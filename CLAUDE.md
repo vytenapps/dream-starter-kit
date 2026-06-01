@@ -69,10 +69,10 @@ supabase start          # boot local Postgres/Auth/Storage (Docker)
 supabase db reset       # re-apply migrations + seed.sql
 supabase status         # show local URLs + keys
 
-# Tests (Phase 4+)
-pnpm test               # vitest (unit/integration)
-pnpm test:e2e           # Playwright (web E2E)
-pnpm test:rls           # RLS isolation regression
+# Tests
+pnpm test               # vitest (unit/integration) — available now
+pnpm test:e2e           # Playwright (web E2E)      — added in Phase 8
+pnpm test:rls           # RLS isolation regression  — added in Phase 8
 ```
 
 ## How to add a feature (the recipe)
@@ -107,7 +107,8 @@ a `tasks` table.
    commit with a scoped message (`feat(tasks): ...`).
 
 To rename the example domain (`projects`/`items`) to your nouns, see the README
-"Rename the example feature" section — it's a find-and-replace plus a migration.
+"Rename the example feature" section (the full README is finalized in Phase 9) —
+it's a find-and-replace plus a migration.
 
 ## Conventions
 
