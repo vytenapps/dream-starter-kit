@@ -1,0 +1,100 @@
+Meet Dream Starter Kit
+Copyright (c) 2026 Vincent (Vyten)
+
+This product is licensed under the MIT License (see LICENSE). It includes and
+builds upon third-party open-source software. The attributions below are
+required by those licenses and/or provided as good-faith acknowledgement.
+
+This file is engineering guidance, not legal advice. Before publishing, run a
+license checker over the installed dependency tree (see README → "License
+check") and have counsel review anything load-bearing.
+
+================================================================================
+1. Base scaffold — create-t3-turbo (MIT)
+================================================================================
+
+This repository was scaffolded from create-t3-turbo and retains substantial
+portions of its source (monorepo wiring, Expo + Next.js apps, Expo Router,
+NativeWind, Turborepo pipeline, tooling configs, CI).
+
+    create-t3-turbo
+    https://github.com/t3-oss/create-t3-turbo
+    Copyright (c) 2023 Julius Marminge
+    Licensed under the MIT License.
+
+    Forked from upstream commit:
+    8f945b7bb3bfb3ca8358d48b1ff0214079bc11ee  (2025-12-11)
+
+Per ARCHITECTURE.md §9.3 we treat this as a one-time scaffold snapshot rather
+than a tracked upstream: we do not merge from upstream (the Supabase backend
+swap diverges from it); discrete upstream fixes are cherry-picked.
+
+MIT License text (applies to the create-t3-turbo-derived portions):
+
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+================================================================================
+2. Apache-2.0 dependencies
+================================================================================
+
+The following are licensed under the Apache License, Version 2.0. Apache-2.0 is
+permissive and compatible with shipping this repo under MIT. If any of their
+SOURCE is copied directly into this repo (rather than consumed via npm), the
+copied files retain their Apache-2.0 header and significant changes are noted.
+
+  - Vercel AI SDK — packages "ai" and "@ai-sdk/*"
+    https://github.com/vercel/ai   (Apache-2.0)
+    Used as an npm dependency (AI features, §4.7).
+
+  - Vercel Chatbot template — https://github.com/vercel/ai-chatbot (Apache-2.0)
+    Used as a REFERENCE/pattern source for the in-app chat UI. If concrete
+    source is lifted into apps/nextjs, this notice + the file header are kept.
+
+  - Vercel Chat SDK — "chat" / https://github.com/vercel/chat (Apache-2.0)
+    OPTIONAL. Only present if multi-platform bot support is enabled.
+
+A copy of the Apache-2.0 license is available at:
+    https://www.apache.org/licenses/LICENSE-2.0
+
+================================================================================
+3. Copied-in registry components (MIT — you own the source)
+================================================================================
+
+Installed via the shadcn-style registry (source copied into this repo). Any
+upstream attribution headers are preserved in the copied files.
+
+  - shadcn/ui                  https://github.com/shadcn-ui/ui            (MIT)
+  - react-native-reusables     https://github.com/founded-labs/react-native-reusables (MIT)
+
+================================================================================
+4. Notable npm dependencies (MIT unless noted)
+================================================================================
+
+  - Turborepo, Next.js, Expo / EAS, React Native, React            (MIT)
+  - Tailwind CSS, NativeWind                                       (MIT)
+  - @supabase/supabase-js                                          (MIT)
+  - Stripe SDKs                                                    (MIT)
+  - liquid-glass-react (rdev) — optional web hero effect           (MIT)
+
+================================================================================
+5. Hosted services (no redistributed code → no repo license obligation)
+================================================================================
+
+  - Supabase platform (called over the network; supabase-js client is MIT)
+  - Vercel AI Gateway (HTTP endpoint that fronts model providers)
+
+================================================================================
+
+Full per-dependency license verification is performed by the license checker
+in CI (see ARCHITECTURE.md §8.7 and the README). No copyleft (GPL/AGPL/LGPL)
+licenses are permitted in the dependency tree.
