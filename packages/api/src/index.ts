@@ -17,4 +17,10 @@ export {
 
 export { useSession, type SessionState } from "./hooks";
 
-export type { Database, Json, Tables } from "./types";
+export type {
+  Database,
+  Json,
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+} from "./types";
