@@ -1,23 +1,20 @@
-import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
-
-import type { AppRouter } from "./root";
-
 /**
- * Inference helpers for input types
- * @example
- * type PostByIdInput = RouterInputs['post']['byId']
- *      ^? { id: number }
+ * @acme/api — the shared Supabase data layer.
+ *
+ * Exposes the cross-platform provider + react-query wiring and shared data
+ * hooks. Each app injects its own platform Supabase client (web: @supabase/ssr;
+ * native: createClient + AsyncStorage). Feature-specific hooks (Phase 4+) live
+ * alongside this as the kit grows.
  */
-type RouterInputs = inferRouterInputs<AppRouter>;
 
-/**
- * Inference helpers for output types
- * @example
- * type AllPostsOutput = RouterOutputs['post']['all']
- *      ^? Post[]
- */
-type RouterOutputs = inferRouterOutputs<AppRouter>;
+export {
+  SupabaseProvider,
+  useSupabase,
+  createQueryClient,
+  type AppSupabaseClient,
+  type SupabaseProviderProps,
+} from "./provider";
 
-export { type AppRouter, appRouter } from "./root";
-export { createTRPCContext } from "./trpc";
-export type { RouterInputs, RouterOutputs };
+export { useSession, type SessionState } from "./hooks";
+
+export type { Database, Json, Tables } from "./types";
