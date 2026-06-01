@@ -96,5 +96,5 @@ upstream attribution headers are preserved in the copied files.
 ================================================================================
 
 Full per-dependency license verification is performed by the license checker
-in CI (see ARCHITECTURE.md §8.7 and the README). No copyleft (GPL/AGPL/LGPL)
+in CI (see ARCHITECTURE.md §8, mechanics step 7, and the README). No copyleft (GPL/AGPL/LGPL)
 licenses are permitted in the dependency tree.
