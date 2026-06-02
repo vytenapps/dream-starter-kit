@@ -15,7 +15,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   newArchEnabled: true,
   assetBundlePatterns: ["**/*"],
   ios: {
-    bundleIdentifier: "com.vyten.dreamstarter",
+    bundleIdentifier: "com.meetdream",
     supportsTablet: true,
     icon: {
       light: "./assets/icon-light.png",
@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
-    package: "com.vyten.dreamstarter",
+    package: "com.meetdream",
     adaptiveIcon: {
       foregroundImage: "./assets/icon-light.png",
       backgroundColor: "#1F104A",
