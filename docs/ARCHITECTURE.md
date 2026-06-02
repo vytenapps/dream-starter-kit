@@ -182,7 +182,9 @@ surface unread items.
   **EAS Submit**. Profiles (`dev`/`preview`/`production`) are in `apps/expo/eas.json`.
 - **Push:** **Expo Push** (free). Remote push requires a **dev build on a physical
   device** — Expo Go can't receive it on Android (SDK 53+).
-- **Web:** Vercel (preview deploys, edge, SEO).
+- **Web:** Vercel (preview deploys, edge, SEO). Fastest setup is the one-click deploy
+  plus the Supabase Marketplace integration (it auto-injects the Supabase env) — see
+  the README's Deploy section.
 
 ---
 
