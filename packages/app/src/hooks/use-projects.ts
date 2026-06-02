@@ -5,7 +5,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { TablesInsert } from "@acme/api";
 import { useSession, useSupabase } from "@acme/api";
 
-import type { CreateProjectInput } from "../validators/project";
+import type {
+  CreateProjectInput,
+  UpdateProjectInput,
+} from "../validators/project";
 
 const projectsKey = ["projects"] as const;
 
@@ -62,6 +65,25 @@ export function useCreateProject() {
       const { data, error } = await supabase
         .from("projects")
         .insert(payload)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: projectsKey }),
+  });
+}
+
+export function useUpdateProject() {
+  const supabase = useSupabase();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...input }: UpdateProjectInput & { id: string }) => {
+      const { data, error } = await supabase
+        .from("projects")
+        .update(input)
+        .eq("id", id)
         .select()
         .single();
       if (error) throw error;

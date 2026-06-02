@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm } from "react-hook-form";
@@ -10,6 +11,7 @@ import {
   useCreateProject,
   useDeleteProject,
   useProjects,
+  useUpdateProject,
 } from "@acme/app";
 import { toast } from "@acme/ui/toast";
 
@@ -20,7 +22,11 @@ import { Input } from "~/components/ui/input";
 export default function ProjectsPage() {
   const projects = useProjects();
   const createProject = useCreateProject();
+  const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
 
   const {
     register,
@@ -39,6 +45,16 @@ export default function ProjectsPage() {
       toast.success("Project created");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not create project");
+    }
+  }
+
+  async function onSaveRename() {
+    if (!editingId || !editName.trim()) return;
+    try {
+      await updateProject.mutateAsync({ id: editingId, name: editName.trim() });
+      setEditingId(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not rename");
     }
   }
 
@@ -77,22 +93,56 @@ export default function ProjectsPage() {
           {projects.data.map((project) => (
             <li key={project.id}>
               <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                  <CardTitle className="text-base">
-                    <Link
-                      href={`/projects/${project.id}`}
-                      className="hover:underline"
-                    >
-                      {project.name}
-                    </Link>
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => void onDelete(project.id)}
-                  >
-                    Delete
-                  </Button>
+                <CardHeader className="flex-row items-center justify-between gap-2">
+                  {editingId === project.id ? (
+                    <div className="flex flex-1 gap-2">
+                      <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        autoFocus
+                      />
+                      <Button size="sm" onClick={() => void onSaveRename()}>
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setEditingId(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <CardTitle className="text-base">
+                        <Link
+                          href={`/projects/${project.id}`}
+                          className="hover:underline"
+                        >
+                          {project.name}
+                        </Link>
+                      </CardTitle>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingId(project.id);
+                            setEditName(project.name);
+                          }}
+                        >
+                          Rename
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => void onDelete(project.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </CardHeader>
               </Card>
             </li>

@@ -14,6 +14,7 @@ export {
   useProjects,
   useProject,
   useCreateProject,
+  useUpdateProject,
   useDeleteProject,
 } from "./hooks/use-projects";
 export {
