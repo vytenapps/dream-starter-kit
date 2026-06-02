@@ -70,10 +70,18 @@ supabase db reset       # re-apply migrations + seed.sql
 supabase status         # show local URLs + keys
 
 # Tests
-pnpm test               # vitest (unit/integration) — available now
-pnpm test:e2e           # Playwright (web E2E)      — added in Phase 8
-pnpm test:rls           # RLS isolation regression  — added in Phase 8
+pnpm test               # vitest (unit/integration) — no backend needed
+pnpm test:e2e           # Playwright (web E2E). Needs `supabase start` + `supabase db
+                        #   reset` + .env on local Supabase; boots `next dev` itself.
+                        #   See tooling/web-e2e/README.md.
+pnpm test:rls           # RLS isolation regression. Needs `supabase start` + .env with
+                        #   NEXT_PUBLIC_SUPABASE_URL/ANON_KEY + SUPABASE_SERVICE_ROLE_KEY.
+pnpm license:check      # fail on strong copyleft (GPL/AGPL/SSPL) in the prod tree
 ```
+
+CI (`.github/workflows/ci.yml`) runs all of these on every PR: lint · format ·
+typecheck · unit · license, plus an `integration` job that boots Supabase and runs
+`test:rls` + Playwright.
 
 ## How to add a feature (the recipe)
 

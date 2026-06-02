@@ -21,6 +21,7 @@
     "lint": "turbo run lint --continue -- --cache --cache-location .cache/.eslintcache",
     "lint:fix": "turbo run lint --continue -- --fix --cache --cache-location .cache/.eslintcache",
     "lint:ws": "pnpm dlx sherif@latest",
+    "license:check": "pnpm licenses list --prod --json | node tooling/scripts/check-licenses.mjs",
     "postinstall": "pnpm lint:ws",
     "test": "turbo run test",
     "test:e2e": "pnpm -F @acme/web-e2e test:e2e",

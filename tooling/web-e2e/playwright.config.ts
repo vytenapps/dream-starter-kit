@@ -13,14 +13,12 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  // In CI the workflow starts Supabase + the web app; locally, run
-  // `supabase start` and `pnpm dev:next` first (reused if already running).
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: "pnpm --filter @acme/nextjs dev",
-        url: baseURL,
-        reuseExistingServer: true,
-        timeout: 120_000,
-      },
+  // Playwright starts the web app (reused locally if already running). The CI
+  // workflow provisions Supabase + the .env before this runs.
+  webServer: {
+    command: "pnpm --filter @acme/nextjs dev",
+    url: baseURL,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
 });

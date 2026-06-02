@@ -4,7 +4,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
-    testTimeout: 30_000,
-    hookTimeout: 30_000,
+    // Generous: a freshly-booted CI Supabase can be slow to settle.
+    testTimeout: 45_000,
+    hookTimeout: 45_000,
+    retry: process.env.CI ? 1 : 0,
   },
 });

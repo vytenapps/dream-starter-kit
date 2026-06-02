@@ -4,7 +4,15 @@ import { NextResponse } from "next/server";
 import { updateSession } from "~/lib/supabase/middleware";
 
 // Routes that require a session (route groups like (app) don't appear in the URL).
-const PROTECTED_PREFIXES = ["/profile", "/projects", "/chat", "/dashboard"];
+// Defense-in-depth: the (app) layout also enforces a server-side session guard.
+const PROTECTED_PREFIXES = [
+  "/profile",
+  "/projects",
+  "/chat",
+  "/dashboard",
+  "/reminders",
+  "/notifications",
+];
 // Auth pages a signed-in user shouldn't see.
 const AUTH_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password"];
 

@@ -11,7 +11,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
-# You can leverage Vercel Remote Caching with Turbo to speed up your builds
+# Leverage Vercel Remote Caching with Turbo to speed up builds.
 # @link https://turborepo.com/docs/core-concepts/remote-caching#remote-caching-on-vercel-builds
 env:
   FORCE_COLOR: 3
@@ -55,3 +55,88 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup
+        uses: ./tooling/github/setup
+
+      - name: Unit tests (vitest)
+        run: pnpm test
+
+  license:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup
+        uses: ./tooling/github/setup
+
+      # Fails only on strong copyleft (GPL/AGPL/SSPL) with no permissive option.
+      - name: License check
+        run: pnpm license:check
+
+  # Integration: a real local Supabase stack (Postgres + Auth + Storage), the
+  # RLS isolation regression, and the Playwright critical-path e2e against the
+  # web app. This is the security + end-to-end gate.
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup
+        uses: ./tooling/github/setup
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase (applies migrations + seed)
+        run: supabase start
+
+      # `supabase status -o env` prints the LOCAL stack's well-known demo anon +
+      # service_role keys to stdout — throwaway values for an ephemeral CI
+      # Postgres, not real secrets. They're written to a private .env consumed by
+      # `next dev` and the RLS tests (both via `dotenv -e ../../.env`); never echoed.
+      - name: Configure .env from local Supabase
+        shell: bash
+        run: |
+          set -a
+          source <(supabase status -o env)
+          set +a
+          : "${DB_URL:=postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
+          cat > .env <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=$API_URL
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
+          SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY
+          SUPABASE_DB_URL=$DB_URL
+          NEXT_PUBLIC_APP_URL=http://localhost:3000
+          EXPO_PUBLIC_SUPABASE_URL=$API_URL
+          EXPO_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
+          EXPO_PUBLIC_API_URL=http://localhost:3000
+          EOF
+
+      - name: RLS isolation regression
+        run: pnpm test:rls
+
+      - name: Install Playwright browser
+        run: pnpm --filter @acme/web-e2e exec playwright install --with-deps chromium
+
+      - name: E2E (Playwright)
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tooling/web-e2e/playwright-report/
+          retention-days: 7
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop --no-backup
