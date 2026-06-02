@@ -1,6 +1,6 @@
 -- 0007 · AI assistant (persisted chat)
 -- chat_threads / chat_messages back the in-app assistant (AI SDK via the AI
--- Gateway). token_usage supports cost/observability. (ERD.md)
+-- Gateway). token_usage supports cost/observability. (docs/ERD.md)
 
 create table public.chat_threads (
   id uuid primary key default gen_random_uuid(),

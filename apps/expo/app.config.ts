@@ -2,9 +2,9 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "Meet Dream",
-  slug: "meet-dream",
-  scheme: process.env.EXPO_PUBLIC_AUTH_SCHEME ?? "meetdream",
+  name: "Dream",
+  slug: "dream-starter-kit",
+  scheme: process.env.EXPO_PUBLIC_AUTH_SCHEME ?? "dreamstarter",
   version: "0.1.0",
   orientation: "portrait",
   icon: "./assets/icon-light.png",
@@ -15,7 +15,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   newArchEnabled: true,
   assetBundlePatterns: ["**/*"],
   ios: {
-    bundleIdentifier: "com.vyten.meetdream",
+    bundleIdentifier: "com.vyten.dreamstarter",
     supportsTablet: true,
     icon: {
       light: "./assets/icon-light.png",
@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
-    package: "com.vyten.meetdream",
+    package: "com.vyten.dreamstarter",
     adaptiveIcon: {
       foregroundImage: "./assets/icon-light.png",
       backgroundColor: "#1F104A",

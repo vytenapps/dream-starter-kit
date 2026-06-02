@@ -1,10 +1,14 @@
-# Meet Dream Starter Kit
+# Dream Starter Kit
 
 A clone-and-ship starter: one **Turborepo** monorepo shipping a **Next.js web app**
 and an **Expo (iOS + Android) app** that share **one Supabase backend**
 (Postgres + Auth + Row-Level Security + Storage + Edge Functions). Stripe billing,
 a Vercel-AI-Gateway assistant, and Expo push notifications are wired in. Clone it,
 rename a few things, and extend it into a real product.
+
+> **Not an engineer?** You can still use this. Setup is copy-paste (below), and the
+> kit is structured so an AI coding assistant like [Claude Code](https://claude.com/claude-code)
+> can extend it feature-by-feature — see [`CLAUDE.md`](./CLAUDE.md) for the recipe it follows.
 
 ### What you get out of the box
 
@@ -25,8 +29,8 @@ rename a few things, and extend it into a real product.
 
 ## Source of truth
 
-- **[`ARCHITECTURE.md`](./ARCHITECTURE.md)** — stack, structure, decisions, dependency/upgrade policy, licenses.
-- **[`ERD.md`](./ERD.md)** — data model + the canonical RLS pattern every table follows.
+- **[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)** — stack, structure, security model, and dependency policy.
+- **[`docs/ERD.md`](./docs/ERD.md)** — data model + the canonical RLS pattern every table follows.
 - **[`CLAUDE.md`](./CLAUDE.md)** — working agreement, the golden security rules, and the "how to add a feature" recipe.
 
 If anything here disagrees with those, **they win.**
@@ -227,10 +231,123 @@ pnpm 10.19.0). Set `EXPO_PUBLIC_*` values as EAS env/secrets.
 3. The webhook is signature-verified and idempotent; it syncs the catalog +
    subscription state into Supabase. Mobile reads `subscriptions` (RLS read-own).
 
+## Dependencies
+
+Versions are pinned in the pnpm **catalog** (`pnpm-workspace.yaml`) so web and
+mobile never drift. The notable direct dependencies and why they're here:
+
+**Monorepo & tooling**
+
+- **turbo** (Turborepo) — runs and caches tasks (build/lint/test) across the workspace.
+- **pnpm** — the package manager; its catalog is the single source of truth for versions.
+- **typescript** — the language; `strict` everywhere.
+- **eslint** + **typescript-eslint** (+ React / a11y / import / turbo plugins) — linting.
+- **prettier** (+ import-sort & tailwind plugins) — formatting.
+- **dotenv-cli** — loads `.env` for scripts and tests.
+
+**Web app (`apps/nextjs`)**
+
+- **next** — the React web framework (App Router, Turbopack).
+- **react** / **react-dom** — the UI runtime.
+- **@supabase/ssr** — Supabase auth/session in Next server code + middleware (cookie-based).
+- **@supabase/supabase-js** — the Supabase client (DB, Auth, Storage).
+- **@tanstack/react-query** — data fetching, caching, and mutations for the shared hooks.
+- **@t3-oss/env-nextjs** — validated, typed environment variables at build/runtime.
+- **react-hook-form** + **@hookform/resolvers** — forms, bound to zod validators.
+- **zod** — schema validation (env, form input, API payloads).
+- **radix-ui** — accessible UI primitives that shadcn/ui builds on.
+- **class-variance-authority**, **tailwind-merge** — component variants + class merging.
+- **lucide-react**, **@tabler/icons-react** — icon sets used by the UI.
+- **sonner** — toast notifications. **vaul** — the paywall drawer. **next-themes** — dark/light mode.
+- **tw-animate-css** — Tailwind animation utilities. **jiti** — runtime TS for config loading.
+- **liquid-glass-react** — optional glass hero accent (web, Chromium-only).
+
+**Mobile app (`apps/expo`)**
+
+- **expo** + **expo-router** — the mobile framework and file-based routing.
+- **react-native** — the mobile runtime.
+- **nativewind** + **react-native-css** — Tailwind-style styling on native.
+- **@react-native-async-storage/async-storage** — persists the auth session.
+- **expo-secure-store** — secure key/value storage.
+- **expo-web-browser** + **expo-linking** — the OAuth deep-link flow.
+- **expo-notifications** + **expo-device** — push registration + device checks.
+- **expo-constants**, **expo-status-bar**, **expo-system-ui**, **expo-splash-screen**, **expo-dev-client** — Expo essentials.
+- **react-native-gesture-handler**, **react-native-reanimated**, **react-native-screens**, **react-native-safe-area-context**, **react-native-worklets** — navigation + animation deps.
+- **@legendapp/list** — a performant list component. **react-native-url-polyfill** — `URL` polyfill needed by supabase-js.
+
+**Backend, payments & AI**
+
+- **@supabase/supabase-js** — also used by edge functions and the RLS tests.
+- **stripe** — the Stripe server SDK (Checkout, customer portal, webhook).
+- **ai** — the Vercel AI SDK; sends model calls through the AI Gateway.
+
+**Shared internal packages** (`@acme/*`) — `api` (data layer), `app` (validators/hooks/logic),
+`ui` (tokens/theme), `config` (env schema + constants). Not published; imported by the apps.
+
+**Testing & quality**
+
+- **vitest** — unit/integration tests. **@playwright/test** — web end-to-end tests.
+- **@tailwindcss/postcss**, **postcss**, **tailwindcss** — the styling build.
+
+Run `pnpm licenses list --prod` for the full resolved tree and license of every
+transitive package.
+
+## Contributing
+
+Contributions are welcome. The repo is a Turborepo monorepo; work happens on a
+branch and lands via pull request.
+
+**Before you open a PR**, run the gates on **Node 22** (`nvm use`) and make sure
+they're green:
+
+```bash
+pnpm install
+pnpm typecheck && pnpm lint && pnpm test     # always
+pnpm -F @acme/nextjs build                   # if you touched the web app
+pnpm license:check                           # if you added/updated dependencies
+pnpm test:rls                                # if you changed schema or RLS  (needs supabase start)
+```
+
+Also, when relevant:
+
+- **Env vars:** update **both** `.env.example` and the zod schema in `packages/config`.
+- **Database:** add a **new** migration (never edit a shipped one), reseed, and
+  run `pnpm db:gen-types`. Add an FK index for any column used in an RLS policy.
+- **Features:** follow the recipe in [`CLAUDE.md`](./CLAUDE.md) and keep cross-platform
+  logic in `packages/`.
+- **Docs:** update the README / `docs/ARCHITECTURE.md` / `docs/ERD.md` if behavior or structure changed.
+
+**Opening the pull request**
+
+1. Branch off `main`: `git checkout -b feat/<short-name>` (or `fix/…`, `docs/…`).
+2. Commit using [Conventional Commits](https://www.conventionalcommits.org/) (e.g.
+   `feat(reminders): add weekly cadence`).
+3. Push and open the PR (`gh pr create` or the GitHub UI). In the description, cover
+   **what** changed and **why**, how you tested it, screenshots for UI changes, and
+   `Closes #<issue>` to link an issue.
+4. Make sure CI is green — every PR runs lint, format, typecheck, unit, license, and
+   the Supabase integration job (`test:rls` + Playwright).
+
+## Reporting issues
+
+Use **GitHub Issues** for bugs and feature requests:
+
+1. **Search first** — someone may have already reported it.
+2. **Open a new issue** and include: what you expected vs. what happened, exact
+   **steps to reproduce**, your environment (OS, `node -v`, `pnpm -v`, web or mobile,
+   local or deployed), and any relevant logs/screenshots. Note whether it's web,
+   mobile, or backend.
+
+**Security vulnerabilities:** please do **not** open a public issue. Use GitHub's
+**private vulnerability reporting** (the repo's *Security → Report a vulnerability*
+tab) or email the maintainers, and allow time for a fix before public disclosure.
+
 ## License
 
-**MIT** — see [`LICENSE`](./LICENSE). Copyright © Vyten LLC.
+**Apache License 2.0** — see [`LICENSE`](./LICENSE). Copyright © 2026 Vyten LLC.
 
-Third-party attributions (the MIT create-t3-turbo base — pinned upstream SHA — and the
-Apache-2.0 Vercel AI libraries) are in [`NOTICE`](./NOTICE). `pnpm license:check` keeps
-the dependency tree free of strong copyleft.
+This repository incorporates third-party open-source software; required attributions
+(the **MIT** create-t3-turbo base with its pinned upstream commit SHA, and the
+**Apache-2.0** Vercel AI SDK) are in [`NOTICE`](./NOTICE). `pnpm license:check` runs in
+CI and fails on strong copyleft (GPL/AGPL/SSPL); it allows permissive licenses plus
+weak, file-level copyleft (LGPL/MPL) that is safe to depend on.

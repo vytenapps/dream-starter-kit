@@ -1,9 +1,12 @@
-# Meet Dream Starter Kit — Data Model (ERD)
+# Dream Starter Kit — Data Model (ERD)
 
 The base schema every cloned app starts from. It's deliberately generic: a universal SaaS substrate
 (identity, billing, engagement, files, AI) plus a thin **domain scaffold** (`projects` → `items`) that
-you **rename to your idea's nouns** and extend. Built for **Supabase Auth + Row-Level Security** — every
+you **rename to your product's nouns** and extend. Built for **Supabase Auth + Row-Level Security** — every
 table is owned by a user (directly or via an org), and access is enforced at the database.
+
+> The SQL in `supabase/migrations/` is the source of truth for exact columns and
+> constraints; this document is the readable overview.
 
 > **How to use it:** keep the core (identity + billing), delete the parts your idea doesn't need
 > (e.g. drop the org layer for a single-user app, drop chat if there's no AI), and rename
@@ -20,7 +23,7 @@ erDiagram
     organizations ||--o{ memberships : "has"
     organizations ||--o{ invitations : "has"
     profiles ||--o| customers : "billing"
-    customers ||--o{ subscriptions : "has"
+    profiles ||--o{ subscriptions : "subscribes"
     products ||--o{ prices : "has"
     prices ||--o{ subscriptions : "billed at"
     profiles ||--o{ projects : "owns"
@@ -86,7 +89,8 @@ erDiagram
         text id PK "Stripe subscription id"
         uuid user_id FK
         text price_id FK
-        text status "trialing | active | past_due | canceled"
+        text status "trialing | active | past_due | canceled | …"
+        boolean cancel_at_period_end
         timestamptz current_period_end
     }
     projects {
@@ -175,7 +179,7 @@ erDiagram
 - `projects` — the top-level container the user (or org) owns. Rename to your grouping noun (pipeline, workspace, clinic, store…).
 - `items` — the primary domain record. Rename to your core noun (lead, booking, habit, listing, candidate…); `data jsonb` holds idea-specific fields so you can move fast before formalizing columns.
 
-**Engagement** *(most Meet Dream ideas are reminder/nudge engines — keep what fits)*
+**Engagement** *(many apps are reminder/nudge engines — keep what fits)*
 - `reminders` — scheduled nudges/follow-ups (due time, channel, status); optionally about an `item`.
 - `push_tokens` — Expo push tokens per device.
 - `notifications` — in-app notification feed with `read_at`.
@@ -237,9 +241,9 @@ Notes:
 
 ## Specializing it per idea
 
-Keep the substrate, rename the domain scaffold, add at most one or two idea-specific tables. Examples drawn from the live catalog:
+Keep the substrate, rename the domain scaffold, add at most one or two idea-specific tables. Example product ideas:
 
-| Catalog idea | `projects` → | `items` → | Add |
+| Example idea | `projects` → | `items` → | Add |
 |---|---|---|---|
 | Lead follow-up autopilot for body shops | shops | **leads** | reminders = follow-ups |
 | Missed-call booking for distilleries | locations | **bookings** | reminders = callbacks |

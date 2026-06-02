@@ -1,7 +1,7 @@
 -- 0004 · App domain (rename to your idea's nouns)
 -- projects -> items. Projects are owned by a user OR an org; items inherit
 -- access from their project. Per-command policies make the rules explicit and
--- safe (members can read shared items; only the creator mutates their own). (ERD.md)
+-- safe (members can read shared items; only the creator mutates their own). (docs/ERD.md)
 
 create table public.projects (
   id uuid primary key default gen_random_uuid(),

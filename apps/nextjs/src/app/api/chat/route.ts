@@ -18,7 +18,7 @@ const bodySchema = z.object({
 });
 
 const SYSTEM_PROMPT =
-  "You are a concise, friendly assistant inside the Meet Dream app.";
+  "You are a concise, friendly assistant inside the Dream app.";
 
 // Per-user rate limit. In-memory (per server instance) — swap for Upstash
 // Redis or similar in production.

@@ -6,7 +6,7 @@
     "./theme": "./theme.css",
     "./postcss-config": "./postcss-config.js"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "clean": "git clean -xdf .cache .turbo node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore",

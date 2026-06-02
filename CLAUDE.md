@@ -1,7 +1,7 @@
 # CLAUDE.md — working agreement for this repo
 
-Guidance for Claude Code (and humans) extending the **Meet Dream Starter Kit**.
-Read this first, then `ARCHITECTURE.md` and `ERD.md` — those two are the
+Guidance for Claude Code (and humans) extending the **Dream Starter Kit**.
+Read this first, then `docs/ARCHITECTURE.md` and `docs/ERD.md` — those two are the
 **source of truth**. If anything here conflicts with them, they win.
 
 ## What this is
@@ -20,8 +20,8 @@ clarity beat cleverness.
 | Web | Next.js (App Router), shadcn/ui, Tailwind | `apps/nextjs` |
 | Mobile | Expo + Expo Router, react-native-reusables, NativeWind | `apps/expo` |
 | Backend | Supabase: Postgres + Auth + Storage + Edge Functions | `supabase/` |
-| Data layer | `@supabase/supabase-js` typed client + react-query hooks | `packages/api` |
-| Shared features | cross-platform screens/hooks/logic | `packages/app` |
+| Data layer (client + generated types) | `@supabase/supabase-js` typed client, session provider | `packages/api` |
+| Shared features | cross-platform validators, react-query hooks, logic | `packages/app` |
 | Shared UI tokens / primitives | | `packages/ui` |
 | Env + constants | zod env schema, `DEFAULT_AI_MODEL`, etc. | `packages/config` |
 | Payments | Stripe (web only) + webhook edge function | `apps/nextjs`, `supabase/functions` |
@@ -35,7 +35,7 @@ clarity beat cleverness.
 
 1. **RLS on every table.** Authorization lives in Postgres, not app code. Every
    table has an owner (`user_id`/`owner_id`, or reachable via `memberships`) and
-   policies scoped to `(select auth.uid())`. See `ERD.md`.
+   policies scoped to `(select auth.uid())`. See `docs/ERD.md`.
 2. **Service role key is server-only.** It bypasses RLS. It appears ONLY in
    Supabase edge functions / server code (e.g. the Stripe webhook). Never in
    `apps/expo` or web client code.
@@ -83,40 +83,115 @@ CI (`.github/workflows/ci.yml`) runs all of these on every PR: lint · format ·
 typecheck · unit · license, plus an `integration` job that boots Supabase and runs
 `test:rls` + Playwright.
 
-## How to add a feature (the recipe)
+## How to add a modular feature
 
-Follow this every time — it keeps the kit secure and consistent. Example: adding
-a `tasks` table.
+Features in this kit are **modular**: each one spans the same predictable set of
+layers, every layer lives in a predictable place, and a feature can be added — or
+deleted — without touching unrelated code. The `projects → items` feature is the
+working reference; copy its shape. (The AI assistant, reminders, and notifications
+are all built this same way.)
 
-1. **Schema + RLS + indexes (migration).** New SQL file in
-   `supabase/migrations/` (`supabase migration new add_tasks`):
-   - create the table with an owner column (`user_id` or `project_id` → org).
-   - `alter table tasks enable row level security;`
-   - add the owner policy (copy the canonical pattern from `ERD.md` /
-     existing tables) using `(select auth.uid())`.
-   - **add a B-tree index on every FK used in RLS predicates** (e.g.
-     `create index on tasks (user_id);`). RLS filters need these.
-   - add demo rows to `supabase/seed.sql` (for two users, so isolation is
-     testable). Run `supabase db reset`.
-2. **Types.** Regenerate DB types: `pnpm db:gen-types` (writes
-   `packages/api`’s generated types). Never hand-edit generated types.
-3. **Validators.** zod schema for create/update input (co-locate with the
-   feature in `packages/app` or `packages/api`).
-4. **Data hooks.** Add react-query hooks in `packages/api` (`useTasks`,
-   `useCreateTask`, …) using the typed client. These are shared by web + native.
-5. **UI.** Web screen in `apps/nextjs` (shadcn + react-hook-form + zod). Native
-   screen in `apps/expo` (react-native-reusables). Share logic via
-   `packages/app`; keep platform UI thin.
-6. **Tests (required).**
-   - Vitest unit test for the validator + any non-trivial hook logic.
-   - Extend `pnpm test:rls`: assert user B cannot read/write user A's tasks.
-   - If it's a critical user flow, add/extend a Playwright spec.
-7. **Verify the gate:** `pnpm typecheck && pnpm lint && pnpm test` green, then
-   commit with a scoped message (`feat(tasks): ...`).
+### The anatomy of a feature
 
-To rename the example domain (`projects`/`items`) to your nouns, see the README
-"Rename the example feature" section (the full README is finalized in Phase 9) —
-it's a find-and-replace plus a migration.
+A feature is a vertical slice through these layers. Build them in this order:
+
+| # | Layer | Lives in | What goes here |
+|---|---|---|---|
+| 1 | **Schema + RLS** | `supabase/migrations/*.sql` | the table(s), RLS policies, FK indexes |
+| 2 | **Seed** | `supabase/seed.sql` | demo rows for **two** users (so isolation is testable) |
+| 3 | **DB types** | `packages/api` (generated) | `pnpm db:gen-types` — never hand-edit |
+| 4 | **Validators** | `packages/app/src/validators` | zod schemas for create/update input |
+| 5 | **Hooks** | `packages/app/src/hooks` | react-query hooks over the typed client |
+| 6 | **Web UI** | `apps/nextjs/src/app/(app)/…` | shadcn + react-hook-form, calls the hooks |
+| 7 | **Native UI** | `apps/expo/src/app/(app)/…` | react-native-reusables, calls the same hooks |
+| 8 | **Server (only if needed)** | `apps/nextjs/src/app/api` or `supabase/functions` | privileged work (Stripe, AI, cron) |
+| 9 | **Tests** | `packages/app` + `tooling/rls-tests` + `tooling/web-e2e` | unit + RLS isolation + e2e |
+
+Layers 4–5 are shared by **both** apps — that's the whole point. Keep `apps/*`
+thin: a screen wires a hook to platform UI and nothing more.
+
+### Worked example — adding a `tasks` feature
+
+**1. Migration (schema + RLS + indexes).** `supabase migration new add_tasks`:
+
+```sql
+create table public.tasks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  title text not null,
+  done boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.tasks enable row level security;
+
+-- Owner-only: copy this canonical pattern from docs/ERD.md / existing tables.
+create policy "tasks owned by user"
+  on public.tasks for all to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
+
+-- REQUIRED: B-tree index on every FK used in an RLS predicate.
+create index tasks_user_id_idx on public.tasks (user_id);
+```
+
+Add demo rows for **both** seed users in `supabase/seed.sql`, then `supabase db reset`.
+
+**2. Types.** `pnpm db:gen-types` regenerates `packages/api`'s `Database` type.
+Use `Tables<'tasks'>`, `TablesInsert<'tasks'>`, `TablesUpdate<'tasks'>` downstream.
+
+**3. Validators** (`packages/app`), imported as `zod/v4`:
+
+```ts
+import { z } from "zod/v4";
+export const createTaskSchema = z.object({ title: z.string().min(1).max(200) });
+export type CreateTaskInput = z.infer<typeof createTaskSchema>;
+```
+
+**4. Hooks** (`packages/app`) — shared by web + native, using `useSupabase()` from `@acme/api`:
+
+```ts
+export function useTasks() {
+  const supabase = useSupabase();
+  return useQuery({
+    queryKey: ["tasks"],
+    queryFn: async () =>
+      (await supabase.from("tasks").select("*").order("created_at")).data ?? [],
+  });
+}
+// + useCreateTask / useUpdateTask / useDeleteTask (mutations that invalidate ["tasks"])
+```
+
+**5. UI.** Web screen under `apps/nextjs/src/app/(app)/tasks` (shadcn + react-hook-form
+with `standardSchemaResolver(createTaskSchema)`); native screen under
+`apps/expo/src/app/(app)/tasks.tsx` (react-native-reusables). Both call the hooks
+from step 4 — no data logic in the screens. Add the route to the web sidebar /
+native home nav.
+
+**6. Tests (required).**
+- Vitest unit test for `createTaskSchema` (and any non-trivial pure logic).
+- Extend `tooling/rls-tests`: assert user B **cannot** read or write user A's tasks.
+- If it's a critical flow, add/extend a Playwright spec in `tooling/web-e2e`.
+
+**7. Verify + commit.** `pnpm typecheck && pnpm lint && pnpm test` green
+(+ `next build` / `expo export` if you touched those), then a scoped commit:
+`feat(tasks): add task list`.
+
+### Keeping features modular (and removable)
+
+- **One feature = one vertical slice.** Don't scatter a feature's logic across
+  unrelated files. A cloner should be able to delete a feature by removing its
+  migration (well, adding a drop migration), its validator/hook files, its two
+  screens, its nav entries, and its tests — and nothing else should break.
+- **Gate optional features behind data, not forks.** Premium is unlocked by
+  reading `subscriptions` (`usePremium()`), not by build flags. Follow that pattern.
+- **Never edit a shipped migration.** Add a new one (rename/drop included).
+- **Touching env or constants?** Update `.env.example` **and** the zod schema in
+  `packages/config`; put shared constants (model id, prices, limits) in `packages/config`.
+
+To rename the example domain (`projects`/`items`) to your own nouns, see the
+README → "The example feature & renaming it" — it's a find-and-replace plus a
+new migration.
 
 ## Conventions
 
@@ -127,12 +202,13 @@ it's a find-and-replace plus a migration.
 - **Env changes** always touch both `.env.example` and the zod schema.
 - **Migrations are append-only and idempotent-friendly.** Never edit a shipped
   migration; add a new one.
-- **Don't track create-t3-turbo upstream** (ARCHITECTURE.md §9.3): snapshot +
-  cherry-pick only. The forked SHA is pinned in `NOTICE`.
+- **Don't track create-t3-turbo upstream** (see `docs/ARCHITECTURE.md` → Keeping
+  dependencies current): snapshot + cherry-pick only. The forked SHA is in `NOTICE`.
 
-## Build status
+## Status
 
-This kit is built in phases (see `ARCHITECTURE.md` and the repo task list):
-0 scaffold · 1 Supabase layer · 2 schema+RLS · 3 auth · 4 example feature ·
-5 billing · 6 AI · 7 engagement · 8 testing/CI · 9 polish. Each phase ends
-"builds clean + committed". Update this file when conventions change.
+The kit is **feature-complete and ready to clone**: auth, the example data feature,
+billing, the AI assistant, engagement (notifications/reminders/push), and the full
+test/CI suite are all built and green. Extend it with the modular-feature recipe
+above, keep every checkpoint green (`pnpm typecheck && pnpm lint && pnpm test`), and
+update this file when conventions change.

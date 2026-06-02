@@ -1,7 +1,7 @@
 -- 0006 · Files + Storage
 -- `files` is metadata for objects in Supabase Storage. The bucket's RLS lives on
 -- storage.objects, path-prefixed by user id (convention: "<user_id>/..."),
--- mirroring the files table's ownership. (ERD.md)
+-- mirroring the files table's ownership. (docs/ERD.md)
 
 create table public.files (
   id uuid primary key default gen_random_uuid(),

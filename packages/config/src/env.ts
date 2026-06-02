@@ -8,7 +8,7 @@ import { z } from "zod/v4";
  * (service role key, Stripe secret, AI gateway key). Client-safe values are
  * validated separately, per platform, with the `*_PUBLIC_` prefix.
  *
- * @see ARCHITECTURE.md §4.5 and `.env.example`
+ * @see docs/ARCHITECTURE.md and `.env.example`
  */
 export const serverEnvSchema = z.object({
   // --- Supabase ---

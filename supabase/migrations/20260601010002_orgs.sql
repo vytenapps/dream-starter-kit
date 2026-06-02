@@ -1,6 +1,6 @@
 -- 0002 · Teams / multi-tenancy (optional — drop for single-user apps)
 -- organizations, memberships, invitations. Org-scoped RLS uses SECURITY DEFINER
--- helpers to avoid infinite recursion on the memberships table. (ERD.md)
+-- helpers to avoid infinite recursion on the memberships table. (docs/ERD.md)
 
 create table public.organizations (
   id uuid primary key default gen_random_uuid(),

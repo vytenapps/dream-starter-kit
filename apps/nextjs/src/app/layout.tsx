@@ -16,10 +16,10 @@ const description =
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
   title: {
-    default: "Meet Dream Starter Kit",
-    template: "%s · Meet Dream",
+    default: "Dream Starter Kit",
+    template: "%s · Dream Starter Kit",
   },
-  applicationName: "Meet Dream",
+  applicationName: "Dream Starter Kit",
   description,
   keywords: [
     "Next.js",
@@ -36,14 +36,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    title: "Meet Dream Starter Kit",
+    title: "Dream Starter Kit",
     description,
     url: env.NEXT_PUBLIC_APP_URL,
-    siteName: "Meet Dream",
+    siteName: "Dream Starter Kit",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Meet Dream Starter Kit",
+    title: "Dream Starter Kit",
     description,
   },
   robots: { index: true, follow: true },

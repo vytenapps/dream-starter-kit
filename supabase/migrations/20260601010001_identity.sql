@@ -1,6 +1,6 @@
 -- 0001 · Identity
 -- profiles: app-level user record, 1:1 with auth.users (same id). The anchor
--- for most RLS policies. Created by a trigger on signup. (ERD.md)
+-- for most RLS policies. Created by a trigger on signup. (docs/ERD.md)
 
 create extension if not exists pgcrypto;
 

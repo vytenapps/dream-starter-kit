@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
   const messages = tokens.map((t) => ({
     to: t.token,
-    title: "Meet Dream",
+    title: "Dream",
     body: "🎉 Test notification",
     sound: "default",
   }));

@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 // Generated Open Graph image (no committed binary). Next wires this into the
 // page <meta> automatically, overriding the openGraph.images default.
-export const alt = "Meet Dream Starter Kit — Next.js + Expo on one Supabase backend";
+export const alt = "Dream Starter Kit — Next.js + Expo on one Supabase backend";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -22,8 +22,8 @@ export default function OpengraphImage() {
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ fontSize: 96, fontWeight: 800, letterSpacing: "-0.03em" }}>
-          Meet Dream
+        <div style={{ fontSize: 88, fontWeight: 800, letterSpacing: "-0.03em" }}>
+          Dream Starter Kit
         </div>
         <div style={{ fontSize: 38, marginTop: 24, opacity: 0.85, maxWidth: 900 }}>
           A clone-and-ship starter — Next.js (web) + Expo (iOS/Android) sharing one

@@ -1,6 +1,6 @@
 -- 0005 · Engagement
 -- reminders (scheduled nudges), push_tokens (Expo), notifications (in-app feed).
--- All strictly user-owned. (ERD.md)
+-- All strictly user-owned. (docs/ERD.md)
 
 create table public.reminders (
   id uuid primary key default gen_random_uuid(),

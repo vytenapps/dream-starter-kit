@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <View className="bg-background flex-1 items-center justify-center gap-4 p-6">
       <Stack.Screen options={{ title: APP_NAME }} />
-      <Text className="text-4xl font-bold">Meet Dream</Text>
+      <Text className="text-4xl font-bold">{APP_NAME}</Text>
       <Text className="text-muted-foreground text-center">
         Signed in as {user?.email}
       </Text>

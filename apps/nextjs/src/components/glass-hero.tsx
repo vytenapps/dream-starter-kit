@@ -24,7 +24,7 @@ function useHydrated() {
  * degrades to a soft translucent panel.
  *
  * Use glass sparingly — as an accent on landing/paywall, not everywhere.
- * backdrop-blur is costly to paint and can hurt contrast (see ARCHITECTURE.md §4.4).
+ * backdrop-blur is costly to paint and can hurt contrast (see docs/ARCHITECTURE.md).
  */
 export function GlassHero() {
   if (!useHydrated()) return null;

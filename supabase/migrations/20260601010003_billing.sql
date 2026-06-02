@@ -2,7 +2,7 @@
 -- Clients may READ their own customer/subscription rows; the product catalog is
 -- world-readable. NO write policies exist for clients — the Stripe webhook
 -- (a Supabase edge function) writes these using the service role, which
--- bypasses RLS entirely. (ERD.md)
+-- bypasses RLS entirely. (docs/ERD.md)
 
 create table public.customers (
   id uuid primary key default gen_random_uuid(),
