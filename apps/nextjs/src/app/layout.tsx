@@ -5,8 +5,8 @@ import { cn } from "@acme/ui";
 import { ThemeProvider, ThemeToggle } from "@acme/ui/theme";
 import { Toaster } from "@acme/ui/toast";
 
-import { env } from "~/env";
 import { Providers } from "~/app/providers";
+import { env } from "~/env";
 
 import "~/app/styles.css";
 

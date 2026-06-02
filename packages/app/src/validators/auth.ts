@@ -1,9 +1,7 @@
 import { z } from "zod/v4";
 
 export const emailSchema = z.email("Enter a valid email");
-export const passwordSchema = z
-  .string()
-  .min(8, "Use at least 8 characters");
+export const passwordSchema = z.string().min(8, "Use at least 8 characters");
 
 export const signInSchema = z.object({
   email: emailSchema,

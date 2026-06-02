@@ -1,5 +1,6 @@
-import type { AppSupabaseClient } from "@acme/api";
 import type { Provider } from "@supabase/supabase-js";
+
+import type { AppSupabaseClient } from "@acme/api";
 
 import type { SignInInput, SignUpInput } from "./validators/auth";
 

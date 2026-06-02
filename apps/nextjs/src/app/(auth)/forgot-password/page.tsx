@@ -6,11 +6,11 @@ import { useForm } from "react-hook-form";
 
 import type { ForgotPasswordInput } from "@acme/app";
 import { forgotPasswordSchema, resetPasswordForEmail } from "@acme/app";
-import { Button } from "@acme/ui/button";
-import { Input } from "@acme/ui/input";
-import { Label } from "@acme/ui/label";
 import { toast } from "@acme/ui/toast";
 
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { createClient } from "~/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
@@ -19,7 +19,9 @@ export default function ForgotPasswordPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting, isSubmitSuccessful },
-  } = useForm<ForgotPasswordInput>({ resolver: standardSchemaResolver(forgotPasswordSchema) });
+  } = useForm<ForgotPasswordInput>({
+    resolver: standardSchemaResolver(forgotPasswordSchema),
+  });
 
   async function onSubmit({ email }: ForgotPasswordInput) {
     try {
@@ -30,7 +32,9 @@ export default function ForgotPasswordPage() {
       );
       toast.success("If that email exists, a reset link is on its way");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not send reset email");
+      toast.error(
+        e instanceof Error ? e.message : "Could not send reset email",
+      );
     }
   }
 
@@ -54,7 +58,12 @@ export default function ForgotPasswordPage() {
         >
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" {...register("email")} />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              {...register("email")}
+            />
             {errors.email && (
               <p className="text-destructive text-sm">{errors.email.message}</p>
             )}

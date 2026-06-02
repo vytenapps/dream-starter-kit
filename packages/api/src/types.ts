@@ -41,8 +41,18 @@ export interface Database {
       };
       organizations: {
         Row: { id: string; name: string; owner_id: string; created_at: string };
-        Insert: { id?: string; name: string; owner_id: string; created_at?: string };
-        Update: { id?: string; name?: string; owner_id?: string; created_at?: string };
+        Insert: {
+          id?: string;
+          name: string;
+          owner_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          owner_id?: string;
+          created_at?: string;
+        };
         Relationships: [];
       };
       memberships: {
@@ -97,9 +107,24 @@ export interface Database {
         Relationships: [];
       };
       customers: {
-        Row: { id: string; user_id: string; stripe_customer_id: string; created_at: string };
-        Insert: { id?: string; user_id: string; stripe_customer_id: string; created_at?: string };
-        Update: { id?: string; user_id?: string; stripe_customer_id?: string; created_at?: string };
+        Row: {
+          id: string;
+          user_id: string;
+          stripe_customer_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          stripe_customer_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          stripe_customer_id?: string;
+          created_at?: string;
+        };
         Relationships: [];
       };
       products: {
@@ -379,9 +404,24 @@ export interface Database {
         Relationships: [];
       };
       chat_threads: {
-        Row: { id: string; user_id: string; title: string | null; created_at: string };
-        Insert: { id?: string; user_id: string; title?: string | null; created_at?: string };
-        Update: { id?: string; user_id?: string; title?: string | null; created_at?: string };
+        Row: {
+          id: string;
+          user_id: string;
+          title: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string | null;
+          created_at?: string;
+        };
         Relationships: [];
       };
       chat_messages: {

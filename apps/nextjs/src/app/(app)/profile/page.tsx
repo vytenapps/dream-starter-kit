@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm } from "react-hook-form";
 
-import { useSession } from "@acme/api";
 import type { UpdateProfileInput } from "@acme/app";
+import { useSession } from "@acme/api";
 import {
   signOut,
   updateProfileSchema,
@@ -13,11 +13,11 @@ import {
   useProfile,
   useUpdateProfile,
 } from "@acme/app";
-import { Button } from "@acme/ui/button";
-import { Input } from "@acme/ui/input";
-import { Label } from "@acme/ui/label";
 import { toast } from "@acme/ui/toast";
 
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { createClient } from "~/lib/supabase/client";
 
 export default function ProfilePage() {
@@ -56,7 +56,9 @@ export default function ProfilePage() {
   }
 
   async function onDelete() {
-    if (!window.confirm("Permanently delete your account? This cannot be undone.")) {
+    if (
+      !window.confirm("Permanently delete your account? This cannot be undone.")
+    ) {
       return;
     }
     try {
@@ -73,7 +75,11 @@ export default function ProfilePage() {
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-8 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Profile</h1>
-        <Button type="button" variant="outline" onClick={() => void onSignOut()}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void onSignOut()}
+        >
           Sign out
         </Button>
       </div>
@@ -88,14 +94,22 @@ export default function ProfilePage() {
           <Label htmlFor="displayName">Display name</Label>
           <Input id="displayName" {...register("displayName")} />
           {errors.displayName && (
-            <p className="text-destructive text-sm">{errors.displayName.message}</p>
+            <p className="text-destructive text-sm">
+              {errors.displayName.message}
+            </p>
           )}
         </div>
         <div className="grid gap-2">
           <Label htmlFor="avatarUrl">Avatar URL</Label>
-          <Input id="avatarUrl" placeholder="https://…" {...register("avatarUrl")} />
+          <Input
+            id="avatarUrl"
+            placeholder="https://…"
+            {...register("avatarUrl")}
+          />
           {errors.avatarUrl && (
-            <p className="text-destructive text-sm">{errors.avatarUrl.message}</p>
+            <p className="text-destructive text-sm">
+              {errors.avatarUrl.message}
+            </p>
           )}
         </div>
         <Button type="submit" disabled={updateProfile.isPending}>

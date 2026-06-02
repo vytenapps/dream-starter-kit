@@ -1,7 +1,6 @@
 import Link from "next/link";
 
-import { buttonVariants } from "@acme/ui/button";
-
+import { buttonVariants } from "~/components/ui/button";
 import { createClient } from "~/lib/supabase/server";
 
 export default async function HomePage() {

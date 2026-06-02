@@ -40,7 +40,8 @@ describe("auth validators", () => {
 
   it("allows an empty avatar URL but rejects a malformed one", () => {
     expect(
-      updateProfileSchema.safeParse({ displayName: "A", avatarUrl: "" }).success,
+      updateProfileSchema.safeParse({ displayName: "A", avatarUrl: "" })
+        .success,
     ).toBe(true);
     expect(
       updateProfileSchema.safeParse({ displayName: "A", avatarUrl: "x" })

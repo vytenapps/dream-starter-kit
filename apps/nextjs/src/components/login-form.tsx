@@ -34,7 +34,10 @@ import {
 import { Input } from "~/components/ui/input";
 import { createClient } from "~/lib/supabase/client";
 
-export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
+export function LoginForm({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
   const router = useRouter();
   const supabase = createClient();
   const redirectTo = useSearchParams().get("redirectTo") ?? "/dashboard";
@@ -143,7 +146,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                     Forgot your password?
                   </Link>
                 </div>
-                <Input id="password" type="password" {...register("password")} />
+                <Input
+                  id="password"
+                  type="password"
+                  {...register("password")}
+                />
                 {errors.password && (
                   <FieldDescription className="text-destructive">
                     {errors.password.message}

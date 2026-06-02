@@ -121,7 +121,11 @@ export default function SignIn() {
         loading={isSubmitting}
         onPress={() => void handleSubmit(onSubmit)()}
       />
-      <Button title="Email me a magic link" variant="ghost" onPress={() => void onMagicLink()} />
+      <Button
+        title="Email me a magic link"
+        variant="ghost"
+        onPress={() => void onMagicLink()}
+      />
 
       <View className="gap-2">
         <Button

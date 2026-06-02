@@ -3,8 +3,8 @@ import { Stack } from "expo-router";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Controller, useForm } from "react-hook-form";
 
-import { useSession } from "@acme/api";
 import type { UpdateProfileInput } from "@acme/app";
+import { useSession } from "@acme/api";
 import {
   signOut,
   updateProfileSchema,
