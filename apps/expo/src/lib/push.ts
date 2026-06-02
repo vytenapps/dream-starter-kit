@@ -4,6 +4,17 @@ import * as Notifications from "expo-notifications";
 
 import type { AppSupabaseClient } from "@acme/api";
 
+// Show notifications received while the app is foregrounded.
+Notifications.setNotificationHandler({
+  handleNotification: () =>
+    Promise.resolve({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+});
+
 /**
  * Register for Expo push notifications and persist the token to `push_tokens`.
  *
