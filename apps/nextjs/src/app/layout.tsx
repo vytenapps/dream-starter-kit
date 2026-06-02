@@ -10,21 +10,43 @@ import { env } from "~/env";
 
 import "~/app/styles.css";
 
+const description =
+  "Universal web + mobile starter — Next.js & Expo on one Supabase backend, with Row-Level Security, Stripe billing and AI built in.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
-  title: "Meet Dream Starter Kit",
-  description:
-    "Universal web + mobile starter — Next.js & Expo on one Supabase backend.",
+  title: {
+    default: "Meet Dream Starter Kit",
+    template: "%s · Meet Dream",
+  },
+  applicationName: "Meet Dream",
+  description,
+  keywords: [
+    "Next.js",
+    "Expo",
+    "React Native",
+    "Supabase",
+    "Turborepo",
+    "starter kit",
+    "Stripe",
+    "Vercel AI",
+    "Row-Level Security",
+  ],
+  authors: [{ name: "Vyten LLC" }],
   openGraph: {
+    type: "website",
+    locale: "en_US",
     title: "Meet Dream Starter Kit",
-    description:
-      "Universal web + mobile starter — Next.js & Expo on one Supabase backend.",
+    description,
     url: env.NEXT_PUBLIC_APP_URL,
     siteName: "Meet Dream",
   },
   twitter: {
     card: "summary_large_image",
+    title: "Meet Dream Starter Kit",
+    description,
   },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {

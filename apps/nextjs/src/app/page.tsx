@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { buttonVariants } from "~/components/ui/button";
+import { GlassHero } from "~/components/glass-hero";
 import { createClient } from "~/lib/supabase/server";
 
 export default async function HomePage() {
@@ -10,7 +11,13 @@ export default async function HomePage() {
   } = await supabase.auth.getUser();
 
   return (
-    <main className="container flex min-h-screen flex-col items-center justify-center gap-6 py-16">
+    <main className="container relative flex min-h-screen flex-col items-center justify-center gap-6 overflow-hidden py-16">
+      {/* Decorative hero backdrop for the glass accent to refract (web only). */}
+      <div
+        aria-hidden
+        className="from-primary/25 via-primary/5 pointer-events-none absolute top-1/2 left-1/2 -z-20 h-80 w-[min(85vw,44rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br to-transparent blur-3xl"
+      />
+      <GlassHero />
       <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
         Meet <span className="text-primary">Dream</span>
       </h1>
