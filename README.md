@@ -6,6 +6,13 @@ and an **Expo (iOS + Android) app** that share **one Supabase backend**
 a Vercel-AI-Gateway assistant, and Expo push notifications are wired in. Clone it,
 rename a few things, and extend it into a real product.
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvytenapps%2Fdream-starter-kit&root-directory=apps%2Fnextjs&project-name=dream-starter-kit&repository-name=dream-starter-kit&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY&envDescription=Your%20Supabase%20project%20URL%20%2B%20anon%20key%20(from%20Supabase%20%E2%86%92%20Project%20Settings%20%E2%86%92%20API)&envLink=https%3A%2F%2Fgithub.com%2Fvytenapps%2Fdream-starter-kit%2Fblob%2Fmain%2F.env.example)
+
+> The button deploys the **web app** to Vercel and prompts for your Supabase URL +
+> anon key. You still need a Supabase project with the migrations applied (and, for
+> billing/AI, the Stripe/AI env) — see [Deploy](#deploy). If you fork this repo,
+> update the org/name in the button URL to point at your fork.
+
 > **Not an engineer?** You can still use this. Setup is copy-paste (below), and the
 > kit is structured so an AI coding assistant like [Claude Code](https://claude.com/claude-code)
 > can extend it feature-by-feature — see [`CLAUDE.md`](./CLAUDE.md) for the recipe it follows.
@@ -70,24 +77,62 @@ If anything here disagrees with those, **they win.**
 AI runs through the **Vercel AI Gateway**, so there's no separate AI-provider signup —
 on Vercel an OIDC token is injected automatically; locally set `AI_GATEWAY_API_KEY`.
 
-## Quickstart (local)
+## Get started
+
+The fastest path is to **fork → run locally → make it yours**. (Prefer to host
+first? Use the [Deploy button](#dream-starter-kit) above.)
+
+### 1. Fork & clone
+
+Click **Fork** at the top of the GitHub page to create your own copy, then clone it:
 
 ```bash
-git clone <your-fork-url> && cd dream-starter-kit
-nvm use                       # Node 22.21.0
-pnpm install
-cp .env.example .env          # see "Environment variables" below
-
-supabase start                # local Postgres/Auth/Storage (Docker); prints URL + keys
-supabase db reset             # apply migrations + seed.sql (two demo users)
-# paste the printed API URL + anon + service_role keys into .env
-
-pnpm dev:next                 # web only  →  http://localhost:3000
-pnpm dev                      # web + mobile together (turbo watch)
+git clone https://github.com/<your-username>/dream-starter-kit.git
+cd dream-starter-kit
 ```
 
-Demo logins (from `supabase/seed.sql`, local only): `user.a@example.com` /
-`user.b@example.com`, password `password123`. User A has an active Pro subscription.
+### 2. Install (Node 22 + pnpm 10)
+
+```bash
+nvm use            # uses .nvmrc → Node 22.21.0  (or install Node 22)
+corepack enable    # provides pnpm 10
+pnpm install
+```
+
+### 3. Start the local backend
+
+Requires the [Supabase CLI](https://supabase.com/docs/guides/cli) + Docker.
+
+```bash
+cp .env.example .env
+supabase start     # boots local Postgres/Auth/Storage; prints your API URL + keys
+supabase db reset  # applies migrations + seed.sql (two demo users)
+```
+
+Paste the printed **API URL**, **anon key**, and **service_role key** into `.env`
+(see [Environment variables](#environment-variables) for which is which).
+
+### 4. Run it
+
+```bash
+pnpm dev:next      # web only  →  http://localhost:3000
+pnpm dev           # web + mobile together (turbo watch)
+```
+
+Sign in with a seeded local account: `user.a@example.com` / `password123`
+(User A has an active Pro subscription) or `user.b@example.com`.
+
+### 5. Make it yours
+
+Rebrand the identity and swap in your own services — see
+[Make it yours](#make-it-yours). Then build features with the recipe in
+[`CLAUDE.md`](./CLAUDE.md).
+
+### 6. Ship it
+
+Deploy the web app to Vercel and the mobile app via EAS — see [Deploy](#deploy).
+
+---
 
 Run the gates before every commit:
 
@@ -155,7 +200,35 @@ tooling/           # eslint / prettier / tailwind / tsconfig + rls-tests + web-e
 follow the recipe in `CLAUDE.md` (migration + RLS + FK index → types → validator →
 hook → web & native UI → tests).
 
-## The example feature & renaming it
+## Make it yours
+
+This repo ships **neutral placeholders** so it stays a clean template. Forking it
+for a real app is mostly swapping identity + secrets — and almost all the secrets
+are env vars, so the source-level edits are small.
+
+**Identity (source):**
+
+- [ ] **App name** — `APP_NAME` in `packages/config` (the short brand), plus the web
+      titles/OG in `apps/nextjs/src/app/layout.tsx` and `opengraph-image.tsx`.
+- [ ] **Bundle id** — `apps/expo/app.config.ts` (`ios.bundleIdentifier` + `android.package`),
+      shipped as the placeholder `com.example.dreamstarter`.
+- [ ] **Deep-link scheme** — set `EXPO_PUBLIC_AUTH_SCHEME` (default `dreamstarter` in
+      `app.config.ts`) and update the matching `…://auth-callback` entry in
+      `supabase/config.toml` **and** your Supabase dashboard redirect URLs.
+- [ ] **Package scope** — `@acme/*` is workspace-internal (never published) and fine to
+      keep; rename only if you want branded imports (see below).
+
+**Config (env — no source changes):**
+
+- [ ] Supabase project + keys, Stripe products/keys + webhook, `AI_GATEWAY_API_KEY`,
+      `EXPO_PUBLIC_EAS_PROJECT_ID` (`eas init`), `NEXT_PUBLIC_APP_URL` — see
+      [Environment variables](#environment-variables) and [Deploy](#deploy).
+- [ ] **License** — keep Apache-2.0 or relicense your fork (Apache lets you build a
+      proprietary product on top); update the copyright line in `NOTICE`.
+
+Then rename the example domain to your own nouns:
+
+### Rename the example feature
 
 `projects → items` is the reference feature. To make it yours (e.g. `boards → cards`):
 
@@ -203,9 +276,11 @@ with the `CRON_SECRET` in the `Authorization` header.
 
 ### Web (Vercel)
 
-Import the repo, set the root to `apps/nextjs`, add the env vars above (the AI Gateway
-credential is injected automatically). Add a Stripe webhook endpoint pointing at the
-deployed `stripe-webhook` function and copy its signing secret into Supabase secrets.
+Use the one-click **[Deploy with Vercel](#dream-starter-kit)** button at the top, or
+do it manually: import the repo, set the root directory to `apps/nextjs`, and add the
+env vars above (the AI Gateway credential is injected automatically). Either way, add a
+Stripe webhook endpoint pointing at the deployed `stripe-webhook` function and copy its
+signing secret into Supabase secrets.
 
 ### Mobile (EAS)
 

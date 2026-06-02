@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "Dream",
   slug: "dream-starter-kit",
-  scheme: process.env.EXPO_PUBLIC_AUTH_SCHEME ?? "meetdream",
+  scheme: process.env.EXPO_PUBLIC_AUTH_SCHEME ?? "dreamstarter",
   version: "0.1.0",
   orientation: "portrait",
   icon: "./assets/icon-light.png",
@@ -15,7 +15,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   newArchEnabled: true,
   assetBundlePatterns: ["**/*"],
   ios: {
-    bundleIdentifier: "com.meetdream",
+    bundleIdentifier: "com.example.dreamstarter",
     supportsTablet: true,
     icon: {
       light: "./assets/icon-light.png",
@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
-    package: "com.meetdream",
+    package: "com.example.dreamstarter",
     adaptiveIcon: {
       foregroundImage: "./assets/icon-light.png",
       backgroundColor: "#1F104A",
