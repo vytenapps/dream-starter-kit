@@ -1,3 +1,7 @@
+import Link from "next/link";
+
+import { buttonVariants } from "@acme/ui/button";
+
 import { createClient } from "~/lib/supabase/server";
 
 export default async function HomePage() {
@@ -15,17 +19,30 @@ export default async function HomePage() {
         Universal starter kit — Next.js (web) + Expo (iOS/Android) sharing one
         Supabase backend.
       </p>
-      <div className="bg-muted rounded-lg px-4 py-3 text-sm">
-        {user ? (
-          <span>
-            Signed in as <strong>{user.email}</strong>
-          </span>
-        ) : (
-          <span className="text-muted-foreground">
-            Not signed in — full auth lands in Phase 3.
-          </span>
-        )}
-      </div>
+
+      {user ? (
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-muted-foreground text-sm">
+            Signed in as{" "}
+            <strong className="text-foreground">{user.email}</strong>
+          </p>
+          <Link href="/dashboard" className={buttonVariants()}>
+            Go to your dashboard
+          </Link>
+        </div>
+      ) : (
+        <div className="flex gap-3">
+          <Link href="/sign-in" className={buttonVariants()}>
+            Sign in
+          </Link>
+          <Link
+            href="/sign-up"
+            className={buttonVariants({ variant: "outline" })}
+          >
+            Create account
+          </Link>
+        </div>
+      )}
     </main>
   );
 }

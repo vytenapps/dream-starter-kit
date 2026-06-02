@@ -12,4 +12,28 @@ export default defineConfig(
   reactConfig,
   nextjsConfig,
   restrictEnvAccess,
+  {
+    // Vendored shadcn/ui block components (added via `npx shadcn add`) are
+    // copy-own source we don't hold to the same strict type-checked lint rules.
+    // Our own app code under src/app/** stays fully strict.
+    files: ["src/components/**"],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/no-unnecessary-condition": "off",
+      "@typescript-eslint/array-type": "off",
+      "@typescript-eslint/consistent-type-definitions": "off",
+      "@typescript-eslint/consistent-type-imports": "off",
+      "@typescript-eslint/prefer-nullish-coalescing": "off",
+      "import/consistent-type-specifier-style": "off",
+      "react-hooks/incompatible-library": "off",
+      "react-hooks/purity": "off",
+    },
+  },
 );

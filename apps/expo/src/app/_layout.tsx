@@ -1,29 +1,39 @@
-import { useColorScheme } from "react-native";
-import { Stack } from "expo-router";
+import { useEffect } from "react";
+import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
-import { SupabaseProvider } from "@acme/api";
+import { SupabaseProvider, useSession } from "@acme/api";
 
 import { supabase } from "~/lib/supabase";
 
 import "../styles.css";
 
-// Root layout: wraps the app with the shared Supabase + react-query provider
-// (the native client persists sessions via AsyncStorage).
+/**
+ * Redirects between the (auth) and (app) route groups based on session state.
+ * Route groups (parens) don't appear in the URL, so targets are "/sign-in" / "/".
+ */
+function AuthGate() {
+  const { user, isLoading } = useSession();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+    const inAuthGroup = segments[0] === "(auth)";
+    if (!user && !inAuthGroup) {
+      router.replace("/sign-in");
+    } else if (user && inAuthGroup) {
+      router.replace("/");
+    }
+  }, [user, isLoading, segments, router]);
+
+  return <Slot />;
+}
+
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   return (
     <SupabaseProvider client={supabase}>
-      <Stack
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: "#c03484",
-          },
-          contentStyle: {
-            backgroundColor: colorScheme === "dark" ? "#09090B" : "#FFFFFF",
-          },
-        }}
-      />
+      <AuthGate />
       <StatusBar />
     </SupabaseProvider>
   );
