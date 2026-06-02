@@ -30,8 +30,15 @@ export const env = createEnv({
   },
   /** Client-safe — compiled into the browser bundle (publishable/anon only). */
   client: {
-    NEXT_PUBLIC_SUPABASE_URL: z.url(),
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+    // Build-time placeholders so a one-click / v0 deploy builds with no env set.
+    // They're baked into the bundle, so the deployed app is non-functional until
+    // you set the real values (e.g. the Vercel Supabase integration) AND redeploy.
+    // Locally, set them in `.env` (see .env.example). The URL must stay a valid URL.
+    NEXT_PUBLIC_SUPABASE_URL: z.url().default("http://127.0.0.1:54321"),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z
+      .string()
+      .min(1)
+      .default("set-in-vercel-env"),
     NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   },

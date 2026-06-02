@@ -8,11 +8,12 @@ rename a few things, and extend it into a real product.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvytenapps%2Fdream-starter-kit&root-directory=apps%2Fnextjs&project-name=dream-starter-kit&repository-name=dream-starter-kit)
 
-> Deploys the **web app** to Vercel without pre-requiring any env vars. For it to
-> build and run you still need a Supabase backend — connect the **Vercel↔Supabase
-> integration** (it injects `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
-> or add them in Project Settings, and apply the migrations — see [Deploy](#deploy).
-> If you fork this repo, update the org/name in the button URL to point at your fork.
+> Deploys the **web app** to Vercel with no env required — it builds with placeholder
+> Supabase config, so the deploy **succeeds**. To make it actually work, connect the
+> **Vercel↔Supabase integration** (it injects `NEXT_PUBLIC_SUPABASE_URL` +
+> `NEXT_PUBLIC_SUPABASE_ANON_KEY`) or add them in Project Settings, apply the migrations,
+> and **redeploy** — see [Deploy](#deploy). If you fork this repo, update the org/name in
+> the button URL to point at your fork.
 
 > **Not an engineer?** You can still use this. Setup is copy-paste (below), and the
 > kit is structured so an AI coding assistant like [Claude Code](https://claude.com/claude-code)
@@ -270,8 +271,9 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
 `SUPABASE_SERVICE_ROLE_KEY` (plus `POSTGRES_*`) — so you type no Supabase secrets by hand.
 
 1. **Deploy** — click [Deploy with Vercel](#dream-starter-kit) at the top. Vercel clones
-   the repo to your account and creates the project (no env required upfront). The first
-   build will fail until Supabase is connected — that's expected; continue below.
+   the repo and builds with placeholder Supabase config (no env required upfront), so the
+   deploy **succeeds** — but the app won't work until you connect Supabase and redeploy
+   (next steps).
 2. **Add Supabase** — in the new Vercel project open **Storage → Create Database →
    Supabase** (or install from the [Marketplace](https://vercel.com/marketplace/supabase)),
    and create a new project. Vercel writes the Supabase + Postgres env vars into the
