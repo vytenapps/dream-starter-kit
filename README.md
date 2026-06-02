@@ -6,12 +6,13 @@ and an **Expo (iOS + Android) app** that share **one Supabase backend**
 a Vercel-AI-Gateway assistant, and Expo push notifications are wired in. Clone it,
 rename a few things, and extend it into a real product.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvytenapps%2Fdream-starter-kit&root-directory=apps%2Fnextjs&project-name=dream-starter-kit&repository-name=dream-starter-kit&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY&envDescription=Your%20Supabase%20project%20URL%20%2B%20anon%20key%20(from%20Supabase%20%E2%86%92%20Project%20Settings%20%E2%86%92%20API)&envLink=https%3A%2F%2Fgithub.com%2Fvytenapps%2Fdream-starter-kit%2Fblob%2Fmain%2F.env.example)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvytenapps%2Fdream-starter-kit&root-directory=apps%2Fnextjs&project-name=dream-starter-kit&repository-name=dream-starter-kit)
 
-> The button deploys the **web app** to Vercel and prompts for your Supabase URL +
-> anon key. You still need a Supabase project with the migrations applied (and, for
-> billing/AI, the Stripe/AI env) — see [Deploy](#deploy). If you fork this repo,
-> update the org/name in the button URL to point at your fork.
+> Deploys the **web app** to Vercel without pre-requiring any env vars. For it to
+> build and run you still need a Supabase backend — connect the **Vercel↔Supabase
+> integration** (it injects `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
+> or add them in Project Settings, and apply the migrations — see [Deploy](#deploy).
+> If you fork this repo, update the org/name in the button URL to point at your fork.
 
 > **Not an engineer?** You can still use this. Setup is copy-paste (below), and the
 > kit is structured so an AI coding assistant like [Claude Code](https://claude.com/claude-code)
