@@ -243,7 +243,7 @@ is one line and web/native never drift. Update channels:
 
 | Component | How to update |
 |---|---|
-| npm packages (AI SDK, Stripe, Supabase, Next.js, React Query, Tailwind/NativeWind, …) | `pnpm update` (optionally automate with Renovate/Dependabot against the catalog) |
+| npm packages (AI SDK, Stripe, Supabase, Next.js, React Query, Tailwind/NativeWind, …) | `pnpm update` — Renovate is preconfigured in `.github/renovate.json` to open update PRs |
 | Expo SDK + `expo-*` + React Native | `expo install --fix` + the Expo SDK upgrade guide (let Expo own native-compatible versions) |
 | shadcn/ui & react-native-reusables | re-run the registry add (`pnpm ui-add <component>`), diff, re-apply your edits |
 | create-t3-turbo scaffold | cherry-pick discrete fixes only (not a tracked dependency) |
