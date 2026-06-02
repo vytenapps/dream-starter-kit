@@ -23,6 +23,7 @@
     "lint:ws": "pnpm dlx sherif@latest",
     "postinstall": "pnpm lint:ws",
     "test": "turbo run test",
+    "test:e2e": "pnpm -F @acme/web-e2e test:e2e",
     "test:rls": "pnpm -F @acme/rls-tests test:rls",
     "typecheck": "turbo run typecheck",
     "ui-add": "turbo run ui-add",

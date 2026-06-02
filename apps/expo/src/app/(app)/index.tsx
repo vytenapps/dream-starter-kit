@@ -18,7 +18,12 @@ export default function Home() {
       <Text className="text-muted-foreground text-center">
         Signed in as {user?.email}
       </Text>
-      <Button title="Profile" onPress={() => router.push("/profile")} />
+      <Button title="Projects" onPress={() => router.push("/projects")} />
+      <Button
+        title="Profile"
+        variant="outline"
+        onPress={() => router.push("/profile")}
+      />
     </View>
   );
 }
