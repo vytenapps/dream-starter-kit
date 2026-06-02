@@ -7,7 +7,9 @@
 export * from "./validators/auth";
 export * from "./validators/project";
 export * from "./validators/item";
+export * from "./validators/reminder";
 export * from "./auth";
+export * from "./reminders";
 export { useProfile, useUpdateProfile } from "./hooks/use-profile";
 export { useDeleteAccount } from "./hooks/use-delete-account";
 export {
@@ -31,3 +33,13 @@ export {
   useThreadMessages,
   useSendMessage,
 } from "./hooks/use-chat";
+export {
+  useNotifications,
+  useUnreadCount,
+  useMarkNotificationRead,
+} from "./hooks/use-notifications";
+export {
+  useReminders,
+  useCreateReminder,
+  useDeleteReminder,
+} from "./hooks/use-reminders";

@@ -386,6 +386,10 @@ deno_version = 2
 [functions.stripe-webhook]
 verify_jwt = false
 
+# Invoked by a scheduler (pg_cron) with the service-role key, not a user JWT.
+[functions.process-reminders]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

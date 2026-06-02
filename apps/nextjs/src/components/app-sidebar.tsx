@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import {
+  IconBell,
+  IconClock,
   IconDashboard,
   IconFolder,
   IconInnerShadowTop,
@@ -27,6 +29,8 @@ const navMain = [
   { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
   { title: "Projects", url: "/projects", icon: IconFolder },
   { title: "Chat", url: "/chat", icon: IconMessageCircle },
+  { title: "Reminders", url: "/reminders", icon: IconClock },
+  { title: "Notifications", url: "/notifications", icon: IconBell },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

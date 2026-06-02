@@ -25,6 +25,11 @@ export default function Home() {
         onPress={() => router.push("/chat")}
       />
       <Button
+        title="Notifications"
+        variant="outline"
+        onPress={() => router.push("/notifications")}
+      />
+      <Button
         title="Profile"
         variant="outline"
         onPress={() => router.push("/profile")}

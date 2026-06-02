@@ -43,6 +43,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     "expo-router",
+    "expo-notifications",
     "expo-secure-store",
     "expo-web-browser",
     [
