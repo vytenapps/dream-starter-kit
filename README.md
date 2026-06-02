@@ -262,6 +262,36 @@ Playwright. See [`tooling/web-e2e/README.md`](./tooling/web-e2e/README.md).
 
 ## Deploy
 
+### Fastest path — Vercel one-click + the Supabase integration
+
+The [**Supabase integration**](https://vercel.com/marketplace/supabase) on the Vercel
+Marketplace provisions a Postgres/Auth/Storage project and **auto-injects** the env the
+app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and
+`SUPABASE_SERVICE_ROLE_KEY` (plus `POSTGRES_*`) — so you type no Supabase secrets by hand.
+
+1. **Deploy** — click [Deploy with Vercel](#dream-starter-kit) at the top. Vercel clones
+   the repo to your account and creates the project (no env required upfront). The first
+   build will fail until Supabase is connected — that's expected; continue below.
+2. **Add Supabase** — in the new Vercel project open **Storage → Create Database →
+   Supabase** (or install from the [Marketplace](https://vercel.com/marketplace/supabase)),
+   and create a new project. Vercel writes the Supabase + Postgres env vars into the
+   project automatically.
+3. **Apply the schema** — the integration creates an *empty* database, so push the kit's
+   migrations to it from your local clone:
+   ```bash
+   supabase link --project-ref <your-new-project-ref>   # ref is in the Supabase dashboard URL
+   supabase db push                                     # applies supabase/migrations
+   ```
+   (Don't run the seed in production — it's local-dev demo data.) Deploy the edge
+   functions too — see [Backend (Supabase)](#backend-supabase).
+4. **Redeploy** — in Vercel, **Deployments → ⋯ → Redeploy** so the build picks up the
+   injected env vars. The web app should now be live.
+5. **Finish config** — in the Supabase dashboard set **Authentication → URL
+   Configuration** (site URL = your Vercel domain; add `https://<domain>/auth/callback`)
+   and enable any OAuth providers. Set `NEXT_PUBLIC_APP_URL` to your domain, and for
+   billing/AI add `STRIPE_*` + `AI_GATEWAY_API_KEY` in Vercel (the AI Gateway credential
+   is auto-injected on Vercel).
+
 ### Backend (Supabase)
 
 ```bash
@@ -275,13 +305,14 @@ Enable OAuth providers and set redirect URLs in the Supabase Dashboard (Auth →
 Providers / URL Configuration). Schedule `process-reminders` (pg_cron / a scheduler)
 with the `CRON_SECRET` in the `Authorization` header.
 
-### Web (Vercel)
+### Web (Vercel) — manual alternative
 
-Use the one-click **[Deploy with Vercel](#dream-starter-kit)** button at the top, or
-do it manually: import the repo, set the root directory to `apps/nextjs`, and add the
-env vars above (the AI Gateway credential is injected automatically). Either way, add a
-Stripe webhook endpoint pointing at the deployed `stripe-webhook` function and copy its
-signing secret into Supabase secrets.
+Prefer to wire env yourself instead of using the integration above? Import the repo, set
+the root directory to `apps/nextjs`, and add the Supabase env vars
+(`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
+plus any `STRIPE_*` / `AI_GATEWAY_API_KEY` (the AI Gateway credential is injected
+automatically on Vercel). Add a Stripe webhook endpoint pointing at the deployed
+`stripe-webhook` function and copy its signing secret into Supabase secrets.
 
 ### Mobile (EAS)
 
