@@ -35,11 +35,7 @@ export function DashboardOverview() {
             <div className="flex flex-col gap-1">
               <CardDescription>Plan</CardDescription>
               <CardTitle className="text-xl">
-                {premium.isLoading
-                  ? "—"
-                  : premium.isPremium
-                    ? "Pro"
-                    : "Free"}
+                {premium.isLoading ? "—" : premium.isPremium ? "Pro" : "Free"}
               </CardTitle>
             </div>
             {!premium.isLoading &&

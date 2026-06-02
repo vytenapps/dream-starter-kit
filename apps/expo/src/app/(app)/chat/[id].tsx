@@ -72,7 +72,11 @@ export default function ChatThread() {
           placeholder="Message…"
           editable={!send.isPending}
         />
-        <Button title="Send" loading={send.isPending} onPress={() => void onSend()} />
+        <Button
+          title="Send"
+          loading={send.isPending}
+          onPress={() => void onSend()}
+        />
       </View>
     </View>
   );

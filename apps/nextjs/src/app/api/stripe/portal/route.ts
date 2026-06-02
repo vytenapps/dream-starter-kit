@@ -14,7 +14,10 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!env.STRIPE_SECRET_KEY) {
-    return NextResponse.json({ error: "Billing not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "Billing not configured" },
+      { status: 503 },
+    );
   }
 
   const { data: customer } = await supabase

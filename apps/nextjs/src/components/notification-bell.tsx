@@ -30,7 +30,12 @@ export function NotificationBell() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          aria-label="Notifications"
+        >
           <IconBell className="size-5" />
           {unread > 0 && (
             <Badge className="absolute -top-1 -right-1 h-4 min-w-4 justify-center rounded-full px-1 text-[10px]">
@@ -43,7 +48,9 @@ export function NotificationBell() {
         <DropdownMenuLabel className="flex items-center justify-between">
           Notifications
           {unread > 0 && (
-            <span className="text-muted-foreground text-xs">{unread} unread</span>
+            <span className="text-muted-foreground text-xs">
+              {unread} unread
+            </span>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

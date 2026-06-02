@@ -42,7 +42,10 @@ export default function ChatPage() {
               <Card>
                 <CardHeader className="flex-row items-center justify-between">
                   <CardTitle className="text-base">
-                    <Link href={`/chat/${thread.id}`} className="hover:underline">
+                    <Link
+                      href={`/chat/${thread.id}`}
+                      className="hover:underline"
+                    >
                       {thread.title ?? "Untitled"}
                     </Link>
                   </CardTitle>

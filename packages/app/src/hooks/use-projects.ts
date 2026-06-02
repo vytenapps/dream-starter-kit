@@ -79,7 +79,10 @@ export function useUpdateProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...input }: UpdateProjectInput & { id: string }) => {
+    mutationFn: async ({
+      id,
+      ...input
+    }: UpdateProjectInput & { id: string }) => {
       const { data, error } = await supabase
         .from("projects")
         .update(input)

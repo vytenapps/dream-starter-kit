@@ -1,11 +1,6 @@
 import { PLANS } from "@acme/config/constants";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
 /**
  * Read-only preview of the Pro plans (shown on the sign-up example). The
@@ -26,7 +21,9 @@ export function PricingPlans() {
           </CardHeader>
           <CardContent>
             <span className="text-2xl font-semibold">{plan.price}</span>
-            <span className="text-muted-foreground text-sm">{plan.cadence}</span>
+            <span className="text-muted-foreground text-sm">
+              {plan.cadence}
+            </span>
           </CardContent>
         </Card>
       ))}

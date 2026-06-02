@@ -52,4 +52,3 @@ export const PLANS = [
 ] as const;
 
 export type PlanId = (typeof PLANS)[number]["id"];
-

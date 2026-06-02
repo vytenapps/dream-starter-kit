@@ -34,7 +34,10 @@ const hitsByUser = new Map<string, number[]>();
  */
 export async function POST(request: Request) {
   if (!env.AI_GATEWAY_API_KEY) {
-    return NextResponse.json({ error: "AI is not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "AI is not configured" },
+      { status: 503 },
+    );
   }
 
   const authHeader = request.headers.get("Authorization");

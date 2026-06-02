@@ -54,7 +54,8 @@ export function Paywall({ trigger }: { trigger?: React.ReactNode }) {
         body: JSON.stringify({ plan }),
       });
       const json = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !json.url) throw new Error(json.error ?? "Checkout failed");
+      if (!res.ok || !json.url)
+        throw new Error(json.error ?? "Checkout failed");
       window.location.href = json.url;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Checkout failed");
@@ -64,7 +65,9 @@ export function Paywall({ trigger }: { trigger?: React.ReactNode }) {
 
   return (
     <Drawer onOpenChange={(open) => !open && reset()}>
-      <DrawerTrigger asChild>{trigger ?? <Button>Go Pro</Button>}</DrawerTrigger>
+      <DrawerTrigger asChild>
+        {trigger ?? <Button>Go Pro</Button>}
+      </DrawerTrigger>
       <DrawerContent>
         <div className="mx-auto w-full max-w-sm">
           <DrawerHeader>
@@ -96,7 +99,10 @@ export function Paywall({ trigger }: { trigger?: React.ReactNode }) {
                       <span className="font-medium">
                         {p.name}
                         {"badge" in p && p.badge ? (
-                          <span className="text-muted-foreground"> · {p.badge}</span>
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · {p.badge}
+                          </span>
                         ) : null}
                       </span>
                     </span>
@@ -139,7 +145,9 @@ export function Paywall({ trigger }: { trigger?: React.ReactNode }) {
                 disabled={!consented || loading}
                 onClick={() => void subscribe()}
               >
-                {loading ? "Redirecting…" : `Subscribe — ${selected?.price}${selected?.cadence}`}
+                {loading
+                  ? "Redirecting…"
+                  : `Subscribe — ${selected?.price}${selected?.cadence}`}
               </Button>
             )}
             <DrawerClose asChild>

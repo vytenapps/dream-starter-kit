@@ -27,11 +27,11 @@ can sign in immediately.
 
 ## What's covered
 
-| Spec | Flow |
-|------|------|
-| `smoke.spec.ts` | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`). |
-| `auth.spec.ts` | Seeded password sign-in → dashboard; a signed-in user is bounced away from auth pages. |
-| `critical-path.spec.ts` | Sign up → create a project → add an item (the reference RLS-backed CRUD flow). |
+| Spec                    | Flow                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`). |
+| `auth.spec.ts`          | Seeded password sign-in → dashboard; a signed-in user is bounced away from auth pages.           |
+| `critical-path.spec.ts` | Sign up → create a project → add an item (the reference RLS-backed CRUD flow).                   |
 
 ## Deliberately not covered here
 

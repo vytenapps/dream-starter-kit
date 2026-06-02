@@ -54,7 +54,9 @@ export default function ChatThreadPage() {
           </div>
         ))}
         {send.isPending && (
-          <p className="text-muted-foreground text-sm">Assistant is thinking…</p>
+          <p className="text-muted-foreground text-sm">
+            Assistant is thinking…
+          </p>
         )}
         {messages.data?.length === 0 && !send.isPending && (
           <p className="text-muted-foreground text-sm">
@@ -63,7 +65,10 @@ export default function ChatThreadPage() {
         )}
       </div>
 
-      <form onSubmit={(e) => void onSend(e)} className="flex gap-2 border-t pt-3">
+      <form
+        onSubmit={(e) => void onSend(e)}
+        className="flex gap-2 border-t pt-3"
+      >
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}

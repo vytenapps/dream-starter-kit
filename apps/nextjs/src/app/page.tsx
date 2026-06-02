@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import { buttonVariants } from "~/components/ui/button";
 import { GlassHero } from "~/components/glass-hero";
+import { buttonVariants } from "~/components/ui/button";
 import { createClient } from "~/lib/supabase/server";
 
 export default async function HomePage() {
@@ -11,7 +11,7 @@ export default async function HomePage() {
   } = await supabase.auth.getUser();
 
   return (
-    <main className="container relative flex min-h-screen flex-col items-center justify-center gap-6 overflow-hidden py-16">
+    <main className="relative container flex min-h-screen flex-col items-center justify-center gap-6 overflow-hidden py-16">
       {/* Decorative hero backdrop for the glass accent to refract (web only). */}
       <div
         aria-hidden
@@ -19,7 +19,7 @@ export default async function HomePage() {
       />
       <GlassHero />
       <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-        Meet <span className="text-primary">Dream</span>
+        <span className="text-primary">Dream</span> Starter Kit
       </h1>
       <p className="text-muted-foreground max-w-xl text-center text-lg">
         Universal starter kit — Next.js (web) + Expo (iOS/Android) sharing one

@@ -31,7 +31,10 @@ export async function POST(request: Request) {
       ? env.STRIPE_PRICE_MONTHLY
       : env.STRIPE_PRICE_YEARLY;
   if (!priceId || !env.STRIPE_SECRET_KEY) {
-    return NextResponse.json({ error: "Billing not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "Billing not configured" },
+      { status: 503 },
+    );
   }
 
   const stripe = getStripe();

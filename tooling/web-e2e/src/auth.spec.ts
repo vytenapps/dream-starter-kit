@@ -13,7 +13,7 @@ async function signIn(page: Page) {
   await page.goto("/sign-in");
   await page.getByLabel("Email").fill(SEED_EMAIL);
   await page.getByLabel("Password").fill(SEED_PASSWORD);
-  await page.getByRole("button", { name: "Login" }).click();
+  await page.getByRole("button", { name: "Login", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard/);
 }
 

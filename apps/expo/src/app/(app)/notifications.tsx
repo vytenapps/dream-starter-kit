@@ -45,7 +45,11 @@ export default function Notifications() {
       <Stack.Screen options={{ title: "Notifications" }} />
       <View className="flex-row gap-2">
         <Button title="Enable push" onPress={() => void onEnablePush()} />
-        <Button title="Send test" variant="outline" onPress={() => void onSendTest()} />
+        <Button
+          title="Send test"
+          variant="outline"
+          onPress={() => void onSendTest()}
+        />
       </View>
       <FlatList
         data={notifications.data ?? []}

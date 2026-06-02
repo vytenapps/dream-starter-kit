@@ -52,7 +52,10 @@ export function useDeleteThread() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("chat_threads").delete().eq("id", id);
+      const { error } = await supabase
+        .from("chat_threads")
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: threadsKey }),
