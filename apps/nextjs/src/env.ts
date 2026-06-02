@@ -53,6 +53,13 @@ export const env = createEnv({
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   },
-  skipValidation:
-    !!process.env.CI || process.env.npm_lifecycle_event === "lint",
+  // Do NOT skip on `process.env.CI`. Vercel sets CI=1 during builds, and when
+  // validation is skipped `@t3-oss/env-nextjs` returns raw `process.env`
+  // *without* applying the `.default()`s above — so `NEXT_PUBLIC_APP_URL` became
+  // `undefined` and `next build` crashed on `new URL(undefined)` for a one-click
+  // deploy with no env set. Letting validation run is what makes the documented
+  // build-time placeholders actually take effect (and still fails loudly on a
+  // genuinely malformed value). We only skip for `lint`, where eslint loads
+  // `next.config.js` (which imports this file) but no real env is available.
+  skipValidation: process.env.npm_lifecycle_event === "lint",
 });
