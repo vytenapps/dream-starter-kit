@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "Dream",
   slug: "dream-starter-kit",
-  scheme: process.env.EXPO_PUBLIC_AUTH_SCHEME ?? "dreamstarter",
+  scheme: process.env.EXPO_PUBLIC_AUTH_SCHEME ?? "meetdream",
   version: "0.1.0",
   orientation: "portrait",
   icon: "./assets/icon-light.png",

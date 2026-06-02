@@ -8,7 +8,7 @@ import { supabase } from "./supabase";
 
 /**
  * Native OAuth: open the provider in an auth session, capture the deep-link
- * callback (dreamstarter://auth-callback?code=…), and exchange the code for a
+ * callback (meetdream://auth-callback?code=…), and exchange the code for a
  * session. The session change is picked up by useSession (AuthGate redirects).
  */
 export async function nativeOAuth(provider: Provider): Promise<void> {
