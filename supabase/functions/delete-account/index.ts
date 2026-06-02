@@ -9,6 +9,7 @@
 // SERVICE_ROLE_KEY are injected automatically). Deploy: `supabase functions
 // deploy delete-account`.
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import Stripe from "npm:stripe@22";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -50,10 +51,33 @@ Deno.serve(async (req) => {
   // Service-role client bypasses RLS to delete the auth user.
   const admin = createClient(supabaseUrl, serviceKey);
 
-  // Phase 5 will cancel the live Stripe subscription here if a customer exists:
-  //   const { data: customer } = await admin.from("customers")
-  //     .select("stripe_customer_id").eq("user_id", user.id).maybeSingle();
-  //   if (customer?.stripe_customer_id) await cancelStripeSubscriptions(customer.stripe_customer_id);
+  // Best-effort: cancel the live Stripe subscription(s) before deleting the
+  // account (the DB cascade only removes our mirror rows, not Stripe state).
+  const stripeSecret = Deno.env.get("STRIPE_SECRET_KEY");
+  if (stripeSecret) {
+    try {
+      const { data: customer } = await admin
+        .from("customers")
+        .select("stripe_customer_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (customer?.stripe_customer_id) {
+        const stripe = new Stripe(stripeSecret);
+        const subs = await stripe.subscriptions.list({
+          customer: customer.stripe_customer_id,
+          status: "all",
+        });
+        await Promise.all(
+          subs.data
+            .filter((s) => s.status !== "canceled")
+            .map((s) => stripe.subscriptions.cancel(s.id)),
+        );
+      }
+    } catch (err) {
+      // Don't block account deletion on Stripe errors — log and continue.
+      console.error("delete-account: Stripe cleanup failed", err);
+    }
+  }
 
   const { error: delErr } = await admin.auth.admin.deleteUser(user.id);
   if (delErr) return json({ error: delErr.message }, 500);

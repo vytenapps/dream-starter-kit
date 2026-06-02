@@ -94,18 +94,22 @@ on conflict do nothing;
 -- ----------------------------------------------------------------------------
 -- Stripe catalog (mirrors what the webhook would sync) + one active sub for A.
 -- ----------------------------------------------------------------------------
+-- A single "Pro" product with two prices: Monthly $9.99 and Yearly $99.
 insert into public.products (id, active, name, description)
-values ('prod_demo', true, 'Pro', 'Demo premium plan')
+values ('prod_pro', true, 'Pro', 'Unlock premium features')
 on conflict (id) do nothing;
 
 insert into public.prices (id, product_id, active, unit_amount, currency, type, interval, interval_count)
-values ('price_demo_monthly', 'prod_demo', true, 900, 'usd', 'recurring', 'month', 1)
+values
+  ('price_pro_monthly', 'prod_pro', true, 999, 'usd', 'recurring', 'month', 1),
+  ('price_pro_yearly', 'prod_pro', true, 9900, 'usd', 'recurring', 'year', 1)
 on conflict (id) do nothing;
 
 insert into public.customers (user_id, stripe_customer_id)
 values ('11111111-1111-1111-1111-111111111111', 'cus_demo_a')
 on conflict (user_id) do nothing;
 
+-- User A has an active monthly subscription (demonstrates premium gating).
 insert into public.subscriptions (id, user_id, price_id, status, current_period_end)
-values ('sub_demo_a', '11111111-1111-1111-1111-111111111111', 'price_demo_monthly', 'active', now() + interval '30 days')
+values ('sub_demo_a', '11111111-1111-1111-1111-111111111111', 'price_pro_monthly', 'active', now() + interval '30 days')
 on conflict (id) do nothing;

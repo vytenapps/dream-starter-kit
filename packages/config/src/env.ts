@@ -28,7 +28,8 @@ export const serverEnvSchema = z.object({
   // --- Stripe — optional until Phase 5 is configured ---
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
-  STRIPE_PRICE_ID: z.string().min(1).optional(),
+  STRIPE_PRICE_MONTHLY: z.string().min(1).optional(),
+  STRIPE_PRICE_YEARLY: z.string().min(1).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 
-import { useProjects } from "@acme/app";
+import { usePremium, useProjects } from "@acme/app";
 
+import { ManageBillingButton, Paywall } from "~/components/paywall";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -15,6 +16,7 @@ import {
 
 export function DashboardOverview() {
   const projects = useProjects();
+  const premium = usePremium();
   const data = projects.data ?? [];
 
   return (
@@ -26,6 +28,22 @@ export function DashboardOverview() {
             <CardTitle className="text-3xl tabular-nums">
               {projects.isLoading ? "—" : data.length}
             </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="sm:col-span-2">
+          <CardHeader className="flex-row items-center justify-between">
+            <div className="flex flex-col gap-1">
+              <CardDescription>Plan</CardDescription>
+              <CardTitle className="text-xl">
+                {premium.isLoading
+                  ? "—"
+                  : premium.isPremium
+                    ? "Pro"
+                    : "Free"}
+              </CardTitle>
+            </div>
+            {!premium.isLoading &&
+              (premium.isPremium ? <ManageBillingButton /> : <Paywall />)}
           </CardHeader>
         </Card>
       </div>

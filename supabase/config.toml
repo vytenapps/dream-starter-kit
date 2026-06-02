@@ -381,6 +381,11 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Stripe calls this endpoint without a Supabase JWT — verify the Stripe
+# signature inside the function instead.
+[functions.stripe-webhook]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

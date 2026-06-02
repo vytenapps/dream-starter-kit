@@ -23,3 +23,4 @@ export {
   useUpdateItem,
   useDeleteItem,
 } from "./hooks/use-items";
+export { usePremium } from "./hooks/use-premium";

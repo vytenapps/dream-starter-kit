@@ -26,3 +26,30 @@ export const AI_MAX_OUTPUT_TOKENS = 2048;
 
 /** Default Supabase Storage bucket for user uploads (see ERD.md `files`). */
 export const DEFAULT_STORAGE_BUCKET = "user-files";
+
+/**
+ * Subscription plans — a single "Pro" product billed monthly or yearly.
+ * Display lives here (cross-platform); the matching Stripe price ids are
+ * server-only env (STRIPE_PRICE_MONTHLY / STRIPE_PRICE_YEARLY). The server maps
+ * a plan `id` to its price id at checkout, so price ids never reach the client.
+ */
+export const PLANS = [
+  {
+    id: "monthly",
+    name: "Monthly",
+    price: "$9.99",
+    cadence: "/mo",
+    interval: "month",
+  },
+  {
+    id: "yearly",
+    name: "Yearly",
+    price: "$99",
+    cadence: "/yr",
+    interval: "year",
+    badge: "Save 17%",
+  },
+] as const;
+
+export type PlanId = (typeof PLANS)[number]["id"];
+
