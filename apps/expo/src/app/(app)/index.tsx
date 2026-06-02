@@ -20,6 +20,11 @@ export default function Home() {
       </Text>
       <Button title="Projects" onPress={() => router.push("/projects")} />
       <Button
+        title="Chat"
+        variant="outline"
+        onPress={() => router.push("/chat")}
+      />
+      <Button
         title="Profile"
         variant="outline"
         onPress={() => router.push("/profile")}

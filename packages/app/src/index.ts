@@ -24,3 +24,10 @@ export {
   useDeleteItem,
 } from "./hooks/use-items";
 export { usePremium } from "./hooks/use-premium";
+export {
+  useChatThreads,
+  useCreateThread,
+  useDeleteThread,
+  useThreadMessages,
+  useSendMessage,
+} from "./hooks/use-chat";

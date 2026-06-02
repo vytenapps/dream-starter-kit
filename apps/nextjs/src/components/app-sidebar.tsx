@@ -5,6 +5,7 @@ import {
   IconDashboard,
   IconFolder,
   IconInnerShadowTop,
+  IconMessageCircle,
 } from "@tabler/icons-react";
 
 import { useSession } from "@acme/api";
@@ -25,6 +26,7 @@ import {
 const navMain = [
   { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
   { title: "Projects", url: "/projects", icon: IconFolder },
+  { title: "Chat", url: "/chat", icon: IconMessageCircle },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
