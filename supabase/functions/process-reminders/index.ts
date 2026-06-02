@@ -4,23 +4,28 @@
 //
 // Scheduling (not enabled here — wire it in your project):
 //   1) Deploy: `supabase functions deploy process-reminders`
-//   2) Schedule every minute via pg_cron + pg_net (run as a migration):
+//   2) Set the function secret:  supabase secrets set CRON_SECRET=<random>
+//   3) Schedule every minute via pg_cron + pg_net (run as a migration):
 //        select cron.schedule('process-reminders', '* * * * *', $$
 //          select net.http_post(
 //            url := 'https://<project-ref>.supabase.co/functions/v1/process-reminders',
-//            headers := jsonb_build_object('Authorization', 'Bearer <SERVICE_ROLE_KEY>')
+//            headers := jsonb_build_object('Authorization', 'Bearer <CRON_SECRET>')
 //          );
 //        $$);
-//   (Protect the endpoint: verify_jwt=false here + a shared secret, or rely on
-//   the cron caller's service-role bearer.)
+//   verify_jwt=false (Stripe-style: no user JWT); the CRON_SECRET check below
+//   keeps the endpoint from being triggered by anonymous callers.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const cronSecret = Deno.env.get("CRON_SECRET");
 
-Deno.serve(async () => {
-  if (!supabaseUrl || !serviceKey) {
+Deno.serve(async (req) => {
+  if (!supabaseUrl || !serviceKey || !cronSecret) {
     return new Response("Server misconfigured", { status: 500 });
+  }
+  if (req.headers.get("Authorization") !== `Bearer ${cronSecret}`) {
+    return new Response("Unauthorized", { status: 401 });
   }
   const admin = createClient(supabaseUrl, serviceKey);
   const nowIso = new Date().toISOString();

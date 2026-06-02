@@ -17,7 +17,10 @@ export const env = createEnv({
   },
   /** Server-only — secrets. Never exposed to the browser. */
   server: {
-    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+    // Optional for the web app (it uses anon + the user's token); Supabase
+    // edge functions receive the service role from Supabase's injected env.
+    // Set it here only if you add admin server routes that bypass RLS.
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
     SUPABASE_DB_URL: z.url().optional(),
     AI_GATEWAY_API_KEY: z.string().min(1).optional(),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
