@@ -3,6 +3,18 @@ import { vercel } from "@t3-oss/env-nextjs/presets-zod";
 import { z } from "zod/v4";
 
 /**
+ * Build-time placeholders for the public Supabase env. A one-click / v0 deploy
+ * builds with no env set, so these get baked into the client bundle and the
+ * deployed app can't reach Supabase until the real values are set AND the app
+ * is redeployed. `isSupabaseConfigured()` (see `~/lib/supabase/config`) detects
+ * this so the UI can warn instead of failing with a cryptic "Failed to fetch".
+ * Keyed off the anon-key sentinel because the URL placeholder doubles as the
+ * real local-dev URL, so it can't tell "unconfigured" apart from "local dev".
+ */
+export const SUPABASE_URL_PLACEHOLDER = "http://127.0.0.1:54321";
+export const SUPABASE_ANON_KEY_PLACEHOLDER = "set-in-vercel-env";
+
+/**
  * Web app environment. Server vars are secrets (never bundled to the client);
  * client vars MUST be `NEXT_PUBLIC_`-prefixed. The shared, platform-agnostic
  * schema lives in `@acme/config` (used by edge functions); this file is the
@@ -44,11 +56,11 @@ export const env = createEnv({
     // They're baked into the bundle, so the deployed app is non-functional until
     // you set the real values (e.g. the Vercel Supabase integration) AND redeploy.
     // Locally, set them in `.env` (see .env.example). The URL must stay a valid URL.
-    NEXT_PUBLIC_SUPABASE_URL: z.url().default("http://127.0.0.1:54321"),
+    NEXT_PUBLIC_SUPABASE_URL: z.url().default(SUPABASE_URL_PLACEHOLDER),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z
       .string()
       .min(1)
-      .default("set-in-vercel-env"),
+      .default(SUPABASE_ANON_KEY_PLACEHOLDER),
     NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
     // Origin hosting the Payload REST API. In the browser the app reads content

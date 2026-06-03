@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm } from "react-hook-form";
 
@@ -18,7 +17,6 @@ import { createClient } from "~/lib/supabase/client";
  * code for a session) → here. The recovery session lets us call updateUser.
  */
 export default function ResetPasswordPage() {
-  const router = useRouter();
   const supabase = createClient();
   const {
     register,
@@ -32,8 +30,9 @@ export default function ResetPasswordPage() {
     try {
       await updatePassword(supabase, password);
       toast.success("Password updated");
-      router.replace("/profile");
-      router.refresh();
+      // Full-page nav so the server + proxy re-read the just-updated session
+      // (a soft router navigation to the gated /profile doesn't pick it up).
+      window.location.assign("/profile");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not update password");
     }

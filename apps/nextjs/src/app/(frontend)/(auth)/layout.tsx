@@ -1,3 +1,5 @@
+import { SupabaseConfigBanner } from "~/components/supabase-config-banner";
+
 export default function AuthLayout({
   children,
 }: {
@@ -5,7 +7,10 @@ export default function AuthLayout({
 }) {
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm">{children}</div>
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <SupabaseConfigBanner />
+        {children}
+      </div>
     </main>
   );
 }
