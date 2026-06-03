@@ -26,6 +26,7 @@ import {
   FieldSeparator,
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import { authCallbackUrl } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/client";
 import { authErrorMessage, isSupabaseConfigured } from "~/lib/supabase/config";
 
@@ -43,7 +44,7 @@ export function LoginForm({
     redirectParam?.startsWith("/") && !redirectParam.startsWith("//")
       ? redirectParam
       : "/dashboard";
-  const callback = `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
+  const callback = authCallbackUrl(redirectTo);
 
   const {
     register,

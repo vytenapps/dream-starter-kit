@@ -163,13 +163,27 @@ max_indexes = 5
 [auth]
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
-# in emails.
+# in emails. THIS APPLIES TO LOCAL `supabase start` ONLY.
+#
+# For a HOSTED project the equivalent lives in the Dashboard (Authentication -> URL
+# Configuration) and is NOT set by the Vercel<->Supabase integration — a fresh project
+# defaults Site URL to http://localhost:3000, so magic links sent from your deployed app
+# get rejected and fall back to localhost (landing on `/?code=...`). After deploying, set:
+#   Site URL      = https://<your-domain>
+#   Redirect URLs = https://<your-domain>/**           (prod; `/**` covers the ?next= query)
+#                   https://*.vercel.app/**            (optional: Vercel preview deploys)
+#                   http://localhost:3000/**           (local dev)
+#                   dreamstarter://auth-callback       (native deep link)
+# See README -> Deploy. (The dashboard is the simplest path. If you instead manage config
+# as code with `supabase config push`, override `site_url` for the hosted project first —
+# pushing the localhost value below to production would re-introduce this exact bug.)
 site_url = "http://localhost:3000"
-# A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-# Includes the web OAuth/magic-link callback and the native deep-link scheme.
+# URLs auth providers may redirect to post-authentication. `/**` is a wildcard that
+# matches any path + query (so /auth/callback?next=... round-trips). Covers the web
+# OAuth/magic-link callback and the native deep-link scheme.
 additional_redirect_urls = [
-  "http://localhost:3000/auth/callback",
-  "http://127.0.0.1:3000/auth/callback",
+  "http://localhost:3000/**",
+  "http://127.0.0.1:3000/**",
   "dreamstarter://auth-callback",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).

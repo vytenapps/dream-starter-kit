@@ -6,15 +6,17 @@ import { ThemeProvider, ThemeToggle } from "@acme/ui/theme";
 import { Toaster } from "@acme/ui/toast";
 
 import { Providers } from "~/app/providers";
-import { env } from "~/env";
+import { getSiteUrl } from "~/lib/site-url";
 
 import "~/app/styles.css";
 
 const description =
   "Universal web + mobile starter — Next.js & Expo on one Supabase backend, with Row-Level Security, Stripe billing and AI built in.";
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
-  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Dream Starter Kit",
     template: "%s · Dream Starter Kit",
@@ -38,7 +40,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     title: "Dream Starter Kit",
     description,
-    url: env.NEXT_PUBLIC_APP_URL,
+    url: siteUrl,
     siteName: "Dream Starter Kit",
   },
   twitter: {

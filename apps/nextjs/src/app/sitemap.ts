@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
 
-import { env } from "~/env";
 import { listArticles, listEvents, listLocations } from "~/lib/payload";
+import { getSiteUrl } from "~/lib/site-url";
 
 /** Public, crawlable routes. Authed (app) routes are excluded (see robots.ts). */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = env.NEXT_PUBLIC_APP_URL;
+  const base = getSiteUrl();
   const lastModified = new Date();
 
   const entries: MetadataRoute.Sitemap = [

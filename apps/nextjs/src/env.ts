@@ -61,11 +61,22 @@ export const env = createEnv({
       .string()
       .min(1)
       .default(SUPABASE_ANON_KEY_PLACEHOLDER),
+    // Local/dev default origin. On Vercel this is superseded by the auto-injected
+    // production URL below (see ~/lib/site-url for the resolution order), so a
+    // default deploy targets the real domain without any manual env.
     NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
     // Origin hosting the Payload REST API. In the browser the app reads content
     // same-origin (relative /cms-api); this is mainly for completeness/SSR.
     NEXT_PUBLIC_CMS_URL: z.url().optional(),
+    // Explicit public-origin override — set to your custom domain to pin every
+    // auth/Stripe/OG redirect to it (e.g. https://app.example.com).
+    NEXT_PUBLIC_SITE_URL: z.url().optional(),
+    // Auto-injected by Vercel for Next.js (no scheme, e.g. `my-app.vercel.app`).
+    // PROJECT_PRODUCTION_URL is the stable production domain; VERCEL_URL is the
+    // per-deployment URL. Both optional so local/non-Vercel builds still pass.
+    NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL: z.string().min(1).optional(),
+    NEXT_PUBLIC_VERCEL_URL: z.string().min(1).optional(),
   },
   /**
    * Destructure from process.env so vars aren't tree-shaken away.
@@ -78,6 +89,10 @@ export const env = createEnv({
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_CMS_URL: process.env.NEXT_PUBLIC_CMS_URL,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL:
+      process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL,
+    NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
   },
   // Do NOT skip on `process.env.CI`. Vercel sets CI=1 during builds, and when
   // validation is skipped `@t3-oss/env-nextjs` returns raw `process.env`

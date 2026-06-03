@@ -11,6 +11,7 @@ import { toast } from "@acme/ui/toast";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { authCallbackUrl } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
@@ -28,7 +29,7 @@ export default function ForgotPasswordPage() {
       await resetPasswordForEmail(
         supabase,
         email,
-        `${window.location.origin}/auth/callback?next=/reset-password`,
+        authCallbackUrl("/reset-password"),
       );
       toast.success("If that email exists, a reset link is on its way");
     } catch (e) {
