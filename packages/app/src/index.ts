@@ -5,26 +5,12 @@
  */
 
 export * from "./validators/auth";
-export * from "./validators/project";
-export * from "./validators/item";
 export * from "./validators/reminder";
 export * from "./auth";
 export * from "./reminders";
+export * from "./hooks/use-content";
 export { useProfile, useUpdateProfile } from "./hooks/use-profile";
 export { useDeleteAccount } from "./hooks/use-delete-account";
-export {
-  useProjects,
-  useProject,
-  useCreateProject,
-  useUpdateProject,
-  useDeleteProject,
-} from "./hooks/use-projects";
-export {
-  useItems,
-  useCreateItem,
-  useUpdateItem,
-  useDeleteItem,
-} from "./hooks/use-items";
 export { usePremium } from "./hooks/use-premium";
 export {
   useChatThreads,

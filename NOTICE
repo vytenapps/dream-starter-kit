@@ -57,6 +57,9 @@ source is copied in).
     https://github.com/vercel/ai   (Apache-2.0)
     Powers the AI assistant route.
 
+  - sharp — image processing for Payload media uploads (Apache-2.0; its bundled
+    libvips binary is LGPL-3.0 — see §4).
+
 A copy of the Apache-2.0 license is in LICENSE and at:
     https://www.apache.org/licenses/LICENSE-2.0
 
@@ -80,12 +83,12 @@ upstream attribution headers are preserved in the copied files.
   - @tanstack/react-query, react-hook-form, zod                   (MIT)
   - radix-ui, lucide-react, @tabler/icons-react, sonner, vaul     (MIT)
   - Stripe SDK ("stripe")                                          (MIT)
-  - liquid-glass-react — optional web hero effect                 (MIT)
+  - Payload CMS — "payload" + "@payloadcms/*" (content backend)    (MIT)
 
 Some transitive build/runtime dependencies carry weak, file-level copyleft
 licenses that are permissive to depend on (no relicensing of this work):
 
-  - LGPL-3.0 — @img/sharp-libvips (image pipeline used by Next.js)
+  - LGPL-3.0 — @img/sharp-libvips (image pipeline used by Next.js + Payload)
   - MPL-2.0  — lightningcss, axe-core
 
 ================================================================================

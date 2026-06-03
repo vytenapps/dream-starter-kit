@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { GalleryVerticalEnd } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -28,14 +28,22 @@ import {
 import { Input } from "~/components/ui/input";
 import { authCallbackUrl } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/client";
+import { authErrorMessage, isSupabaseConfigured } from "~/lib/supabase/config";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const router = useRouter();
   const supabase = createClient();
-  const redirectTo = useSearchParams().get("redirectTo") ?? "/dashboard";
+  const configured = isSupabaseConfigured();
+  // Only honor same-origin paths — this value drives a full-page navigation
+  // (and the OAuth callback `next`), so an absolute/protocol-relative URL would
+  // be an open redirect.
+  const redirectParam = useSearchParams().get("redirectTo");
+  const redirectTo =
+    redirectParam?.startsWith("/") && !redirectParam.startsWith("//")
+      ? redirectParam
+      : "/dashboard";
   const callback = authCallbackUrl(redirectTo);
 
   const {
@@ -48,10 +56,9 @@ export function LoginForm({
   async function onSubmit(values: SignInInput) {
     try {
       await signInWithPassword(supabase, values);
-      router.replace(redirectTo);
-      router.refresh();
+      window.location.assign(redirectTo);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Sign in failed");
+      toast.error(authErrorMessage(e, "Sign in failed"));
     }
   }
 
@@ -65,7 +72,7 @@ export function LoginForm({
       await signInWithOtp(supabase, email, { emailRedirectTo: callback });
       toast.success("Check your email for a magic link");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not send link");
+      toast.error(authErrorMessage(e, "Could not send link"));
     }
   }
 
@@ -73,7 +80,7 @@ export function LoginForm({
     const { error } = await signInWithOAuth(supabase, provider, {
       redirectTo: callback,
     });
-    if (error) toast.error(error.message);
+    if (error) toast.error(authErrorMessage(error, error.message));
   }
 
   return (
@@ -127,12 +134,13 @@ export function LoginForm({
             )}
           </Field>
           <Field>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !configured}>
               {isSubmitting ? "Signing in…" : "Login"}
             </Button>
             <Button
               type="button"
               variant="ghost"
+              disabled={!configured}
               onClick={() => void onMagicLink()}
             >
               Email me a magic link
@@ -143,6 +151,7 @@ export function LoginForm({
             <Button
               variant="outline"
               type="button"
+              disabled={!configured}
               onClick={() => void onOAuth("apple")}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -156,6 +165,7 @@ export function LoginForm({
             <Button
               variant="outline"
               type="button"
+              disabled={!configured}
               onClick={() => void onOAuth("google")}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

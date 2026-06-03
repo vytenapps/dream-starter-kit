@@ -229,65 +229,10 @@ export interface Database {
         };
         Relationships: [];
       };
-      projects: {
-        Row: {
-          id: string;
-          owner_id: string;
-          org_id: string | null;
-          name: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          owner_id: string;
-          org_id?: string | null;
-          name: string;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          owner_id?: string;
-          org_id?: string | null;
-          name?: string;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      items: {
-        Row: {
-          id: string;
-          project_id: string;
-          created_by: string;
-          title: string;
-          data: Json;
-          status: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          project_id: string;
-          created_by: string;
-          title: string;
-          data?: Json;
-          status?: string;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          project_id?: string;
-          created_by?: string;
-          title?: string;
-          data?: Json;
-          status?: string;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
       reminders: {
         Row: {
           id: string;
           user_id: string;
-          item_id: string | null;
           due_at: string;
           channel: string;
           status: string;
@@ -296,7 +241,6 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          item_id?: string | null;
           due_at: string;
           channel?: string;
           status?: string;
@@ -305,7 +249,6 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
-          item_id?: string | null;
           due_at?: string;
           channel?: string;
           status?: string;
@@ -374,7 +317,6 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          item_id: string | null;
           bucket: string;
           path: string;
           mime_type: string | null;
@@ -384,7 +326,6 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          item_id?: string | null;
           bucket?: string;
           path: string;
           mime_type?: string | null;
@@ -394,7 +335,6 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
-          item_id?: string | null;
           bucket?: string;
           path?: string;
           mime_type?: string | null;
@@ -461,14 +401,14 @@ export interface Database {
 
 type PublicSchema = Database["public"];
 
-/** Row type for a public table, e.g. `Tables<"items">`. */
+/** Row type for a public table, e.g. `Tables<"reminders">`. */
 export type Tables<T extends keyof PublicSchema["Tables"]> =
   PublicSchema["Tables"][T]["Row"];
 
-/** Insert type for a public table, e.g. `TablesInsert<"items">`. */
+/** Insert type for a public table, e.g. `TablesInsert<"reminders">`. */
 export type TablesInsert<T extends keyof PublicSchema["Tables"]> =
   PublicSchema["Tables"][T]["Insert"];
 
-/** Update type for a public table, e.g. `TablesUpdate<"items">`. */
+/** Update type for a public table, e.g. `TablesUpdate<"reminders">`. */
 export type TablesUpdate<T extends keyof PublicSchema["Tables"]> =
   PublicSchema["Tables"][T]["Update"];

@@ -40,7 +40,6 @@ export function useCreateReminder() {
         user_id: user.id,
         due_at: input.dueAt,
         channel: input.channel,
-        item_id: input.itemId ?? null,
       };
       const { data, error } = await supabase
         .from("reminders")

@@ -20,6 +20,7 @@ clarity beat cleverness.
 | Web | Next.js (App Router), shadcn/ui, Tailwind | `apps/nextjs` |
 | Mobile | Expo + Expo Router, react-native-reusables, NativeWind | `apps/expo` |
 | Backend | Supabase: Postgres + Auth + Storage + Edge Functions | `supabase/` |
+| Content / CMS | Payload CMS v3 (web/server only) — own `cms` schema, `/admin`, REST at `/cms-api` | `apps/nextjs/src/payload`, `packages/cms` |
 | Data layer (client + generated types) | `@supabase/supabase-js` typed client, session provider | `packages/api` |
 | Shared features | cross-platform validators, react-query hooks, logic | `packages/app` |
 | Shared UI tokens / primitives | | `packages/ui` |
@@ -33,9 +34,13 @@ clarity beat cleverness.
 
 ## The golden rules (do not violate)
 
-1. **RLS on every table.** Authorization lives in Postgres, not app code. Every
-   table has an owner (`user_id`/`owner_id`, or reachable via `memberships`) and
-   policies scoped to `(select auth.uid())`. See `docs/ERD.md`.
+1. **RLS on every app table.** Authorization lives in Postgres, not app code. Every
+   table in the `public` schema has an owner (`user_id`/`owner_id`, or reachable via
+   `memberships`) and policies scoped to `(select auth.uid())`. See `docs/ERD.md`.
+   **The one allowed exception is Payload CMS**, which owns the separate `cms`
+   schema and enforces its own access-control; it's contained via a dedicated
+   least-privilege, server-only `payload_cms` role (no access to `public`/`auth`) —
+   so it's outside RLS *by design*, not by oversight. Don't put per-user app data there.
 2. **Service role key is server-only.** It bypasses RLS. It appears ONLY in
    Supabase edge functions / server code (e.g. the Stripe webhook). Never in
    `apps/expo` or web client code.
@@ -87,9 +92,10 @@ typecheck · unit · license, plus an `integration` job that boots Supabase and 
 
 Features in this kit are **modular**: each one spans the same predictable set of
 layers, every layer lives in a predictable place, and a feature can be added — or
-deleted — without touching unrelated code. The `projects → items` feature is the
-working reference; copy its shape. (The AI assistant, reminders, and notifications
-are all built this same way.)
+deleted — without touching unrelated code. The **`reminders`** feature is the
+working reference for a Supabase RLS feature; copy its shape. (The AI assistant
+and notifications are built this same way.) For **editorial/marketing content**,
+use Payload instead — see [How to add a Payload content type](#how-to-add-a-payload-content-type).
 
 ### The anatomy of a feature
 
@@ -110,7 +116,12 @@ A feature is a vertical slice through these layers. Build them in this order:
 Layers 4–5 are shared by **both** apps — that's the whole point. Keep `apps/*`
 thin: a screen wires a hook to platform UI and nothing more.
 
-### Worked example — adding a `tasks` feature
+### Worked example
+
+The in-repo reference is **`reminders`** (a single owner-scoped table: validator
+`reminder.ts`, hooks `use-reminders.ts`, web + native screens, and an RLS test).
+Read those files to see the real shape. The walkthrough below uses a fresh `tasks`
+table so the pattern is easy to follow — `reminders` is built exactly this way.
 
 **1. Migration (schema + RLS + indexes).** `supabase migration new add_tasks`:
 
@@ -189,9 +200,30 @@ native home nav.
 - **Touching env or constants?** Update `.env.example` **and** the zod schema in
   `packages/config`; put shared constants (model id, prices, limits) in `packages/config`.
 
-To rename the example domain (`projects`/`items`) to your own nouns, see the
-README → "The example feature & renaming it" — it's a find-and-replace plus a
-new migration.
+The kit ships **no** example app-domain table — add your product's own per-user
+tables with the recipe above. For content-type guidance, see the README and
+[How to add a Payload content type](#how-to-add-a-payload-content-type) below.
+
+## How to add a Payload content type
+
+For **editorial/marketing content** (the same for every visitor — articles, events,
+pages, …), add a **Payload collection**, not a Supabase table. Content lives in the
+`cms` schema and is governed by **Payload's access-control, not RLS**.
+
+1. **Collection.** Add a config in `apps/nextjs/src/payload/collections/` (copy
+   `Articles.ts`). Set fields, `slug`, and `access` (e.g. published-or-admin reads).
+2. **Register it** in `apps/nextjs/src/payload.config.ts` (`collections: [...]`).
+3. **Types.** `pnpm cms:gen-types` regenerates Payload's types into `packages/cms`
+   (`@acme/cms`) — never hand-edit. Then `pnpm cms:migrate:create` + `pnpm cms:migrate`
+   to apply the schema change to the `cms` schema.
+4. **Web page.** Add a public RSC route under `apps/nextjs/src/app/(frontend)/(public)/`
+   that fetches via Payload's **Local API** (`getPayload(...).find(...)`), for SEO.
+5. **Mobile.** Add a REST hook in `packages/app` (copy `use-content.ts`'s
+   `useArticles`/`useEvents`), typed by `@acme/cms`, and a native screen under
+   `apps/expo/src/app/(app)/content/`.
+6. **No RLS, no rls-tests.** Content is access-controlled by Payload — do **not**
+   add it to `docs/ERD.md` or `tooling/rls-tests`. (Add a Playwright `content.spec.ts`
+   case if it's a critical public flow.)
 
 ## Conventions
 
@@ -207,8 +239,10 @@ new migration.
 
 ## Status
 
-The kit is **feature-complete and ready to clone**: auth, the example data feature,
-billing, the AI assistant, engagement (notifications/reminders/push), and the full
-test/CI suite are all built and green. Extend it with the modular-feature recipe
-above, keep every checkpoint green (`pnpm typecheck && pnpm lint && pnpm test`), and
-update this file when conventions change.
+The kit is **feature-complete and ready to clone**: auth, billing, the AI assistant,
+engagement (notifications/reminders/push), the **Payload CMS** content backend
+(articles/events/pages + admin at `/admin`), and the full test/CI suite are all built
+and green. There is **no** example app-domain table — `reminders` is the reference for
+adding your own. Extend it with the modular-feature recipe above, keep every checkpoint
+green (`pnpm typecheck && pnpm lint && pnpm test`), and update this file when
+conventions change.

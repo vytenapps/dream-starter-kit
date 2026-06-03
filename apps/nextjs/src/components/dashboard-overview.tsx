@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { usePremium, useProjects } from "@acme/app";
+import { usePremium } from "@acme/app";
 
 import { ManageBillingButton, Paywall } from "~/components/paywall";
 import { Button } from "~/components/ui/button";
@@ -15,22 +15,12 @@ import {
 } from "~/components/ui/card";
 
 export function DashboardOverview() {
-  const projects = useProjects();
   const premium = usePremium();
-  const data = projects.data ?? [];
 
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardDescription>Projects</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">
-              {projects.isLoading ? "—" : data.length}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="sm:col-span-2">
           <CardHeader className="flex-row items-center justify-between">
             <div className="flex flex-col gap-1">
               <CardDescription>Plan</CardDescription>
@@ -42,36 +32,38 @@ export function DashboardOverview() {
               (premium.isPremium ? <ManageBillingButton /> : <Paywall />)}
           </CardHeader>
         </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription>Content</CardDescription>
+            <CardTitle className="text-xl">Payload CMS</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/admin">Open the CMS admin</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-base">Recent projects</CardTitle>
-          <Button asChild size="sm" variant="outline">
-            <Link href="/projects">All projects</Link>
-          </Button>
+        <CardHeader>
+          <CardTitle className="text-base">Welcome</CardTitle>
+          <CardDescription>
+            Your account lives on the app side (Supabase Auth + Row-Level
+            Security). Public content — articles, events, pages and more — is
+            managed in the CMS and shown on the public site.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-1">
-          {projects.isLoading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
-          ) : data.length > 0 ? (
-            data.slice(0, 5).map((project) => (
-              <Link
-                key={project.id}
-                href={`/projects/${project.id}`}
-                className="hover:bg-muted rounded-md px-3 py-2 text-sm"
-              >
-                {project.name}
-              </Link>
-            ))
-          ) : (
-            <p className="text-muted-foreground text-sm">
-              No projects yet.{" "}
-              <Link href="/projects" className="underline">
-                Create your first →
-              </Link>
-            </p>
-          )}
+        <CardContent className="flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link href="/articles">Browse articles</Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/reminders">Reminders</Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/chat">AI chat</Link>
+          </Button>
         </CardContent>
       </Card>
     </div>

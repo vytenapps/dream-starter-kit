@@ -55,7 +55,8 @@ max_client_conn = 100
 enabled = true
 # Specifies an ordered list of schema files that describe your database.
 # Supports glob patterns relative to supabase directory: "./schemas/*.sql"
-schema_paths = []
+# Provisions the Payload `cms` schema + least-privilege role before migrations/seed.
+schema_paths = ["./payload/00_cms_role.sql"]
 
 [db.seed]
 # If enabled, seeds the database after migrations during a db reset.
@@ -113,6 +114,22 @@ file_size_limit = "50MiB"
 # file_size_limit = "50MiB"
 # allowed_mime_types = ["image/png", "image/jpeg"]
 # objects_path = "./images"
+
+# Payload CMS media bucket — public-read (published content is served on public
+# pages + mobile). Separate from the RLS-governed `user-files` bucket; Payload
+# writes here via the S3 adapter (see apps/nextjs/src/payload.config.ts).
+[storage.buckets.cms-media]
+public = true
+file_size_limit = "50MiB"
+allowed_mime_types = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+  "video/mp4",
+  "audio/mpeg",
+]
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
