@@ -102,14 +102,14 @@ layouts** under `app/`: a `(frontend)` group (the app + public pages, with the
 shared providers/theme) and a `(payload)` group (the admin UI + REST API, which
 own their own HTML shell). There is therefore **no top-level `app/layout.tsx`**;
 route handlers (`app/api/*`, `app/auth/callback`) and metadata files (`robots.ts`,
-`sitemap.ts`) stay at the top level. See [§4.x](#4x-content--payload-cms).
+`sitemap.ts`) stay at the top level. See [§4.10](#410-content--payload-cms).
 
 ### 4.3 Mobile app — Expo + Expo Router
 
 The iOS/Android app. File-based routing mirrors the web (`(auth)` and `(app)`
 route groups). UI uses **react-native-reusables** (the shadcn philosophy for
 React Native) styled with **NativeWind**, so web and native look consistent.
-Built and shipped with EAS ([§4.10](#410-build--ship)).
+Built and shipped with EAS ([§4.11](#411-build--ship)).
 
 ### 4.4 Shared packages — the reusable core
 
@@ -154,7 +154,7 @@ This is the part a founder most needs to get right, so it's enforced structurall
   A bug in app code cannot leak another user's data. There's an automated test
   (`pnpm test:rls`) that proves one user can't read or write another's rows. *(The
   one deliberate exception is Payload's `cms` schema, which is governed by Payload's
-  own access-control instead — see [§4.x](#4x-content--payload-cms).)*
+  own access-control instead — see [§4.10](#410-content--payload-cms).)*
 - **The service-role key is server-only.** It bypasses RLS and appears *only* in
   edge functions / server code — never in the web client or the mobile bundle.
 - **Secrets go through a zod env schema.** Every variable is validated on boot
@@ -195,7 +195,7 @@ hooks and web + native screens. The native app registers an Expo push token; the
 sends notifications + push. A web notification bell and a native header bell
 surface unread items.
 
-### 4.x Content — Payload CMS
+### 4.10 Content — Payload CMS
 
 Editorial and marketing content (the parts that are the same for every visitor —
 articles, events, videos, audio, photos, locations, plus `pages` like home/about/
@@ -230,7 +230,7 @@ separate from the Supabase app data:
   (`/cms-api`) through shared hooks in `@acme/app` (`useArticles`, `useEvents`, …),
   typed by `@acme/cms`, with native screens under `apps/expo/src/app/(app)/content/`.
 
-### 4.10 Build & ship
+### 4.11 Build & ship
 
 - **Mobile:** Expo **EAS Build** (cloud builds, no local native toolchain) +
   **EAS Submit**. Profiles (`dev`/`preview`/`production`) are in `apps/expo/eas.json`.
@@ -316,7 +316,7 @@ is one line and web/native never drift. Update channels:
 - **Store billing rules.** In-app digital subscriptions must use Apple/Google
   billing; this kit sells on the **web** only ([§4.7](#47-payments--stripe-web)).
 - **Push needs a dev build.** Remote push doesn't work in Expo Go on Android
-  (SDK 53+) — test in a dev build ([§4.10](#410-build--ship)).
+  (SDK 53+) — test in a dev build ([§4.11](#411-build--ship)).
 - **AI model slugs change.** They live in one place (`DEFAULT_AI_MODEL`); update
   there, don't hardcode elsewhere.
 - **Payload + Next 16 bundler.** Payload v3 required bumping `next` to `^16.2.6`. If
