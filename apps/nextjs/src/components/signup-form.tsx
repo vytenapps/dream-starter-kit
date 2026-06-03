@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { GalleryVerticalEnd } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -21,13 +20,14 @@ import {
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
 import { createClient } from "~/lib/supabase/client";
+import { authErrorMessage, isSupabaseConfigured } from "~/lib/supabase/config";
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const router = useRouter();
   const supabase = createClient();
+  const configured = isSupabaseConfigured();
   const callback = `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback?next=/dashboard`;
 
   const {
@@ -40,10 +40,13 @@ export function SignupForm({
     try {
       await signUpWithPassword(supabase, values, { emailRedirectTo: callback });
       toast.success("Account created");
-      router.replace("/dashboard");
-      router.refresh();
+      // Full-page navigation (not router.replace): the auth cookie is set
+      // client-side by supabase-js, and a soft App-Router navigation to the
+      // proxy-gated /dashboard doesn't reliably pick it up. A hard navigation
+      // makes the server + proxy re-read the fresh session. (Verified via e2e.)
+      window.location.assign("/dashboard");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Sign up failed");
+      toast.error(authErrorMessage(e, "Sign up failed"));
     }
   }
 
@@ -51,7 +54,7 @@ export function SignupForm({
     const { error } = await signInWithOAuth(supabase, provider, {
       redirectTo: callback,
     });
-    if (error) toast.error(error.message);
+    if (error) toast.error(authErrorMessage(error, error.message));
   }
 
   return (
@@ -106,7 +109,7 @@ export function SignupForm({
             )}
           </Field>
           <Field>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !configured}>
               {isSubmitting ? "Creating…" : "Create Account"}
             </Button>
           </Field>
@@ -115,6 +118,7 @@ export function SignupForm({
             <Button
               variant="outline"
               type="button"
+              disabled={!configured}
               onClick={() => void onOAuth("apple")}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -128,6 +132,7 @@ export function SignupForm({
             <Button
               variant="outline"
               type="button"
+              disabled={!configured}
               onClick={() => void onOAuth("google")}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
