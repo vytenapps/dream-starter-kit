@@ -118,10 +118,29 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL=$API_URL
           EXPO_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
           EXPO_PUBLIC_API_URL=http://localhost:3000
+          PAYLOAD_DATABASE_URL=postgresql://payload_cms:payload_local_dev_only@127.0.0.1:54322/postgres?options=-c%20search_path%3Dcms
+          PAYLOAD_SECRET=ci-not-a-real-secret-change-me
+          NEXT_PUBLIC_CMS_URL=http://localhost:3000
+          S3_ENDPOINT=$API_URL/storage/v1/s3
+          S3_REGION=local
+          S3_ACCESS_KEY_ID=stub
+          S3_SECRET_ACCESS_KEY=$ANON_KEY
+          S3_BUCKET=cms-media
           EOF
+
+      # Payload owns a separate `cms` Postgres schema + a least-privilege role.
+      # `schema_paths` provisions it on `db reset`; CI uses `start`, so apply the
+      # bootstrap explicitly (idempotent) as the postgres superuser.
+      - name: Provision Payload CMS schema + role
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/payload/00_cms_role.sql
 
       - name: RLS isolation regression
         run: pnpm test:rls
+
+      # Dev push (NODE_ENV!=production) creates the cms tables on boot, then the
+      # script seeds demo content so the public-content e2e has data to render.
+      - name: Seed Payload CMS
+        run: pnpm cms:seed
 
       - name: Install Playwright browser
         run: pnpm --filter @acme/web-e2e exec playwright install --with-deps chromium

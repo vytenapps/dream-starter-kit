@@ -9,7 +9,9 @@ test.describe("smoke", () => {
     page,
   }) => {
     await page.goto("/");
-    await expect(page.locator('a[href="/sign-in"]')).toBeVisible();
+    // The public header and the home hero both link to /sign-in — assert the
+    // first match (multiple is expected) rather than tripping strict mode.
+    await expect(page.locator('a[href="/sign-in"]').first()).toBeVisible();
   });
 
   test("a protected route redirects to sign-in when signed out", async ({

@@ -64,9 +64,11 @@ export default buildConfig({
     // Payload owns its own Postgres schema, isolated from the RLS-governed
     // `public` tables. It connects as the least-privilege `payload_cms` role.
     schemaName: "cms",
-    // Reproducible schema: commit Payload migrations (`pnpm cms:migrate`); don't
-    // auto-`push` (mirrors the Supabase-migrations discipline).
-    push: false,
+    // Dev/CI auto-creates the cms tables (so a fresh clone needs no migration
+    // step — just `supabase start` + `pnpm cms:seed`). In production
+    // (NODE_ENV=production) push is OFF: generate & commit migrations with
+    // `pnpm cms:migrate:create`, then run `pnpm cms:migrate` on deploy.
+    push: process.env.NODE_ENV !== "production",
     migrationDir: path.resolve(dirname, "payload/migrations"),
   }),
   sharp,

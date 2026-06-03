@@ -116,8 +116,8 @@ cp .env.example .env
 supabase start     # boots local Postgres/Auth/Storage; prints your API URL + keys
 supabase db reset  # applies migrations + seed.sql (two demo users); also provisions
                    #   the Payload `cms` schema + payload_cms role (via config.toml)
-pnpm cms:migrate   # creates Payload's tables in the `cms` schema
-pnpm cms:seed      # demo content + a demo admin (editor@example.com / password123)
+pnpm cms:seed      # dev auto-creates Payload's cms tables, then seeds demo content
+                   #   + a demo admin (editor@example.com / password123)
 ```
 
 Paste the printed **API URL**, **anon key**, and **service_role key** into `.env`
@@ -316,8 +316,8 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
    billing/AI add `STRIPE_*` + `AI_GATEWAY_API_KEY` in Vercel (the AI Gateway credential
    is auto-injected on Vercel).
 6. **Set up the CMS** — run `supabase/payload/00_cms_role.sql` once in the SQL editor,
-   add the `PAYLOAD_*` + `S3_*` env, run `pnpm cms:migrate`, then log into `/admin` — see
-   [Content backend (Payload CMS)](#content-backend-payload-cms).
+   add the `PAYLOAD_*` + `S3_*` env, create + run Payload migrations, then log into
+   `/admin` — see [Content backend (Payload CMS)](#content-backend-payload-cms).
 
 ### Backend (Supabase)
 
@@ -345,8 +345,10 @@ captured by `supabase db push` (`CREATE ROLE` isn't diffed), so set them up once
    transaction pooler), `PAYLOAD_SECRET`, and the `S3_*` vars (point them at your
    Supabase Storage S3 endpoint and the **public-read `cms-media`** bucket). For mobile,
    set `EXPO_PUBLIC_CMS_URL` to your web origin.
-3. **Migrate (+ seed)** — run `pnpm cms:migrate` against the hosted DB to create
-   Payload's tables (optionally `pnpm cms:seed` for demo content; skip in a real prod).
+3. **Migrate** — production runs with dev-push OFF, so create Payload's tables via a
+   committed migration: run `pnpm cms:migrate:create` once to generate the initial
+   migration from your collections (commit it), then `pnpm cms:migrate` to apply it to
+   the hosted DB. (Optionally `pnpm cms:seed` for demo content; skip in real prod.)
 4. **Log in** — open `https://<your-domain>/admin` and create your admin user.
 
 > If the Payload admin fails to build/run under Next 16's default Turbopack, build
