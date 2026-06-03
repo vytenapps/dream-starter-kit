@@ -1,13 +1,15 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Critical-path e2e: sign up, then create a project + item end-to-end.
+ * Critical-path e2e: sign up, then schedule a reminder end-to-end — a kept,
+ * RLS-backed Supabase feature (the example projects→items domain was replaced
+ * by the Payload CMS; see content.spec.ts for the public content path).
  *
  * Runs against a LIVE local Supabase (`supabase start`, email confirmations off)
  * + the web app. In CI the workflow provisions both (Phase 8). Locally:
  *   supabase start && pnpm dev:next   # then: pnpm test:e2e
  */
-test("sign up → create a project → add an item", async ({ page }) => {
+test("sign up → schedule a reminder", async ({ page }) => {
   const stamp = Date.now();
   const email = `e2e-${stamp}@test.local`;
 
@@ -20,16 +22,11 @@ test("sign up → create a project → add an item", async ({ page }) => {
   // Confirmations are off locally, so signup lands on the dashboard.
   await expect(page).toHaveURL(/\/dashboard/);
 
-  // Create a project.
-  const projectName = `E2E Project ${stamp}`;
-  await page.goto("/projects");
-  await page.getByPlaceholder("New project name").fill(projectName);
-  await page.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(page.getByText(projectName)).toBeVisible();
+  // Schedule a reminder.
+  await page.goto("/reminders");
+  await page.getByLabel("When").fill("2030-01-01T10:00");
+  await page.getByRole("button", { name: "Schedule reminder" }).click();
 
-  // Open it and add an item.
-  await page.getByRole("link", { name: projectName }).click();
-  await page.getByPlaceholder("New item title").fill("First item");
-  await page.getByRole("button", { name: "Add item" }).click();
-  await expect(page.getByText("First item")).toBeVisible();
+  // The new reminder appears in the list with a pending status.
+  await expect(page.getByText(/pending/i)).toBeVisible();
 });

@@ -7,6 +7,5 @@ export const createReminderSchema = z.object({
   /** ISO timestamp (e.g. from a datetime-local input, converted to ISO). */
   dueAt: z.string().min(1, "Pick a date and time"),
   channel: z.enum(REMINDER_CHANNELS),
-  itemId: z.uuid().optional(),
 });
 export type CreateReminderInput = z.infer<typeof createReminderSchema>;

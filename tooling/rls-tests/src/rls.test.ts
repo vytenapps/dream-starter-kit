@@ -8,6 +8,10 @@
  *
  * Requires env (loaded from .env): NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL),
  * NEXT_PUBLIC_SUPABASE_ANON_KEY (or SUPABASE_ANON_KEY), SUPABASE_SERVICE_ROLE_KEY.
+ *
+ * NOTE: Payload CMS content lives in a separate `cms` Postgres schema, OUTSIDE
+ * RLS by design (access is enforced by Payload, not Postgres). It is intentionally
+ * not covered here — this gate protects the RLS-governed `public` (app) tables.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
@@ -42,8 +46,8 @@ let aId = "";
 let bId = "";
 let clientA: SupabaseClient<Database>;
 let clientB: SupabaseClient<Database>;
-let projectAId = "";
-let itemAId = "";
+let threadAId = "";
+let reminderAId = "";
 
 async function createUser(email: string, password: string): Promise<string> {
   const { data, error } = await admin.auth.admin.createUser({
@@ -71,24 +75,28 @@ beforeAll(async () => {
   clientA = await signIn(userA.email, userA.password);
   clientB = await signIn(userB.email, userB.password);
 
-  // As A: create a personal project + item (exercises the INSERT policies).
-  const proj = await clientA
-    .from("projects")
-    .insert({ owner_id: aId, name: "A private project" })
+  // As A: create owner-scoped rows (exercises the INSERT WITH CHECK policies).
+  const thread = await clientA
+    .from("chat_threads")
+    .insert({ user_id: aId, title: "A private thread" })
     .select()
     .single();
-  expect(proj.error).toBeNull();
-  if (!proj.data) throw new Error("project insert returned no row");
-  projectAId = proj.data.id;
+  expect(thread.error).toBeNull();
+  if (!thread.data) throw new Error("chat_threads insert returned no row");
+  threadAId = thread.data.id;
 
-  const item = await clientA
-    .from("items")
-    .insert({ project_id: projectAId, created_by: aId, title: "A secret item" })
+  const reminder = await clientA
+    .from("reminders")
+    .insert({
+      user_id: aId,
+      due_at: new Date(stamp + 86_400_000).toISOString(),
+      channel: "push",
+    })
     .select()
     .single();
-  expect(item.error).toBeNull();
-  if (!item.data) throw new Error("item insert returned no row");
-  itemAId = item.data.id;
+  expect(reminder.error).toBeNull();
+  if (!reminder.data) throw new Error("reminders insert returned no row");
+  reminderAId = reminder.data.id;
 
   // As service role: give A an active subscription (webhook-style write).
   await admin.from("products").upsert({ id: "prod_rls", name: "RLS Test" });
@@ -111,35 +119,36 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await admin.from("subscriptions").delete().eq("user_id", aId);
-  if (projectAId) await admin.from("projects").delete().eq("id", projectAId); // cascades items
+  if (threadAId) await admin.from("chat_threads").delete().eq("id", threadAId); // cascades chat_messages
+  if (reminderAId) await admin.from("reminders").delete().eq("id", reminderAId);
   if (aId) await admin.auth.admin.deleteUser(aId);
   if (bId) await admin.auth.admin.deleteUser(bId);
 });
 
 describe("RLS: a user only sees their own rows", () => {
-  it("A can read A's own item", async () => {
+  it("A can read A's own chat thread", async () => {
     const { data, error } = await clientA
-      .from("items")
+      .from("chat_threads")
       .select("*")
-      .eq("id", itemAId);
+      .eq("id", threadAId);
     expect(error).toBeNull();
     expect(data).toHaveLength(1);
   });
 
-  it("B cannot read A's item", async () => {
+  it("B cannot read A's chat thread", async () => {
     const { data, error } = await clientB
-      .from("items")
+      .from("chat_threads")
       .select("*")
-      .eq("id", itemAId);
+      .eq("id", threadAId);
     expect(error).toBeNull(); // RLS filters silently — not an error, just no rows
     expect(data).toHaveLength(0);
   });
 
-  it("B cannot read A's project", async () => {
+  it("B cannot read A's reminder", async () => {
     const { data } = await clientB
-      .from("projects")
+      .from("reminders")
       .select("*")
-      .eq("id", projectAId);
+      .eq("id", reminderAId);
     expect(data).toHaveLength(0);
   });
 
@@ -161,29 +170,32 @@ describe("RLS: a user only sees their own rows", () => {
 });
 
 describe("RLS: a user cannot write into another user's rows", () => {
-  it("B cannot insert an item into A's project", async () => {
+  it("B cannot insert a chat thread owned by A", async () => {
     const { error } = await clientB
-      .from("items")
-      .insert({ project_id: projectAId, created_by: bId, title: "intrusion" });
-    expect(error).not.toBeNull(); // WITH CHECK (can_access_project) rejects it
+      .from("chat_threads")
+      .insert({ user_id: aId, title: "intrusion" });
+    expect(error).not.toBeNull(); // WITH CHECK (user_id = auth.uid()) rejects it
   });
 
-  it("B's UPDATE of A's item does not change it", async () => {
-    await clientB.from("items").update({ title: "hacked" }).eq("id", itemAId);
+  it("B's UPDATE of A's chat thread does not change it", async () => {
+    await clientB
+      .from("chat_threads")
+      .update({ title: "hacked" })
+      .eq("id", threadAId);
     const { data } = await admin
-      .from("items")
+      .from("chat_threads")
       .select("title")
-      .eq("id", itemAId)
+      .eq("id", threadAId)
       .single();
-    expect(data?.title).toBe("A secret item");
+    expect(data?.title).toBe("A private thread");
   });
 
-  it("B's DELETE of A's item affects zero rows", async () => {
-    await clientB.from("items").delete().eq("id", itemAId);
+  it("B's DELETE of A's chat thread affects zero rows", async () => {
+    await clientB.from("chat_threads").delete().eq("id", threadAId);
     const { count } = await admin
-      .from("items")
+      .from("chat_threads")
       .select("*", { count: "exact", head: true })
-      .eq("id", itemAId);
+      .eq("id", threadAId);
     expect(count).toBe(1);
   });
 });

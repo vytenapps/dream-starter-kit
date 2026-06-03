@@ -6,7 +6,10 @@ import { reactConfig } from "@acme/eslint-config/react";
 
 export default defineConfig(
   {
-    ignores: [".next/**"],
+    // `.next/**` is build output; `src/app/(payload)/**` is Payload-generated
+    // mount boilerplate ("DO NOT MODIFY") that uses framework patterns our lint
+    // rules would otherwise reject.
+    ignores: [".next/**", "src/app/(payload)/**"],
   },
   baseConfig,
   reactConfig,

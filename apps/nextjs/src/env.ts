@@ -27,6 +27,16 @@ export const env = createEnv({
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
     STRIPE_PRICE_MONTHLY: z.string().min(1).optional(),
     STRIPE_PRICE_YEARLY: z.string().min(1).optional(),
+    // Payload CMS (server-only). Payload reads these directly from process.env
+    // (incl. the `payload` CLI), so they're optional here; declared for typing
+    // and to keep .env validated. See .env.example.
+    PAYLOAD_DATABASE_URL: z.string().min(1).optional(),
+    PAYLOAD_SECRET: z.string().min(1).optional(),
+    S3_ENDPOINT: z.url().optional(),
+    S3_REGION: z.string().min(1).optional(),
+    S3_ACCESS_KEY_ID: z.string().min(1).optional(),
+    S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+    S3_BUCKET: z.string().min(1).optional(),
   },
   /** Client-safe — compiled into the browser bundle (publishable/anon only). */
   client: {
@@ -41,6 +51,9 @@ export const env = createEnv({
       .default("set-in-vercel-env"),
     NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+    // Origin hosting the Payload REST API. In the browser the app reads content
+    // same-origin (relative /cms-api); this is mainly for completeness/SSR.
+    NEXT_PUBLIC_CMS_URL: z.url().optional(),
   },
   /**
    * Destructure from process.env so vars aren't tree-shaken away.
@@ -52,6 +65,7 @@ export const env = createEnv({
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_CMS_URL: process.env.NEXT_PUBLIC_CMS_URL,
   },
   // Do NOT skip on `process.env.CI`. Vercel sets CI=1 during builds, and when
   // validation is skipped `@t3-oss/env-nextjs` returns raw `process.env`

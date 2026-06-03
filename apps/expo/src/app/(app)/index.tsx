@@ -18,7 +18,10 @@ export default function Home() {
       <Text className="text-muted-foreground text-center">
         Signed in as {user?.email}
       </Text>
-      <Button title="Projects" onPress={() => router.push("/projects")} />
+      <Button
+        title="Articles"
+        onPress={() => router.push("/content/articles")}
+      />
       <Button
         title="Chat"
         variant="outline"

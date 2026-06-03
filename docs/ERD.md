@@ -1,16 +1,23 @@
 # Dream Starter Kit — Data Model (ERD)
 
 The base schema every cloned app starts from. It's deliberately generic: a universal SaaS substrate
-(identity, billing, engagement, files, AI) plus a thin **domain scaffold** (`projects` → `items`) that
-you **rename to your product's nouns** and extend. Built for **Supabase Auth + Row-Level Security** — every
-table is owned by a user (directly or via an org), and access is enforced at the database.
+(identity, billing, engagement, files, AI) that you extend with your product's tables. Built for
+**Supabase Auth + Row-Level Security** — every table is owned by a user (directly or via an org), and
+access is enforced at the database.
 
 > The SQL in `supabase/migrations/` is the source of truth for exact columns and
 > constraints; this document is the readable overview.
 
 > **How to use it:** keep the core (identity + billing), delete the parts your idea doesn't need
-> (e.g. drop the org layer for a single-user app, drop chat if there's no AI), and rename
-> `projects`/`items` to your domain (see [§ Specializing it per idea](#specializing-it-per-idea)).
+> (e.g. drop the org layer for a single-user app, drop chat if there's no AI), and add your own
+> per-user tables following the canonical RLS pattern below (see
+> [§ Specializing it per idea](#specializing-it-per-idea)).
+
+> **Editorial vs. app data.** This ERD covers **per-user app data** in Supabase's `public` schema
+> under RLS. **Editorial / marketing content** (articles, events, pages, …) lives in a separate
+> `cms` Postgres schema owned by **Payload CMS** — that schema is provisioned and migrated by Payload,
+> sits **outside** Supabase RLS by design (access is enforced by Payload's own access-control), and is
+> **not** modeled here. See [`ARCHITECTURE.md` → Content (Payload CMS)](./ARCHITECTURE.md#4x-content--payload-cms).
 
 ---
 
@@ -26,16 +33,10 @@ erDiagram
     profiles ||--o{ subscriptions : "subscribes"
     products ||--o{ prices : "has"
     prices ||--o{ subscriptions : "billed at"
-    profiles ||--o{ projects : "owns"
-    organizations ||--o{ projects : "owns (optional)"
-    projects ||--o{ items : "contains"
-    profiles ||--o{ items : "created"
     profiles ||--o{ reminders : "has"
-    items ||--o{ reminders : "about (optional)"
     profiles ||--o{ push_tokens : "registers"
     profiles ||--o{ notifications : "receives"
     profiles ||--o{ files : "owns"
-    items ||--o{ files : "attached to (optional)"
     profiles ||--o{ chat_threads : "starts"
     chat_threads ||--o{ chat_messages : "contains"
 
@@ -93,26 +94,9 @@ erDiagram
         boolean cancel_at_period_end
         timestamptz current_period_end
     }
-    projects {
-        uuid id PK
-        uuid owner_id FK
-        uuid org_id FK "nullable"
-        text name
-        timestamptz created_at
-    }
-    items {
-        uuid id PK "rename to your domain noun"
-        uuid project_id FK
-        uuid created_by FK
-        text title
-        jsonb data
-        text status
-        timestamptz created_at
-    }
     reminders {
         uuid id PK
         uuid user_id FK
-        uuid item_id FK "nullable"
         timestamptz due_at
         text channel "push | email"
         text status "pending | sent"
@@ -135,7 +119,6 @@ erDiagram
     files {
         uuid id PK
         uuid user_id FK
-        uuid item_id FK "nullable"
         text bucket
         text path "Supabase Storage path"
         text mime_type
@@ -175,20 +158,22 @@ erDiagram
 - `products`, `prices` — mirrors of your Stripe catalog.
 - `subscriptions` — the canonical Stripe subscription state (`status`, `current_period_end`) used to gate premium features on web **and** mobile.
 
-**App domain** *(rename — this is your idea)*
-- `projects` — the top-level container the user (or org) owns. Rename to your grouping noun (pipeline, workspace, clinic, store…).
-- `items` — the primary domain record. Rename to your core noun (lead, booking, habit, listing, candidate…); `data jsonb` holds idea-specific fields so you can move fast before formalizing columns.
+**App domain** *(this is your idea — add it)*
+- The kit ships **no** example domain table; you add your own per-user tables (the primary records of your product) following the canonical RLS pattern below. Use `data jsonb` on a table if you want idea-specific fields before formalizing columns.
 
 **Engagement** *(many apps are reminder/nudge engines — keep what fits)*
-- `reminders` — scheduled nudges/follow-ups (due time, channel, status); optionally about an `item`.
+- `reminders` — scheduled nudges/follow-ups (due time, channel, status).
 - `push_tokens` — Expo push tokens per device.
 - `notifications` — in-app notification feed with `read_at`.
 
 **Files** *(keep if the app stores uploads)*
-- `files` — metadata for objects in **Supabase Storage** (bucket + path + mime + size); optionally attached to an `item`.
+- `files` — metadata for objects in **Supabase Storage** (bucket + path + mime + size), in the RLS-governed `user-files` bucket.
 
 **AI assistant** *(keep if the app has AI features)*
 - `chat_threads` / `chat_messages` — persisted conversations for the in-app assistant (AI SDK via the Vercel AI Gateway). `token_usage` supports cost/observability.
+
+**Content** *(Payload CMS — outside this ERD)*
+- Editorial/marketing content (`articles`, `events`, `videos`, `audio`, `photos`, `locations`, `pages`, plus `media` uploads and Payload's own `users`) lives in the separate **`cms`** Postgres schema, owned and migrated by **Payload CMS**. It is intentionally **outside Supabase RLS** — Payload enforces its own access-control (e.g. published-or-admin) and connects as a dedicated least-privilege `payload_cms` role scoped to `cms` only. Don't model it here or add it to the RLS tests.
 
 ---
 
@@ -202,27 +187,28 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- User-owned table: each user sees/edits only their own rows
-alter table items enable row level security;
-create policy "items owned by creator"
-  on items for all
+-- User-owned table (the canonical pattern): each user sees/edits only their own rows.
+-- `reminders` is the simplest live example — copy this for any per-user table you add.
+alter table reminders enable row level security;
+create policy "reminders owned by user"
+  on reminders for all
   to authenticated
-  using (created_by = (select auth.uid()))
-  with check (created_by = (select auth.uid()));
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
 
--- Org-scoped table: the owner, or any member of the row's org
-alter table projects enable row level security;
-create policy "projects: owner or org member"
-  on projects for all
-  to authenticated
-  using (
-    (org_id is null and owner_id = (select auth.uid()))
-    or exists (
-      select 1 from memberships m
-      where m.org_id = projects.org_id
-        and m.user_id = (select auth.uid())
-    )
-  );
+-- Org-scoped variant: the owner, or any member of the row's org. Use this shape
+-- for a table with a nullable `org_id` (model it on `organizations`/`memberships`).
+-- create policy "<table>: owner or org member"
+--   on <table> for all
+--   to authenticated
+--   using (
+--     (org_id is null and owner_id = (select auth.uid()))
+--     or exists (
+--       select 1 from memberships m
+--       where m.org_id = <table>.org_id
+--         and m.user_id = (select auth.uid())
+--     )
+--   );
 
 -- Stripe-synced tables: users may READ their own; only the webhook writes (service role bypasses RLS)
 alter table subscriptions enable row level security;
@@ -241,21 +227,19 @@ Notes:
 
 ## Specializing it per idea
 
-Keep the substrate, rename the domain scaffold, add at most one or two idea-specific tables. Example product ideas:
+Keep the substrate and add your own idea-specific tables. The first question is **whose data is it?**
 
-| Example idea | `projects` → | `items` → | Add |
-|---|---|---|---|
-| Lead follow-up autopilot for body shops | shops | **leads** | reminders = follow-ups |
-| Missed-call booking for distilleries | locations | **bookings** | reminders = callbacks |
-| Medications / missed-dose tracking | — (per user) | **medications** | `dose_logs` (adherence) |
-| Pipeline & reminders for recruiters | **pipelines** | **candidates** | stages on `data` |
-| Review & reputation manager for florists | locations | **reviews** | chat_threads = AI reply drafts |
-| Savings goals with nudges | — (per user) | **goals** | reminders = nudges |
-| Escrow & shipping for antiques (marketplace) | — | **listings** | `orders` + buyer/seller via memberships |
+- **Per-user app data** (a user's own records — leads, bookings, medications, candidates, goals, listings,
+  …) → a new table in the `public` schema, owned by `user_id` (or scoped via `org_id`), with the canonical
+  RLS policy and an FK index. Use `data jsonb` for fields you haven't formalized yet. Add one via the
+  recipe in [`CLAUDE.md`](../CLAUDE.md#worked-example).
+- **Editorial / marketing content** (articles, events, pages, media — the same for every visitor) → a
+  **Payload collection**, not a Supabase table. It lands in the `cms` schema, outside RLS, served on public
+  pages and to mobile over REST. Add one via [`CLAUDE.md` → How to add a Payload content type](../CLAUDE.md#how-to-add-a-payload-content-type).
 
-Rules of thumb:
+Rules of thumb for the Supabase side:
 - **Single-user consumer app** → drop `organizations` / `memberships` / `invitations`; own everything by `user_id`.
-- **B2B / team SaaS** → keep the org layer; scope `projects`/`items` by `org_id`.
+- **B2B / team SaaS** → keep the org layer; scope your tables by `org_id` (org-scoped policy above).
 - **Marketplace** → add a transactions/`orders` table and model the two sides with `memberships` roles (buyer/seller); RLS lets each side see only their own orders.
 - **No AI** → drop `chat_threads` / `chat_messages`. **No uploads** → drop `files`. **No reminders** → drop `reminders` / `push_tokens`.
 
