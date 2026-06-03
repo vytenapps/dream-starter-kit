@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@acme/api": "workspace:*",
+    "@acme/cms": "workspace:*",
     "@supabase/supabase-js": "catalog:",
     "@tanstack/react-query": "catalog:",
     "zod": "catalog:"

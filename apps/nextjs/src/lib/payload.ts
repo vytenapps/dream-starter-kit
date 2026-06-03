@@ -1,0 +1,179 @@
+import "server-only";
+
+import config from "@payload-config";
+import { getPayload } from "payload";
+
+import type {
+  Article,
+  Audio as AudioDoc,
+  Event as EventDoc,
+  Location as LocationDoc,
+  Page,
+  Photo,
+  SiteSetting,
+  Video,
+} from "@acme/cms";
+
+/**
+ * Server-side access to Payload via its LOCAL API (in-process, no HTTP) — the
+ * right choice for public Server Components (SEO/perf). Client components and
+ * the Expo app use the REST hooks in `@acme/app` (use-content) instead.
+ *
+ * Reads degrade gracefully: if the CMS isn't reachable or hasn't been migrated
+ * yet (e.g. a placeholder-env deploy before Payload is configured), the public
+ * pages render an empty state rather than 500-ing.
+ */
+const client = () => getPayload({ config });
+
+const PUBLISHED = { _status: { equals: "published" } };
+const publishedSlug = (slug: string) => ({
+  and: [{ slug: { equals: slug } }, PUBLISHED],
+});
+
+async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await fn();
+  } catch {
+    return fallback;
+  }
+}
+
+export function getPage(slug: string): Promise<Page | null> {
+  return safe(async () => {
+    const payload = await client();
+    const { docs } = await payload.find({
+      collection: "pages",
+      where: publishedSlug(slug),
+      limit: 1,
+    });
+    return docs[0] ?? null;
+  }, null);
+}
+
+export function listArticles(): Promise<Article[]> {
+  return safe(async () => {
+    const payload = await client();
+    const { docs } = await payload.find({
+      collection: "articles",
+      where: PUBLISHED,
+      sort: "-publishedAt",
+      depth: 1,
+      limit: 100,
+    });
+    return docs;
+  }, []);
+}
+
+export function getArticle(slug: string): Promise<Article | null> {
+  return safe(async () => {
+    const payload = await client();
+    const { docs } = await payload.find({
+      collection: "articles",
+      where: publishedSlug(slug),
+      depth: 1,
+      limit: 1,
+    });
+    return docs[0] ?? null;
+  }, null);
+}
+
+export function listEvents(): Promise<EventDoc[]> {
+  return safe(async () => {
+    const payload = await client();
+    const { docs } = await payload.find({
+      collection: "events",
+      where: PUBLISHED,
+      sort: "startsAt",
+      depth: 1,
+      limit: 100,
+    });
+    return docs;
+  }, []);
+}
+
+export function getEvent(slug: string): Promise<EventDoc | null> {
+  return safe(async () => {
+    const payload = await client();
+    const { docs } = await payload.find({
+      collection: "events",
+      where: publishedSlug(slug),
+      depth: 1,
+      limit: 1,
+    });
+    return docs[0] ?? null;
+  }, null);
+}
+
+export function listVideos(): Promise<Video[]> {
+  return safe(async () => {
+    const payload = await client();
+    const { docs } = await payload.find({
+      collection: "videos",
+      where: PUBLISHED,
+      depth: 1,
+      limit: 100,
+    });
+    return docs;
+  }, []);
+}
+
+export function listAudio(): Promise<AudioDoc[]> {
+  return safe(async () => {
+    const payload = await client();
+    const { docs } = await payload.find({
+      collection: "audio",
+      where: PUBLISHED,
+      depth: 1,
+      limit: 100,
+    });
+    return docs;
+  }, []);
+}
+
+export function listPhotos(): Promise<Photo[]> {
+  return safe(async () => {
+    const payload = await client();
+    const { docs } = await payload.find({
+      collection: "photos",
+      where: PUBLISHED,
+      depth: 1,
+      limit: 100,
+    });
+    return docs;
+  }, []);
+}
+
+export function listLocations(): Promise<LocationDoc[]> {
+  return safe(async () => {
+    const payload = await client();
+    const { docs } = await payload.find({
+      collection: "locations",
+      where: PUBLISHED,
+      depth: 1,
+      limit: 100,
+    });
+    return docs;
+  }, []);
+}
+
+export function getLocation(slug: string): Promise<LocationDoc | null> {
+  return safe(async () => {
+    const payload = await client();
+    const { docs } = await payload.find({
+      collection: "locations",
+      where: publishedSlug(slug),
+      depth: 1,
+      limit: 1,
+    });
+    return docs[0] ?? null;
+  }, null);
+}
+
+/**
+ * The SiteSettings global. Callers (e.g. the public header) handle failure with
+ * their own fallback, so this is allowed to throw if the CMS is unavailable.
+ */
+export async function getSiteSettings(): Promise<SiteSetting> {
+  const payload = await client();
+  return payload.findGlobal({ slug: "site-settings" });
+}

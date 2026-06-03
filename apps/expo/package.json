@@ -16,6 +16,7 @@
   "dependencies": {
     "@acme/api": "workspace:*",
     "@acme/app": "workspace:*",
+    "@acme/cms": "workspace:*",
     "@acme/config": "workspace:*",
     "@hookform/resolvers": "catalog:",
     "@legendapp/list": "^2.0.14",

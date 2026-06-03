@@ -5,14 +5,12 @@
 create table public.reminders (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
-  item_id uuid references public.items (id) on delete cascade, -- nullable: standalone reminder
   due_at timestamptz not null,
   channel text not null default 'push' check (channel in ('push', 'email')),
   status text not null default 'pending' check (status in ('pending', 'sent', 'canceled')),
   created_at timestamptz not null default now()
 );
 create index on public.reminders (user_id);
-create index on public.reminders (item_id);
 create index on public.reminders (status, due_at); -- the scheduler scans due+pending
 
 create table public.push_tokens (

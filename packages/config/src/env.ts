@@ -5,8 +5,8 @@ import { z } from "zod/v4";
  *
  * Used by Supabase edge functions, Next.js server code, and Node scripts.
  * NEVER import this into a client/mobile bundle — it describes secrets
- * (service role key, Stripe secret, AI gateway key). Client-safe values are
- * validated separately, per platform, with the `*_PUBLIC_` prefix.
+ * (service role key, Stripe secret, AI gateway key, Payload secret/DB). Client-safe
+ * values are validated separately, per platform, with the `*_PUBLIC_` prefix.
  *
  * @see docs/ARCHITECTURE.md and `.env.example`
  */
@@ -30,6 +30,18 @@ export const serverEnvSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
   STRIPE_PRICE_MONTHLY: z.string().min(1).optional(),
   STRIPE_PRICE_YEARLY: z.string().min(1).optional(),
+
+  // --- Payload CMS (server-only; content lives in the `cms` Postgres schema) ---
+  /** Postgres connection for the least-privilege `payload_cms` role (search_path=cms). */
+  PAYLOAD_DATABASE_URL: z.string().min(1).optional(),
+  /** Payload encryption/JWT secret. Required once Payload is enabled. */
+  PAYLOAD_SECRET: z.string().min(1).optional(),
+  // Supabase Storage (S3) — Payload media bucket (`cms-media`).
+  S3_ENDPOINT: z.url().optional(),
+  S3_REGION: z.string().min(1).optional(),
+  S3_ACCESS_KEY_ID: z.string().min(1).optional(),
+  S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  S3_BUCKET: z.string().min(1).default("cms-media"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -43,6 +55,8 @@ export const clientEnvSchema = z.object({
   SUPABASE_URL: z.url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   APP_URL: z.url(),
+  /** Origin of the Payload REST API (the web app). Mobile reads content from here. */
+  CMS_URL: z.url().optional(),
 });
 
 export type ClientEnv = z.infer<typeof clientEnvSchema>;

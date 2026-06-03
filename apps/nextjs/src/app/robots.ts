@@ -7,11 +7,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Keep authed app surfaces + API routes out of the index.
+      // Keep authed app surfaces, the CMS admin, and API routes out of the index.
       disallow: [
         "/api/",
+        "/cms-api/",
+        "/admin",
         "/dashboard",
-        "/projects",
         "/chat",
         "/profile",
         "/reminders",

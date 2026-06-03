@@ -6,7 +6,6 @@
 create table public.files (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
-  item_id uuid references public.items (id) on delete set null, -- nullable: not attached to an item
   bucket text not null default 'user-files',
   path text not null, -- Storage object path, e.g. "<user_id>/avatar.png"
   mime_type text,
@@ -15,7 +14,6 @@ create table public.files (
   unique (bucket, path)
 );
 create index on public.files (user_id);
-create index on public.files (item_id);
 
 alter table public.files enable row level security;
 

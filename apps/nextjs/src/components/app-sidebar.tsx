@@ -5,7 +5,6 @@ import {
   IconBell,
   IconClock,
   IconDashboard,
-  IconFolder,
   IconInnerShadowTop,
   IconMessageCircle,
 } from "@tabler/icons-react";
@@ -27,7 +26,6 @@ import {
 
 const navMain = [
   { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
-  { title: "Projects", url: "/projects", icon: IconFolder },
   { title: "Chat", url: "/chat", icon: IconMessageCircle },
   { title: "Reminders", url: "/reminders", icon: IconClock },
   { title: "Notifications", url: "/notifications", icon: IconBell },

@@ -7,7 +7,6 @@ import { updateSession } from "~/lib/supabase/middleware";
 // Defense-in-depth: the (app) layout also enforces a server-side session guard.
 const PROTECTED_PREFIXES = [
   "/profile",
-  "/projects",
   "/chat",
   "/dashboard",
   "/reminders",
@@ -17,8 +16,15 @@ const PROTECTED_PREFIXES = [
 const AUTH_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password"];
 
 export async function proxy(request: NextRequest) {
-  const { response, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
+
+  // Payload CMS owns its own auth/session under /admin and its REST API under
+  // /cms-api. Never run the Supabase session/redirect logic on those paths.
+  if (pathname.startsWith("/admin") || pathname.startsWith("/cms-api")) {
+    return NextResponse.next();
+  }
+
+  const { response, user } = await updateSession(request);
 
   if (!user && PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
     const url = request.nextUrl.clone();

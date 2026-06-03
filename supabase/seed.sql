@@ -1,6 +1,8 @@
 -- Seed data for local dev. Runs after migrations on `supabase db reset`.
--- Creates TWO demo users (so RLS cross-user isolation is testable) plus demo
--- domain data, a tiny Stripe catalog, and one active subscription.
+-- Creates TWO demo users (so RLS cross-user isolation is testable), a few
+-- engagement/chat rows, a tiny Stripe catalog, and one active subscription.
+-- (Public content — articles, events, pages, etc. — lives in Payload; seed it
+-- with `pnpm cms:seed`.)
 --
 -- Demo logins (local only):
 --   user.a@example.com / password123   (id 1111…)  — has an active subscription
@@ -54,22 +56,6 @@ values
     'email', now(), now(), now()
   )
 on conflict (provider_id, provider) do nothing;
-
--- ----------------------------------------------------------------------------
--- Domain data — a personal project + items for each user.
--- ----------------------------------------------------------------------------
-insert into public.projects (id, owner_id, org_id, name)
-values
-  ('aaaa0000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', null, 'User A · Personal'),
-  ('bbbb0000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', null, 'User B · Personal')
-on conflict (id) do nothing;
-
-insert into public.items (project_id, created_by, title, status, data)
-values
-  ('aaaa0000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'A''s first item', 'open', '{"note":"belongs to A"}'),
-  ('aaaa0000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'A''s second item', 'done', '{}'),
-  ('bbbb0000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'B''s first item', 'open', '{"note":"belongs to B"}')
-on conflict do nothing;
 
 -- ----------------------------------------------------------------------------
 -- Engagement + chat demo rows.

@@ -3,8 +3,8 @@
 A clone-and-ship starter: one **Turborepo** monorepo shipping a **Next.js web app**
 and an **Expo (iOS + Android) app** that share **one Supabase backend**
 (Postgres + Auth + Row-Level Security + Storage + Edge Functions). Stripe billing,
-a Vercel-AI-Gateway assistant, and Expo push notifications are wired in. Clone it,
-rename a few things, and extend it into a real product.
+a Vercel-AI-Gateway assistant, Expo push notifications, and a **Payload CMS** content
+backend are wired in. Clone it, rename a few things, and extend it into a real product.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvytenapps%2Fdream-starter-kit&root-directory=apps%2Fnextjs&project-name=dream-starter-kit&repository-name=dream-starter-kit)
 
@@ -23,9 +23,14 @@ rename a few things, and extend it into a real product.
 
 - **Auth** — email/password, magic link, Google & Apple OAuth (Supabase Auth), with
   protected routes on web + native and account deletion.
-- **A real data feature** — `projects → items` CRUD on web *and* native from one set
-  of shared react-query hooks, fully protected by Row-Level Security. This is the
-  reference pattern you copy for your own nouns.
+- **A real data feature** — `reminders` CRUD on web *and* native from one set of
+  shared react-query hooks, fully protected by Row-Level Security. This is the
+  reference pattern you copy for your own per-user tables.
+- **A content CMS** — **Payload CMS v3** manages editorial/marketing content
+  (`articles`, `events`, `videos`, `audio`, `photos`, `locations`, plus `pages`) from
+  an admin at **`/admin`**. Public pages render **server-side** for SEO; the mobile app
+  reads the same content over REST. Payload runs web-only and owns its own `cms` schema
+  outside RLS (see [Architecture → Content](./docs/ARCHITECTURE.md#4x-content--payload-cms)).
 - **Billing** — Stripe Checkout + customer portal + a signature-verified, idempotent
   webhook. A single **Pro** plan (Monthly **$9.99** / Yearly **$99**). Mobile unlocks
   premium by reading the `subscriptions` table (no IAP).
@@ -49,9 +54,10 @@ If anything here disagrees with those, **they win.**
 | Layer | Choice |
 |---|---|
 | Monorepo | Turborepo + pnpm (forked from create-t3-turbo) |
-| Web | Next.js (App Router, Turbopack) · shadcn/ui · Tailwind |
+| Web | Next.js (App Router) · shadcn/ui · Tailwind · Payload admin at `/admin` |
 | Mobile | Expo + Expo Router · react-native-reusables · NativeWind |
 | Backend | Supabase — Postgres + Auth + RLS + Storage + Edge Functions (Deno) |
+| Content / CMS | Payload CMS v3 (web/server only) — own `cms` schema, REST at `/cms-api` |
 | Data layer | `@supabase/supabase-js` typed client + react-query hooks (`packages/api`) |
 | Payments | Stripe (web only) + webhook edge function |
 | AI | Vercel AI SDK v6 via the AI Gateway (Claude default) |
@@ -108,11 +114,17 @@ Requires the [Supabase CLI](https://supabase.com/docs/guides/cli) + Docker.
 ```bash
 cp .env.example .env
 supabase start     # boots local Postgres/Auth/Storage; prints your API URL + keys
-supabase db reset  # applies migrations + seed.sql (two demo users)
+supabase db reset  # applies migrations + seed.sql (two demo users); also provisions
+                   #   the Payload `cms` schema + payload_cms role (via config.toml)
+pnpm cms:seed      # dev auto-creates Payload's cms tables, then seeds demo content
+                   #   + a demo admin (editor@example.com / password123)
 ```
 
 Paste the printed **API URL**, **anon key**, and **service_role key** into `.env`
-(see [Environment variables](#environment-variables) for which is which).
+(see [Environment variables](#environment-variables) for which is which). The Payload
+env (`PAYLOAD_*`, `S3_*`) ships with working local defaults in `.env.example`; set
+`PAYLOAD_SECRET` and the local anon key as `S3_SECRET_ACCESS_KEY`. The CMS admin is at
+**http://localhost:3000/admin**.
 
 ### 4. Run it
 
@@ -189,12 +201,17 @@ pnpm dev                # or: pnpm -F @acme/expo dev
 
 ```
 apps/nextjs        # web — Next.js App Router, shadcn/ui (thin entry point)
+  src/app/(frontend)/(public)/  # public CMS pages (server-rendered via Payload Local API)
+  src/app/(payload)/            # Payload admin (/admin) + REST (/cms-api)
+  src/payload/                  # Payload collections, access-control, seed
+  src/payload.config.ts         # Payload config (collections, db, S3 storage)
 apps/expo          # mobile — Expo Router, react-native-reusables (thin entry point)
 packages/api       # Supabase data layer: typed client, generated DB types, react-query hooks
-packages/app       # cross-platform features: zod validators, hooks, pure logic (shared web+native)
+packages/app       # cross-platform features: zod validators, hooks (incl. content hooks), pure logic
+packages/cms       # Payload content TYPES ONLY (generated; safe to import on mobile)
 packages/ui        # shared UI tokens/primitives + theme/toast
 packages/config    # zod env schema + constants (DEFAULT_AI_MODEL, PLANS, rate limit)
-supabase/          # migrations (schema + RLS), seed.sql, edge functions, config.toml
+supabase/          # migrations (schema + RLS), payload/ (cms role+schema), seed.sql, edge functions, config.toml
 tooling/           # eslint / prettier / tailwind / tsconfig + rls-tests + web-e2e + CI setup
 ```
 
@@ -211,7 +228,9 @@ are env vars, so the source-level edits are small.
 **Identity (source):**
 
 - [ ] **App name** — `APP_NAME` in `packages/config` (the short brand), plus the web
-      titles/OG in `apps/nextjs/src/app/layout.tsx` and `opengraph-image.tsx`.
+      titles/OG in `apps/nextjs/src/app/(frontend)/layout.tsx` and
+      `(frontend)/opengraph-image.tsx`. (There's no top-level `app/layout.tsx` — the app
+      lives in the `(frontend)` route group and Payload's admin in `(payload)`.)
 - [ ] **Bundle id** — `apps/expo/app.config.ts` (`ios.bundleIdentifier` + `android.package`),
       shipped as the placeholder `com.example.dreamstarter`.
 - [ ] **Deep-link scheme** — set `EXPO_PUBLIC_AUTH_SCHEME` (default `dreamstarter` in
@@ -228,19 +247,22 @@ are env vars, so the source-level edits are small.
 - [ ] **License** — keep Apache-2.0 or relicense your fork (Apache lets you build a
       proprietary product on top); update the copyright line in `NOTICE`.
 
-Then rename the example domain to your own nouns:
+Then add your own product data. There's **no** example domain to rename — instead you
+add tables/content for your idea:
 
-### Rename the example feature
+### Add your own feature
 
-`projects → items` is the reference feature. To make it yours (e.g. `boards → cards`):
+The kit ships two reference shapes to copy, depending on whose data it is:
 
-1. Find-and-replace `project`/`projects` and `item`/`items` (respect casing) across
-   `packages/app`, `packages/api`, `apps/nextjs`, `apps/expo`.
-2. Add a **new** migration renaming the tables/policies/indexes (migrations are
-   append-only — never edit a shipped one), then `supabase db reset`.
-3. Regenerate DB types: `pnpm db:gen-types`.
-4. Update the seed and the RLS regression (`tooling/rls-tests`) and Playwright specs.
-5. `pnpm typecheck && pnpm lint && pnpm test`.
+- **Per-user app data** (your product's records, protected by RLS) — copy the
+  **`reminders`** feature: a migration (table + RLS + FK index), a validator, shared
+  react-query hooks, web + native screens, and an RLS test. Full recipe in
+  [`CLAUDE.md`](./CLAUDE.md#how-to-add-a-modular-feature).
+- **Editorial / marketing content** (the same for every visitor — articles, events,
+  pages) — add a **Payload collection** instead of a Supabase table. It's served on
+  public pages and to mobile over REST, and is governed by Payload's access-control
+  (not RLS). Recipe in
+  [`CLAUDE.md` → How to add a Payload content type](./CLAUDE.md#how-to-add-a-payload-content-type).
 
 ### Rename the package scope
 
@@ -293,6 +315,9 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
    and enable any OAuth providers. Set `NEXT_PUBLIC_APP_URL` to your domain, and for
    billing/AI add `STRIPE_*` + `AI_GATEWAY_API_KEY` in Vercel (the AI Gateway credential
    is auto-injected on Vercel).
+6. **Set up the CMS** — run `supabase/payload/00_cms_role.sql` once in the SQL editor,
+   add the `PAYLOAD_*` + `S3_*` env, create + run Payload migrations, then log into
+   `/admin` — see [Content backend (Payload CMS)](#content-backend-payload-cms).
 
 ### Backend (Supabase)
 
@@ -306,6 +331,28 @@ supabase secrets set STRIPE_SECRET_KEY=… STRIPE_WEBHOOK_SECRET=… CRON_SECRET
 Enable OAuth providers and set redirect URLs in the Supabase Dashboard (Auth →
 Providers / URL Configuration). Schedule `process-reminders` (pg_cron / a scheduler)
 with the `CRON_SECRET` in the `Authorization` header.
+
+### Content backend (Payload CMS)
+
+Payload runs inside the deployed web app, but its `cms` schema + login role aren't
+captured by `supabase db push` (`CREATE ROLE` isn't diffed), so set them up once:
+
+1. **Provision the schema + role** — in the Supabase dashboard **SQL editor**, run
+   [`supabase/payload/00_cms_role.sql`](./supabase/payload/00_cms_role.sql) **once**,
+   editing the role password to a real secret.
+2. **Env** — in Vercel set the server-only `PAYLOAD_DATABASE_URL` (the `payload_cms`
+   role's connection string — use the **direct/session** Postgres connection, not the
+   transaction pooler), `PAYLOAD_SECRET`, and the `S3_*` vars (point them at your
+   Supabase Storage S3 endpoint and the **public-read `cms-media`** bucket). For mobile,
+   set `EXPO_PUBLIC_CMS_URL` to your web origin.
+3. **Migrate** — production runs with dev-push OFF, so create Payload's tables via a
+   committed migration: run `pnpm cms:migrate:create` once to generate the initial
+   migration from your collections (commit it), then `pnpm cms:migrate` to apply it to
+   the hosted DB. (Optionally `pnpm cms:seed` for demo content; skip in real prod.)
+4. **Log in** — open `https://<your-domain>/admin` and create your admin user.
+
+> If the Payload admin fails to build/run under Next 16's default Turbopack, build
+> the web app with Webpack (`next build --webpack`).
 
 ### Web (Vercel) — manual alternative
 
@@ -356,7 +403,7 @@ mobile never drift. The notable direct dependencies and why they're here:
 
 **Web app (`apps/nextjs`)**
 
-- **next** — the React web framework (App Router, Turbopack).
+- **next** — the React web framework (App Router; `^16` for Payload v3).
 - **react** / **react-dom** — the UI runtime.
 - **@supabase/ssr** — Supabase auth/session in Next server code + middleware (cookie-based).
 - **@supabase/supabase-js** — the Supabase client (DB, Auth, Storage).
@@ -369,7 +416,6 @@ mobile never drift. The notable direct dependencies and why they're here:
 - **lucide-react**, **@tabler/icons-react** — icon sets used by the UI.
 - **sonner** — toast notifications. **vaul** — the paywall drawer. **next-themes** — dark/light mode.
 - **tw-animate-css** — Tailwind animation utilities. **jiti** — runtime TS for config loading.
-- **liquid-glass-react** — optional glass hero accent (web, Chromium-only).
 
 **Mobile app (`apps/expo`)**
 
@@ -390,8 +436,19 @@ mobile never drift. The notable direct dependencies and why they're here:
 - **stripe** — the Stripe server SDK (Checkout, customer portal, webhook).
 - **ai** — the Vercel AI SDK; sends model calls through the AI Gateway.
 
+**Content (Payload CMS — web/server only)**
+
+- **payload** — the headless CMS (admin UI, collections, access-control, REST/Local API).
+- **@payloadcms/next** — mounts Payload's admin + REST inside the Next.js app.
+- **@payloadcms/db-postgres** — the Postgres adapter (targets the dedicated `cms` schema).
+- **@payloadcms/storage-s3** — stores uploads in the Supabase Storage `cms-media` bucket.
+- **@payloadcms/richtext-lexical**, **@payloadcms/plugin-seo** — rich-text editor + SEO fields.
+- **sharp** — image processing for uploads (pulls a transitive **LGPL** `sharp-libvips`,
+  which `license:check` allows as weak copyleft).
+
 **Shared internal packages** (`@acme/*`) — `api` (data layer), `app` (validators/hooks/logic),
-`ui` (tokens/theme), `config` (env schema + constants). Not published; imported by the apps.
+`cms` (generated Payload content types), `ui` (tokens/theme), `config` (env schema + constants).
+Not published; imported by the apps.
 
 **Testing & quality**
 
