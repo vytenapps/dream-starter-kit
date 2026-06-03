@@ -1,0 +1,5 @@
+{
+  "name": "@acme/scripts",
+  "private": true,
+  "type": "module"
+}
