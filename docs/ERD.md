@@ -99,7 +99,7 @@ erDiagram
         uuid user_id FK
         timestamptz due_at
         text channel "push | email"
-        text status "pending | sent"
+        text status "pending | sent | canceled"
     }
     push_tokens {
         uuid id PK

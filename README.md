@@ -30,7 +30,7 @@ backend are wired in. Clone it, rename a few things, and extend it into a real p
   (`articles`, `events`, `videos`, `audio`, `photos`, `locations`, plus `pages`) from
   an admin at **`/admin`**. Public pages render **server-side** for SEO; the mobile app
   reads the same content over REST. Payload runs web-only and owns its own `cms` schema
-  outside RLS (see [Architecture → Content](./docs/ARCHITECTURE.md#4x-content--payload-cms)).
+  outside RLS (see [Architecture → Content](./docs/ARCHITECTURE.md#410-content--payload-cms)).
 - **Billing** — Stripe Checkout + customer portal + a signature-verified, idempotent
   webhook. A single **Pro** plan (Monthly **$9.99** / Yearly **$99**). Mobile unlocks
   premium by reading the `subscriptions` table (no IAP).
@@ -179,6 +179,10 @@ Every variable is validated by a zod schema (`packages/config/env` + each app's
 | `AI_GATEWAY_API_KEY` | 🔒 | [Vercel AI Gateway](https://vercel.com/ai-gateway) (auto on Vercel) |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | 🔒 | Stripe Dashboard / `stripe listen` |
 | `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY` | 🔒 | Stripe price IDs (`price_…`) |
+| `PAYLOAD_DATABASE_URL` | 🔒 | `payload_cms` role connection (`search_path=cms`); local default in `.env.example` |
+| `PAYLOAD_SECRET` | 🔒 | you choose (`openssl rand -base64 32`) — Payload admin auth/encryption |
+| `S3_ENDPOINT` / `S3_REGION` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` / `S3_BUCKET` | 🔒 | Supabase Storage (S3) for Payload media — the `cms-media` bucket; local defaults in `.env.example` |
+| `NEXT_PUBLIC_CMS_URL` / `EXPO_PUBLIC_CMS_URL` | ✅ | Payload REST origin (mobile reads content; web is same-origin) |
 | `SUPABASE_AUTH_EXTERNAL_GOOGLE_*` / `_APPLE_*` | 🔒 | OAuth provider consoles (local dev only; prod uses the Dashboard) |
 | `EXPO_PUBLIC_EAS_PROJECT_ID` / `EXPO_PUBLIC_AUTH_SCHEME` | ✅ | `eas init` / `app.config.ts` `scheme` |
 
