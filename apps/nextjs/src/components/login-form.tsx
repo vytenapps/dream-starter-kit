@@ -26,6 +26,7 @@ import {
   FieldSeparator,
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import { authCallbackUrl } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/client";
 
 export function LoginForm({
@@ -35,7 +36,7 @@ export function LoginForm({
   const router = useRouter();
   const supabase = createClient();
   const redirectTo = useSearchParams().get("redirectTo") ?? "/dashboard";
-  const callback = `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
+  const callback = authCallbackUrl(redirectTo);
 
   const {
     register,

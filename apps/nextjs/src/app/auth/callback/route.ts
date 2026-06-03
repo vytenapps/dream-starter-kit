@@ -1,24 +1,40 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { getSiteUrl } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/server";
+
+/**
+ * Only allow internal absolute paths as the post-auth destination, so a crafted
+ * `?next=` can't turn the callback into an open redirect. `//evil.com` and
+ * `https://evil.com` are rejected; legitimate values are app paths like
+ * `/dashboard`.
+ */
+function safeNext(raw: string | null): string {
+  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard";
+}
 
 /**
  * OAuth + magic-link + password-reset callback: exchange the `code` for a
  * session cookie, then redirect to `next`.
+ *
+ * Redirects are built from `getSiteUrl()` (not the request origin): behind
+ * Vercel's proxy `request.url` can carry the internal deployment host, which
+ * would bounce the user to the wrong URL after a successful exchange.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/profile";
+  const next = safeNext(searchParams.get("next"));
+  const siteUrl = getSiteUrl();
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${siteUrl}${next}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/sign-in?error=auth_callback`);
+  return NextResponse.redirect(`${siteUrl}/sign-in?error=auth_callback`);
 }

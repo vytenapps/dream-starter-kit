@@ -20,6 +20,7 @@ import {
   FieldSeparator,
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import { authCallbackUrl } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/client";
 
 export function SignupForm({
@@ -28,7 +29,7 @@ export function SignupForm({
 }: React.ComponentProps<"div">) {
   const router = useRouter();
   const supabase = createClient();
-  const callback = `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback?next=/dashboard`;
+  const callback = authCallbackUrl("/dashboard");
 
   const {
     register,

@@ -163,7 +163,8 @@ Every variable is validated by a zod schema (`packages/config/env` + each app's
 | `SUPABASE_SERVICE_ROLE_KEY` | 🔒 | same (server-only; bypasses RLS) |
 | `SUPABASE_DB_URL` | 🔒 | local default in `.env.example` / hosted pooler URL |
 | `CRON_SECRET` | 🔒 | you choose; guards the `process-reminders` function |
-| `NEXT_PUBLIC_APP_URL` / `EXPO_PUBLIC_API_URL` | ✅ | your web origin (LAN IP in mobile dev) |
+| `NEXT_PUBLIC_APP_URL` / `EXPO_PUBLIC_API_URL` | ✅ | your web origin (LAN IP in mobile dev). On Vercel the web origin is auto-detected — see `NEXT_PUBLIC_SITE_URL` |
+| `NEXT_PUBLIC_SITE_URL` | ✅ | optional — pin the public web origin to a custom domain; else auto-detected on Vercel / falls back to `NEXT_PUBLIC_APP_URL` |
 | `AI_GATEWAY_API_KEY` | 🔒 | [Vercel AI Gateway](https://vercel.com/ai-gateway) (auto on Vercel) |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | 🔒 | Stripe Dashboard / `stripe listen` |
 | `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY` | 🔒 | Stripe price IDs (`price_…`) |
@@ -289,10 +290,20 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
 4. **Redeploy** — in Vercel, **Deployments → ⋯ → Redeploy** so the build picks up the
    injected env vars. The web app should now be live.
 5. **Finish config** — in the Supabase dashboard set **Authentication → URL
-   Configuration** (site URL = your Vercel domain; add `https://<domain>/auth/callback`)
-   and enable any OAuth providers. Set `NEXT_PUBLIC_APP_URL` to your domain, and for
-   billing/AI add `STRIPE_*` + `AI_GATEWAY_API_KEY` in Vercel (the AI Gateway credential
-   is auto-injected on Vercel).
+   Configuration**. **This is required** — a fresh Supabase project defaults its Site URL
+   to `http://localhost:3000` and the integration doesn't change it, so until you do this
+   magic-link / confirmation / OAuth redirects bounce back to `localhost` (you'll land on
+   `http://localhost:3000/?code=...`). Set:
+   - **Site URL** → `https://<your-domain>`
+   - **Redirect URLs** (add each) → `https://<your-domain>/**` · `https://*.vercel.app/**`
+     (Vercel preview deploys, optional) · `http://localhost:3000/**` (local dev) ·
+     `dreamstarter://auth-callback` (native app). The `/**` matters — it lets the
+     `/auth/callback?next=…` query through.
+
+   Then enable any OAuth providers. You do **not** need to set the app's own URL — it's
+   auto-detected from Vercel's `NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL` (set
+   `NEXT_PUBLIC_SITE_URL` only to pin a custom domain). For billing/AI add `STRIPE_*` +
+   `AI_GATEWAY_API_KEY` in Vercel (the AI Gateway credential is auto-injected on Vercel).
 
 ### Backend (Supabase)
 

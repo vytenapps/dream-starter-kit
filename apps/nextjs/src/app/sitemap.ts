@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
 
-import { env } from "~/env";
+import { getSiteUrl } from "~/lib/site-url";
 
 /** Public, crawlable routes. Authed (app) routes are excluded (see robots.ts). */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = env.NEXT_PUBLIC_APP_URL;
+  const base = getSiteUrl();
   const lastModified = new Date();
   return [
     { url: `${base}/`, lastModified, changeFrequency: "weekly", priority: 1 },
