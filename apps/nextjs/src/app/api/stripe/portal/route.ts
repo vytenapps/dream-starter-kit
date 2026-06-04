@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 
 import { env } from "~/env";
-import { getSiteUrl } from "~/lib/site-url";
+import { originFromRequest } from "~/lib/site-url";
 import { getStripe } from "~/lib/stripe";
 import { createClient } from "~/lib/supabase/server";
 
 /** Open the Stripe customer portal for the signed-in user's billing account. */
-export async function POST() {
+export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -34,7 +34,7 @@ export async function POST() {
   const stripe = getStripe();
   const session = await stripe.billingPortal.sessions.create({
     customer: customer.stripe_customer_id,
-    return_url: `${getSiteUrl()}/dashboard`,
+    return_url: `${originFromRequest(request)}/dashboard`,
   });
 
   return NextResponse.json({ url: session.url });

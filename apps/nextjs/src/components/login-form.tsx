@@ -44,7 +44,6 @@ export function LoginForm({
     redirectParam?.startsWith("/") && !redirectParam.startsWith("//")
       ? redirectParam
       : "/dashboard";
-  const callback = authCallbackUrl(redirectTo);
 
   const {
     register,
@@ -69,7 +68,10 @@ export function LoginForm({
       return;
     }
     try {
-      await signInWithOtp(supabase, email, { emailRedirectTo: callback });
+      // Resolved at click time so it uses the live browser origin.
+      await signInWithOtp(supabase, email, {
+        emailRedirectTo: authCallbackUrl(redirectTo),
+      });
       toast.success("Check your email for a magic link");
     } catch (e) {
       toast.error(authErrorMessage(e, "Could not send link"));
@@ -78,7 +80,7 @@ export function LoginForm({
 
   async function onOAuth(provider: "google" | "apple") {
     const { error } = await signInWithOAuth(supabase, provider, {
-      redirectTo: callback,
+      redirectTo: authCallbackUrl(redirectTo),
     });
     if (error) toast.error(authErrorMessage(error, error.message));
   }

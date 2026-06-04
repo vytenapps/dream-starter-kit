@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { authCodeFunnelNext } from "~/lib/auth-redirect";
 import { updateSession } from "~/lib/supabase/middleware";
 
 // Routes that require a session (route groups like (app) don't appear in the URL).
@@ -22,6 +23,19 @@ export async function proxy(request: NextRequest) {
   // /cms-api. Never run the Supabase session/redirect logic on those paths.
   if (pathname.startsWith("/admin") || pathname.startsWith("/cms-api")) {
     return NextResponse.next();
+  }
+
+  // Safety net: if Supabase delivered the auth code to a path other than our
+  // callback (it falls back to the project Site URL and lands on `/?code=…` when
+  // the redirect allow-list doesn't match), funnel it to /auth/callback so the
+  // session exchange still happens — preserving `code`/`token_hash` and setting
+  // the post-auth destination.
+  const funnelNext = authCodeFunnelNext(pathname, request.nextUrl.searchParams);
+  if (funnelNext) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    url.searchParams.set("next", funnelNext);
+    return NextResponse.redirect(url);
   }
 
   const { response, user } = await updateSession(request);

@@ -1,7 +1,8 @@
+import type { EmailOtpType } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { getSiteUrl } from "~/lib/site-url";
+import { originFromRequest } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/server";
 
 /**
@@ -17,22 +18,34 @@ function safeNext(raw: string | null): string {
 }
 
 /**
- * OAuth + magic-link + password-reset callback: exchange the `code` for a
- * session cookie, then redirect to `next`.
+ * OAuth + magic-link + email-confirmation + password-reset callback: turn the
+ * URL token into a session cookie, then redirect to `next`. Handles both flavors
+ * Supabase can send — PKCE (`?code=`, the default here) and OTP token-hash
+ * (`?token_hash=&type=`, used by the older email templates) — so it works
+ * whichever the project is configured for.
  *
- * Redirects are built from `getSiteUrl()` (not the request origin): behind
- * Vercel's proxy `request.url` can carry the internal deployment host, which
- * would bounce the user to the wrong URL after a successful exchange.
+ * Redirects are built from `originFromRequest()` — the public host from the
+ * forwarded headers — so the user stays on the SAME deployment they arrived on.
+ * This matters for PKCE: the `code_verifier` cookie was set on this host during
+ * sign-up, so the exchange (and the post-exchange redirect) must stay here, not
+ * bounce to a fixed production URL.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const tokenHash = searchParams.get("token_hash");
+  const type = searchParams.get("type") as EmailOtpType | null;
   const next = safeNext(searchParams.get("next"));
-  const siteUrl = getSiteUrl();
+  const siteUrl = originFromRequest(request);
 
-  if (code) {
+  if (code || tokenHash) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = code
+      ? await supabase.auth.exchangeCodeForSession(code)
+      : await supabase.auth.verifyOtp({
+          type: type ?? "email",
+          token_hash: tokenHash ?? "",
+        });
     if (!error) {
       return NextResponse.redirect(`${siteUrl}${next}`);
     }
