@@ -315,31 +315,20 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
    functions too — see [Backend (Supabase)](#backend-supabase).
 4. **Redeploy** — in Vercel, **Deployments → ⋯ → Redeploy** so the build picks up the
    injected env vars. The web app should now be live.
-5. **Point Supabase Auth at your origin** — **required, one-time.** A fresh Supabase
-   project defaults its Auth **Site URL** to `http://localhost:3000` and the Vercel
-   integration doesn't change it, so until you do this, confirmation / magic-link / OAuth
-   redirects bounce back to `localhost` (you land on `http://localhost:3000/?code=...`).
-   Supabase rejects any `redirect_to` that isn't in its allow-list and falls back to the
-   Site URL — this lives in the *project*, so app code can't set it for you.
-
-   Easiest — run the helper (grab a token at
-   [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens)):
-   ```bash
-   SUPABASE_ACCESS_TOKEN=sbp_xxx SITE_URL=https://<your-domain> pnpm supabase:auth:config
-   ```
-   It sets the Site URL + Redirect URLs (production, a `https://*.vercel.app/**` wildcard
-   for previews, localhost, and the native deep link). Run it with no token to just print
-   the values to paste into **Authentication → URL Configuration** manually:
+5. **Finish config** — in the Supabase dashboard set **Authentication → URL
+   Configuration**. **This is required** — a fresh Supabase project defaults its Site URL
+   to `http://localhost:3000` and the integration doesn't change it, so until you do this
+   magic-link / confirmation / OAuth redirects bounce back to `localhost` (you'll land on
+   `http://localhost:3000/?code=...`). Set:
    - **Site URL** → `https://<your-domain>`
-   - **Redirect URLs** → `https://<your-domain>/**` · `https://*.vercel.app/**`
-     (covers every preview/branch deploy) · `http://localhost:3000/**` ·
-     `dreamstarter://auth-callback`. The `/**` matters — it lets `/auth/callback?next=…`
-     through.
+   - **Redirect URLs** (add each) → `https://<your-domain>/**` · `https://*.vercel.app/**`
+     (Vercel preview deploys, optional) · `http://localhost:3000/**` (local dev) ·
+     `dreamstarter://auth-callback` (native app). The `/**` matters — it lets the
+     `/auth/callback?next=…` query through.
 
-   After this, every deploy/preview/localhost auto-works: the app always sends the live
-   origin you're on (browser `window.location.origin`; server `VERCEL_*`), so you do
-   **not** set the app's own URL — `NEXT_PUBLIC_SITE_URL` is only for pinning a custom
-   domain. Then enable any OAuth providers. For billing/AI add `STRIPE_*` +
+   Then enable any OAuth providers. You do **not** need to set the app's own URL — it's
+   auto-detected from Vercel's `NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL` (set
+   `NEXT_PUBLIC_SITE_URL` only to pin a custom domain). For billing/AI add `STRIPE_*` +
    `AI_GATEWAY_API_KEY` in Vercel (the AI Gateway credential is auto-injected on Vercel).
 6. **Set up the CMS** — run `supabase/payload/00_cms_role.sql` once in the SQL editor,
    add the `PAYLOAD_*` + `S3_*` env, create + run Payload migrations, then log into
