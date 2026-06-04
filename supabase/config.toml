@@ -174,16 +174,18 @@ enabled = true
 #                   https://*.vercel.app/**            (optional: Vercel preview deploys)
 #                   http://localhost:3000/**           (local dev)
 #                   dreamstarter://auth-callback       (native deep link)
-# See README -> Deploy. (The dashboard is the simplest path. If you instead manage config
-# as code with `supabase config push`, override `site_url` for the hosted project first —
-# pushing the localhost value below to production would re-introduce this exact bug.)
+# See README -> Deploy. Easiest: `pnpm supabase:auth:config` sets both for the hosted
+# project via the Management API. (If you instead manage config as code with
+# `supabase config push`, override `site_url` for the hosted project first — pushing the
+# localhost value below to production would re-introduce this exact bug.)
 site_url = "http://localhost:3000"
 # URLs auth providers may redirect to post-authentication. `/**` is a wildcard that
 # matches any path + query (so /auth/callback?next=... round-trips). Covers the web
-# OAuth/magic-link callback and the native deep-link scheme.
+# OAuth/magic-link callback, Vercel previews, and the native deep-link scheme.
 additional_redirect_urls = [
   "http://localhost:3000/**",
   "http://127.0.0.1:3000/**",
+  "https://*.vercel.app/**",
   "dreamstarter://auth-callback",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).

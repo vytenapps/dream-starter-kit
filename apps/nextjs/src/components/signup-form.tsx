@@ -29,7 +29,6 @@ export function SignupForm({
 }: React.ComponentProps<"div">) {
   const supabase = createClient();
   const configured = isSupabaseConfigured();
-  const callback = authCallbackUrl("/dashboard");
 
   const {
     register,
@@ -39,7 +38,11 @@ export function SignupForm({
 
   async function onSubmit(values: SignUpInput) {
     try {
-      await signUpWithPassword(supabase, values, { emailRedirectTo: callback });
+      // Resolved at submit time so it uses the live browser origin (the domain
+      // the user is actually on), not an SSR-captured value.
+      await signUpWithPassword(supabase, values, {
+        emailRedirectTo: authCallbackUrl("/dashboard"),
+      });
       toast.success("Account created");
       // Full-page navigation (not router.replace): the auth cookie is set
       // client-side by supabase-js, and a soft App-Router navigation to the
@@ -53,7 +56,7 @@ export function SignupForm({
 
   async function onOAuth(provider: "google" | "apple") {
     const { error } = await signInWithOAuth(supabase, provider, {
-      redirectTo: callback,
+      redirectTo: authCallbackUrl("/dashboard"),
     });
     if (error) toast.error(authErrorMessage(error, error.message));
   }
