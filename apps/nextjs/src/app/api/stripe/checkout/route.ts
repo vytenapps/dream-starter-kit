@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod/v4";
 
 import { env } from "~/env";
-import { originFromRequest } from "~/lib/site-url";
+import { getSiteUrl } from "~/lib/site-url";
 import { getStripe } from "~/lib/stripe";
 import { createClient } from "~/lib/supabase/server";
 
@@ -69,8 +69,8 @@ export async function POST(request: Request) {
     line_items: [{ price: priceId, quantity: 1 }],
     client_reference_id: user.id,
     subscription_data: { metadata: { supabase_user_id: user.id } },
-    success_url: `${originFromRequest(request)}/dashboard?checkout=success`,
-    cancel_url: `${originFromRequest(request)}/dashboard?checkout=cancelled`,
+    success_url: `${getSiteUrl()}/dashboard?checkout=success`,
+    cancel_url: `${getSiteUrl()}/dashboard?checkout=cancelled`,
   });
 
   return NextResponse.json({ url: session.url });
