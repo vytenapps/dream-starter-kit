@@ -72,9 +72,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-8 p-6">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-8 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Profile</h1>
+        <p className="text-muted-foreground text-sm">{user?.email}</p>
         <Button
           type="button"
           variant="outline"
@@ -83,8 +83,6 @@ export default function ProfilePage() {
           Sign out
         </Button>
       </div>
-
-      <p className="text-muted-foreground text-sm">{user?.email}</p>
 
       <form
         onSubmit={(e) => void handleSubmit(onSave)(e)}
@@ -131,6 +129,6 @@ export default function ProfilePage() {
           {deleteAccount.isPending ? "Deleting…" : "Delete account"}
         </Button>
       </div>
-    </main>
+    </div>
   );
 }

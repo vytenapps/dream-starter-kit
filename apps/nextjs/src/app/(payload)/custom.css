@@ -1,1 +1,82 @@
-/* Add custom Payload admin panel styles here. */
+/*
+ * Payload admin styling bridge. Two jobs (per Payload's official Tailwind +
+ * shadcn/ui guide & example, adapted to Tailwind v4):
+ *
+ *  1. Make the admin shadcn/Tailwind-capable: pull in Tailwind UTILITIES but
+ *     NOT preflight — preflight's resets would clobber Payload's own admin
+ *     styles. This lets custom admin components/views (e.g. a future theme
+ *     editor screen) use shadcn primitives.
+ *  2. Reskin Payload's own chrome from the shadcn theme tokens so the admin
+ *     follows the same site-wide theme as the front end.
+ *
+ * The token VALUES (--background, --foreground, …) are injected at runtime by
+ * ThemeStyleProvider (the theme-settings CMS global) for both `:root` (light)
+ * and `[data-theme="dark"]`. This file only references and maps them.
+ */
+
+/* ── 1. Tailwind utilities without preflight ───────────────────────────────── */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "../../components";
+@source "../../payload/components";
+
+/* Payload toggles dark mode via [data-theme="dark"] (not the front end's .dark) */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Map shadcn tokens → Tailwind color utilities so shadcn components resolve. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ── 2. Reskin Payload's own admin chrome from the shadcn tokens ────────────── */
+/*
+ * Payload's chrome derives from semantic vars (--theme-bg/text/border, the low
+ * --theme-elevation-* steps) and --font-body. We point those at the shadcn
+ * tokens. Declared under BOTH :root and html[data-theme="dark"] (same rules) so
+ * we beat Payload's own dark overrides; `var(--*)` resolves to the right
+ * per-mode value either way. Mid/high elevations stay on Payload's neutral ramp
+ * (they back icon/label shades and adapt to dark on their own).
+ */
+:root,
+html[data-theme="dark"] {
+  --theme-bg: var(--background);
+  --theme-text: var(--foreground);
+  --theme-input-bg: var(--input);
+  --theme-border-color: var(--border);
+
+  --theme-elevation-0: var(--background);
+  --theme-elevation-50: var(--muted);
+  --theme-elevation-100: var(--muted);
+  --theme-elevation-150: var(--border);
+
+  --font-body: var(--font-sans);
+  --font-mono: var(--font-mono);
+}

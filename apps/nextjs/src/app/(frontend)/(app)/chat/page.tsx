@@ -25,9 +25,8 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Chat</h1>
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
+      <div className="flex items-center justify-end">
         <Button onClick={() => void onNew()} disabled={createThread.isPending}>
           New chat
         </Button>
@@ -66,6 +65,6 @@ export default function ChatPage() {
           No chats yet — start one to talk to the assistant.
         </p>
       )}
-    </main>
+    </div>
   );
 }

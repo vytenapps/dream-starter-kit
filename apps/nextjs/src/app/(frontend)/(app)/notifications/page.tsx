@@ -11,9 +11,7 @@ export default function NotificationsPage() {
   const markRead = useMarkNotificationRead();
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Notifications</h1>
-
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
       {notifications.isLoading ? (
         <p className="text-muted-foreground">Loading…</p>
       ) : notifications.data && notifications.data.length > 0 ? (
@@ -47,6 +45,6 @@ export default function NotificationsPage() {
       ) : (
         <p className="text-muted-foreground">No notifications yet.</p>
       )}
-    </main>
+    </div>
   );
 }

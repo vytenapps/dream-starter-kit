@@ -17,6 +17,7 @@ import { Photos } from "./payload/collections/Photos";
 import { Users } from "./payload/collections/Users";
 import { Videos } from "./payload/collections/Videos";
 import { SiteSettings } from "./payload/globals/SiteSettings";
+import { ThemeSettings } from "./payload/globals/ThemeSettings";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -30,6 +31,21 @@ export default buildConfig({
       // to /cms-setup, which seeds demo content with a progress bar. Self-
       // disables once the CMS has content. See payload/components/SeedGate.tsx.
       beforeDashboard: ["~/payload/components/SeedGate#SeedGate"],
+      // Wraps every admin route and injects the site-wide shadcn theme as a
+      // <style> (from the theme-settings global) so the admin chrome follows the
+      // same theme as the front end. See payload/components/ThemeStyleProvider.tsx.
+      providers: ["~/payload/components/ThemeStyleProvider#ThemeStyleProvider"],
+      // "Theme" nav entry → the custom theme editor view registered below.
+      afterNavLinks: ["~/payload/components/ThemeNavLink#ThemeNavLink"],
+      views: {
+        // Rich Simple/Advanced theme editor at /admin/theme (mirrors the shared
+        // vyten workspace theme settings page). See payload/views/ThemeView.tsx.
+        theme: {
+          Component: "~/payload/views/ThemeView#ThemeView",
+          path: "/theme",
+          exact: true,
+        },
+      },
     },
   },
   // Admin at /admin; REST API moved OFF /api to /cms-api so it never collides
@@ -49,7 +65,7 @@ export default buildConfig({
     Locations,
     Pages,
   ],
-  globals: [SiteSettings],
+  globals: [SiteSettings, ThemeSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET ?? "",
   // Generated types are published from the @acme/cms package so the Expo app and

@@ -10,8 +10,8 @@ import {
 } from "@tabler/icons-react";
 
 import { useSession } from "@acme/api";
-import { APP_NAME } from "@acme/config/constants";
 
+import { useBranding } from "~/components/branding-provider";
 import { NavMain } from "~/components/nav-main";
 import { NavUser } from "~/components/nav-user";
 import {
@@ -33,6 +33,7 @@ const navMain = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useSession();
+  const branding = useBranding();
   const sidebarUser = {
     name:
       (user?.user_metadata?.display_name as string | undefined) ??
@@ -52,8 +53,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
               <a href="/dashboard">
-                <IconInnerShadowTop className="size-5!" />
-                <span className="text-base font-semibold">{APP_NAME}</span>
+                {(branding.logoLightUrl ?? branding.logoDarkUrl) ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={branding.logoLightUrl ?? branding.logoDarkUrl ?? ""}
+                      alt={branding.appName}
+                      className="h-5 w-auto object-contain dark:hidden"
+                    />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={branding.logoDarkUrl ?? branding.logoLightUrl ?? ""}
+                      alt={branding.appName}
+                      className="hidden h-5 w-auto object-contain dark:block"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <IconInnerShadowTop className="size-5!" />
+                    <span className="text-base font-semibold">
+                      {branding.appName}
+                    </span>
+                  </>
+                )}
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -241,6 +241,50 @@ in the Next.js server — it reads `profiles` via the user's own RLS session and
 `cms.users` via the Local API — so it never uses the `payload_cms` DB role or the
 service-role key (golden rules #1–2 hold). `/admin` is gated in `proxy.ts`.
 
+## Theming (shadcn, one source of truth)
+
+The whole surface — the web front end **and** the Payload `/admin` panel — is driven
+by one shadcn theme (Tailwind v4, OKLCH tokens). Two layers:
+
+1. **Static defaults (no-flash):** all design tokens live in **`tooling/tailwind/theme.css`**
+   (`@acme/tailwind-config/theme`) — `:root` + `@variant dark`, plus the `@theme inline`
+   map. This is the *only* place tokens are defined. **Do not** redefine `:root`/`.dark`
+   tokens in `apps/nextjs/src/app/styles.css` (it only holds imports, variants, base layer).
+2. **Runtime override (site-wide, editable):** the **`theme-settings` Payload global**
+   (`payload/globals/ThemeSettings.ts`, staff-editable in `/admin`) is the authoritative
+   theme. `lib/theme/serialize.ts#themeToCss` turns it into a `<style>` that overrides the
+   defaults (doubled `:root:root` selector wins regardless of `<head>` order), targeting
+   both `.dark` (front end) and `[data-theme="dark"]` (admin). It's injected server-side by
+   `<ThemeStyle />` (front-end layout `<head>`) and `ThemeStyleProvider` (registered as
+   Payload `admin.components.providers`). Defaults live in `lib/theme/defaults.ts` and
+   **must mirror `theme.css`**.
+
+The shared **app shell** (shadcn `dashboard-01`) wraps every authenticated page in
+`app/(frontend)/(app)/layout.tsx` (sidebar + header); pages return content only.
+
+**To add/change a color token:** edit `theme.css` (default) **and** `lib/theme/defaults.ts`
+(`COLOR_TOKENS`, which also generates the global's fields + serializer output) — never in
+`styles.css`. Fonts are a curated `next/font` set chosen at runtime via the global
+(`FONT_*_OPTIONS`); their CSS vars are set on `<html>`.
+
+**Payload admin** follows Payload's official Tailwind+shadcn guide: `(payload)/custom.css`
+pulls in Tailwind **utilities without preflight** (so shadcn components work in admin
+without breaking Payload's reset) and maps the shadcn tokens onto Payload's own
+`--theme-*`/`--font-body` chrome variables. Token values come from `ThemeStyleProvider`.
+
+**Theme editor — `/admin/theme`.** A custom Payload admin view (`payload/views/ThemeView.tsx`
+→ `ThemeEditor`, registered via `admin.components.views` + `afterNavLinks`) edits the global
+with branding (app name + icon/logos via Media uploads), colors, typography and styles, with a
+live preview. It has two modes:
+- **Simple** — three colors (background, foreground, primary); `lib/theme/derive.ts#deriveBoth`
+  computes the full light palette **and** an auto-generated dark palette.
+- **Advanced** — every token, per light/dark, grouped (Brand/Base/UI/Sidebar[+sync]/Charts),
+  plus serif font, letter-spacing, radius, spacing and shadow.
+Saves via `POST /cms-api/globals/theme-settings`; uploads via `POST /cms-api/media`. Pure color
+math + derivation live in `lib/theme/{color,derive}.ts` (unit-tested). **Branding** (app name,
+favicon, sidebar logo) is read server-side by `getBranding()` (lib/payload.ts) and surfaced via
+`BrandingProvider`. Serif fonts (Merriweather/Lora) are loaded on `<html>` alongside the sans/mono set.
+
 ## Conventions
 
 - **TypeScript everywhere**, `strict`. No `any` without a reason.
