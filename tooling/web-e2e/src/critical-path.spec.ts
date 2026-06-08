@@ -27,6 +27,8 @@ test("sign up → schedule a reminder", async ({ page }) => {
   await page.getByLabel("When").fill("2030-01-01T10:00");
   await page.getByRole("button", { name: "Schedule reminder" }).click();
 
-  // The new reminder appears in the list with a pending status.
-  await expect(page.getByText(/pending/i)).toBeVisible();
+  // The new reminder appears in the list with a pending status. This races a
+  // full insert → react-query refetch → render, so give it room on a loaded CI
+  // runner (the default 5s assertion timeout flakes here).
+  await expect(page.getByText(/pending/i)).toBeVisible({ timeout: 15_000 });
 });
