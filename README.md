@@ -115,10 +115,22 @@ Requires the [Supabase CLI](https://supabase.com/docs/guides/cli) + Docker.
 cp .env.example .env
 supabase start     # boots local Postgres/Auth/Storage; prints your API URL + keys
 supabase db reset  # applies migrations + seed.sql (two demo users); also provisions
-                   #   the Payload `cms` schema + payload_cms role (via config.toml)
-pnpm cms:seed      # dev auto-creates Payload's cms tables, then seeds demo content
-                   #   + a demo admin (editor@example.com / password123)
+                   #   the Payload `cms` schema + payload_cms role (run first via the
+                   #   config.toml [db.seed].sql_paths entry, local-only)
 ```
+
+> Payload connects as the dedicated `payload_cms` role using the local
+> `PAYLOAD_DATABASE_URL` from `.env.example` — make sure you copied the full
+> `PAYLOAD_*` / `S3_*` block into your `.env` (step above), or `/admin` will 500
+> with `password authentication failed for user "payload_cms"`.
+
+Payload's `cms` tables are auto-created in dev on first boot. **The CMS shares your
+Supabase login — there's no separate Payload account.** Sign up through the app (step 4);
+the **first** signup is automatically flagged staff (the founder/admin). Open `/admin`
+while signed in and you're let straight into the CMS — the kit provisions your CMS user,
+then seeds demo content (pages, articles, an event, site nav) with a progress bar and
+drops you into the admin. To add more editors later, set `is_staff = true` on their
+`profiles` row. The `pnpm cms:seed` CLI is still available for headless/CI setup.
 
 Paste the printed **API URL**, **anon key**, and **service_role key** into `.env`
 (see [Environment variables](#environment-variables) for which is which). The Payload
@@ -363,8 +375,13 @@ captured by `supabase db push` (`CREATE ROLE` isn't diffed), so set them up once
 3. **Migrate** — production runs with dev-push OFF, so create Payload's tables via a
    committed migration: run `pnpm cms:migrate:create` once to generate the initial
    migration from your collections (commit it), then `pnpm cms:migrate` to apply it to
-   the hosted DB. (Optionally `pnpm cms:seed` for demo content; skip in real prod.)
-4. **Log in** — open `https://<your-domain>/admin` and create your admin user.
+   the hosted DB.
+4. **Log in** — sign up through the app first; the **first** signup is auto-flagged
+   staff. Then open `https://<your-domain>/admin` while signed in — the CMS shares your
+   Supabase login (no separate Payload account), provisions your CMS user, and triggers
+   the demo-content seed (with a progress bar) before landing in the admin, so the CMS is
+   populated out of the box; edit or replace that content for real prod. Grant more
+   editors by setting `is_staff = true` on their `profiles` row.
 
 > If the Payload admin fails to build/run under Next 16's default Turbopack, build
 > the web app with Webpack (`next build --webpack`).

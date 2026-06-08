@@ -25,6 +25,12 @@ export default buildConfig({
   admin: {
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname, "app/(payload)") },
+    components: {
+      // On first boot (no content yet) this redirects the freshly-created admin
+      // to /cms-setup, which seeds demo content with a progress bar. Self-
+      // disables once the CMS has content. See payload/components/SeedGate.tsx.
+      beforeDashboard: ["~/payload/components/SeedGate#SeedGate"],
+    },
   },
   // Admin at /admin; REST API moved OFF /api to /cms-api so it never collides
   // with the app's existing /api/chat, /api/stripe/*, /api/push/* routes.

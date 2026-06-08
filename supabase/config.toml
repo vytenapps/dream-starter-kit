@@ -55,15 +55,18 @@ max_client_conn = 100
 enabled = true
 # Specifies an ordered list of schema files that describe your database.
 # Supports glob patterns relative to supabase directory: "./schemas/*.sql"
-# Provisions the Payload `cms` schema + least-privilege role before migrations/seed.
-schema_paths = ["./payload/00_cms_role.sql"]
+# NOTE: schema_paths is the declarative-schema feature consumed by `supabase db
+# diff` to GENERATE migrations — it is NOT executed on `db reset` or `db push`.
+# The Payload role/schema is provisioned via [db.seed].sql_paths below instead.
 
 [db.seed]
 # If enabled, seeds the database after migrations during a db reset.
 enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
-sql_paths = ["./seed.sql"]
+# `payload/00_cms_role.sql` runs first to provision the Payload `cms` schema +
+# least-privilege `payload_cms` role (local-only; on hosted, run it once by hand).
+sql_paths = ["./payload/00_cms_role.sql", "./seed.sql"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.

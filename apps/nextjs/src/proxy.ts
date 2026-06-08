@@ -18,13 +18,35 @@ const AUTH_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password"];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Payload CMS owns its own auth/session under /admin and its REST API under
-  // /cms-api. Never run the Supabase session/redirect logic on those paths.
-  if (pathname.startsWith("/admin") || pathname.startsWith("/cms-api")) {
-    return NextResponse.next();
-  }
+  const { response, user, supabase } = await updateSession(request);
 
-  const { response, user } = await updateSession(request);
+  // Payload CMS (/admin UI + /cms-api REST) authenticates from the Supabase session
+  // via the SSO bridge (payload/auth/supabase-strategy.ts). The session is refreshed
+  // above; here we gate /admin so only staff app users reach Payload's (login-less)
+  // admin — anonymous users go to sign-in, non-staff back to the app.
+  if (pathname.startsWith("/admin") || pathname.startsWith("/cms-api")) {
+    if (pathname.startsWith("/admin")) {
+      if (!user) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/sign-in";
+        url.search = "";
+        url.searchParams.set("redirectTo", pathname);
+        return NextResponse.redirect(url);
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_staff")
+        .eq("id", user.id)
+        .single();
+      if (!profile?.is_staff) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/dashboard";
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
+    }
+    return response;
+  }
 
   if (!user && PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
     const url = request.nextUrl.clone();
