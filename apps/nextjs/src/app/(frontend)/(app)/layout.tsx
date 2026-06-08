@@ -1,10 +1,19 @@
 import { redirect } from "next/navigation";
 
+import { AppSidebar } from "~/components/app-sidebar";
+import { BrandingProvider } from "~/components/branding-provider";
+import { SiteHeader } from "~/components/site-header";
+import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
+import { getBranding } from "~/lib/payload";
 import { createClient } from "~/lib/supabase/server";
 
 /**
  * Server-side guard for the authenticated area (belt-and-suspenders with
  * middleware). Anything under (app) requires a session.
+ *
+ * Also provides the shared shadcn `dashboard-01` shell — sidebar + header — so
+ * every signed-in page (dashboard, chat, reminders, notifications, profile)
+ * renders inside one consistent chrome. Pages return only their content.
  */
 export default async function AppLayout({
   children,
@@ -18,5 +27,24 @@ export default async function AppLayout({
 
   if (!user) redirect("/sign-in");
 
-  return <>{children}</>;
+  const branding = await getBranding();
+
+  return (
+    <BrandingProvider value={branding}>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+            "--header-height": "calc(var(--spacing) * 12)",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          {children}
+        </SidebarInset>
+      </SidebarProvider>
+    </BrandingProvider>
+  );
 }

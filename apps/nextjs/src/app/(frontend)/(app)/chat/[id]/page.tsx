@@ -30,7 +30,7 @@ export default function ChatThreadPage() {
   }
 
   return (
-    <main className="mx-auto flex h-screen w-full max-w-2xl flex-col p-4">
+    <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col p-4">
       <Link href="/chat" className="text-muted-foreground text-sm">
         ← Chats
       </Link>
@@ -79,6 +79,6 @@ export default function ChatThreadPage() {
           Send
         </Button>
       </form>
-    </main>
+    </div>
   );
 }

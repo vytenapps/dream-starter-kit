@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import config from "@payload-config";
 import { getPayload } from "payload";
 
@@ -13,6 +14,9 @@ import type {
   SiteSetting,
   Video,
 } from "@acme/cms";
+import { APP_NAME } from "@acme/config/constants";
+
+import type { ThemeSettingsInput } from "./theme/defaults";
 
 /**
  * Server-side access to Payload via its LOCAL API (in-process, no HTTP) — the
@@ -176,4 +180,70 @@ export function getLocation(slug: string): Promise<LocationDoc | null> {
 export async function getSiteSettings(): Promise<SiteSetting> {
   const payload = await client();
   return payload.findGlobal({ slug: "site-settings" });
+}
+
+/**
+ * The raw theme-settings global, fetched once per request and shared by all
+ * theme/branding readers (<ThemeStyle />, the (app) layout's branding, and the
+ * route metadata). `cache` dedupes so a single page render hits Payload once,
+ * not three times — keeping the global read off the critical render path.
+ */
+const themeGlobal = cache(async () =>
+  (await client()).findGlobal({ slug: "theme-settings", depth: 1 }),
+);
+
+/**
+ * The site-wide shadcn theme (theme-settings global). Read by <ThemeStyle /> in
+ * both the front end and the Payload admin. Degrades to `null` if the CMS isn't
+ * reachable/migrated — the serializer then falls back to the built-in defaults,
+ * so the app is never unthemed.
+ */
+export function getThemeSettings(): Promise<ThemeSettingsInput | null> {
+  return safe(
+    async () => (await themeGlobal()) as unknown as ThemeSettingsInput,
+    null,
+  );
+}
+
+export interface Branding {
+  appName: string;
+  appIconUrl: string | null;
+  logoLightUrl: string | null;
+  logoDarkUrl: string | null;
+}
+
+const mediaUrl = (v: unknown): string | null =>
+  v && typeof v === "object" && "url" in v
+    ? ((v as { url?: string | null }).url ?? null)
+    : null;
+
+/**
+ * Branding derived from the theme-settings global (app name + uploaded
+ * icon/logos), populated one level deep so media URLs resolve. Degrades to
+ * APP_NAME / no images when the CMS is unavailable.
+ */
+export function getBranding(): Promise<Branding> {
+  return safe(
+    async () => {
+      const g = (await themeGlobal()) as unknown as {
+        appName?: string | null;
+        appIcon?: unknown;
+        logoLight?: unknown;
+        logoDark?: unknown;
+      };
+      const trimmedName = g.appName?.trim();
+      return {
+        appName: trimmedName?.length ? trimmedName : APP_NAME,
+        appIconUrl: mediaUrl(g.appIcon),
+        logoLightUrl: mediaUrl(g.logoLight),
+        logoDarkUrl: mediaUrl(g.logoDark),
+      };
+    },
+    {
+      appName: APP_NAME,
+      appIconUrl: null,
+      logoLightUrl: null,
+      logoDarkUrl: null,
+    },
+  );
 }

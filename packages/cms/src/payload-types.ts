@@ -109,9 +109,11 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     "site-settings": SiteSetting;
+    "theme-settings": ThemeSetting;
   };
   globalsSelect: {
     "site-settings": SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    "theme-settings": ThemeSettingsSelect<false> | ThemeSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -762,6 +764,329 @@ export interface SiteSetting {
   createdAt?: string | null;
 }
 /**
+ * Branding, colors, typography and styles for the entire app and this admin panel. Edited via /admin/theme.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "theme-settings".
+ */
+export interface ThemeSetting {
+  id: number;
+  editorMode?: ("simple" | "advanced") | null;
+  /**
+   * Display name shown in the app shell and tab title.
+   */
+  appName?: string | null;
+  /**
+   * Square icon — used as the favicon (512×512 ideal).
+   */
+  appIcon?: (number | null) | Media;
+  /**
+   * Logo shown on light backgrounds.
+   */
+  logoLight?: (number | null) | Media;
+  /**
+   * Logo shown on dark backgrounds.
+   */
+  logoDark?: (number | null) | Media;
+  colorsLight?: {
+    /**
+     * --background · any CSS color (oklch recommended)
+     */
+    background?: string | null;
+    /**
+     * --foreground · any CSS color (oklch recommended)
+     */
+    foreground?: string | null;
+    /**
+     * --card · any CSS color (oklch recommended)
+     */
+    card?: string | null;
+    /**
+     * --card-foreground · any CSS color (oklch recommended)
+     */
+    cardForeground?: string | null;
+    /**
+     * --popover · any CSS color (oklch recommended)
+     */
+    popover?: string | null;
+    /**
+     * --popover-foreground · any CSS color (oklch recommended)
+     */
+    popoverForeground?: string | null;
+    /**
+     * --primary · any CSS color (oklch recommended)
+     */
+    primary?: string | null;
+    /**
+     * --primary-foreground · any CSS color (oklch recommended)
+     */
+    primaryForeground?: string | null;
+    /**
+     * --secondary · any CSS color (oklch recommended)
+     */
+    secondary?: string | null;
+    /**
+     * --secondary-foreground · any CSS color (oklch recommended)
+     */
+    secondaryForeground?: string | null;
+    /**
+     * --muted · any CSS color (oklch recommended)
+     */
+    muted?: string | null;
+    /**
+     * --muted-foreground · any CSS color (oklch recommended)
+     */
+    mutedForeground?: string | null;
+    /**
+     * --accent · any CSS color (oklch recommended)
+     */
+    accent?: string | null;
+    /**
+     * --accent-foreground · any CSS color (oklch recommended)
+     */
+    accentForeground?: string | null;
+    /**
+     * --destructive · any CSS color (oklch recommended)
+     */
+    destructive?: string | null;
+    /**
+     * --destructive-foreground · any CSS color (oklch recommended)
+     */
+    destructiveForeground?: string | null;
+    /**
+     * --border · any CSS color (oklch recommended)
+     */
+    border?: string | null;
+    /**
+     * --input · any CSS color (oklch recommended)
+     */
+    input?: string | null;
+    /**
+     * --ring · any CSS color (oklch recommended)
+     */
+    ring?: string | null;
+    /**
+     * --chart-1 · any CSS color (oklch recommended)
+     */
+    chart1?: string | null;
+    /**
+     * --chart-2 · any CSS color (oklch recommended)
+     */
+    chart2?: string | null;
+    /**
+     * --chart-3 · any CSS color (oklch recommended)
+     */
+    chart3?: string | null;
+    /**
+     * --chart-4 · any CSS color (oklch recommended)
+     */
+    chart4?: string | null;
+    /**
+     * --chart-5 · any CSS color (oklch recommended)
+     */
+    chart5?: string | null;
+    /**
+     * --sidebar · any CSS color (oklch recommended)
+     */
+    sidebar?: string | null;
+    /**
+     * --sidebar-foreground · any CSS color (oklch recommended)
+     */
+    sidebarForeground?: string | null;
+    /**
+     * --sidebar-primary · any CSS color (oklch recommended)
+     */
+    sidebarPrimary?: string | null;
+    /**
+     * --sidebar-primary-foreground · any CSS color (oklch recommended)
+     */
+    sidebarPrimaryForeground?: string | null;
+    /**
+     * --sidebar-accent · any CSS color (oklch recommended)
+     */
+    sidebarAccent?: string | null;
+    /**
+     * --sidebar-accent-foreground · any CSS color (oklch recommended)
+     */
+    sidebarAccentForeground?: string | null;
+    /**
+     * --sidebar-border · any CSS color (oklch recommended)
+     */
+    sidebarBorder?: string | null;
+    /**
+     * --sidebar-ring · any CSS color (oklch recommended)
+     */
+    sidebarRing?: string | null;
+  };
+  colorsDark?: {
+    /**
+     * --background · any CSS color (oklch recommended)
+     */
+    background?: string | null;
+    /**
+     * --foreground · any CSS color (oklch recommended)
+     */
+    foreground?: string | null;
+    /**
+     * --card · any CSS color (oklch recommended)
+     */
+    card?: string | null;
+    /**
+     * --card-foreground · any CSS color (oklch recommended)
+     */
+    cardForeground?: string | null;
+    /**
+     * --popover · any CSS color (oklch recommended)
+     */
+    popover?: string | null;
+    /**
+     * --popover-foreground · any CSS color (oklch recommended)
+     */
+    popoverForeground?: string | null;
+    /**
+     * --primary · any CSS color (oklch recommended)
+     */
+    primary?: string | null;
+    /**
+     * --primary-foreground · any CSS color (oklch recommended)
+     */
+    primaryForeground?: string | null;
+    /**
+     * --secondary · any CSS color (oklch recommended)
+     */
+    secondary?: string | null;
+    /**
+     * --secondary-foreground · any CSS color (oklch recommended)
+     */
+    secondaryForeground?: string | null;
+    /**
+     * --muted · any CSS color (oklch recommended)
+     */
+    muted?: string | null;
+    /**
+     * --muted-foreground · any CSS color (oklch recommended)
+     */
+    mutedForeground?: string | null;
+    /**
+     * --accent · any CSS color (oklch recommended)
+     */
+    accent?: string | null;
+    /**
+     * --accent-foreground · any CSS color (oklch recommended)
+     */
+    accentForeground?: string | null;
+    /**
+     * --destructive · any CSS color (oklch recommended)
+     */
+    destructive?: string | null;
+    /**
+     * --destructive-foreground · any CSS color (oklch recommended)
+     */
+    destructiveForeground?: string | null;
+    /**
+     * --border · any CSS color (oklch recommended)
+     */
+    border?: string | null;
+    /**
+     * --input · any CSS color (oklch recommended)
+     */
+    input?: string | null;
+    /**
+     * --ring · any CSS color (oklch recommended)
+     */
+    ring?: string | null;
+    /**
+     * --chart-1 · any CSS color (oklch recommended)
+     */
+    chart1?: string | null;
+    /**
+     * --chart-2 · any CSS color (oklch recommended)
+     */
+    chart2?: string | null;
+    /**
+     * --chart-3 · any CSS color (oklch recommended)
+     */
+    chart3?: string | null;
+    /**
+     * --chart-4 · any CSS color (oklch recommended)
+     */
+    chart4?: string | null;
+    /**
+     * --chart-5 · any CSS color (oklch recommended)
+     */
+    chart5?: string | null;
+    /**
+     * --sidebar · any CSS color (oklch recommended)
+     */
+    sidebar?: string | null;
+    /**
+     * --sidebar-foreground · any CSS color (oklch recommended)
+     */
+    sidebarForeground?: string | null;
+    /**
+     * --sidebar-primary · any CSS color (oklch recommended)
+     */
+    sidebarPrimary?: string | null;
+    /**
+     * --sidebar-primary-foreground · any CSS color (oklch recommended)
+     */
+    sidebarPrimaryForeground?: string | null;
+    /**
+     * --sidebar-accent · any CSS color (oklch recommended)
+     */
+    sidebarAccent?: string | null;
+    /**
+     * --sidebar-accent-foreground · any CSS color (oklch recommended)
+     */
+    sidebarAccentForeground?: string | null;
+    /**
+     * --sidebar-border · any CSS color (oklch recommended)
+     */
+    sidebarBorder?: string | null;
+    /**
+     * --sidebar-ring · any CSS color (oklch recommended)
+     */
+    sidebarRing?: string | null;
+  };
+  /**
+   * Body / UI font (--font-sans)
+   */
+  fontSans?: ("geist" | "inter" | "system") | null;
+  /**
+   * Serif font (--font-serif)
+   */
+  fontSerif?: ("merriweather" | "lora" | "system") | null;
+  /**
+   * Monospace font (--font-mono)
+   */
+  fontMono?: ("geist-mono" | "jetbrains-mono") | null;
+  /**
+   * Base letter spacing, e.g. 0rem (--tracking-normal)
+   */
+  letterSpacing?: string | null;
+  /**
+   * Base border radius, e.g. 0.75rem (--radius)
+   */
+  radius?: string | null;
+  /**
+   * Base spacing unit, e.g. 0.25rem (--spacing)
+   */
+  spacing?: string | null;
+  /**
+   * Drives the --shadow-* scale.
+   */
+  shadow?: {
+    color?: string | null;
+    opacity?: number | null;
+    blurRadius?: number | null;
+    spread?: number | null;
+    offsetX?: number | null;
+    offsetY?: number | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
@@ -785,6 +1110,108 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | {
         twitter?: T;
         github?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "theme-settings_select".
+ */
+export interface ThemeSettingsSelect<T extends boolean = true> {
+  editorMode?: T;
+  appName?: T;
+  appIcon?: T;
+  logoLight?: T;
+  logoDark?: T;
+  colorsLight?:
+    | T
+    | {
+        background?: T;
+        foreground?: T;
+        card?: T;
+        cardForeground?: T;
+        popover?: T;
+        popoverForeground?: T;
+        primary?: T;
+        primaryForeground?: T;
+        secondary?: T;
+        secondaryForeground?: T;
+        muted?: T;
+        mutedForeground?: T;
+        accent?: T;
+        accentForeground?: T;
+        destructive?: T;
+        destructiveForeground?: T;
+        border?: T;
+        input?: T;
+        ring?: T;
+        chart1?: T;
+        chart2?: T;
+        chart3?: T;
+        chart4?: T;
+        chart5?: T;
+        sidebar?: T;
+        sidebarForeground?: T;
+        sidebarPrimary?: T;
+        sidebarPrimaryForeground?: T;
+        sidebarAccent?: T;
+        sidebarAccentForeground?: T;
+        sidebarBorder?: T;
+        sidebarRing?: T;
+      };
+  colorsDark?:
+    | T
+    | {
+        background?: T;
+        foreground?: T;
+        card?: T;
+        cardForeground?: T;
+        popover?: T;
+        popoverForeground?: T;
+        primary?: T;
+        primaryForeground?: T;
+        secondary?: T;
+        secondaryForeground?: T;
+        muted?: T;
+        mutedForeground?: T;
+        accent?: T;
+        accentForeground?: T;
+        destructive?: T;
+        destructiveForeground?: T;
+        border?: T;
+        input?: T;
+        ring?: T;
+        chart1?: T;
+        chart2?: T;
+        chart3?: T;
+        chart4?: T;
+        chart5?: T;
+        sidebar?: T;
+        sidebarForeground?: T;
+        sidebarPrimary?: T;
+        sidebarPrimaryForeground?: T;
+        sidebarAccent?: T;
+        sidebarAccentForeground?: T;
+        sidebarBorder?: T;
+        sidebarRing?: T;
+      };
+  fontSans?: T;
+  fontSerif?: T;
+  fontMono?: T;
+  letterSpacing?: T;
+  radius?: T;
+  spacing?: T;
+  shadow?:
+    | T
+    | {
+        color?: T;
+        opacity?: T;
+        blurRadius?: T;
+        spread?: T;
+        offsetX?: T;
+        offsetY?: T;
       };
   updatedAt?: T;
   createdAt?: T;

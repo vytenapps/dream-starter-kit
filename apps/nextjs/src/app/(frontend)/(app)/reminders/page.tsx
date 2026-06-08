@@ -56,9 +56,7 @@ export default function RemindersPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Reminders</h1>
-
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
       <form
         onSubmit={(e) => void handleSubmit(onCreate)(e)}
         className="flex flex-col gap-3"
@@ -123,6 +121,6 @@ export default function RemindersPage() {
       ) : (
         <p className="text-muted-foreground">No reminders scheduled.</p>
       )}
-    </main>
+    </div>
   );
 }

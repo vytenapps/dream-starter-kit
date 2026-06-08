@@ -48,6 +48,13 @@
   --tracking-normal: 0rem;
   --spacing: 0.25rem;
 
+  /* Font families indirect through these so the runtime theme (theme-settings
+     global → injected <style>) can swap them by overriding the :root var. The
+     `@theme inline` block below references THESE, not the raw next/font vars. */
+  --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-merriweather);
+  --font-mono: var(--font-geist-mono);
+
   @variant dark {
     --background: oklch(0.1836 0.0111 311.9111);
     --foreground: oklch(0.9788 0.0057 308.3962);
@@ -132,8 +139,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

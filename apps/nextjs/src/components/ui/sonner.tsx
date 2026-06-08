@@ -8,15 +8,18 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { Toaster as Sonner } from "sonner";
 
+import { useTheme } from "@acme/ui/theme";
+
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
+  // Follow the app's theme system (packages/ui/theme), not next-themes, so
+  // toasts stay in sync with the single site-wide theme source.
+  const { themeMode } = useTheme();
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={themeMode === "auto" ? "system" : themeMode}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
