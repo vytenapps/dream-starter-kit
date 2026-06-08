@@ -37,7 +37,8 @@ export const Users: CollectionConfig = {
       index: true,
       admin: {
         readOnly: true,
-        description: "Linked Supabase auth user id (managed by the SSO bridge).",
+        description:
+          "Linked Supabase auth user id (managed by the SSO bridge).",
       },
     },
     {

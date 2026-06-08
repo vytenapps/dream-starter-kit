@@ -113,7 +113,8 @@ export async function seedCmsContent(
           data: {
             title: "Modeling content in Payload",
             slug: "modeling-content-in-payload",
-            excerpt: "Articles, events, media and more — all in the cms schema.",
+            excerpt:
+              "Articles, events, media and more — all in the cms schema.",
             author: authorId,
             publishedAt: "2026-01-02T00:00:00.000Z",
             _status: "published",
