@@ -299,7 +299,7 @@ export function ThemeEditor(props: { initial: ThemeEditorInitial }) {
   }
 
   return (
-    <div className="bg-background text-foreground min-h-screen p-6">
+    <div className="text-foreground p-4 md:p-6">
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
