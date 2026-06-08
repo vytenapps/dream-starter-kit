@@ -39,5 +39,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  return { response, user };
+  // `supabase` is returned so callers can run follow-up reads (e.g. the /admin
+  // staff-gate) on the same refreshed session without building a second client.
+  return { response, user, supabase };
 }

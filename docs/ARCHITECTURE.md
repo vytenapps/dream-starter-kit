@@ -217,10 +217,18 @@ separate from the Supabase app data:
   automatically on `supabase db reset` (wired via `config.toml`
   `[db.migrations].schema_paths`); on hosted Supabase you run it **once** in the SQL
   editor. Payload's own tables are created and migrated by Payload (`pnpm cms:migrate`).
-- **Two-backend auth split.** Payload has its **own** auth via a `users` collection
-  (content editors/staff), completely separate from **Supabase Auth** (which still
-  authenticates app users). They do **not** share a session — Payload `users` are not
-  Supabase users. Supabase Auth, Stripe billing, and AI chat are unchanged.
+- **Single sign-on from Supabase Auth.** There is **one** login. Payload doesn't keep
+  its own password — a custom auth strategy (`apps/nextjs/src/payload/auth/supabase-strategy.ts`,
+  wired on the `users` collection with `disableLocalStrategy: true`) authenticates every
+  CMS request from the caller's existing **Supabase** session and provisions a `cms.users`
+  row on first access, linked by `supabaseUserId`. Authorization is **default-deny**: only
+  app users flagged **`profiles.is_staff`** may enter the CMS (the first signup is
+  auto-flagged staff; flip the flag to add editors), and a column-level `revoke` stops
+  users self-escalating. The bridge stays within the kit's isolation rules — it runs in
+  the Next.js server (reading `profiles` via the user's own RLS session, provisioning via
+  Payload's Local API), **never** as the `payload_cms` role and **never** with the
+  service-role key. The `/admin` route is gated in `proxy.ts` (anonymous → `/sign-in`,
+  non-staff → `/dashboard`), which also refreshes the Supabase session on CMS paths.
 - **Media in Supabase Storage.** Uploads go to a dedicated **public-read** bucket
   **`cms-media`** (separate from the RLS-governed `user-files` bucket) via the S3
   storage adapter (`forcePathStyle: true`).

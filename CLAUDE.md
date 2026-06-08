@@ -224,6 +224,22 @@ pages, …), add a **Payload collection**, not a Supabase table. Content lives i
 6. **No RLS, no rls-tests.** Content is access-controlled by Payload — do **not**
    add it to `docs/ERD.md` or `tooling/rls-tests`. (Add a Playwright `content.spec.ts`
    case if it's a critical public flow.)
+7. **Seed it.** Add a demo row for the new collection to `seedCmsContent()` in
+   `apps/nextjs/src/payload/seed.ts` (as a new ordered step) so the CMS stays "fully
+   functional" out of the box. That seed runs two ways: the `pnpm cms:seed` CLI, and
+   automatically the first time a staff user opens `/admin` — a `beforeDashboard` gate
+   (`payload/components/SeedGate.tsx`) sends an unseeded admin to `/cms-setup`, which
+   streams `/api/cms/seed` behind a shadcn progress bar, then returns to `/admin`. Keep
+   steps scalar-only (no binary fixtures).
+
+**CMS auth is SSO from Supabase — there is no second login.** Payload's local strategy
+is disabled; `apps/nextjs/src/payload/auth/supabase-strategy.ts` authenticates each CMS
+request from the Supabase session and provisions a `cms.users` row (linked by
+`supabaseUserId`). Access is **default-deny**: only users with `profiles.is_staff = true`
+get in (the first signup is auto-flagged; flip the flag to add editors). The bridge runs
+in the Next.js server — it reads `profiles` via the user's own RLS session and writes
+`cms.users` via the Local API — so it never uses the `payload_cms` DB role or the
+service-role key (golden rules #1–2 hold). `/admin` is gated in `proxy.ts`.
 
 ## Conventions
 
