@@ -1,5 +1,5 @@
-import config from "@payload-config";
-import { getPayload } from "payload";
+import type { AdminViewServerProps } from "payload";
+import { DefaultTemplate } from "@payloadcms/next/templates";
 
 import type { ThemeEditorInitial } from "./components/ThemeEditor";
 import type { ColorSet } from "~/lib/theme/defaults";
@@ -39,10 +39,17 @@ const fillColors = (
  * Custom Payload admin view at `/admin/theme`. Server component: loads the
  * `theme-settings` global (depth 1 so media URLs resolve) and hands initial
  * values to the client editor. Staff-gated by `proxy.ts` like all of `/admin`.
+ *
+ * Wrapped in Payload's `DefaultTemplate` so it renders inside the standard admin
+ * chrome (nav sidebar + header), cohesive with the rest of the panel.
  */
-export async function ThemeView() {
-  const payload = await getPayload({ config });
-  const g = (await payload.findGlobal({
+export async function ThemeView({
+  initPageResult,
+  params,
+  searchParams,
+}: AdminViewServerProps) {
+  const { req } = initPageResult;
+  const g = (await req.payload.findGlobal({
     slug: "theme-settings",
     depth: 1,
   })) as unknown as {
@@ -79,5 +86,18 @@ export async function ThemeView() {
     shadow: { ...DEFAULT_SHADOW, ...(g.shadow ?? {}) },
   };
 
-  return <ThemeEditor initial={initial} />;
+  return (
+    <DefaultTemplate
+      i18n={req.i18n}
+      locale={initPageResult.locale}
+      params={params}
+      payload={req.payload}
+      permissions={initPageResult.permissions}
+      searchParams={searchParams}
+      user={req.user ?? undefined}
+      visibleEntities={initPageResult.visibleEntities}
+    >
+      <ThemeEditor initial={initial} />
+    </DefaultTemplate>
+  );
 }
