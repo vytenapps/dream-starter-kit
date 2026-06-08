@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import config from "@payload-config";
 import { getPayload } from "payload";
 
@@ -182,18 +183,26 @@ export async function getSiteSettings(): Promise<SiteSetting> {
 }
 
 /**
+ * The raw theme-settings global, fetched once per request and shared by all
+ * theme/branding readers (<ThemeStyle />, the (app) layout's branding, and the
+ * route metadata). `cache` dedupes so a single page render hits Payload once,
+ * not three times — keeping the global read off the critical render path.
+ */
+const themeGlobal = cache(async () =>
+  (await client()).findGlobal({ slug: "theme-settings", depth: 1 }),
+);
+
+/**
  * The site-wide shadcn theme (theme-settings global). Read by <ThemeStyle /> in
  * both the front end and the Payload admin. Degrades to `null` if the CMS isn't
  * reachable/migrated — the serializer then falls back to the built-in defaults,
  * so the app is never unthemed.
  */
 export function getThemeSettings(): Promise<ThemeSettingsInput | null> {
-  return safe(async () => {
-    const payload = await client();
-    return (await payload.findGlobal({
-      slug: "theme-settings",
-    })) as unknown as ThemeSettingsInput;
-  }, null);
+  return safe(
+    async () => (await themeGlobal()) as unknown as ThemeSettingsInput,
+    null,
+  );
 }
 
 export interface Branding {
@@ -216,11 +225,7 @@ const mediaUrl = (v: unknown): string | null =>
 export function getBranding(): Promise<Branding> {
   return safe(
     async () => {
-      const payload = await client();
-      const g = (await payload.findGlobal({
-        slug: "theme-settings",
-        depth: 1,
-      })) as unknown as {
+      const g = (await themeGlobal()) as unknown as {
         appName?: string | null;
         appIcon?: unknown;
         logoLight?: unknown;
