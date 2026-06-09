@@ -95,15 +95,18 @@ export default function Navbar({
               ),
             )}
             <Sheet>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0 md:hidden"
-                >
-                  <Menu className="size-5" />
-                  <span className="sr-only">Toggle navigation menu</span>
-                </Button>
+              {/* Style the radix trigger directly instead of `asChild` + <Button>:
+                  radix Slot cloning a component child (Button) doesn't render on
+                  the server in this radix-ui + React 19 setup, so the trigger was
+                  absent from SSR HTML and hydration mismatched on every page. */}
+              <SheetTrigger
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "icon" }),
+                  "shrink-0 md:hidden",
+                )}
+              >
+                <Menu className="size-5" />
+                <span className="sr-only">Toggle navigation menu</span>
               </SheetTrigger>
               <SheetContent side="right">
                 <SheetTitle className="sr-only">Navigation menu</SheetTitle>

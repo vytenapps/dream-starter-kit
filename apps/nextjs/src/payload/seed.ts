@@ -327,6 +327,10 @@ export async function seedCmsContent(
             title: "Welcome to the kit",
             slug: "welcome-to-the-kit",
             excerpt: "Your content-driven starter is ready to extend.",
+            body: richText([
+              "Welcome to the Dream Starter Kit. This article is demo content seeded into the Payload CMS so the blog renders end to end on a fresh clone.",
+              "Edit or delete it from the admin at /admin, then publish your own posts. Articles support a hero image, an excerpt and this rich-text body.",
+            ]),
             author: authorId,
             publishedAt: "2026-01-01T00:00:00.000Z",
             _status: "published",
@@ -339,6 +343,10 @@ export async function seedCmsContent(
             slug: "modeling-content-in-payload",
             excerpt:
               "Articles, events, media and more — all in the cms schema.",
+            body: richText([
+              "Payload CMS owns the cms Postgres schema and powers every editorial collection in this kit: articles, events, videos, photos, audio and locations.",
+              "Each collection is a thin config file under src/payload/collections. Add a field, run pnpm cms:gen-types, and it flows straight through to the typed web and mobile screens.",
+            ]),
             author: authorId,
             publishedAt: "2026-01-02T00:00:00.000Z",
             _status: "published",
@@ -355,6 +363,10 @@ export async function seedCmsContent(
             name: "Demo HQ",
             slug: "demo-hq",
             address: "123 Demo St",
+            description: richText([
+              "Demo HQ is a sample location record. Locations pair an address with a rich-text description — use them for stores, venues or offices.",
+              "Replace this with your own places from the admin, or delete the locations collection if your product doesn't need it.",
+            ]),
             _status: "published",
           },
         });
@@ -369,6 +381,10 @@ export async function seedCmsContent(
             title: "Launch day",
             slug: "launch-day",
             startsAt: "2026-02-01T18:00:00.000Z",
+            description: richText([
+              "Launch day is a demo event. Events carry a start time and a rich-text description for the agenda, location and details.",
+              "This one is seeded so the events list and detail pages render out of the box — edit or remove it from the admin.",
+            ]),
             _status: "published",
           },
         });
