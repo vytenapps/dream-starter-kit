@@ -49,6 +49,10 @@ export default buildConfig({
       ],
     },
     components: {
+      // Replace Payload's default mark in the admin chrome (step-nav home icon)
+      // with the brand favicon, same as the public header/footer. See
+      // payload/components/BrandIcon.tsx.
+      graphics: { Icon: "~/payload/components/BrandIcon#BrandIcon" },
       // On first boot (no content yet) this redirects the freshly-created admin
       // to /cms-setup, which seeds demo content with a progress bar. Self-
       // disables once the CMS has content. See payload/components/SeedGate.tsx.
