@@ -208,10 +208,8 @@ export async function getSiteSettings(): Promise<SiteSetting> {
  */
 const themeGlobal = cache(async () => {
   try {
-    return await (await client()).findGlobal({
-      slug: "theme-settings",
-      depth: 1,
-    });
+    const payload = await client();
+    return await payload.findGlobal({ slug: "theme-settings", depth: 1 });
   } catch {
     return null;
   }
