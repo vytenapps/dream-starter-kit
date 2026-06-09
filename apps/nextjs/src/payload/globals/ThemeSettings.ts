@@ -71,13 +71,12 @@ export const ThemeSettings: GlobalConfig = {
               maxLength: 100,
               admin: {
                 description:
-                  "Display name shown in the app shell and tab title. Defaults to “Dream”.",
+                  "Display name shown in the app shell and tab title.",
               },
             },
             linkField("brandLink", {
               label: "Brand link",
-              description:
-                "Where the header logo/wordmark links to. Defaults to the home page (/). Supports internal paths and external URLs.",
+              description: "Where the header logo/wordmark links to.",
             }),
             {
               name: "appIcon",

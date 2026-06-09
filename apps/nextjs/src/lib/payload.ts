@@ -231,7 +231,7 @@ export function getThemeSettings(): Promise<ThemeSettingsInput | null> {
 /** A link resolved from the reusable `linkField` group (see payload/fields/link). */
 export interface ResolvedLink {
   url: string;
-  /** True when the link points to another origin (`type: "external"`). */
+  /** True when the link points off-site (auto-detected from the url). */
   external: boolean;
   /** Whether to open in a new tab (`target="_blank"`). */
   newTab: boolean;
@@ -251,22 +251,22 @@ const mediaUrl = (v: unknown): string | null =>
     ? ((v as { url?: string | null }).url ?? null)
     : null;
 
+/** True when a url points off-site: has a scheme (https:, mailto:, …) or is protocol-relative. */
+const isExternalUrl = (url: string): boolean =>
+  /^[a-z][a-z0-9+.-]*:/i.test(url) || url.startsWith("//");
+
 /**
  * Normalize a stored `linkField` group into a `ResolvedLink`. A blank url falls
- * back to `fallbackUrl` (default home). External links default to opening in a
- * new tab unless explicitly turned off.
+ * back to `fallbackUrl` (default home). Internal vs. external is auto-detected
+ * from the url itself.
  */
 const resolveLink = (v: unknown, fallbackUrl = "/"): ResolvedLink => {
-  const g = (v ?? {}) as {
-    type?: string | null;
-    url?: string | null;
-    newTab?: boolean | null;
-  };
+  const g = (v ?? {}) as { url?: string | null; newTab?: boolean | null };
   const url = g.url?.trim();
-  const external = g.type === "external";
+  const resolved = url?.length ? url : fallbackUrl;
   return {
-    url: url?.length ? url : fallbackUrl,
-    external,
+    url: resolved,
+    external: isExternalUrl(resolved),
     newTab: g.newTab ?? false,
   };
 };

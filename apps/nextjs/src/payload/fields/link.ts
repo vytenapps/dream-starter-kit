@@ -1,10 +1,11 @@
 import type { Field } from "payload";
 
 /**
- * A reusable, optional link group supporting both internal and external links.
+ * A reusable, optional link group.
  *
- * - `type` — "internal" (a path on this site) or "external" (another origin).
- * - `url`  — the path (e.g. `/pricing`) or full URL (e.g. `https://example.com`).
+ * - `url` — an internal path (e.g. `/pricing`) or a full external URL
+ *   (e.g. `https://example.com`). Internal vs. external is auto-detected from
+ *   the value by `resolveLink()` — no manual toggle.
  * - `newTab` — open in a new tab (`target="_blank"` + safe `rel`).
  *
  * Resolve the stored value with `resolveLink()` in `lib/payload.ts`, which
@@ -18,40 +19,23 @@ export const linkField = (
   type: "group",
   label: options.label ?? "Link",
   admin: {
-    description:
-      options.description ??
-      "Optional link. Internal points to a path on this site; external to another URL.",
+    description: options.description ?? "Optional link.",
   },
   fields: [
     {
-      type: "row",
-      fields: [
-        {
-          name: "type",
-          type: "radio",
-          defaultValue: "internal",
-          options: [
-            { label: "Internal", value: "internal" },
-            { label: "External", value: "external" },
-          ],
-          admin: { layout: "horizontal", width: "50%" },
-        },
-        {
-          name: "newTab",
-          type: "checkbox",
-          label: "Open in new tab",
-          defaultValue: false,
-          admin: { width: "50%" },
-        },
-      ],
-    },
-    {
       name: "url",
       type: "text",
+      label: "URL",
       admin: {
         description:
           "Internal path (e.g. /pricing) or full external URL (https://example.com).",
       },
+    },
+    {
+      name: "newTab",
+      type: "checkbox",
+      label: "Open in new tab",
+      defaultValue: false,
     },
   ],
 });
