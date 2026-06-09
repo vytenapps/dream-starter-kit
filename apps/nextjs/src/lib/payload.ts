@@ -48,6 +48,7 @@ export function getPage(slug: string): Promise<Page | null> {
     const { docs } = await payload.find({
       collection: "pages",
       where: publishedSlug(slug),
+      depth: 2,
       limit: 1,
     });
     return docs[0] ?? null;

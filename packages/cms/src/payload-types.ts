@@ -13,53 +13,53 @@
  * via the `definition` "supportedTimezones".
  */
 export type SupportedTimezones =
-  | "Pacific/Midway"
-  | "Pacific/Niue"
-  | "Pacific/Honolulu"
-  | "Pacific/Rarotonga"
-  | "America/Anchorage"
-  | "Pacific/Gambier"
-  | "America/Los_Angeles"
-  | "America/Tijuana"
-  | "America/Denver"
-  | "America/Phoenix"
-  | "America/Chicago"
-  | "America/Guatemala"
-  | "America/New_York"
-  | "America/Bogota"
-  | "America/Caracas"
-  | "America/Santiago"
-  | "America/Buenos_Aires"
-  | "America/Sao_Paulo"
-  | "Atlantic/South_Georgia"
-  | "Atlantic/Azores"
-  | "Atlantic/Cape_Verde"
-  | "Europe/London"
-  | "Europe/Berlin"
-  | "Africa/Lagos"
-  | "Europe/Athens"
-  | "Africa/Cairo"
-  | "Europe/Moscow"
-  | "Asia/Riyadh"
-  | "Asia/Dubai"
-  | "Asia/Baku"
-  | "Asia/Karachi"
-  | "Asia/Tashkent"
-  | "Asia/Calcutta"
-  | "Asia/Dhaka"
-  | "Asia/Almaty"
-  | "Asia/Jakarta"
-  | "Asia/Bangkok"
-  | "Asia/Shanghai"
-  | "Asia/Singapore"
-  | "Asia/Tokyo"
-  | "Asia/Seoul"
-  | "Australia/Brisbane"
-  | "Australia/Sydney"
-  | "Pacific/Guam"
-  | "Pacific/Noumea"
-  | "Pacific/Auckland"
-  | "Pacific/Fiji";
+  | 'Pacific/Midway'
+  | 'Pacific/Niue'
+  | 'Pacific/Honolulu'
+  | 'Pacific/Rarotonga'
+  | 'America/Anchorage'
+  | 'Pacific/Gambier'
+  | 'America/Los_Angeles'
+  | 'America/Tijuana'
+  | 'America/Denver'
+  | 'America/Phoenix'
+  | 'America/Chicago'
+  | 'America/Guatemala'
+  | 'America/New_York'
+  | 'America/Bogota'
+  | 'America/Caracas'
+  | 'America/Santiago'
+  | 'America/Buenos_Aires'
+  | 'America/Sao_Paulo'
+  | 'Atlantic/South_Georgia'
+  | 'Atlantic/Azores'
+  | 'Atlantic/Cape_Verde'
+  | 'Europe/London'
+  | 'Europe/Berlin'
+  | 'Africa/Lagos'
+  | 'Europe/Athens'
+  | 'Africa/Cairo'
+  | 'Europe/Moscow'
+  | 'Asia/Riyadh'
+  | 'Asia/Dubai'
+  | 'Asia/Baku'
+  | 'Asia/Karachi'
+  | 'Asia/Tashkent'
+  | 'Asia/Calcutta'
+  | 'Asia/Dhaka'
+  | 'Asia/Almaty'
+  | 'Asia/Jakarta'
+  | 'Asia/Bangkok'
+  | 'Asia/Shanghai'
+  | 'Asia/Singapore'
+  | 'Asia/Tokyo'
+  | 'Asia/Seoul'
+  | 'Australia/Brisbane'
+  | 'Australia/Sydney'
+  | 'Pacific/Guam'
+  | 'Pacific/Noumea'
+  | 'Pacific/Auckland'
+  | 'Pacific/Fiji';
 
 export interface Config {
   auth: {
@@ -76,10 +76,10 @@ export interface Config {
     photos: Photo;
     locations: Location;
     pages: Page;
-    "payload-kv": PayloadKv;
-    "payload-locked-documents": PayloadLockedDocument;
-    "payload-preferences": PayloadPreference;
-    "payload-migrations": PayloadMigration;
+    'payload-kv': PayloadKv;
+    'payload-locked-documents': PayloadLockedDocument;
+    'payload-preferences': PayloadPreference;
+    'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {};
   collectionsSelect: {
@@ -92,28 +92,22 @@ export interface Config {
     photos: PhotosSelect<false> | PhotosSelect<true>;
     locations: LocationsSelect<false> | LocationsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
-    "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
-    "payload-locked-documents":
-      | PayloadLockedDocumentsSelect<false>
-      | PayloadLockedDocumentsSelect<true>;
-    "payload-preferences":
-      | PayloadPreferencesSelect<false>
-      | PayloadPreferencesSelect<true>;
-    "payload-migrations":
-      | PayloadMigrationsSelect<false>
-      | PayloadMigrationsSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
+    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
+    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
     defaultIDType: number;
   };
   fallbackLocale: null;
   globals: {
-    "site-settings": SiteSetting;
-    "theme-settings": ThemeSetting;
+    'site-settings': SiteSetting;
+    'theme-settings': ThemeSetting;
   };
   globalsSelect: {
-    "site-settings": SiteSettingsSelect<false> | SiteSettingsSelect<true>;
-    "theme-settings": ThemeSettingsSelect<false> | ThemeSettingsSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'theme-settings': ThemeSettingsSelect<false> | ThemeSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -155,10 +149,10 @@ export interface User {
    * Linked Supabase auth user id (managed by the SSO bridge).
    */
   supabaseUserId?: string | null;
-  role: "admin" | "editor";
+  role: 'admin' | 'editor';
   updatedAt: string;
   createdAt: string;
-  collection: "users";
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -224,8 +218,8 @@ export interface Article {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -244,7 +238,7 @@ export interface Article {
   };
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -262,8 +256,8 @@ export interface Event {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -275,7 +269,7 @@ export interface Event {
   image?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -296,8 +290,8 @@ export interface Location {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -306,7 +300,7 @@ export interface Location {
   image?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -317,7 +311,7 @@ export interface Video {
   title: string;
   slug: string;
   description?: string | null;
-  sourceType: "url" | "upload";
+  sourceType: 'url' | 'upload';
   url?: string | null;
   file?: (number | null) | Media;
   thumbnail?: (number | null) | Media;
@@ -327,7 +321,7 @@ export interface Video {
   duration?: number | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -345,7 +339,7 @@ export interface Audio {
   duration?: number | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -366,7 +360,7 @@ export interface Photo {
     | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -376,21 +370,7 @@ export interface Page {
   id: number;
   title: string;
   slug: string;
-  body?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
+  layout?: (HeroBlock | ItemsBlock | LogosBlock | StatsBlock | CTABlock | FAQBlock | ProseBlock)[] | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -401,7 +381,183 @@ export interface Page {
   };
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  title: string;
+  description?: string | null;
+  /**
+   * Small pill above the title.
+   */
+  badgeText?: string | null;
+  badgeLinkText?: string | null;
+  badgeLinkHref?: string | null;
+  buttons?:
+    | {
+        text: string;
+        href: string;
+        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Hero screenshot (light mode).
+   */
+  mockupLight?: (number | null) | Media;
+  /**
+   * Optional dark-mode variant of the screenshot.
+   */
+  mockupDark?: (number | null) | Media;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ItemsBlock".
+ */
+export interface ItemsBlock {
+  title?: string | null;
+  items?:
+    | {
+        title: string;
+        description: string;
+        /**
+         * Optional lucide icon.
+         */
+        icon?:
+          | (
+              | 'Rocket'
+              | 'Zap'
+              | 'ShieldCheck'
+              | 'Sparkles'
+              | 'Star'
+              | 'Heart'
+              | 'Globe'
+              | 'Code'
+              | 'Layers'
+              | 'Smartphone'
+              | 'Palette'
+              | 'Lock'
+              | 'Check'
+              | 'Cloud'
+              | 'Bell'
+              | 'Settings'
+              | 'Users'
+              | 'ChartBar'
+              | 'Search'
+              | 'Mail'
+            )
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'items';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LogosBlock".
+ */
+export interface LogosBlock {
+  title?: string | null;
+  badgeText?: string | null;
+  logos?:
+    | {
+        name: string;
+        /**
+         * Optional logo image; falls back to the name.
+         */
+        image?: (number | null) | Media;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'logos';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StatsBlock".
+ */
+export interface StatsBlock {
+  items?:
+    | {
+        label?: string | null;
+        value: string;
+        suffix?: string | null;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'stats';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CTABlock".
+ */
+export interface CTABlock {
+  title: string;
+  buttons?:
+    | {
+        text: string;
+        href: string;
+        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'cta';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FAQBlock".
+ */
+export interface FAQBlock {
+  title?: string | null;
+  items?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'faq';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ProseBlock".
+ */
+export interface ProseBlock {
+  title?: string | null;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'prose';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -428,44 +584,44 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: "users";
+        relationTo: 'users';
         value: number | User;
       } | null)
     | ({
-        relationTo: "media";
+        relationTo: 'media';
         value: number | Media;
       } | null)
     | ({
-        relationTo: "articles";
+        relationTo: 'articles';
         value: number | Article;
       } | null)
     | ({
-        relationTo: "events";
+        relationTo: 'events';
         value: number | Event;
       } | null)
     | ({
-        relationTo: "videos";
+        relationTo: 'videos';
         value: number | Video;
       } | null)
     | ({
-        relationTo: "audio";
+        relationTo: 'audio';
         value: number | Audio;
       } | null)
     | ({
-        relationTo: "photos";
+        relationTo: 'photos';
         value: number | Photo;
       } | null)
     | ({
-        relationTo: "locations";
+        relationTo: 'locations';
         value: number | Location;
       } | null)
     | ({
-        relationTo: "pages";
+        relationTo: 'pages';
         value: number | Page;
       } | null);
   globalSlug?: string | null;
   user: {
-    relationTo: "users";
+    relationTo: 'users';
     value: number | User;
   };
   updatedAt: string;
@@ -478,7 +634,7 @@ export interface PayloadLockedDocument {
 export interface PayloadPreference {
   id: number;
   user: {
-    relationTo: "users";
+    relationTo: 'users';
     value: number | User;
   };
   key?: string | null;
@@ -684,7 +840,17 @@ export interface LocationsSelect<T extends boolean = true> {
 export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
-  body?: T;
+  layout?:
+    | T
+    | {
+        hero?: T | HeroBlockSelect<T>;
+        items?: T | ItemsBlockSelect<T>;
+        logos?: T | LogosBlockSelect<T>;
+        stats?: T | StatsBlockSelect<T>;
+        cta?: T | CTABlockSelect<T>;
+        faq?: T | FAQBlockSelect<T>;
+        prose?: T | ProseBlockSelect<T>;
+      };
   meta?:
     | T
     | {
@@ -695,6 +861,123 @@ export interface PagesSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock_select".
+ */
+export interface HeroBlockSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  badgeText?: T;
+  badgeLinkText?: T;
+  badgeLinkHref?: T;
+  buttons?:
+    | T
+    | {
+        text?: T;
+        href?: T;
+        variant?: T;
+        id?: T;
+      };
+  mockupLight?: T;
+  mockupDark?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ItemsBlock_select".
+ */
+export interface ItemsBlockSelect<T extends boolean = true> {
+  title?: T;
+  items?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        icon?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LogosBlock_select".
+ */
+export interface LogosBlockSelect<T extends boolean = true> {
+  title?: T;
+  badgeText?: T;
+  logos?:
+    | T
+    | {
+        name?: T;
+        image?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StatsBlock_select".
+ */
+export interface StatsBlockSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        label?: T;
+        value?: T;
+        suffix?: T;
+        description?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CTABlock_select".
+ */
+export interface CTABlockSelect<T extends boolean = true> {
+  title?: T;
+  buttons?:
+    | T
+    | {
+        text?: T;
+        href?: T;
+        variant?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FAQBlock_select".
+ */
+export interface FAQBlockSelect<T extends boolean = true> {
+  title?: T;
+  items?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ProseBlock_select".
+ */
+export interface ProseBlockSelect<T extends boolean = true> {
+  title?: T;
+  content?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -916,6 +1199,14 @@ export interface ThemeSetting {
      * --sidebar-ring · any CSS color (oklch recommended)
      */
     sidebarRing?: string | null;
+    /**
+     * --brand · any CSS color (oklch recommended)
+     */
+    brand?: string | null;
+    /**
+     * --brand-foreground · any CSS color (oklch recommended)
+     */
+    brandForeground?: string | null;
   };
   colorsDark?: {
     /**
@@ -1046,19 +1337,27 @@ export interface ThemeSetting {
      * --sidebar-ring · any CSS color (oklch recommended)
      */
     sidebarRing?: string | null;
+    /**
+     * --brand · any CSS color (oklch recommended)
+     */
+    brand?: string | null;
+    /**
+     * --brand-foreground · any CSS color (oklch recommended)
+     */
+    brandForeground?: string | null;
   };
   /**
    * Body / UI font (--font-sans)
    */
-  fontSans?: ("geist" | "inter" | "system") | null;
+  fontSans?: ('geist' | 'inter' | 'system') | null;
   /**
    * Serif font (--font-serif)
    */
-  fontSerif?: ("merriweather" | "lora" | "system") | null;
+  fontSerif?: ('merriweather' | 'lora' | 'system') | null;
   /**
    * Monospace font (--font-mono)
    */
-  fontMono?: ("geist-mono" | "jetbrains-mono") | null;
+  fontMono?: ('geist-mono' | 'jetbrains-mono') | null;
   /**
    * Base letter spacing, e.g. 0rem (--tracking-normal)
    */
@@ -1082,7 +1381,7 @@ export interface ThemeSetting {
     offsetX?: number | null;
     offsetY?: number | null;
   };
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1159,6 +1458,8 @@ export interface ThemeSettingsSelect<T extends boolean = true> {
         sidebarAccentForeground?: T;
         sidebarBorder?: T;
         sidebarRing?: T;
+        brand?: T;
+        brandForeground?: T;
       };
   colorsDark?:
     | T
@@ -1195,6 +1496,8 @@ export interface ThemeSettingsSelect<T extends boolean = true> {
         sidebarAccentForeground?: T;
         sidebarBorder?: T;
         sidebarRing?: T;
+        brand?: T;
+        brandForeground?: T;
       };
   fontSans?: T;
   fontSerif?: T;
@@ -1225,7 +1528,7 @@ export interface CollectionsWidget {
   data?: {
     [k: string]: unknown;
   };
-  width: "full";
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
