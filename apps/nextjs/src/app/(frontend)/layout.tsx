@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import {
   Geist,
   Geist_Mono,
@@ -8,9 +7,10 @@ import {
   Lora,
   Merriweather,
 } from "next/font/google";
+import Script from "next/script";
 
 import { cn } from "@acme/ui";
-import { ThemeProvider, themeDetectorScript } from "@acme/ui/theme";
+import { themeDetectorScript, ThemeProvider } from "@acme/ui/theme";
 import { Toaster } from "@acme/ui/toast";
 
 import { Providers } from "~/app/providers";
