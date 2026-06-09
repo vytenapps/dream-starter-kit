@@ -64,10 +64,10 @@ dream-starter-kit/
 │  ├─ ui/                    # shared UI tokens/primitives + theme/toast
 │  └─ config/                # zod env schema + constants (DEFAULT_AI_MODEL, PLANS, rate limit)
 ├─ supabase/
-│  ├─ migrations/            # SQL schema + RLS policies (implements ERD.md)
+│  ├─ migrations/            # SQL schema + RLS policies (implements ERD.md) — ships as ONE baseline migration
 │  ├─ payload/               # 00_cms_role.sql — provisions the `cms` schema + payload_cms role
 │  ├─ functions/             # edge functions: stripe-webhook, delete-account, process-reminders
-│  ├─ seed.sql               # demo data (two users) for local dev + tests
+│  ├─ seed.sql               # ships EMPTY (first signup becomes the founder); add your own demo rows
 │  └─ config.toml            # local stack + auth configuration
 ├─ tooling/                  # eslint, prettier, tailwind, tsconfig, rls-tests, web-e2e, CI setup, scripts
 ├─ .github/workflows/        # CI: lint, format, typecheck, test, license, integration
@@ -135,7 +135,10 @@ Built and shipped with EAS ([§4.11](#411-build--ship)).
 One Supabase project provides Postgres, **Supabase Auth** (email/password, magic
 link, Google & Apple OAuth), Storage, and **Edge Functions** (Deno). The schema
 and the canonical security pattern live in [`ERD.md`](./ERD.md) and are applied
-by the SQL files in `supabase/migrations/`.
+by the SQL files in `supabase/migrations/`. The kit ships the whole base schema
+as a **single baseline migration** (`20260609000001_initial.sql` — identity,
+orgs, billing, engagement, files/storage, chat, CMS staff flag); your features
+extend it with **new** migrations (append-only — never edit a shipped one).
 
 Three edge functions run server-side with the service-role key:
 - **`stripe-webhook`** — verifies Stripe signatures and syncs billing state.
@@ -215,7 +218,7 @@ separate from the Supabase app data:
   nothing on `public`/`auth`) — **not** the service-role key, and server-only. The
   role + schema are created by `supabase/payload/00_cms_role.sql`, applied
   automatically on `supabase db reset` (wired via `config.toml`
-  `[db.migrations].schema_paths`); on hosted Supabase you run it **once** in the SQL
+  `[db.seed].sql_paths`); on hosted Supabase you run it **once** in the SQL
   editor. Payload's own tables are created and migrated by Payload (`pnpm cms:migrate`).
 - **Single sign-on from Supabase Auth.** There is **one** login. Payload doesn't keep
   its own password — a custom auth strategy (`apps/nextjs/src/payload/auth/supabase-strategy.ts`,

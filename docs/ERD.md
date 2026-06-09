@@ -6,7 +6,9 @@ The base schema every cloned app starts from. It's deliberately generic: a unive
 access is enforced at the database.
 
 > The SQL in `supabase/migrations/` is the source of truth for exact columns and
-> constraints; this document is the readable overview.
+> constraints; this document is the readable overview. The entire base schema ships
+> as a **single baseline migration** (`20260609000001_initial.sql`); extend it with
+> **new** migrations only — never edit the shipped baseline.
 
 > **How to use it:** keep the core (identity + billing), delete the parts your idea doesn't need
 > (e.g. drop the org layer for a single-user app, drop chat if there's no AI), and add your own
@@ -243,4 +245,4 @@ Rules of thumb for the Supabase side:
 - **Marketplace** → add a transactions/`orders` table and model the two sides with `memberships` roles (buyer/seller); RLS lets each side see only their own orders.
 - **No AI** → drop `chat_threads` / `chat_messages`. **No uploads** → drop `files`. **No reminders** → drop `reminders` / `push_tokens`.
 
-This base lives in `supabase/migrations/` (schema + the RLS policies above) and seeds demo rows in `supabase/seed.sql`.
+This base lives in `supabase/migrations/20260609000001_initial.sql` (schema + the RLS policies above). `supabase/seed.sql` ships **empty** — the first signup becomes the founder/staff user; add your own demo rows there as you build.

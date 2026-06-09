@@ -104,7 +104,7 @@ A feature is a vertical slice through these layers. Build them in this order:
 | # | Layer | Lives in | What goes here |
 |---|---|---|---|
 | 1 | **Schema + RLS** | `supabase/migrations/*.sql` | the table(s), RLS policies, FK indexes |
-| 2 | **Seed** | `supabase/seed.sql` | demo rows for **two** users (so isolation is testable) |
+| 2 | **Seed** | `supabase/seed.sql` | optional demo rows (ships **empty**; rls-tests provision their own users) |
 | 3 | **DB types** | `packages/api` (generated) | `pnpm db:gen-types` — never hand-edit |
 | 4 | **Validators** | `packages/app/src/validators` | zod schemas for create/update input |
 | 5 | **Hooks** | `packages/app/src/hooks` | react-query hooks over the typed client |
@@ -146,7 +146,8 @@ create policy "tasks owned by user"
 create index tasks_user_id_idx on public.tasks (user_id);
 ```
 
-Add demo rows for **both** seed users in `supabase/seed.sql`, then `supabase db reset`.
+Optionally add demo rows in `supabase/seed.sql` (it ships empty — there are no
+seed users; `tooling/rls-tests` provisions its own), then `supabase db reset`.
 
 **2. Types.** `pnpm db:gen-types` regenerates `packages/api`'s `Database` type.
 Use `Tables<'tasks'>`, `TablesInsert<'tasks'>`, `TablesUpdate<'tasks'>` downstream.
