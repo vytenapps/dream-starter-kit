@@ -11,6 +11,7 @@ const BrandingContext = React.createContext<Branding>({
   appIconUrl: null,
   logoLightUrl: null,
   logoDarkUrl: null,
+  brandLink: { url: "/", external: false, newTab: false },
 });
 
 /** Seeds branding (from the theme-settings global) into client components like

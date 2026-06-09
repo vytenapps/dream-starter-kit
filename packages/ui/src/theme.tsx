@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { DesktopIcon, MoonIcon, SunIcon } from "@radix-ui/react-icons";
+import { MoonIcon, SunIcon } from "@radix-ui/react-icons";
 import * as z from "zod/v4";
 
 import { Button } from "./button";
@@ -162,9 +162,11 @@ export function ThemeToggle() {
           size="icon"
           className="[&>svg]:absolute [&>svg]:size-5 [&>svg]:scale-0"
         >
-          <SunIcon className="light:scale-100! auto:scale-0!" />
-          <MoonIcon className="auto:scale-0! dark:scale-100!" />
-          <DesktopIcon className="auto:scale-100!" />
+          {/* In "auto" mode the root carries both the resolved theme class
+              (`light`/`dark`) and `auto`, so the sun/moon track the live system
+              setting rather than showing a generic monitor icon. */}
+          <SunIcon className="light:scale-100!" />
+          <MoonIcon className="dark:scale-100!" />
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>

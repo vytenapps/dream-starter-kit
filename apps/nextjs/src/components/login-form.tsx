@@ -180,8 +180,9 @@ export function LoginForm({
         </FieldGroup>
       </form>
       <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        By clicking continue, you agree to our{" "}
+        <a href="/terms">Terms of Service</a> and{" "}
+        <a href="/privacy">Privacy Policy</a>.
       </FieldDescription>
     </div>
   );

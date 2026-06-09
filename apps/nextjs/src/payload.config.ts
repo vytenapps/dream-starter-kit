@@ -27,6 +27,27 @@ export default buildConfig({
   admin: {
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname, "app/(payload)") },
+    // Favicon set for the /admin chrome (same RealFaviconGenerator output in
+    // /public). Payload's meta extends Next.js Metadata, so we declare the SVG +
+    // PNG + apple-touch icons explicitly rather than relying on Payload's default.
+    meta: {
+      titleSuffix: "· Admin",
+      icons: [
+        { rel: "icon", type: "image/x-icon", url: "/favicon.ico" },
+        { rel: "icon", type: "image/svg+xml", url: "/favicon.svg" },
+        {
+          rel: "icon",
+          type: "image/png",
+          sizes: "96x96",
+          url: "/favicon-96x96.png",
+        },
+        {
+          rel: "apple-touch-icon",
+          sizes: "180x180",
+          url: "/apple-touch-icon.png",
+        },
+      ],
+    },
     components: {
       // On first boot (no content yet) this redirects the freshly-created admin
       // to /cms-setup, which seeds demo content with a progress bar. Self-

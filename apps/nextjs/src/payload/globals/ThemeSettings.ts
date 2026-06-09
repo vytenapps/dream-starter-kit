@@ -14,6 +14,7 @@ import {
   FONT_SERIF_OPTIONS,
 } from "../../lib/theme/defaults";
 import { isAdmin, publishedOrAdmin } from "../access";
+import { linkField } from "../fields/link";
 
 const colorFields = (mode: "light" | "dark"): Field[] =>
   COLOR_TOKENS.map((token) => ({
@@ -70,9 +71,14 @@ export const ThemeSettings: GlobalConfig = {
               maxLength: 100,
               admin: {
                 description:
-                  "Display name shown in the app shell and tab title.",
+                  "Display name shown in the app shell and tab title. Defaults to “Dream”.",
               },
             },
+            linkField("brandLink", {
+              label: "Brand link",
+              description:
+                "Where the header logo/wordmark links to. Defaults to the home page (/). Supports internal paths and external URLs.",
+            }),
             {
               name: "appIcon",
               type: "upload",

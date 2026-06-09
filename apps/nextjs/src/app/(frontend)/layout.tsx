@@ -9,7 +9,7 @@ import {
 } from "next/font/google";
 
 import { cn } from "@acme/ui";
-import { ThemeProvider, ThemeToggle } from "@acme/ui/theme";
+import { ThemeProvider } from "@acme/ui/theme";
 import { Toaster } from "@acme/ui/toast";
 
 import { Providers } from "~/app/providers";
@@ -31,6 +31,21 @@ const siteUrl = getSiteUrl();
  */
 export async function generateMetadata(): Promise<Metadata> {
   const { appName, appIconUrl } = await getBranding();
+  // Static favicon set (RealFaviconGenerator output, in /public) used by default.
+  // When a CMS branding `appIcon` is uploaded it overrides the head <link> icons,
+  // so a cloner can rebrand from /admin/theme without touching code — the static
+  // PNGs/manifest stay as the baseline (Android PWA, legacy shortcut).
+  const icons: Metadata["icons"] = appIconUrl
+    ? { icon: appIconUrl, apple: appIconUrl }
+    : {
+        icon: [
+          { url: "/favicon.ico", sizes: "any" },
+          { url: "/favicon.svg", type: "image/svg+xml" },
+          { url: "/favicon-96x96.png", type: "image/png", sizes: "96x96" },
+        ],
+        shortcut: "/favicon.ico",
+        apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+      };
   return {
     metadataBase: new URL(siteUrl),
     title: { default: appName, template: `%s · ${appName}` },
@@ -48,7 +63,8 @@ export async function generateMetadata(): Promise<Metadata> {
       "Row-Level Security",
     ],
     authors: [{ name: "Vyten LLC" }],
-    ...(appIconUrl ? { icons: { icon: appIconUrl, apple: appIconUrl } } : {}),
+    icons,
+    manifest: "/site.webmanifest",
     openGraph: {
       type: "website",
       locale: "en_US",
@@ -112,9 +128,6 @@ export default function RootLayout(props: { children: React.ReactNode }) {
       >
         <ThemeProvider>
           <Providers>{props.children}</Providers>
-          <div className="absolute right-4 bottom-4">
-            <ThemeToggle />
-          </div>
           <Toaster />
         </ThemeProvider>
       </body>

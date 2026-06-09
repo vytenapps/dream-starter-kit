@@ -1111,9 +1111,20 @@ export interface SiteSetting {
 export interface ThemeSetting {
   id: number;
   /**
-   * Display name shown in the app shell and tab title.
+   * Display name shown in the app shell and tab title. Defaults to “Dream”.
    */
   appName?: string | null;
+  /**
+   * Where the header logo/wordmark links to. Defaults to the home page (/). Supports internal paths and external URLs.
+   */
+  brandLink?: {
+    type?: ("internal" | "external") | null;
+    newTab?: boolean | null;
+    /**
+     * Internal path (e.g. /pricing) or full external URL (https://example.com).
+     */
+    url?: string | null;
+  };
   /**
    * Square icon — used as the favicon (512×512 ideal).
    */
@@ -1507,6 +1518,13 @@ export interface SiteSettingsSelect<T extends boolean = true> {
  */
 export interface ThemeSettingsSelect<T extends boolean = true> {
   appName?: T;
+  brandLink?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        url?: T;
+      };
   appIcon?: T;
   logoLight?: T;
   logoDark?: T;
