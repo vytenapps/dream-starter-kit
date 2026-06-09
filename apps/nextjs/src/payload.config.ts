@@ -18,6 +18,7 @@ import { Users } from "./payload/collections/Users";
 import { Videos } from "./payload/collections/Videos";
 import { SiteSettings } from "./payload/globals/SiteSettings";
 import { ThemeSettings } from "./payload/globals/ThemeSettings";
+import { migrations } from "./payload/migrations";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -75,11 +76,15 @@ export default buildConfig({
     // Payload owns its own Postgres schema, isolated from the RLS-governed
     // `public` tables. It connects as the least-privilege `payload_cms` role.
     schemaName: "cms",
-    // Dev/CI auto-creates the cms tables (so a fresh clone needs no migration
-    // step — just `supabase start` + `pnpm cms:seed`). In production
-    // (NODE_ENV=production) push is OFF: generate & commit migrations with
-    // `pnpm cms:migrate:create`, then run `pnpm cms:migrate` on deploy.
+    // Dev/CI auto-creates the cms tables via dev "push" (so a fresh clone needs
+    // no migration step). In production (NODE_ENV=production) push is OFF; instead
+    // Payload runs `prodMigrations` automatically on first connect, so a fresh
+    // prod database self-provisions the cms schema on the first request — no
+    // separate `pnpm cms:migrate` deploy step required (it stays idempotent via
+    // the cms.payload_migrations ledger). After changing a collection, regenerate
+    // with `pnpm cms:migrate:create` and commit the new file in payload/migrations.
     push: process.env.NODE_ENV !== "production",
+    prodMigrations: migrations,
     migrationDir: path.resolve(dirname, "payload/migrations"),
   }),
   sharp,

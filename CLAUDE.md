@@ -214,8 +214,11 @@ pages, …), add a **Payload collection**, not a Supabase table. Content lives i
    `Articles.ts`). Set fields, `slug`, and `access` (e.g. published-or-admin reads).
 2. **Register it** in `apps/nextjs/src/payload.config.ts` (`collections: [...]`).
 3. **Types.** `pnpm cms:gen-types` regenerates Payload's types into `packages/cms`
-   (`@acme/cms`) — never hand-edit. Then `pnpm cms:migrate:create` + `pnpm cms:migrate`
-   to apply the schema change to the `cms` schema.
+   (`@acme/cms`) — never hand-edit. Then `pnpm cms:migrate:create` to generate a migration
+   under `apps/nextjs/src/payload/migrations` (generated — never hand-edit) and **commit
+   it**. Locally, dev-push (or `pnpm db:reset`, which now runs `cms:migrate`) applies it;
+   in production Payload runs committed migrations automatically on first boot via the
+   adapter's `prodMigrations`, so no manual `cms:migrate` deploy step is needed.
 4. **Web page.** Add a public RSC route under `apps/nextjs/src/app/(frontend)/(public)/`
    that fetches via Payload's **Local API** (`getPayload(...).find(...)`), for SEO.
 5. **Mobile.** Add a REST hook in `packages/app` (copy `use-content.ts`'s
