@@ -31,12 +31,12 @@ so repeated runs against the same DB don't collide.
 
 ## What's covered
 
-| Spec                    | Flow                                                                                             |
-| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| Spec                    | Flow                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `founder.setup.ts`      | Setup project (runs first): founder sign-up → `/cms-setup` seeds the CMS → `/admin`. Provisions the founder + seeded content the rest of the suite relies on. |
-| `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`). |
-| `auth.spec.ts`          | Sign up → dashboard; a signed-in user is bounced away from auth pages.                           |
-| `critical-path.spec.ts` | Sign up → schedule a reminder (the reference RLS-backed CRUD flow).                              |
+| `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`).                                                              |
+| `auth.spec.ts`          | Sign up → dashboard; a signed-in user is bounced away from auth pages.                                                                                        |
+| `critical-path.spec.ts` | Sign up → schedule a reminder (the reference RLS-backed CRUD flow).                                                                                           |
 
 ## Deliberately not covered here
 

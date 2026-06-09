@@ -27,7 +27,7 @@ test("founder sign-up seeds the CMS before /admin", async ({ page }) => {
   // /welcome routes the founder into the seed flow; a non-first sign-up lands on
   // the dashboard (a founder already existed — fine, one is present either way).
   await page.waitForURL(/\/(cms-setup|dashboard)/, { timeout: 15_000 });
-  if (/\/dashboard/.test(page.url())) return;
+  if (page.url().includes("/dashboard")) return;
 
   // The shadcn progress screen, then hand-off to /admin once content exists.
   // Seeding + the Payload admin bundle can be slow on a cold CI runner.
