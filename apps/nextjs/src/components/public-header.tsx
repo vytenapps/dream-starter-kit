@@ -16,7 +16,7 @@ const DEFAULT_NAV: NavItem[] = [
 
 const DEFAULT_ACTIONS: NavbarActionProps[] = [
   { text: "Sign in", href: "/sign-in", isButton: false },
-  { text: "Get started", href: "/sign-in", isButton: true, variant: "default" },
+  { text: "Get started", href: "/sign-up", isButton: true, variant: "default" },
 ];
 
 /**

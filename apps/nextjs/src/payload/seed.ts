@@ -126,7 +126,7 @@ export async function seedCmsContent(
               { label: "Sign in", url: "/sign-in", isButton: false },
               {
                 label: "Get started",
-                url: "/sign-in",
+                url: "/sign-up",
                 isButton: true,
                 variant: "default",
               },

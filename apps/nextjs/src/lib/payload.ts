@@ -198,10 +198,22 @@ export async function getSiteSettings(): Promise<SiteSetting> {
  * theme/branding readers (<ThemeStyle />, the (app) layout's branding, and the
  * route metadata). `cache` dedupes so a single page render hits Payload once,
  * not three times — keeping the global read off the critical render path.
+ *
+ * Resolves to `null` (never rejects) when the CMS is unreachable/unmigrated.
+ * This matters because the cached promise is SHARED by several readers: a
+ * rejected cached promise is retained by React's `cache()` without a synchronous
+ * rejection handler, surfacing as a noisy `unhandledRejection` on every request
+ * when Postgres/Payload is down. Swallowing here keeps the degraded path quiet;
+ * callers fall back to defaults via the `null` result.
  */
-const themeGlobal = cache(async () =>
-  (await client()).findGlobal({ slug: "theme-settings", depth: 1 }),
-);
+const themeGlobal = cache(async () => {
+  try {
+    const payload = await client();
+    return await payload.findGlobal({ slug: "theme-settings", depth: 1 });
+  } catch {
+    return null;
+  }
+});
 
 /**
  * The site-wide shadcn theme (theme-settings global). Read by <ThemeStyle /> in
@@ -236,7 +248,7 @@ const mediaUrl = (v: unknown): string | null =>
 export function getBranding(): Promise<Branding> {
   return safe(
     async () => {
-      const g = (await themeGlobal()) as unknown as {
+      const g = ((await themeGlobal()) ?? {}) as {
         appName?: string | null;
         appIcon?: unknown;
         logoLight?: unknown;
