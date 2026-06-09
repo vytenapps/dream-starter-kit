@@ -35,6 +35,11 @@ export default buildConfig({
       // <style> (from the theme-settings global) so the admin chrome follows the
       // same theme as the front end. See payload/components/ThemeStyleProvider.tsx.
       providers: ["~/payload/components/ThemeStyleProvider#ThemeStyleProvider"],
+      // Auth is SSO from Supabase (local strategy disabled), so Payload's default
+      // logout — which only clears the unused `payload-token` — is a no-op. Repoint
+      // the button at /cms-logout, which clears the Supabase session. See
+      // payload/components/LogoutButton.tsx and app/cms-logout/route.ts.
+      logout: { Button: "~/payload/components/LogoutButton#LogoutButton" },
     },
   },
   // Admin at /admin; REST API moved OFF /api to /cms-api so it never collides
