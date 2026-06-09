@@ -253,6 +253,20 @@ export const COLOR_TOKENS: ColorToken[] = [
     light: "oklch(0.533 0.236 264.19)",
     dark: "oklch(0.533 0.236 264.19)",
   },
+  {
+    field: "brand",
+    cssVar: "brand",
+    label: "Brand",
+    light: "oklch(0.533 0.236 264.19)",
+    dark: "oklch(0.6747 0.1492 264.19)",
+  },
+  {
+    field: "brandForeground",
+    cssVar: "brand-foreground",
+    label: "Brand foreground",
+    light: "oklch(0.7039 0.1825 264.19)",
+    dark: "oklch(0.8 0.12 264.19)",
+  },
 ];
 
 /** A font choice: maps a stored value to the CSS `font-family` stack to apply.

@@ -31,6 +31,10 @@
   --sidebar-accent-foreground: oklch(0.533 0.236 264.19);
   --sidebar-border: oklch(0.9155 0.0235 310.6964);
   --sidebar-ring: oklch(0.533 0.236 264.19);
+  /* Brand accent — the two endpoints Launch UI uses for glows + gradient text
+     (bg-brand, text-brand-foreground, from-brand/to-brand-foreground). */
+  --brand: oklch(0.533 0.236 264.19);
+  --brand-foreground: oklch(0.7039 0.1825 264.19);
   --radius: 0.75rem;
   --shadow-2xs: 0px 2px 10px 0px hsl(0 0% 0% / 0.03);
   --shadow-xs: 0px 2px 10px 0px hsl(0 0% 0% / 0.03);
@@ -88,6 +92,8 @@
     --sidebar-accent-foreground: oklch(0.6747 0.1492 264.19);
     --sidebar-border: oklch(0.2941 0.0175 310.1142);
     --sidebar-ring: oklch(0.533 0.236 264.19);
+    --brand: oklch(0.6747 0.1492 264.19);
+    --brand-foreground: oklch(0.8 0.12 264.19);
     --radius: 0.75rem;
     --shadow-2xs: 0px 2px 10px 0px hsl(0 0% 0% / 0.1);
     --shadow-xs: 0px 2px 10px 0px hsl(0 0% 0% / 0.1);
@@ -138,6 +144,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
 
   --font-sans: var(--font-sans);
   --font-serif: var(--font-serif);

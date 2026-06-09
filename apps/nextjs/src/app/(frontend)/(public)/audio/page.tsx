@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 
 import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+  ContentCard,
+  ContentEmpty,
+  ContentGrid,
+} from "~/components/content/content-card";
+import { PageHeader } from "~/components/content/page-header";
+import { Section } from "~/components/launch-ui/ui/section";
 import { listAudio } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
@@ -19,27 +20,23 @@ export default async function AudioPage() {
   const audio = await listAudio();
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">Audio</h1>
-
-      {audio.length > 0 ? (
-        <ul className="mt-8 grid gap-4">
-          {audio.map((track) => (
-            <li key={track.id}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">{track.title}</CardTitle>
-                  {track.description && (
-                    <CardDescription>{track.description}</CardDescription>
-                  )}
-                </CardHeader>
-              </Card>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-muted-foreground mt-8">No audio yet.</p>
-      )}
-    </main>
+    <>
+      <PageHeader title="Audio" description="Listen on the go." />
+      <Section className="pt-8 sm:pt-12 md:pt-16">
+        {audio.length > 0 ? (
+          <ContentGrid>
+            {audio.map((track) => (
+              <ContentCard
+                key={track.id}
+                title={track.title}
+                description={track.description}
+              />
+            ))}
+          </ContentGrid>
+        ) : (
+          <ContentEmpty>No audio yet.</ContentEmpty>
+        )}
+      </Section>
+    </>
   );
 }

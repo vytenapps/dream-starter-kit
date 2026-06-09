@@ -36,6 +36,8 @@ export const serverEnvSchema = z.object({
   PAYLOAD_DATABASE_URL: z.string().min(1).optional(),
   /** Payload encryption/JWT secret. Required once Payload is enabled. */
   PAYLOAD_SECRET: z.string().min(1).optional(),
+  /** Shared secret guarding the draft-preview entry route (`/next/preview`). */
+  PAYLOAD_PREVIEW_SECRET: z.string().min(1).optional(),
   // Supabase Storage (S3) — Payload media bucket (`cms-media`).
   S3_ENDPOINT: z.url().optional(),
   S3_REGION: z.string().min(1).optional(),

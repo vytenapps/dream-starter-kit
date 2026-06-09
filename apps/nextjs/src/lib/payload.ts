@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { draftMode } from "next/headers";
 import config from "@payload-config";
 import { getPayload } from "payload";
 
@@ -42,12 +43,22 @@ async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   }
 }
 
+/**
+ * A page by slug. When Next.js draft mode is enabled (Payload Live Preview via
+ * `/next/preview`), this returns the latest DRAFT and bypasses the published-only
+ * access control so editors can preview unpublished changes; otherwise it serves
+ * the published version only.
+ */
 export function getPage(slug: string): Promise<Page | null> {
   return safe(async () => {
+    const { isEnabled: draft } = await draftMode();
     const payload = await client();
     const { docs } = await payload.find({
       collection: "pages",
-      where: publishedSlug(slug),
+      where: draft ? { slug: { equals: slug } } : publishedSlug(slug),
+      draft,
+      overrideAccess: draft,
+      depth: 2,
       limit: 1,
     });
     return docs[0] ?? null;

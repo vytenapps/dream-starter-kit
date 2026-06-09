@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { DetailLayout } from "~/components/content/detail-layout";
 import { CmsRichText } from "~/components/rich-text";
 import { getLocation } from "~/lib/payload";
 
@@ -28,20 +29,27 @@ export default async function LocationPage({
   const location = await getLocation(slug);
   if (!location) notFound();
 
+  const image =
+    typeof location.image === "object" && location.image?.url
+      ? { url: location.image.url, alt: location.image.alt }
+      : null;
+
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">{location.name}</h1>
-      <dl className="text-muted-foreground mt-2 space-y-1 text-sm">
-        {location.address && <div>{location.address}</div>}
-        {location.latitude != null && location.longitude != null && (
-          <div>
-            {location.latitude}, {location.longitude}
-          </div>
-        )}
-      </dl>
-      <div className="mt-6">
-        <CmsRichText data={location.description} />
-      </div>
-    </main>
+    <DetailLayout
+      title={location.name}
+      image={image}
+      meta={
+        <dl className="space-y-1">
+          {location.address && <div>{location.address}</div>}
+          {location.latitude != null && location.longitude != null && (
+            <div>
+              {location.latitude}, {location.longitude}
+            </div>
+          )}
+        </dl>
+      }
+    >
+      <CmsRichText data={location.description} />
+    </DetailLayout>
   );
 }

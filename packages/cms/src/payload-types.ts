@@ -376,7 +376,187 @@ export interface Page {
   id: number;
   title: string;
   slug: string;
-  body?: {
+  layout?:
+    | (
+        | HeroBlock
+        | ItemsBlock
+        | LogosBlock
+        | StatsBlock
+        | CTABlock
+        | FAQBlock
+        | ProseBlock
+      )[]
+    | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ("draft" | "published") | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  title: string;
+  description?: string | null;
+  /**
+   * Small pill above the title.
+   */
+  badgeText?: string | null;
+  badgeLinkText?: string | null;
+  badgeLinkHref?: string | null;
+  buttons?:
+    | {
+        text: string;
+        href: string;
+        variant?: ("default" | "glow" | "outline" | "secondary") | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Hero screenshot (light mode).
+   */
+  mockupLight?: (number | null) | Media;
+  /**
+   * Optional dark-mode variant of the screenshot.
+   */
+  mockupDark?: (number | null) | Media;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: "hero";
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ItemsBlock".
+ */
+export interface ItemsBlock {
+  title?: string | null;
+  items?:
+    | {
+        title: string;
+        description: string;
+        /**
+         * Optional lucide icon.
+         */
+        icon?:
+          | (
+              | "Rocket"
+              | "Zap"
+              | "ShieldCheck"
+              | "Sparkles"
+              | "Star"
+              | "Heart"
+              | "Globe"
+              | "Code"
+              | "Layers"
+              | "Smartphone"
+              | "Palette"
+              | "Lock"
+              | "Check"
+              | "Cloud"
+              | "Bell"
+              | "Settings"
+              | "Users"
+              | "ChartBar"
+              | "Search"
+              | "Mail"
+            )
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: "items";
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LogosBlock".
+ */
+export interface LogosBlock {
+  title?: string | null;
+  badgeText?: string | null;
+  logos?:
+    | {
+        name: string;
+        /**
+         * Optional logo image; falls back to the name.
+         */
+        image?: (number | null) | Media;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: "logos";
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StatsBlock".
+ */
+export interface StatsBlock {
+  items?:
+    | {
+        label?: string | null;
+        value: string;
+        suffix?: string | null;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: "stats";
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CTABlock".
+ */
+export interface CTABlock {
+  title: string;
+  buttons?:
+    | {
+        text: string;
+        href: string;
+        variant?: ("default" | "glow" | "outline" | "secondary") | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: "cta";
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FAQBlock".
+ */
+export interface FAQBlock {
+  title?: string | null;
+  items?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: "faq";
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ProseBlock".
+ */
+export interface ProseBlock {
+  title?: string | null;
+  content: {
     root: {
       type: string;
       children: {
@@ -390,18 +570,10 @@ export interface Page {
       version: number;
     };
     [k: string]: unknown;
-  } | null;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
   };
-  updatedAt: string;
-  createdAt: string;
-  _status?: ("draft" | "published") | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: "prose";
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -684,7 +856,17 @@ export interface LocationsSelect<T extends boolean = true> {
 export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
-  body?: T;
+  layout?:
+    | T
+    | {
+        hero?: T | HeroBlockSelect<T>;
+        items?: T | ItemsBlockSelect<T>;
+        logos?: T | LogosBlockSelect<T>;
+        stats?: T | StatsBlockSelect<T>;
+        cta?: T | CTABlockSelect<T>;
+        faq?: T | FAQBlockSelect<T>;
+        prose?: T | ProseBlockSelect<T>;
+      };
   meta?:
     | T
     | {
@@ -695,6 +877,123 @@ export interface PagesSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock_select".
+ */
+export interface HeroBlockSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  badgeText?: T;
+  badgeLinkText?: T;
+  badgeLinkHref?: T;
+  buttons?:
+    | T
+    | {
+        text?: T;
+        href?: T;
+        variant?: T;
+        id?: T;
+      };
+  mockupLight?: T;
+  mockupDark?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ItemsBlock_select".
+ */
+export interface ItemsBlockSelect<T extends boolean = true> {
+  title?: T;
+  items?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        icon?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LogosBlock_select".
+ */
+export interface LogosBlockSelect<T extends boolean = true> {
+  title?: T;
+  badgeText?: T;
+  logos?:
+    | T
+    | {
+        name?: T;
+        image?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StatsBlock_select".
+ */
+export interface StatsBlockSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        label?: T;
+        value?: T;
+        suffix?: T;
+        description?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CTABlock_select".
+ */
+export interface CTABlockSelect<T extends boolean = true> {
+  title?: T;
+  buttons?:
+    | T
+    | {
+        text?: T;
+        href?: T;
+        variant?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FAQBlock_select".
+ */
+export interface FAQBlockSelect<T extends boolean = true> {
+  title?: T;
+  items?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ProseBlock_select".
+ */
+export interface ProseBlockSelect<T extends boolean = true> {
+  title?: T;
+  content?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -742,20 +1041,60 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface SiteSetting {
   id: number;
+  /**
+   * Top-level nav items. Add sub-items to render a dropdown menu.
+   */
   header?:
     | {
         label: string;
         url: string;
+        submenu?:
+          | {
+              label: string;
+              url: string;
+              description?: string | null;
+              id?: string | null;
+            }[]
+          | null;
         id?: string | null;
       }[]
     | null;
-  footer?:
+  /**
+   * Right-aligned links/buttons, e.g. Sign in and Get started.
+   */
+  headerActions?:
+    | {
+        label: string;
+        url: string;
+        variant?: ("default" | "glow" | "outline" | "secondary") | null;
+        isButton?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  footerColumns?:
+    | {
+        title: string;
+        links?:
+          | {
+              label: string;
+              url: string;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  footerPolicies?:
     | {
         label: string;
         url: string;
         id?: string | null;
       }[]
     | null;
+  /**
+   * Bottom-bar copyright. Defaults to © {year} {app name}.
+   */
+  copyright?: string | null;
   social?: {
     twitter?: string | null;
     github?: string | null;
@@ -916,6 +1255,14 @@ export interface ThemeSetting {
      * --sidebar-ring · any CSS color (oklch recommended)
      */
     sidebarRing?: string | null;
+    /**
+     * --brand · any CSS color (oklch recommended)
+     */
+    brand?: string | null;
+    /**
+     * --brand-foreground · any CSS color (oklch recommended)
+     */
+    brandForeground?: string | null;
   };
   colorsDark?: {
     /**
@@ -1046,6 +1393,14 @@ export interface ThemeSetting {
      * --sidebar-ring · any CSS color (oklch recommended)
      */
     sidebarRing?: string | null;
+    /**
+     * --brand · any CSS color (oklch recommended)
+     */
+    brand?: string | null;
+    /**
+     * --brand-foreground · any CSS color (oklch recommended)
+     */
+    brandForeground?: string | null;
   };
   /**
    * Body / UI font (--font-sans)
@@ -1096,15 +1451,46 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | {
         label?: T;
         url?: T;
+        submenu?:
+          | T
+          | {
+              label?: T;
+              url?: T;
+              description?: T;
+              id?: T;
+            };
         id?: T;
       };
-  footer?:
+  headerActions?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        variant?: T;
+        isButton?: T;
+        id?: T;
+      };
+  footerColumns?:
+    | T
+    | {
+        title?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              url?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  footerPolicies?:
     | T
     | {
         label?: T;
         url?: T;
         id?: T;
       };
+  copyright?: T;
   social?:
     | T
     | {
@@ -1159,6 +1545,8 @@ export interface ThemeSettingsSelect<T extends boolean = true> {
         sidebarAccentForeground?: T;
         sidebarBorder?: T;
         sidebarRing?: T;
+        brand?: T;
+        brandForeground?: T;
       };
   colorsDark?:
     | T
@@ -1195,6 +1583,8 @@ export interface ThemeSettingsSelect<T extends boolean = true> {
         sidebarAccentForeground?: T;
         sidebarBorder?: T;
         sidebarRing?: T;
+        brand?: T;
+        brandForeground?: T;
       };
   fontSans?: T;
   fontSerif?: T;

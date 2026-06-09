@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+  ContentCard,
+  ContentEmpty,
+  ContentGrid,
+} from "~/components/content/content-card";
+import { PageHeader } from "~/components/content/page-header";
+import { Section } from "~/components/launch-ui/ui/section";
 import { listLocations } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
@@ -20,29 +20,31 @@ export default async function LocationsPage() {
   const locations = await listLocations();
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">Locations</h1>
-
-      {locations.length > 0 ? (
-        <ul className="mt-8 grid gap-4">
-          {locations.map((location) => (
-            <li key={location.id}>
-              <Link href={`/locations/${location.slug}`}>
-                <Card className="hover:border-foreground/20 transition-colors">
-                  <CardHeader>
-                    <CardTitle className="text-xl">{location.name}</CardTitle>
-                    {location.address && (
-                      <CardDescription>{location.address}</CardDescription>
-                    )}
-                  </CardHeader>
-                </Card>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-muted-foreground mt-8">No locations yet.</p>
-      )}
-    </main>
+    <>
+      <PageHeader title="Locations" description="Places to find us." />
+      <Section className="pt-8 sm:pt-12 md:pt-16">
+        {locations.length > 0 ? (
+          <ContentGrid>
+            {locations.map((location) => {
+              const image =
+                typeof location.image === "object" && location.image?.url
+                  ? { url: location.image.url, alt: location.image.alt }
+                  : null;
+              return (
+                <ContentCard
+                  key={location.id}
+                  href={`/locations/${location.slug}`}
+                  title={location.name}
+                  image={image}
+                  description={location.address}
+                />
+              );
+            })}
+          </ContentGrid>
+        ) : (
+          <ContentEmpty>No locations yet.</ContentEmpty>
+        )}
+      </Section>
+    </>
   );
 }

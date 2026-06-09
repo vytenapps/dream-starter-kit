@@ -8,10 +8,12 @@ import { expect, test } from "@playwright/test";
  * seeded copy.
  */
 test.describe("public content", () => {
-  test("home renders inside the public chrome", async ({ page }) => {
+  test("home renders the hero inside the public chrome", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("header")).toBeVisible();
     await expect(page.locator("footer")).toBeVisible();
+    // The Launch UI hero renders the page's leading <h1>.
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
   test("articles list renders", async ({ page }) => {
@@ -21,8 +23,9 @@ test.describe("public content", () => {
     ).toBeVisible();
   });
 
-  test("a static page renders from the CMS", async ({ page }) => {
+  test("a static page renders its CMS blocks", async ({ page }) => {
     await page.goto("/about");
-    await expect(page.getByRole("heading")).toBeVisible();
+    // The prose block renders a heading containing the page's name.
+    await expect(page.getByRole("heading", { name: /about/i })).toBeVisible();
   });
 });

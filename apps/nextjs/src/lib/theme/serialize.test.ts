@@ -10,6 +10,7 @@ function token(field: string) {
 }
 const primary = token("primary");
 const background = token("background");
+const brand = token("brand");
 
 describe("themeToCss", () => {
   it("falls back to the built-in defaults when settings is null", () => {
@@ -25,6 +26,8 @@ describe("themeToCss", () => {
     // Default token + dimension values come straight from the TS mirror.
     expect(css).toContain(`--primary: ${primary.light};`);
     expect(css).toContain(`--radius: ${DEFAULT_RADIUS};`);
+    // Brand accent token (consumed by Launch UI) is part of the palette.
+    expect(css).toContain(`--brand: ${brand.light};`);
   });
 
   it("emits dark defaults in the dark block", () => {
