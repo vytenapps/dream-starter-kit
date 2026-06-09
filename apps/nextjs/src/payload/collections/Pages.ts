@@ -1,8 +1,15 @@
 import type { CollectionConfig } from "payload";
 
+import { generatePreviewPath } from "../../lib/preview";
 import { isAdmin, publishedOrAdmin } from "../access";
 import { pageBlocks } from "../blocks";
 import { slugField } from "../fields/slug";
+
+const previewBreakpoints = [
+  { label: "Mobile", name: "mobile", width: 375, height: 667 },
+  { label: "Tablet", name: "tablet", width: 768, height: 1024 },
+  { label: "Desktop", name: "desktop", width: 1440, height: 900 },
+];
 
 /**
  * Marketing/legal pages, addressed by slug (home, about, contact, terms,
@@ -20,6 +27,21 @@ export const Pages: CollectionConfig = {
     useAsTitle: "title",
     group: "Content",
     defaultColumns: ["title", "slug", "_status"],
+    // Live Preview: the admin iframe loads /next/preview, which enables draft
+    // mode and renders the page's draft (see lib/preview + /next/preview route).
+    livePreview: {
+      url: ({ data }) =>
+        generatePreviewPath({
+          collection: "pages",
+          slug: typeof data.slug === "string" ? data.slug : undefined,
+        }),
+      breakpoints: previewBreakpoints,
+    },
+    preview: (doc) =>
+      generatePreviewPath({
+        collection: "pages",
+        slug: typeof doc.slug === "string" ? doc.slug : undefined,
+      }),
   },
   versions: { drafts: true },
   access: {

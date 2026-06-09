@@ -7,6 +7,7 @@ import type {
   Audio as AudioDoc,
   Event as EventDoc,
   Location as LocationDoc,
+  Page,
   Photo,
   Video,
 } from "@acme/cms";
@@ -74,3 +75,17 @@ export const usePhotos = () => useList<Photo>("photos");
 export const useLocations = () => useList<LocationDoc>("locations");
 export const useLocation = (slug: string) =>
   useDoc<LocationDoc>("locations", slug);
+
+/**
+ * A page (with its Launch UI block `layout`) by slug, depth 2 so block media
+ * resolves. Lets the mobile app render the same CMS-driven pages as the web.
+ */
+export const usePage = (slug: string) =>
+  useQuery({
+    queryKey: ["cms", "pages", "slug", slug],
+    enabled: slug.length > 0,
+    queryFn: () =>
+      cmsFetch<Paginated<Page>>(
+        `pages?${bySlug(slug)}&${PUBLISHED}&depth=2&limit=1`,
+      ).then((r) => r.docs[0] ?? null),
+  });

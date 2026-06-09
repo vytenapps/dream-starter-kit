@@ -44,6 +44,7 @@ export const env = createEnv({
     // and to keep .env validated. See .env.example.
     PAYLOAD_DATABASE_URL: z.string().min(1).optional(),
     PAYLOAD_SECRET: z.string().min(1).optional(),
+    PAYLOAD_PREVIEW_SECRET: z.string().min(1).optional(),
     S3_ENDPOINT: z.url().optional(),
     S3_REGION: z.string().min(1).optional(),
     S3_ACCESS_KEY_ID: z.string().min(1).optional(),
