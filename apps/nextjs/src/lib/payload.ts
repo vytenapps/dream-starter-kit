@@ -228,17 +228,48 @@ export function getThemeSettings(): Promise<ThemeSettingsInput | null> {
   );
 }
 
+/** A link resolved from the reusable `linkField` group (see payload/fields/link). */
+export interface ResolvedLink {
+  url: string;
+  /** True when the link points to another origin (`type: "external"`). */
+  external: boolean;
+  /** Whether to open in a new tab (`target="_blank"`). */
+  newTab: boolean;
+}
+
 export interface Branding {
   appName: string;
   appIconUrl: string | null;
   logoLightUrl: string | null;
   logoDarkUrl: string | null;
+  /** The header logo/wordmark's click target. Falls back to home ("/"). */
+  brandLink: ResolvedLink;
 }
 
 const mediaUrl = (v: unknown): string | null =>
   v && typeof v === "object" && "url" in v
     ? ((v as { url?: string | null }).url ?? null)
     : null;
+
+/**
+ * Normalize a stored `linkField` group into a `ResolvedLink`. A blank url falls
+ * back to `fallbackUrl` (default home). External links default to opening in a
+ * new tab unless explicitly turned off.
+ */
+const resolveLink = (v: unknown, fallbackUrl = "/"): ResolvedLink => {
+  const g = (v ?? {}) as {
+    type?: string | null;
+    url?: string | null;
+    newTab?: boolean | null;
+  };
+  const url = g.url?.trim();
+  const external = g.type === "external";
+  return {
+    url: url?.length ? url : fallbackUrl,
+    external,
+    newTab: g.newTab ?? false,
+  };
+};
 
 /**
  * Branding derived from the theme-settings global (app name + uploaded
@@ -253,6 +284,7 @@ export function getBranding(): Promise<Branding> {
         appIcon?: unknown;
         logoLight?: unknown;
         logoDark?: unknown;
+        brandLink?: unknown;
       };
       const trimmedName = g.appName?.trim();
       return {
@@ -260,6 +292,7 @@ export function getBranding(): Promise<Branding> {
         appIconUrl: mediaUrl(g.appIcon),
         logoLightUrl: mediaUrl(g.logoLight),
         logoDarkUrl: mediaUrl(g.logoDark),
+        brandLink: resolveLink(g.brandLink),
       };
     },
     {
@@ -267,6 +300,7 @@ export function getBranding(): Promise<Branding> {
       appIconUrl: null,
       logoLightUrl: null,
       logoDarkUrl: null,
+      brandLink: { url: "/", external: false, newTab: false },
     },
   );
 }

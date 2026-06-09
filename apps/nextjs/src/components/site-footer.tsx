@@ -1,5 +1,4 @@
 import type { FooterColumnProps } from "~/components/launch-ui/sections/footer";
-import LaunchUI from "~/components/launch-ui/logos/launch-ui";
 import FooterSection from "~/components/launch-ui/sections/footer";
 import { getBranding, getSiteSettings } from "~/lib/payload";
 
@@ -28,9 +27,8 @@ const DEFAULT_POLICIES = [
 
 /**
  * Public site footer — the Launch UI Footer, driven by the SiteSettings global
- * (link columns + bottom-bar policy links + copyright) and branding (app name
- * from theme-settings). Falls back to sensible defaults when the CMS is
- * unreachable.
+ * (link columns + bottom-bar policy links + copyright). Falls back to sensible
+ * defaults when the CMS is unreachable.
  */
 export async function SiteFooter() {
   const branding = await getBranding();
@@ -62,8 +60,14 @@ export async function SiteFooter() {
 
   return (
     <FooterSection
-      logo={<LaunchUI className="text-brand size-6" />}
+      logo={
+        // Brand mark from the favicon set (auto light/dark via favicon.svg).
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/favicon.svg" alt="" aria-hidden className="size-6" />
+      }
       name={branding.appName}
+      homeUrl={branding.brandLink.url}
+      homeNewTab={branding.brandLink.newTab}
       columns={columns}
       policies={policies}
       copyright={copyright}

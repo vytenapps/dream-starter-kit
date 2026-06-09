@@ -38,6 +38,8 @@ export interface NavbarProps {
   logo?: ReactNode;
   name?: string;
   homeUrl?: string;
+  /** Open the brand link in a new tab (set for external brand links). */
+  homeNewTab?: boolean;
   items?: NavItem[];
   mobileLinks?: NavbarLink[];
   actions?: NavbarActionProps[];
@@ -49,6 +51,7 @@ export default function Navbar({
   logo = <LaunchUI />,
   name = "Acme",
   homeUrl = "/",
+  homeNewTab = false,
   items = [],
   mobileLinks = [],
   actions = [],
@@ -63,10 +66,17 @@ export default function Navbar({
           <NavbarLeft>
             <a
               href={homeUrl}
+              {...(homeNewTab
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {})}
               className="flex items-center gap-2 text-xl font-bold"
             >
               {logo}
-              {name}
+              {/* Wordmark pinned to Geist so the brand name stays consistent
+                  regardless of the theme's selected body font. */}
+              <span className="font-[family-name:var(--font-geist-sans)] whitespace-nowrap">
+                {name}
+              </span>
             </a>
             {showNavigation && items.length > 0 && <Navigation items={items} />}
           </NavbarLeft>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { cn } from "@acme/ui";
+import { ThemeToggle } from "@acme/ui/theme";
 
 import LaunchUI from "../logos/launch-ui";
 import {
@@ -9,7 +10,6 @@ import {
   FooterColumn,
   FooterContent,
 } from "../ui/footer";
-import { ModeToggle } from "../ui/mode-toggle";
 
 interface FooterLink {
   text: string;
@@ -24,6 +24,10 @@ export interface FooterColumnProps {
 export interface FooterProps {
   logo?: ReactNode;
   name?: string;
+  /** Optional link for the brand lockup. When omitted, the brand isn't linked. */
+  homeUrl?: string;
+  /** Open the brand link in a new tab (set for external brand links). */
+  homeNewTab?: boolean;
   columns?: FooterColumnProps[];
   copyright?: string;
   policies?: FooterLink[];
@@ -34,6 +38,8 @@ export interface FooterProps {
 export default function FooterSection({
   logo = <LaunchUI />,
   name = "Acme",
+  homeUrl,
+  homeNewTab = false,
   columns = [],
   copyright,
   policies = [],
@@ -46,10 +52,29 @@ export default function FooterSection({
         <Footer>
           <FooterContent>
             <FooterColumn className="col-span-2 sm:col-span-3 md:col-span-1">
-              <div className="flex items-center gap-2">
-                {logo}
-                <h3 className="text-xl font-bold">{name}</h3>
-              </div>
+              {(() => {
+                const brand = (
+                  <>
+                    {logo}
+                    <h3 className="font-[family-name:var(--font-geist-sans)] text-xl font-bold">
+                      {name}
+                    </h3>
+                  </>
+                );
+                return homeUrl ? (
+                  <a
+                    href={homeUrl}
+                    {...(homeNewTab
+                      ? { target: "_blank", rel: "noopener noreferrer" }
+                      : {})}
+                    className="flex items-center gap-2"
+                  >
+                    {brand}
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-2">{brand}</div>
+                );
+              })()}
             </FooterColumn>
             {columns.map((column) => (
               <FooterColumn key={column.title}>
@@ -74,7 +99,7 @@ export default function FooterSection({
                   {policy.text}
                 </a>
               ))}
-              {showModeToggle && <ModeToggle />}
+              {showModeToggle && <ThemeToggle />}
             </div>
           </FooterBottom>
         </Footer>

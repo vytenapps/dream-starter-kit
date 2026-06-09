@@ -1,6 +1,5 @@
 import type { NavbarActionProps } from "~/components/launch-ui/sections/navbar";
 import type { NavItem } from "~/components/launch-ui/ui/navigation";
-import LaunchUI from "~/components/launch-ui/logos/launch-ui";
 import Navbar from "~/components/launch-ui/sections/navbar";
 import { getBranding, getSiteSettings } from "~/lib/payload";
 
@@ -71,14 +70,18 @@ export async function PublicHeader() {
       className="h-6 w-auto"
     />
   ) : (
-    <LaunchUI className="text-brand size-6" />
+    // Brand mark from the favicon set (auto light/dark via favicon.svg's own
+    // prefers-color-scheme styles). Decorative — the adjacent app name labels it.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src="/favicon.svg" alt="" aria-hidden className="size-6" />
   );
 
   return (
     <Navbar
       logo={logo}
       name={branding.appName}
-      homeUrl="/"
+      homeUrl={branding.brandLink.url}
+      homeNewTab={branding.brandLink.newTab}
       items={items}
       mobileLinks={mobileLinks}
       actions={actions}
