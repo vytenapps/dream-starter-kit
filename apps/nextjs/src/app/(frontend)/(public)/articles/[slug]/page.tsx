@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { DetailLayout } from "~/components/content/detail-layout";
 import { CmsRichText } from "~/components/rich-text";
 import { getArticle } from "~/lib/payload";
 
@@ -28,30 +29,22 @@ export default async function ArticlePage({
   const article = await getArticle(slug);
   if (!article) notFound();
 
-  const heroImage =
-    typeof article.heroImage === "object" && article.heroImage
-      ? article.heroImage
+  const image =
+    typeof article.heroImage === "object" && article.heroImage?.url
+      ? { url: article.heroImage.url, alt: article.heroImage.alt }
       : null;
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-12">
-      {heroImage?.url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={heroImage.url}
-          alt={heroImage.alt}
-          className="mb-8 w-full rounded-xl object-cover"
-        />
-      )}
-      <h1 className="text-3xl font-bold tracking-tight">{article.title}</h1>
-      {article.publishedAt && (
-        <p className="text-muted-foreground mt-2 text-sm">
-          {new Date(article.publishedAt).toLocaleDateString()}
-        </p>
-      )}
-      <div className="mt-6">
-        <CmsRichText data={article.body} />
-      </div>
-    </main>
+    <DetailLayout
+      title={article.title}
+      image={image}
+      meta={
+        article.publishedAt
+          ? new Date(article.publishedAt).toLocaleDateString()
+          : undefined
+      }
+    >
+      <CmsRichText data={article.body} />
+    </DetailLayout>
   );
 }

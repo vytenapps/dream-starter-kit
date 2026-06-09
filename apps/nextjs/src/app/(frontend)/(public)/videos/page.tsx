@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+  ContentCard,
+  ContentEmpty,
+  ContentGrid,
+} from "~/components/content/content-card";
+import { PageHeader } from "~/components/content/page-header";
+import { Section } from "~/components/launch-ui/ui/section";
 import { listVideos } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
@@ -20,42 +20,34 @@ export default async function VideosPage() {
   const videos = await listVideos();
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">Videos</h1>
-
-      {videos.length > 0 ? (
-        <ul className="mt-8 grid gap-4">
-          {videos.map((video) => {
-            const card = (
-              <Card className="hover:border-foreground/20 transition-colors">
-                <CardHeader>
-                  <CardTitle className="text-xl">{video.title}</CardTitle>
-                  {video.description && (
-                    <CardDescription>{video.description}</CardDescription>
-                  )}
-                </CardHeader>
-              </Card>
-            );
-            return (
-              <li key={video.id}>
-                {video.sourceType === "url" && video.url ? (
-                  <Link
-                    href={video.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {card}
-                  </Link>
-                ) : (
-                  card
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p className="text-muted-foreground mt-8">No videos yet.</p>
-      )}
-    </main>
+    <>
+      <PageHeader title="Videos" description="Watch and learn." />
+      <Section className="pt-8 sm:pt-12 md:pt-16">
+        {videos.length > 0 ? (
+          <ContentGrid>
+            {videos.map((video) => {
+              const thumb =
+                typeof video.thumbnail === "object" && video.thumbnail?.url
+                  ? { url: video.thumbnail.url, alt: video.thumbnail.alt }
+                  : null;
+              const href =
+                video.sourceType === "url" && video.url ? video.url : undefined;
+              return (
+                <ContentCard
+                  key={video.id}
+                  href={href}
+                  external={Boolean(href)}
+                  title={video.title}
+                  image={thumb}
+                  description={video.description}
+                />
+              );
+            })}
+          </ContentGrid>
+        ) : (
+          <ContentEmpty>No videos yet.</ContentEmpty>
+        )}
+      </Section>
+    </>
   );
 }

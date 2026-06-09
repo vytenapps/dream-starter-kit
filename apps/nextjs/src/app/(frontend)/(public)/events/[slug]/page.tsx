@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { DetailLayout } from "~/components/content/detail-layout";
 import { CmsRichText } from "~/components/rich-text";
 import { getEvent } from "~/lib/payload";
 
@@ -29,20 +30,26 @@ export default async function EventPage({
     typeof event.location === "object" && event.location
       ? event.location
       : null;
+  const image =
+    typeof event.image === "object" && event.image?.url
+      ? { url: event.image.url, alt: event.image.alt }
+      : null;
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">{event.title}</h1>
-      <dl className="text-muted-foreground mt-2 space-y-1 text-sm">
-        <div>Starts: {new Date(event.startsAt).toLocaleString()}</div>
-        {event.endsAt && (
-          <div>Ends: {new Date(event.endsAt).toLocaleString()}</div>
-        )}
-        {location && <div>Location: {location.name}</div>}
-      </dl>
-      <div className="mt-6">
-        <CmsRichText data={event.description} />
-      </div>
-    </main>
+    <DetailLayout
+      title={event.title}
+      image={image}
+      meta={
+        <dl className="space-y-1">
+          <div>Starts: {new Date(event.startsAt).toLocaleString()}</div>
+          {event.endsAt && (
+            <div>Ends: {new Date(event.endsAt).toLocaleString()}</div>
+          )}
+          {location && <div>Location: {location.name}</div>}
+        </dl>
+      }
+    >
+      <CmsRichText data={event.description} />
+    </DetailLayout>
   );
 }
