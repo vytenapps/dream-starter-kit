@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@acme/tailwind-config/theme";
+@import "./launch-ui.css";
 
 @source "../../../../packages/ui/src/*.{ts,tsx}";
 
