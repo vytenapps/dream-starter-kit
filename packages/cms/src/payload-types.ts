@@ -764,14 +764,13 @@ export interface SiteSetting {
   createdAt?: string | null;
 }
 /**
- * Branding, colors, typography and styles for the entire app and this admin panel. Edited via /admin/theme.
+ * Branding, colors, typography and styles for the entire app and this admin panel.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "theme-settings".
  */
 export interface ThemeSetting {
   id: number;
-  editorMode?: ("simple" | "advanced") | null;
   /**
    * Display name shown in the app shell and tab title.
    */
@@ -1083,6 +1082,7 @@ export interface ThemeSetting {
     offsetX?: number | null;
     offsetY?: number | null;
   };
+  _status?: ("draft" | "published") | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1120,7 +1120,6 @@ export interface SiteSettingsSelect<T extends boolean = true> {
  * via the `definition` "theme-settings_select".
  */
 export interface ThemeSettingsSelect<T extends boolean = true> {
-  editorMode?: T;
   appName?: T;
   appIcon?: T;
   logoLight?: T;
@@ -1213,6 +1212,7 @@ export interface ThemeSettingsSelect<T extends boolean = true> {
         offsetX?: T;
         offsetY?: T;
       };
+  _status?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -26,11 +26,9 @@ import { MetaTitleComponent as MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c08
 import { MetaDescriptionComponent as MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { MetaImageComponent as MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
-import { ThemeNavLink as ThemeNavLink_6ca5c366fae3e4dac688d62f35a52286 } from '~/payload/components/ThemeNavLink'
 import { SeedGate as SeedGate_579c462e1297910adc75e16d2ce018f6 } from '~/payload/components/SeedGate'
 import { ThemeStyleProvider as ThemeStyleProvider_1ee7cf46bd3ef3bd11106074673f2adc } from '~/payload/components/ThemeStyleProvider'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
-import { ThemeView as ThemeView_7855a3f533bcc83469a858ed8544cc9f } from '~/payload/views/ThemeView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -63,10 +61,8 @@ export const importMap = {
   "@payloadcms/plugin-seo/client#MetaDescriptionComponent": MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#MetaImageComponent": MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
-  "~/payload/components/ThemeNavLink#ThemeNavLink": ThemeNavLink_6ca5c366fae3e4dac688d62f35a52286,
   "~/payload/components/SeedGate#SeedGate": SeedGate_579c462e1297910adc75e16d2ce018f6,
   "~/payload/components/ThemeStyleProvider#ThemeStyleProvider": ThemeStyleProvider_1ee7cf46bd3ef3bd11106074673f2adc,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
-  "~/payload/views/ThemeView#ThemeView": ThemeView_7855a3f533bcc83469a858ed8544cc9f,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }
