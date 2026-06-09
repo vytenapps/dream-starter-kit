@@ -31,7 +31,7 @@ run rather than signing in to seed data.
 | Spec                    | Flow                                                                                             |
 | ----------------------- | ------------------------------------------------------------------------------------------------ |
 | `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`). |
-| `auth.spec.ts`          | Sign up → dashboard; a signed-in user is bounced away from auth pages.                            |
+| `auth.spec.ts`          | Sign up → dashboard; a signed-in user is bounced away from auth pages.                           |
 | `critical-path.spec.ts` | Sign up → create a project → add an item (the reference RLS-backed CRUD flow).                   |
 
 ## Deliberately not covered here
