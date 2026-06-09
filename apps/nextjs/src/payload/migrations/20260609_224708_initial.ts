@@ -704,6 +704,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TABLE "cms"."theme_settings" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"app_name" varchar,
+  	"brand_link_url" varchar,
+  	"brand_link_new_tab" boolean DEFAULT false,
   	"app_icon_id" integer,
   	"logo_light_id" integer,
   	"logo_dark_id" integer,
@@ -795,6 +797,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TABLE "cms"."_theme_settings_v" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"version_app_name" varchar,
+  	"version_brand_link_url" varchar,
+  	"version_brand_link_new_tab" boolean DEFAULT false,
   	"version_app_icon_id" integer,
   	"version_logo_light_id" integer,
   	"version_logo_dark_id" integer,

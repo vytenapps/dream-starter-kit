@@ -4,7 +4,7 @@
 -- that the FIRST user who signs up through the app UI becomes the owner. The
 -- handle_new_user() trigger flags the first profile as staff (is_staff = true),
 -- which grants Payload CMS admin access via the Supabase->Payload SSO bridge.
--- See supabase/migrations/20260601010008_cms_staff.sql.
+-- See supabase/migrations/20260609000001_initial.sql (Identity / CMS staff sections).
 --
 -- To exercise the app, run it (`pnpm dev`), open the web app, and sign up — that
 -- account is the founder/admin. Public content (articles, events, pages) lives in
