@@ -31,10 +31,11 @@ const selectFrom = (options: { value: string; label: string }[]) =>
   options.map((o) => ({ label: o.label, value: o.value }));
 
 /**
- * Site-wide shadcn theme — the single source of runtime truth for branding,
- * color, typography, and styles across the whole surface: the web front end AND
- * the Payload admin panel. Read by `<ThemeStyle />` (serialized to a `<style>`
- * that overrides the `theme.css` defaults) and by `getBranding()`.
+ * Front-end shadcn theme — the source of runtime truth for branding, color,
+ * typography, and styles across the web front end. Read by `<ThemeStyle />`
+ * (serialized to a `<style>` that overrides the `theme.css` defaults) and by
+ * `getBranding()`. The Payload admin is NOT themed from this global; it uses a
+ * fixed palette (`~/lib/theme/admin-theme.ts`).
  *
  * A standard, versioned Payload global edited natively in the admin (Edit / API
  * tabs + Versions, with drafts → publish), grouped under "Admin" beneath Site

@@ -243,21 +243,25 @@ service-role key (golden rules #1–2 hold). `/admin` is gated in `proxy.ts`.
 
 ## Theming (shadcn, one source of truth)
 
-The whole surface — the web front end **and** the Payload `/admin` panel — is driven
-by one shadcn theme (Tailwind v4, OKLCH tokens). Two layers:
+The **front end** is driven by one editable shadcn theme; the Payload `/admin` panel
+uses its own **fixed** palette (Tailwind v4, OKLCH tokens). Layers:
 
 1. **Static defaults (no-flash):** all design tokens live in **`tooling/tailwind/theme.css`**
    (`@acme/tailwind-config/theme`) — `:root` + `@variant dark`, plus the `@theme inline`
    map. This is the *only* place tokens are defined. **Do not** redefine `:root`/`.dark`
    tokens in `apps/nextjs/src/app/styles.css` (it only holds imports, variants, base layer).
-2. **Runtime override (site-wide, editable):** the **`theme-settings` Payload global**
+2. **Front-end runtime override (site-wide, editable):** the **`theme-settings` Payload global**
    (`payload/globals/ThemeSettings.ts`, staff-editable in `/admin`) is the authoritative
-   theme. `lib/theme/serialize.ts#themeToCss` turns it into a `<style>` that overrides the
-   defaults (doubled `:root:root` selector wins regardless of `<head>` order), targeting
-   both `.dark` (front end) and `[data-theme="dark"]` (admin). It's injected server-side by
-   `<ThemeStyle />` (front-end layout `<head>`) and `ThemeStyleProvider` (registered as
-   Payload `admin.components.providers`). Defaults live in `lib/theme/defaults.ts` and
-   **must mirror `theme.css`**.
+   **front-end** theme. `lib/theme/serialize.ts#themeToCss` turns it into a `<style>` that
+   overrides the defaults (doubled `:root:root` selector wins regardless of `<head>` order),
+   targeting `.dark` (front end). It's injected server-side by `<ThemeStyle />` (front-end
+   layout `<head>`). Defaults live in `lib/theme/defaults.ts` and **must mirror `theme.css`**.
+3. **Admin fixed theme:** the `/admin` panel is pinned to a hardcoded palette in
+   **`lib/theme/admin-theme.ts`** (`ADMIN_THEME_CSS`), injected by `ThemeStyleProvider`
+   (registered as Payload `admin.components.providers`). It is intentionally independent of
+   the `theme-settings` global, so editing the front-end theme never changes the admin chrome.
+   The dark block targets `[data-theme="dark"]` (the selector the admin toggles). To restyle
+   the admin, edit the token values in that file.
 
 The shared **app shell** (shadcn `dashboard-01`) wraps every authenticated page in
 `app/(frontend)/(app)/layout.tsx` (sidebar + header); pages return content only.
@@ -270,13 +274,15 @@ The shared **app shell** (shadcn `dashboard-01`) wraps every authenticated page 
 **Payload admin** follows Payload's official Tailwind+shadcn guide: `(payload)/custom.css`
 pulls in Tailwind **utilities without preflight** (so shadcn components work in admin
 without breaking Payload's reset) and maps the shadcn tokens onto Payload's own
-`--theme-*`/`--font-body` chrome variables. Token values come from `ThemeStyleProvider`.
+`--theme-*`/`--font-body` chrome variables. Token values come from `ThemeStyleProvider`
+(the fixed `admin-theme.ts` palette, not the editable global).
 
 **Editing the theme.** `theme-settings` is a **standard, versioned Payload global** — no
 custom view. It lives in the **Admin** nav group under **Site Settings** and is edited with
 Payload's native **Edit / API** tabs plus a **Versions** tab. Versioning is **drafts → publish**
-(`versions: { drafts: true }`): the front end and admin chrome render the **published** theme, so
-a draft save does not change the live site until you **Publish**. Fields are grouped in tabs
+(`versions: { drafts: true }`): the front end renders the **published** theme, so a draft save
+does not change the live site until you **Publish** (the admin chrome is unaffected either way —
+it uses the fixed `admin-theme.ts` palette). Fields are grouped in tabs
 (Branding · Light · Dark · Typography · Other); branding uploads (app icon/logos) use standard
 Media upload fields. Read access is `publishedOrAdmin` (anonymous visitors get the published
 theme; staff see drafts); update + `readVersions` are staff-only. Pure color math lives in
