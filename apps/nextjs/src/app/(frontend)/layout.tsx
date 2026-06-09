@@ -7,9 +7,10 @@ import {
   Lora,
   Merriweather,
 } from "next/font/google";
+import Script from "next/script";
 
 import { cn } from "@acme/ui";
-import { ThemeProvider } from "@acme/ui/theme";
+import { themeDetectorScript, ThemeProvider } from "@acme/ui/theme";
 import { Toaster } from "@acme/ui/toast";
 
 import { Providers } from "~/app/providers";
@@ -119,6 +120,16 @@ export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
+        {/* No-flash theme detector: sets the light/dark/auto class on <html>
+            before first paint. Injected via next/script `beforeInteractive` so it
+            lands in the initial HTML and runs before hydration — and because Next
+            injects it outside React's element tree, it avoids React 19's dev
+            warning about <script> elements rendered by a component. */}
+        <Script
+          id="theme-detector"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeDetectorScript }}
+        />
         <ThemeStyle />
       </head>
       <body
