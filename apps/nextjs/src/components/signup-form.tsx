@@ -29,7 +29,10 @@ export function SignupForm({
 }: React.ComponentProps<"div">) {
   const supabase = createClient();
   const configured = isSupabaseConfigured();
-  const callback = authCallbackUrl("/dashboard");
+  // First account = the founder, so route every sign-up through /welcome, which
+  // sends the founder into the CMS seed flow (/cms-setup) and everyone else to
+  // /dashboard. Used for both the password redirect below and the OAuth callback.
+  const callback = authCallbackUrl("/welcome");
 
   const {
     register,
@@ -42,10 +45,11 @@ export function SignupForm({
       await signUpWithPassword(supabase, values, { emailRedirectTo: callback });
       toast.success("Account created");
       // Full-page navigation (not router.replace): the auth cookie is set
-      // client-side by supabase-js, and a soft App-Router navigation to the
-      // proxy-gated /dashboard doesn't reliably pick it up. A hard navigation
-      // makes the server + proxy re-read the fresh session. (Verified via e2e.)
-      window.location.assign("/dashboard");
+      // client-side by supabase-js, and a soft App-Router navigation doesn't
+      // reliably pick it up. A hard navigation makes the server re-read the
+      // fresh session — /welcome then routes the founder to the CMS seed flow
+      // and everyone else to /dashboard. (Verified via e2e.)
+      window.location.assign("/welcome");
     } catch (e) {
       toast.error(authErrorMessage(e, "Sign up failed"));
     }

@@ -3,9 +3,13 @@
 import { useEffect } from "react";
 
 /**
- * Payload admin `beforeDashboard` gate. When the CMS has no content yet (i.e.
- * right after the first admin is created), it sends the admin to `/cms-setup`,
- * which seeds demo content with a progress bar and returns them to `/admin`.
+ * Payload admin `beforeDashboard` gate — a FALLBACK for the seed flow.
+ *
+ * Seeding normally runs right after the founder's account is created: sign-up
+ * routes them through `/welcome` → `/cms-setup`, which seeds before they ever
+ * reach `/admin`. This gate covers the edge case where that was skipped (e.g.
+ * the founder closed the setup tab, or seeding failed): if the CMS is still
+ * unseeded when a staff user opens `/admin`, it sends them to `/cms-setup`.
  *
  * Self-disabling: once content exists the status check reports `seeded: true`
  * and this renders nothing, so returning admins are never redirected. Renders
