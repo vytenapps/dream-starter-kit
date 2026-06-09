@@ -114,10 +114,16 @@ Requires the [Supabase CLI](https://supabase.com/docs/guides/cli) + Docker.
 ```bash
 cp .env.example .env
 supabase start     # boots local Postgres/Auth/Storage; prints your API URL + keys
-supabase db reset  # applies migrations + seed.sql (two demo users); also provisions
-                   #   the Payload `cms` schema + payload_cms role (run first via the
-                   #   config.toml [db.seed].sql_paths entry, local-only)
+pnpm db:reset      # applies migrations + seed.sql (ships EMPTY — the first signup
+                   #   becomes the founder), provisions the Payload `cms` schema +
+                   #   payload_cms role (config.toml [db.seed].sql_paths, local-only),
+                   #   then runs `cms:migrate` to build the Payload tables so a running
+                   #   dev server stays in sync after a reset
 ```
+
+> Use `pnpm db:reset` rather than bare `supabase db reset`: the former also runs
+> `pnpm cms:migrate`, which re-creates Payload's `cms` tables. A plain `supabase db
+> reset` drops them and a *running* `next dev` won't recreate them until restarted.
 
 > Payload connects as the dedicated `payload_cms` role using the local
 > `PAYLOAD_DATABASE_URL` from `.env.example` — make sure you copied the full
@@ -373,10 +379,14 @@ captured by `supabase db push` (`CREATE ROLE` isn't diffed), so set them up once
    transaction pooler), `PAYLOAD_SECRET`, and the `S3_*` vars (point them at your
    Supabase Storage S3 endpoint and the **public-read `cms-media`** bucket). For mobile,
    set `EXPO_PUBLIC_CMS_URL` to your web origin.
-3. **Migrate** — production runs with dev-push OFF, so create Payload's tables via a
-   committed migration: run `pnpm cms:migrate:create` once to generate the initial
-   migration from your collections (commit it), then `pnpm cms:migrate` to apply it to
-   the hosted DB.
+3. **Migrate** — nothing to run. Production has dev-push OFF, so Payload's tables come
+   from committed migrations (`apps/nextjs/src/payload/migrations`), which Payload applies
+   **automatically on first boot** via the adapter's `prodMigrations` — idempotent, tracked
+   in the `cms.payload_migrations` ledger. An initial migration ships with the kit, so a
+   fresh deploy self-provisions the `cms` schema on the first request. After you change a
+   collection, regenerate with `pnpm cms:migrate:create` and **commit** the new file; the
+   next deploy applies it. (`pnpm cms:migrate` still works for applying against any DB by
+   hand, but isn't needed in the deploy flow.)
 4. **Log in** — sign up through the app first; the **first** signup is auto-flagged
    staff. Then open `https://<your-domain>/admin` while signed in — the CMS shares your
    Supabase login (no separate Payload account), provisions your CMS user, and triggers

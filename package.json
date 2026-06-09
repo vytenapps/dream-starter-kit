@@ -12,7 +12,7 @@
     "clean": "git clean -xdf node_modules",
     "clean:workspaces": "turbo run clean",
     "db:gen-types": "supabase gen types typescript --local > packages/api/src/types.ts",
-    "db:reset": "supabase db reset",
+    "db:reset": "supabase db reset && pnpm cms:migrate",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "cms:gen-types": "pnpm -F @acme/nextjs payload generate:types",
