@@ -12,7 +12,18 @@ export default defineConfig({
     baseURL,
     trace: "on-first-retry",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    // Runs first: provisions the founder (first sign-up) + seeds the CMS, so the
+    // parallel suite below sees an existing founder and seeded content. See
+    // src/founder.setup.ts.
+    { name: "setup", testMatch: /founder\.setup\.ts/ },
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+      testIgnore: /founder\.setup\.ts/,
+      dependencies: ["setup"],
+    },
+  ],
   // Playwright starts the web app (reused locally if already running). The CI
   // workflow provisions Supabase + the .env before this runs.
   webServer: {

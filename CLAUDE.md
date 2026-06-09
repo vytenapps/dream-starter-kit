@@ -226,11 +226,13 @@ pages, …), add a **Payload collection**, not a Supabase table. Content lives i
    case if it's a critical public flow.)
 7. **Seed it.** Add a demo row for the new collection to `seedCmsContent()` in
    `apps/nextjs/src/payload/seed.ts` (as a new ordered step) so the CMS stays "fully
-   functional" out of the box. That seed runs two ways: the `pnpm cms:seed` CLI, and
-   automatically the first time a staff user opens `/admin` — a `beforeDashboard` gate
-   (`payload/components/SeedGate.tsx`) sends an unseeded admin to `/cms-setup`, which
-   streams `/api/cms/seed` behind a shadcn progress bar, then returns to `/admin`. Keep
-   steps scalar-only (no binary fixtures).
+   functional" out of the box. That seed runs three ways: the `pnpm cms:seed` CLI;
+   automatically right after the **founder's account is created** — sign-up routes the
+   first/staff user through `/welcome` (`app/welcome/route.ts`) to `/cms-setup`, which
+   streams `/api/cms/seed` behind a shadcn progress bar, then enters `/admin`; and, as a
+   fallback, the first time a staff user opens an unseeded `/admin` — a `beforeDashboard`
+   gate (`payload/components/SeedGate.tsx`) redirects them to the same `/cms-setup` flow.
+   All paths share one idempotent endpoint. Keep steps scalar-only (no binary fixtures).
 
 **CMS auth is SSO from Supabase — there is no second login.** Payload's local strategy
 is disabled; `apps/nextjs/src/payload/auth/supabase-strategy.ts` authenticates each CMS

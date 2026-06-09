@@ -21,18 +21,22 @@ pnpm --filter @acme/web-e2e exec playwright install --with-deps chromium
 pnpm test:e2e
 ```
 
-Local Supabase runs with email confirmations **off**, so sign-up lands straight
-on the dashboard. The kit ships an **empty seed** (no demo accounts) — the first
-UI signup becomes the owner — so the auth spec signs **up** a fresh account each
-run rather than signing in to seed data.
+Local Supabase runs with email confirmations **off**, so sign-up is immediately
+usable. The kit ships an **empty seed** (no demo accounts) — the first UI signup
+becomes the owner, who is routed through `/welcome` → `/cms-setup` to seed the CMS
+before `/admin`; every later signup lands on the dashboard. The `setup` project
+(`founder.setup.ts`) provisions that founder first, so the parallel specs that
+assert "sign-up → dashboard" run as non-staff users. Each spec uses a unique email
+so repeated runs against the same DB don't collide.
 
 ## What's covered
 
-| Spec                    | Flow                                                                                             |
-| ----------------------- | ------------------------------------------------------------------------------------------------ |
-| `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`). |
-| `auth.spec.ts`          | Sign up → dashboard; a signed-in user is bounced away from auth pages.                           |
-| `critical-path.spec.ts` | Sign up → create a project → add an item (the reference RLS-backed CRUD flow).                   |
+| Spec                    | Flow                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `founder.setup.ts`      | Setup project (runs first): founder sign-up → `/cms-setup` seeds the CMS → `/admin`. Provisions the founder + seeded content the rest of the suite relies on. |
+| `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`).                                                              |
+| `auth.spec.ts`          | Sign up → dashboard; a signed-in user is bounced away from auth pages.                                                                                        |
+| `critical-path.spec.ts` | Sign up → schedule a reminder (the reference RLS-backed CRUD flow).                                                                                           |
 
 ## Deliberately not covered here
 

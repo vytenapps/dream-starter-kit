@@ -38,9 +38,10 @@ export default function CmsSetupPage() {
       return;
     }
 
-    // Not logged into the CMS, or content already exists — nothing to show.
+    // Not staff (or no session) — this page isn't for them. Send them into the
+    // app rather than bouncing through the /admin gate.
     if (res.status === 401) {
-      goToAdmin();
+      window.location.assign("/dashboard");
       return;
     }
 
