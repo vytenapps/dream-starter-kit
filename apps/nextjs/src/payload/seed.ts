@@ -93,15 +93,64 @@ export async function seedCmsContent(
           slug: "site-settings",
           data: {
             header: [
-              { label: "Home", url: "/" },
-              { label: "Articles", url: "/articles" },
-              { label: "Events", url: "/events" },
+              {
+                label: "Content",
+                url: "/articles",
+                submenu: [
+                  {
+                    label: "Articles",
+                    url: "/articles",
+                    description: "Long-form posts and updates.",
+                  },
+                  {
+                    label: "Events",
+                    url: "/events",
+                    description: "Upcoming and past events.",
+                  },
+                  {
+                    label: "Videos",
+                    url: "/videos",
+                    description: "Watch and learn.",
+                  },
+                  {
+                    label: "Photos",
+                    url: "/photos",
+                    description: "Galleries and imagery.",
+                  },
+                ],
+              },
+              { label: "Locations", url: "/locations" },
               { label: "About", url: "/about" },
             ],
-            footer: [
+            headerActions: [
+              { label: "Sign in", url: "/sign-in", isButton: false },
+              {
+                label: "Get started",
+                url: "/sign-in",
+                isButton: true,
+                variant: "default",
+              },
+            ],
+            footerColumns: [
+              {
+                title: "Content",
+                links: [
+                  { label: "Articles", url: "/articles" },
+                  { label: "Events", url: "/events" },
+                  { label: "Videos", url: "/videos" },
+                ],
+              },
+              {
+                title: "Company",
+                links: [
+                  { label: "About", url: "/about" },
+                  { label: "Contact", url: "/contact" },
+                ],
+              },
+            ],
+            footerPolicies: [
               { label: "Terms", url: "/terms" },
               { label: "Privacy", url: "/privacy" },
-              { label: "Contact", url: "/contact" },
             ],
             social: { twitter: "dreamstarterkit", github: "vytenapps" },
           },

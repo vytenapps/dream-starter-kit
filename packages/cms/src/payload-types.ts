@@ -1025,20 +1025,60 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface SiteSetting {
   id: number;
+  /**
+   * Top-level nav items. Add sub-items to render a dropdown menu.
+   */
   header?:
     | {
         label: string;
         url: string;
+        submenu?:
+          | {
+              label: string;
+              url: string;
+              description?: string | null;
+              id?: string | null;
+            }[]
+          | null;
         id?: string | null;
       }[]
     | null;
-  footer?:
+  /**
+   * Right-aligned links/buttons, e.g. Sign in and Get started.
+   */
+  headerActions?:
+    | {
+        label: string;
+        url: string;
+        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
+        isButton?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  footerColumns?:
+    | {
+        title: string;
+        links?:
+          | {
+              label: string;
+              url: string;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  footerPolicies?:
     | {
         label: string;
         url: string;
         id?: string | null;
       }[]
     | null;
+  /**
+   * Bottom-bar copyright. Defaults to © {year} {app name}.
+   */
+  copyright?: string | null;
   social?: {
     twitter?: string | null;
     github?: string | null;
@@ -1395,15 +1435,46 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | {
         label?: T;
         url?: T;
+        submenu?:
+          | T
+          | {
+              label?: T;
+              url?: T;
+              description?: T;
+              id?: T;
+            };
         id?: T;
       };
-  footer?:
+  headerActions?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        variant?: T;
+        isButton?: T;
+        id?: T;
+      };
+  footerColumns?:
+    | T
+    | {
+        title?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              url?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  footerPolicies?:
     | T
     | {
         label?: T;
         url?: T;
         id?: T;
       };
+  copyright?: T;
   social?:
     | T
     | {

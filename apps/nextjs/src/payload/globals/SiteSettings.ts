@@ -1,38 +1,204 @@
 import type { GlobalConfig } from "payload";
 
 import { anyone, isAdmin } from "../access";
+import { BUTTON_VARIANTS } from "../blocks/shared";
 
-/** Site-wide chrome consumed by the public layout: header nav, footer links,
- *  social handles. A true singleton — the correct use case for a global. */
+/**
+ * Site-wide chrome consumed by the public layout (Launch UI Navbar + Footer):
+ * the header nav (with optional dropdown sub-menus), header action buttons,
+ * footer link columns, and social handles. A true singleton — the correct use
+ * case for a global. The site name/logo come from the `theme-settings` branding
+ * (see `getBranding()`), not here.
+ */
 export const SiteSettings: GlobalConfig = {
   slug: "site-settings",
   admin: { group: "Admin" },
   access: { read: anyone, update: isAdmin },
   fields: [
     {
-      name: "header",
-      type: "array",
-      label: "Header nav",
-      fields: [
-        { name: "label", type: "text", required: true },
-        { name: "url", type: "text", required: true },
-      ],
-    },
-    {
-      name: "footer",
-      type: "array",
-      label: "Footer links",
-      fields: [
-        { name: "label", type: "text", required: true },
-        { name: "url", type: "text", required: true },
-      ],
-    },
-    {
-      name: "social",
-      type: "group",
-      fields: [
-        { name: "twitter", type: "text" },
-        { name: "github", type: "text" },
+      type: "tabs",
+      tabs: [
+        {
+          label: "Header",
+          fields: [
+            {
+              name: "header",
+              type: "array",
+              label: "Header nav",
+              admin: {
+                description:
+                  "Top-level nav items. Add sub-items to render a dropdown menu.",
+              },
+              fields: [
+                {
+                  type: "row",
+                  fields: [
+                    {
+                      name: "label",
+                      type: "text",
+                      required: true,
+                      admin: { width: "50%" },
+                    },
+                    {
+                      name: "url",
+                      type: "text",
+                      required: true,
+                      admin: { width: "50%" },
+                    },
+                  ],
+                },
+                {
+                  name: "submenu",
+                  type: "array",
+                  label: "Sub-menu",
+                  fields: [
+                    {
+                      type: "row",
+                      fields: [
+                        {
+                          name: "label",
+                          type: "text",
+                          required: true,
+                          admin: { width: "50%" },
+                        },
+                        {
+                          name: "url",
+                          type: "text",
+                          required: true,
+                          admin: { width: "50%" },
+                        },
+                      ],
+                    },
+                    { name: "description", type: "text" },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "headerActions",
+              type: "array",
+              label: "Header actions (right side)",
+              admin: {
+                description:
+                  "Right-aligned links/buttons, e.g. Sign in and Get started.",
+              },
+              fields: [
+                {
+                  type: "row",
+                  fields: [
+                    {
+                      name: "label",
+                      type: "text",
+                      required: true,
+                      admin: { width: "40%" },
+                    },
+                    {
+                      name: "url",
+                      type: "text",
+                      required: true,
+                      admin: { width: "35%" },
+                    },
+                    {
+                      name: "variant",
+                      type: "select",
+                      defaultValue: "default",
+                      options: [...BUTTON_VARIANTS],
+                      admin: { width: "25%" },
+                    },
+                  ],
+                },
+                {
+                  name: "isButton",
+                  type: "checkbox",
+                  label: "Render as button",
+                  defaultValue: true,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          label: "Footer",
+          fields: [
+            {
+              name: "footerColumns",
+              type: "array",
+              label: "Footer columns",
+              fields: [
+                { name: "title", type: "text", required: true },
+                {
+                  name: "links",
+                  type: "array",
+                  fields: [
+                    {
+                      type: "row",
+                      fields: [
+                        {
+                          name: "label",
+                          type: "text",
+                          required: true,
+                          admin: { width: "50%" },
+                        },
+                        {
+                          name: "url",
+                          type: "text",
+                          required: true,
+                          admin: { width: "50%" },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "footerPolicies",
+              type: "array",
+              label: "Bottom-bar policy links",
+              fields: [
+                {
+                  type: "row",
+                  fields: [
+                    {
+                      name: "label",
+                      type: "text",
+                      required: true,
+                      admin: { width: "50%" },
+                    },
+                    {
+                      name: "url",
+                      type: "text",
+                      required: true,
+                      admin: { width: "50%" },
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "copyright",
+              type: "text",
+              admin: {
+                description:
+                  "Bottom-bar copyright. Defaults to © {year} {app name}.",
+              },
+            },
+          ],
+        },
+        {
+          label: "Social",
+          fields: [
+            {
+              name: "social",
+              type: "group",
+              label: false,
+              fields: [
+                { name: "twitter", type: "text" },
+                { name: "github", type: "text" },
+              ],
+            },
+          ],
+        },
       ],
     },
   ],
