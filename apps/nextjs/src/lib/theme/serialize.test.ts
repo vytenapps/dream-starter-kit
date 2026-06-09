@@ -17,8 +17,11 @@ describe("themeToCss", () => {
 
     // Doubled selector so the override outranks theme.css's plain `:root`.
     expect(css).toContain(":root:root {");
-    // Dark block targets both the front end (.dark) and the admin panel.
-    expect(css).toContain(':root:root.dark, :root:root[data-theme="dark"]');
+    // Dark block targets the front end's `.dark` only — the admin uses a fixed
+    // palette (admin-theme.ts), so this serializer no longer emits the admin's
+    // `[data-theme="dark"]` selector.
+    expect(css).toContain(":root:root.dark {");
+    expect(css).not.toContain('[data-theme="dark"]');
     // Default token + dimension values come straight from the TS mirror.
     expect(css).toContain(`--primary: ${primary.light};`);
     expect(css).toContain(`--radius: ${DEFAULT_RADIUS};`);
@@ -26,7 +29,7 @@ describe("themeToCss", () => {
 
   it("emits dark defaults in the dark block", () => {
     const css = themeToCss(null);
-    const darkBlock = css.slice(css.indexOf('[data-theme="dark"]'));
+    const darkBlock = css.slice(css.indexOf(":root:root.dark {"));
     expect(darkBlock).toContain(`--primary: ${primary.dark};`);
   });
 

@@ -1,10 +1,9 @@
 /**
  * Turns a theme (the `theme-settings` global, or the built-in defaults) into the
- * CSS injected site-wide by `<ThemeStyle />`. The output overrides the static
- * defaults from `theme.css` and targets BOTH dark selectors:
- *  - `.dark`              — the app front end (see packages/ui/src/theme.tsx)
- *  - `[data-theme="dark"]`— the Payload admin panel
- * so one CMS global themes the entire surface.
+ * CSS injected into the front end by `<ThemeStyle />`. The output overrides the
+ * static defaults from `theme.css` and targets the front end's `.dark` selector
+ * (see packages/ui/src/theme.tsx). The Payload admin is NOT themed from this
+ * global — it uses a fixed palette (`~/lib/theme/admin-theme.ts`).
  *
  * Selectors are doubled (`:root:root`) to raise specificity above theme.css's
  * plain `:root` — so the override wins no matter the `<head>` source order
@@ -103,7 +102,7 @@ export function themeToCss(settings: ThemeSettingsInput | null): string {
     ":root:root {",
     declarations([...lightColors, ...rootExtras]),
     "}",
-    ':root:root.dark, :root:root[data-theme="dark"] {',
+    ":root:root.dark {",
     declarations(darkColors),
     "}",
   ].join("\n");
