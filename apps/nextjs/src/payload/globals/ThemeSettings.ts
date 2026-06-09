@@ -13,7 +13,7 @@ import {
   FONT_SANS_OPTIONS,
   FONT_SERIF_OPTIONS,
 } from "../../lib/theme/defaults";
-import { anyone, isAdmin } from "../access";
+import { isAdmin, publishedOrAdmin } from "../access";
 
 const colorFields = (mode: "light" | "dark"): Field[] =>
   COLOR_TOKENS.map((token) => ({
@@ -36,38 +36,27 @@ const selectFrom = (options: { value: string; label: string }[]) =>
  * the Payload admin panel. Read by `<ThemeStyle />` (serialized to a `<style>`
  * that overrides the `theme.css` defaults) and by `getBranding()`.
  *
- * Edited primarily via the rich custom view at `/admin/theme` (Simple +
- * Advanced modes); this native form is the underlying data store. Values default
- * to the built-in theme so day one is a no-op. See `apps/nextjs/src/lib/theme`
- * and CLAUDE.md → Theming.
+ * A standard, versioned Payload global edited natively in the admin (Edit / API
+ * tabs + Versions, with drafts → publish), grouped under "Admin" beneath Site
+ * Settings. Values default to the built-in theme so day one is a no-op. See
+ * `apps/nextjs/src/lib/theme` and CLAUDE.md → Theming.
  */
 export const ThemeSettings: GlobalConfig = {
   slug: "theme-settings",
   label: "Theme",
   admin: {
     group: "Admin",
-    // Hidden from the admin nav: this global is the data store, edited only via
-    // the polished custom view at /admin/theme (which reads it via the Local API
-    // and saves via the REST endpoint — neither depends on nav visibility).
-    hidden: true,
     description:
-      "Branding, colors, typography and styles for the entire app and this admin panel. Edited via /admin/theme.",
+      "Branding, colors, typography and styles for the entire app and this admin panel.",
   },
-  // Public read: the front end needs the theme to render for anonymous visitors.
-  // Update is staff-only.
-  access: { read: anyone, update: isAdmin },
+  // Drafts → publish: editors stage theme changes and publish when ready. The
+  // front end (and admin chrome) render the PUBLISHED version; saving a draft
+  // does not change the live theme. `max` caps stored version history.
+  versions: { drafts: true, max: 20 },
+  // Public read of the PUBLISHED theme (anonymous visitors need it to render);
+  // admins see drafts. Update + version history are staff-only.
+  access: { read: publishedOrAdmin, update: isAdmin, readVersions: isAdmin },
   fields: [
-    // Which editor mode was last used in the /admin/theme view.
-    {
-      name: "editorMode",
-      type: "select",
-      defaultValue: "simple",
-      options: [
-        { label: "Simple", value: "simple" },
-        { label: "Advanced", value: "advanced" },
-      ],
-      admin: { hidden: true },
-    },
     {
       type: "tabs",
       tabs: [

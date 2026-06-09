@@ -272,18 +272,17 @@ pulls in Tailwind **utilities without preflight** (so shadcn components work in 
 without breaking Payload's reset) and maps the shadcn tokens onto Payload's own
 `--theme-*`/`--font-body` chrome variables. Token values come from `ThemeStyleProvider`.
 
-**Theme editor — `/admin/theme`.** A custom Payload admin view (`payload/views/ThemeView.tsx`
-→ `ThemeEditor`, registered via `admin.components.views` + `afterNavLinks`) edits the global
-with branding (app name + icon/logos via Media uploads), colors, typography and styles, with a
-live preview. It has two modes:
-- **Simple** — three colors (background, foreground, primary); `lib/theme/derive.ts#deriveBoth`
-  computes the full light palette **and** an auto-generated dark palette.
-- **Advanced** — every token, per light/dark, grouped (Brand/Base/UI/Sidebar[+sync]/Charts),
-  plus serif font, letter-spacing, radius, spacing and shadow.
-Saves via `POST /cms-api/globals/theme-settings`; uploads via `POST /cms-api/media`. Pure color
-math + derivation live in `lib/theme/{color,derive}.ts` (unit-tested). **Branding** (app name,
-favicon, sidebar logo) is read server-side by `getBranding()` (lib/payload.ts) and surfaced via
-`BrandingProvider`. Serif fonts (Merriweather/Lora) are loaded on `<html>` alongside the sans/mono set.
+**Editing the theme.** `theme-settings` is a **standard, versioned Payload global** — no
+custom view. It lives in the **Admin** nav group under **Site Settings** and is edited with
+Payload's native **Edit / API** tabs plus a **Versions** tab. Versioning is **drafts → publish**
+(`versions: { drafts: true }`): the front end and admin chrome render the **published** theme, so
+a draft save does not change the live site until you **Publish**. Fields are grouped in tabs
+(Branding · Light · Dark · Typography · Other); branding uploads (app icon/logos) use standard
+Media upload fields. Read access is `publishedOrAdmin` (anonymous visitors get the published
+theme; staff see drafts); update + `readVersions` are staff-only. Pure color math lives in
+`lib/theme/color.ts` (consumed by `serialize.ts`). **Branding** (app name, favicon, sidebar logo)
+is read server-side by `getBranding()` (lib/payload.ts) and surfaced via `BrandingProvider`.
+Serif fonts (Merriweather/Lora) are loaded on `<html>` alongside the sans/mono set.
 
 ## Conventions
 
