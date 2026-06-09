@@ -137,11 +137,12 @@ jobs:
       - name: RLS isolation regression
         run: pnpm test:rls
 
-      # Dev push (NODE_ENV!=production) creates the cms tables on boot, then the
-      # script seeds demo content so the public-content e2e has data to render.
-      - name: Seed Payload CMS
-        run: pnpm cms:seed
-
+      # NOTE: the CMS is intentionally NOT pre-seeded here. Payload's dev push
+      # (NODE_ENV!=production) creates the cms tables on boot, and the Playwright
+      # `setup` project (founder.setup.ts) seeds demo content by signing up the
+      # FIRST user — exercising the real signup→/cms-setup→seed path end-to-end —
+      # so the public-content specs have data to render. Pre-seeding would mask
+      # that path (the seed endpoint would no-op as already-seeded).
       - name: Install Playwright browser
         run: pnpm --filter @acme/web-e2e exec playwright install --with-deps chromium
 
