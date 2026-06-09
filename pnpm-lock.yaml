@@ -15,6 +15,9 @@ catalogs:
     '@payloadcms/db-postgres':
       specifier: 3.85.0
       version: 3.85.0
+    '@payloadcms/live-preview-react':
+      specifier: 3.85.0
+      version: 3.85.0
     '@payloadcms/next':
       specifier: 3.85.0
       version: 3.85.0
@@ -279,6 +282,9 @@ importers:
       '@payloadcms/db-postgres':
         specifier: 'catalog:'
         version: 3.85.0(@opentelemetry/api@1.9.0)(payload@3.85.0(bufferutil@4.0.8)(graphql@16.14.1)(typescript@5.9.3))
+      '@payloadcms/live-preview-react':
+        specifier: 'catalog:'
+        version: 3.85.0(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
       '@payloadcms/next':
         specifier: 'catalog:'
         version: 3.85.0(@types/react@19.1.12)(graphql@16.14.1)(monaco-editor@0.55.1)(next@16.2.7(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4))(payload@3.85.0(bufferutil@4.0.8)(graphql@16.14.1)(typescript@5.9.3))(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(typescript@5.9.3)
@@ -318,6 +324,9 @@ importers:
       lucide-react:
         specifier: ^1.17.0
         version: 1.17.0(react@19.1.4)
+      motion:
+        specifier: ^12.0.0
+        version: 12.40.0(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
       next:
         specifier: ^16.2.6
         version: 16.2.7(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4)
@@ -2784,6 +2793,15 @@ packages:
     peerDependencies:
       graphql: ^16.8.1
       payload: 3.85.0
+
+  '@payloadcms/live-preview-react@3.85.0':
+    resolution: {integrity: sha512-QgPVGPOJz57jTGu2j6DBhCCASuT4YiZE4itVK7uKMcxZi8adtsSgz/G0BuU/XepOV62pApbTdMQxRQAwo198cg==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.1 || ^19.1.2 || ^19.2.1
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.1 || ^19.1.2 || ^19.2.1
+
+  '@payloadcms/live-preview@3.85.0':
+    resolution: {integrity: sha512-IMx9ymbAqwgwoYxeoGcVtXwvD5O+/Qu9jW3IikxwI44fCH08kZSxLe1FXtc3WFRaemhc5clMWPB9RDehg16QXA==}
 
   '@payloadcms/next@3.85.0':
     resolution: {integrity: sha512-9Q0kaKgd1CBl2Nu6QMISqRKfDlGraCkLWxKlWH59MO0Fu+vhvqhqEIv/gjzNj6wWMMH8e4yzFm8knZjTJTzzWQ==}
@@ -5773,6 +5791,20 @@ packages:
     resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
     engines: {node: '>=14'}
 
+  framer-motion@12.40.0:
+    resolution: {integrity: sha512-uaBd3qC1v3KQqBEjwTUd183K6PbS+j0yR9w9VmEOLWA/tnUcSn8Xa3uck7t4dgpDoUss8xQTcj8W2L07lrnLFg==}
+    peerDependencies:
+      '@emotion/is-prop-valid': '*'
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@emotion/is-prop-valid':
+        optional: true
+      react:
+        optional: true
+      react-dom:
+        optional: true
+
   freeport-async@2.0.0:
     resolution: {integrity: sha512-K7od3Uw45AJg00XUmy15+Hae2hOcgKcmN3/EF6Y7i01O0gaqiRx8sUSpsb9+BRNL8RPBrhzPsVfy8q9ADlJuWQ==}
     engines: {node: '>=8'}
@@ -6983,6 +7015,26 @@ packages:
 
   monaco-editor@0.55.1:
     resolution: {integrity: sha512-jz4x+TJNFHwHtwuV9vA9rMujcZRb0CEilTEwG2rRSpe/A7Jdkuj8xPKttCgOh+v/lkHy7HsZ64oj+q3xoAFl9A==}
+
+  motion-dom@12.40.0:
+    resolution: {integrity: sha512-HxU3ZaBwNPVQUBQf1xxgq+7JrPNZvjLVxgbpEZL7RrWJnsxOf0/OM+yrHG9ogLQ31Do/r57Oz2gQWPK+6q62mg==}
+
+  motion-utils@12.39.0:
+    resolution: {integrity: sha512-8nadJAJjTtqRkmRF36FoJTrywK9nnFmnPwnSMyxaOCU7GDjN9RTMJIxx9De8ErM+vpPhMccr/6fo5WciyQLnMQ==}
+
+  motion@12.40.0:
+    resolution: {integrity: sha512-yjrHUrBFW6kQvjJwRsoiPSAhC5tRwRqNGJWmiJ4CrGnbKp0V88AdzkhBmDoqIsIPfarOe0Uddd37Xq43/gIocA==}
+    peerDependencies:
+      '@emotion/is-prop-valid': '*'
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@emotion/is-prop-valid':
+        optional: true
+      react:
+        optional: true
+      react-dom:
+        optional: true
 
   ms@2.0.0:
     resolution: {integrity: sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==}
@@ -11471,6 +11523,14 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
+  '@payloadcms/live-preview-react@3.85.0(react-dom@19.1.4(react@19.1.4))(react@19.1.4)':
+    dependencies:
+      '@payloadcms/live-preview': 3.85.0
+      react: 19.1.4
+      react-dom: 19.1.4(react@19.1.4)
+
+  '@payloadcms/live-preview@3.85.0': {}
+
   '@payloadcms/next@3.85.0(@types/react@19.1.12)(graphql@16.14.1)(monaco-editor@0.55.1)(next@16.2.7(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4))(payload@3.85.0(bufferutil@4.0.8)(graphql@16.14.1)(typescript@5.9.3))(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(typescript@5.9.3)':
     dependencies:
       '@dnd-kit/core': 6.3.1(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
@@ -15008,6 +15068,15 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
+  framer-motion@12.40.0(react-dom@19.1.4(react@19.1.4))(react@19.1.4):
+    dependencies:
+      motion-dom: 12.40.0
+      motion-utils: 12.39.0
+      tslib: 2.8.1
+    optionalDependencies:
+      react: 19.1.4
+      react-dom: 19.1.4(react@19.1.4)
+
   freeport-async@2.0.0: {}
 
   fresh@0.5.2: {}
@@ -16576,6 +16645,20 @@ snapshots:
     dependencies:
       dompurify: 3.2.7
       marked: 14.0.0
+
+  motion-dom@12.40.0:
+    dependencies:
+      motion-utils: 12.39.0
+
+  motion-utils@12.39.0: {}
+
+  motion@12.40.0(react-dom@19.1.4(react@19.1.4))(react@19.1.4):
+    dependencies:
+      framer-motion: 12.40.0(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
+      tslib: 2.8.1
+    optionalDependencies:
+      react: 19.1.4
+      react-dom: 19.1.4(react@19.1.4)
 
   ms@2.0.0: {}
 
