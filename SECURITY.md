@@ -23,8 +23,9 @@ Please allow a reasonable amount of time for a fix before any public disclosure.
 This is a clone-and-ship template, so a few things are intentional and **not**
 vulnerabilities:
 
-- **Demo seed credentials** (`user.a@example.com` / `password123`) and the
-  well-known **local** Supabase keys exist only for local development and tests.
+- The database ships with an **empty seed** (no demo accounts) — the first UI
+  signup becomes the owner. The well-known **local** Supabase keys exist only for
+  local development and tests.
 - The committed `.env.example` contains **placeholders only** — never real secrets.
 
 Security-relevant invariants we *do* care about (please report breaks):

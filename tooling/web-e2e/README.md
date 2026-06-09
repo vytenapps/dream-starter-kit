@@ -22,15 +22,16 @@ pnpm test:e2e
 ```
 
 Local Supabase runs with email confirmations **off**, so sign-up lands straight
-on the dashboard and the seeded accounts (`user.a@example.com` / `password123`)
-can sign in immediately.
+on the dashboard. The kit ships an **empty seed** (no demo accounts) — the first
+UI signup becomes the owner — so the auth spec signs **up** a fresh account each
+run rather than signing in to seed data.
 
 ## What's covered
 
 | Spec                    | Flow                                                                                             |
 | ----------------------- | ------------------------------------------------------------------------------------------------ |
 | `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`). |
-| `auth.spec.ts`          | Seeded password sign-in → dashboard; a signed-in user is bounced away from auth pages.           |
+| `auth.spec.ts`          | Sign up → dashboard; a signed-in user is bounced away from auth pages.                           |
 | `critical-path.spec.ts` | Sign up → create a project → add an item (the reference RLS-backed CRUD flow).                   |
 
 ## Deliberately not covered here

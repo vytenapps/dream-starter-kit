@@ -145,8 +145,9 @@ pnpm dev:next      # web only  →  http://localhost:3000
 pnpm dev           # web + mobile together (turbo watch)
 ```
 
-Sign in with a seeded local account: `user.a@example.com` / `password123`
-(User A has an active Pro subscription) or `user.b@example.com`.
+The database ships **empty** (no seeded accounts), so the **first account you
+sign up becomes the owner** — it's auto-flagged staff and gets Payload CMS admin
+access at `/admin`. Open the web app, hit **Sign up**, and you're the founder.
 
 ### 5. Make it yours
 
