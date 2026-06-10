@@ -1,0 +1,26 @@
+<!--
+  Staff invite email (Supabase "Invite user" template), sent when an admin
+  creates a user in /admin (payload/hooks/invite-user.ts).
+
+  Links straight to the app's /accept-invite page with {{ .TokenHash }}; the
+  page verifies it with an explicit verifyOtp(type: "invite") call. This keeps
+  the one-time token out of the navigation redirect chain, so link prefetchers
+  (mail scanners) and browser navigation restarts can't burn it — unlike the
+  default {{ .ConfirmationURL }} flow.
+
+  Hosted Supabase does not read this file — paste the same markup into the
+  Dashboard (Authentication -> Emails -> Invite user). See README -> Deploy.
+-->
+<h2>You have been invited</h2>
+
+<p>
+  You have been invited to create a staff account on {{ .SiteURL }}. Follow
+  this link to accept the invite and set your password:
+</p>
+<p>
+  <a href="{{ .SiteURL }}/accept-invite?token_hash={{ .TokenHash }}&type=invite"
+    >Accept the invite</a
+  >
+</p>
+
+<p>If you weren’t expecting this invitation, you can ignore this email.</p>

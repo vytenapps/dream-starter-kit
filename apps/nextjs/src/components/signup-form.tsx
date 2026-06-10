@@ -42,14 +42,25 @@ export function SignupForm({
 
   async function onSubmit(values: SignUpInput) {
     try {
-      await signUpWithPassword(supabase, values, { emailRedirectTo: callback });
-      toast.success("Account created");
-      // Full-page navigation (not router.replace): the auth cookie is set
-      // client-side by supabase-js, and a soft App-Router navigation doesn't
-      // reliably pick it up. A hard navigation makes the server re-read the
-      // fresh session — /welcome then routes the founder to the CMS seed flow
-      // and everyone else to /dashboard. (Verified via e2e.)
-      window.location.assign("/welcome");
+      const { session } = await signUpWithPassword(supabase, values, {
+        emailRedirectTo: callback,
+      });
+      if (session) {
+        // Email confirmations are off — the user is already signed in.
+        toast.success("Account created");
+        // Full-page navigation (not router.replace): the auth cookie is set
+        // client-side by supabase-js, and a soft App-Router navigation doesn't
+        // reliably pick it up. A hard navigation makes the server re-read the
+        // fresh session — /welcome then routes the founder to the CMS seed flow
+        // and everyone else to /dashboard. (Verified via e2e.)
+        window.location.assign("/welcome");
+      } else {
+        // Confirmations are on (the hosted default): no session until the user
+        // clicks the emailed link or enters the emailed code on /check-email.
+        window.location.assign(
+          `/check-email?email=${encodeURIComponent(values.email)}`,
+        );
+      }
     } catch (e) {
       toast.error(authErrorMessage(e, "Sign up failed"));
     }
