@@ -135,9 +135,12 @@ Built and shipped with EAS ([§4.11](#411-build--ship)).
 One Supabase project provides Postgres, **Supabase Auth** (email/password, magic
 link, Google & Apple OAuth), Storage, and **Edge Functions** (Deno). Email
 **confirmations are on** (locally too, matching hosted defaults): sign-up routes
-to `/check-email`, completed by the emailed link (`/auth/callback` code exchange,
-then `/welcome` routes founder → `/cms-setup`, others → `/dashboard`) or by
-typing the emailed 6-digit code (`verifyOtp`). The schema
+to `/check-email`, completed by the emailed link (`/confirm-email` verifies the
+`token_hash`, then `/welcome` routes founder → `/cms-setup`, others →
+`/dashboard`) or by typing the emailed 6-digit code (`verifyOtp`). Both kit email
+templates link via `token_hash` pages rather than GoTrue redirect links, so
+re-sent emails, cross-browser opens, and prefetch-happy mail scanners all work.
+The schema
 and the canonical security pattern live in [`ERD.md`](./ERD.md) and are applied
 by the SQL files in `supabase/migrations/`. The kit ships the whole base schema
 as a **single baseline migration** (`20260609000001_initial.sql` — identity,

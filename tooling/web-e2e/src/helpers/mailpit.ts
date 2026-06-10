@@ -18,9 +18,10 @@ interface MailpitMessage {
 
 /**
  * Poll Mailpit for the newest message to `email` and return its auth content:
- * the action link (a Supabase `/auth/v1/verify` link in confirmation emails, or
- * the app's `/accept-invite?token_hash=…` link in invite emails) and, when
- * present, the 6-digit OTP code from the customized confirmation template.
+ * the action link (the app's `/confirm-email?token_hash=…` /
+ * `/accept-invite?token_hash=…` links from the kit templates, or a Supabase
+ * `/auth/v1/verify` link from default templates) and, when present, the
+ * 6-digit OTP code from the customized confirmation template.
  */
 export async function fetchAuthEmail(
   email: string,
@@ -58,7 +59,7 @@ function parseAuthEmail(
   email: string,
 ): { link: string; code: string | null } {
   const actionUrl =
-    /https?:\/\/[^\s"'<>]*(?:\/auth\/v1\/verify|\/accept-invite\?token_hash=)[^\s"'<>]*/;
+    /https?:\/\/[^\s"'<>]*(?:\/auth\/v1\/verify|\/(?:accept-invite|confirm-email)\?token_hash=)[^\s"'<>]*/;
   // Prefer the plain-text body; fall back to HTML (with entities unescaped).
   const link =
     actionUrl.exec(message.Text)?.[0] ??
@@ -110,13 +111,10 @@ export async function signUpToCheckEmail(
 
 /**
  * Sign up through the UI and complete email confirmation by following the
- * emailed link from Mailpit.
- *
- * The link is opened in the SAME page: the confirmation link is PKCE-coupled
- * (the code verifier cookie was set at sign-up), so it only completes in the
- * browser context that signed up. It ends on /auth/callback → /welcome, which
- * routes the founder to /cms-setup and everyone else to /dashboard — assert
- * the destination in the caller.
+ * emailed link from Mailpit (/confirm-email?token_hash=… — verified by the
+ * page via verifyOtp, no PKCE coupling). It ends on /welcome, which routes
+ * the founder to /cms-setup and everyone else to /dashboard — assert the
+ * destination in the caller.
  */
 export async function signUpAndConfirm(
   page: Page,
@@ -125,4 +123,13 @@ export async function signUpAndConfirm(
   await signUpToCheckEmail(page, opts);
   const { link } = await fetchAuthEmail(opts.email);
   await page.goto(link);
+  // /confirm-email verifies the token client-side, then hard-navigates through
+  // /welcome to the destination — wait out both hops (slow on a loaded dev
+  // server) so callers can assert the final URL directly.
+  await page.waitForURL(
+    (url) =>
+      !url.pathname.startsWith("/confirm-email") &&
+      !url.pathname.startsWith("/welcome"),
+    { timeout: 60_000 },
+  );
 }

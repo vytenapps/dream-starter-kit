@@ -24,8 +24,10 @@ test("signing in as the admin lands in /admin", async ({ page }) => {
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.waitForURL(/\/admin/, { timeout: 60_000 });
-  // Assert the Payload admin actually rendered for this user (not just the URL).
+  // Assert the Payload admin actually rendered for this user (not just the
+  // URL). Generous timeout: the admin shell's data fetches crawl when the dev
+  // server is busy compiling for parallel workers.
   await expect(
     page.getByRole("link", { name: "Users", exact: true }),
-  ).toBeVisible({ timeout: 30_000 });
+  ).toBeVisible({ timeout: 60_000 });
 });

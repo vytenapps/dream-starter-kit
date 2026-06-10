@@ -40,15 +40,45 @@ test("signing up + entering the email code manually lands on the dashboard", asy
   const email = uniqueEmail();
   await signUpToCheckEmail(page, { name: "E2E User", email });
 
-  // The manual path: the same email carries a 6-digit code (verifyOtp — not
-  // PKCE-coupled, so unlike the link it would work from any browser).
+  // The manual path: the same email carries a 6-digit code, verified inline.
   await page.getByRole("button", { name: "Enter code manually" }).click();
   const { code } = await fetchAuthEmail(email);
   expect(code).toBeTruthy();
   await page.getByPlaceholder("Enter code").fill(code ?? "");
   await page.getByRole("button", { name: "Continue with login code" }).click();
 
-  await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
+  // verifyOtp + hard nav through /welcome; allow for cold compiles under load.
+  await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
+});
+
+test("signing in before confirming re-sends the confirmation email", async ({
+  page,
+}) => {
+  // Recovery path: the original confirmation link expired/broke (e.g. the
+  // hosted project's redirect URLs weren't configured yet). Signing in with
+  // the right password but an unconfirmed email must re-send a FRESH
+  // confirmation and land back on /check-email — not dead-end on a toast.
+  const email = uniqueEmail();
+  await signUpToCheckEmail(page, { name: "E2E User", email });
+  const first = await fetchAuthEmail(email);
+
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill("password123");
+  await page.getByRole("button", { name: "Login" }).click();
+  await page.waitForURL(/\/check-email/);
+
+  // A fresh confirmation arrived (new one-time token → different link).
+  let link = first.link;
+  await expect(async () => {
+    const latest = await fetchAuthEmail(email);
+    expect(latest.link).not.toBe(first.link);
+    link = latest.link;
+  }).toPass({ timeout: 20_000 });
+
+  // The new link completes the flow.
+  await page.goto(link);
+  await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
 });
 
 test("a signed-in user is bounced away from auth pages", async ({ page }) => {

@@ -2,10 +2,14 @@
   Sign-up confirmation email (Supabase "Confirm signup" template).
 
   Carries BOTH verification paths the /check-email screen offers:
-    - {{ .ConfirmationURL }} — the one-click link (PKCE: must be opened in the
-      same browser that signed up; handled by /auth/callback).
-    - {{ .Token }} — the 6-digit code for "Enter code manually" (verifyOtp;
-      works from any browser/device).
+    - a link to /confirm-email?token_hash=… — verified by an explicit
+      verifyOtp call from the page. Deliberately NOT {{ .ConfirmationURL }}:
+      re-sent confirmations have no PKCE state, so their links redirect with
+      implicit-flow hash tokens a server route can't read; and a one-time
+      token in a redirect chain gets burned by mail-scanner prefetch or
+      browser navigation restarts. token_hash works for original AND re-sent
+      emails, from any browser/device.
+    - {{ .Token }} — the 6-digit code for "Enter code manually".
 
   Hosted Supabase does not read this file — paste the same markup into the
   Dashboard (Authentication -> Emails -> Confirm signup). See README -> Deploy.
@@ -13,7 +17,11 @@
 <h2>Confirm your email</h2>
 
 <p>Follow this link to confirm your email and finish creating your account:</p>
-<p><a href="{{ .ConfirmationURL }}">Confirm your email</a></p>
+<p>
+  <a href="{{ .SiteURL }}/confirm-email?token_hash={{ .TokenHash }}&type=signup"
+    >Confirm your email</a
+  >
+</p>
 
 <p>Or enter this code on the “Check your email” screen:</p>
 <p style="font-size: 24px; letter-spacing: 4px"><strong>{{ .Token }}</strong></p>

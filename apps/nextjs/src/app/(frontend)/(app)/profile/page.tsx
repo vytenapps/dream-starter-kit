@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import type { UpdateProfileInput } from "@acme/app";
 import { useSession } from "@acme/api";
 import {
+  resendSignUpEmail,
   signOut,
   updateProfileSchema,
   useDeleteAccount,
@@ -18,7 +19,9 @@ import { toast } from "@acme/ui/toast";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { authCallbackUrl } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/client";
+import { authErrorMessage } from "~/lib/supabase/config";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -55,6 +58,24 @@ export default function ProfilePage() {
     router.refresh();
   }
 
+  // Recovery path for an unconfirmed email (e.g. the confirmation link
+  // expired or redirected to the wrong origin before the project's auth URLs
+  // were configured): re-send a fresh confirmation and finish on /check-email,
+  // which offers both the link and the manual 6-digit code.
+  async function onVerifyEmail() {
+    if (!user?.email) return;
+    try {
+      await resendSignUpEmail(supabase, user.email, {
+        emailRedirectTo: authCallbackUrl("/welcome"),
+      });
+      window.location.assign(
+        `/check-email?email=${encodeURIComponent(user.email)}`,
+      );
+    } catch (e) {
+      toast.error(authErrorMessage(e, "Could not send the email. Try again."));
+    }
+  }
+
   async function onDelete() {
     if (
       !window.confirm("Permanently delete your account? This cannot be undone.")
@@ -83,6 +104,19 @@ export default function ProfilePage() {
           Sign out
         </Button>
       </div>
+
+      {user && !user.email_confirmed_at && (
+        <div className="border-muted-foreground/30 -mt-4 rounded-lg border p-4">
+          <h2 className="font-medium">Email not verified</h2>
+          <p className="text-muted-foreground mb-3 text-sm">
+            Your email address hasn’t been confirmed yet. We can send you a
+            fresh confirmation link and code.
+          </p>
+          <Button type="button" onClick={() => void onVerifyEmail()}>
+            Verify email
+          </Button>
+        </div>
+      )}
 
       <form
         onSubmit={(e) => void handleSubmit(onSave)(e)}
