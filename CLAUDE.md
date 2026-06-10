@@ -108,7 +108,7 @@ A feature is a vertical slice through these layers. Build them in this order:
 | 3 | **DB types** | `packages/api` (generated) | `pnpm db:gen-types` — never hand-edit |
 | 4 | **Validators** | `packages/app/src/validators` | zod schemas for create/update input |
 | 5 | **Hooks** | `packages/app/src/hooks` | react-query hooks over the typed client |
-| 6 | **Web UI** | `apps/nextjs/src/app/(app)/…` | shadcn + react-hook-form, calls the hooks |
+| 6 | **Web UI** | `apps/nextjs/src/app/(frontend)/(app)/…` | shadcn + react-hook-form, calls the hooks |
 | 7 | **Native UI** | `apps/expo/src/app/(app)/…` | react-native-reusables, calls the same hooks |
 | 8 | **Server (only if needed)** | `apps/nextjs/src/app/api` or `supabase/functions` | privileged work (Stripe, AI, cron) |
 | 9 | **Tests** | `packages/app` + `tooling/rls-tests` + `tooling/web-e2e` | unit + RLS isolation + e2e |
@@ -174,7 +174,7 @@ export function useTasks() {
 // + useCreateTask / useUpdateTask / useDeleteTask (mutations that invalidate ["tasks"])
 ```
 
-**5. UI.** Web screen under `apps/nextjs/src/app/(app)/tasks` (shadcn + react-hook-form
+**5. UI.** Web screen under `apps/nextjs/src/app/(frontend)/(app)/tasks` (shadcn + react-hook-form
 with `standardSchemaResolver(createTaskSchema)`); native screen under
 `apps/expo/src/app/(app)/tasks.tsx` (react-native-reusables). Both call the hooks
 from step 4 — no data logic in the screens. Add the route to the web sidebar /
