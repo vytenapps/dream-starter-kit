@@ -169,6 +169,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await admin.from("subscriptions").delete().eq("user_id", aId);
+  await admin.from("subscriptions").delete().eq("user_id", bId);
   if (orgAId) await admin.from("organizations").delete().eq("id", orgAId); // cascades memberships + invitations
   await admin.from("customers").delete().eq("user_id", aId);
   await admin.from("notifications").delete().eq("user_id", aId);
@@ -469,5 +470,69 @@ describe("RLS: customers are read-own (service-role written)", () => {
       .select("*")
       .eq("user_id", aId);
     expect(data).toHaveLength(0);
+  });
+});
+
+describe("premium gating: only active/trialing subscriptions unlock premium", () => {
+  // Mirrors the exact query in packages/app/src/hooks/use-premium.ts
+  // (usePremium): read-own subscriptions, filtered to active/trialing, newest
+  // period first. This pins the premium gate (golden rule #4) — RLS read-own
+  // AND the status filter together — against B, who starts with no subscription.
+  const ACTIVE_STATUSES = ["active", "trialing"];
+  const day = 86_400_000;
+
+  async function premiumRow(client: SupabaseClient<Database>) {
+    const { data, error } = await client
+      .from("subscriptions")
+      .select("status, price_id, current_period_end")
+      .in("status", ACTIVE_STATUSES)
+      .order("current_period_end", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    expect(error).toBeNull();
+    return data;
+  }
+
+  it("returns nothing when the user has only canceled/past_due rows", async () => {
+    await admin.from("subscriptions").insert([
+      {
+        id: `sub_b_canceled_${stamp}`,
+        user_id: bId,
+        price_id: "price_rls",
+        status: "canceled",
+        current_period_end: new Date(stamp - day).toISOString(),
+      },
+      {
+        id: `sub_b_pastdue_${stamp}`,
+        user_id: bId,
+        price_id: "price_rls",
+        status: "past_due",
+        current_period_end: new Date(stamp - 2 * day).toISOString(),
+      },
+    ]);
+    expect(await premiumRow(clientB)).toBeNull();
+  });
+
+  it("returns the newest active/trialing row once the user has one", async () => {
+    await admin.from("subscriptions").insert([
+      {
+        id: `sub_b_active_${stamp}`,
+        user_id: bId,
+        price_id: "price_rls",
+        status: "active",
+        current_period_end: new Date(stamp + day).toISOString(),
+      },
+      {
+        id: `sub_b_trialing_${stamp}`,
+        user_id: bId,
+        price_id: "price_rls",
+        status: "trialing",
+        current_period_end: new Date(stamp + 10 * day).toISOString(),
+      },
+    ]);
+    const row = await premiumRow(clientB);
+    // trialing has the latest current_period_end among active/trialing, so it
+    // wins — and canceled/past_due are excluded by the status filter.
+    expect(row?.status).toBe("trialing");
   });
 });
