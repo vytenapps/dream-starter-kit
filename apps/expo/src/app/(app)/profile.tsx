@@ -11,6 +11,7 @@ import {
   useDeleteAccount,
   useProfile,
   useUpdateProfile,
+  useUserTags,
 } from "@acme/app";
 
 import { Button } from "~/components/ui/button";
@@ -26,6 +27,7 @@ export default function Profile() {
   const profile = useProfile();
   const updateProfile = useUpdateProfile();
   const deleteAccount = useDeleteAccount();
+  const tags = useUserTags();
 
   const {
     control,
@@ -112,6 +114,29 @@ export default function Profile() {
         {errors.avatarUrl && (
           <Text className="text-destructive text-sm">
             {errors.avatarUrl.message}
+          </Text>
+        )}
+      </View>
+
+      <View className="gap-1">
+        <Text className="text-sm font-medium">Tags</Text>
+        {tags.data && tags.data.length > 0 ? (
+          <View className="flex-row flex-wrap gap-2">
+            {tags.data.map((tag) => (
+              <View
+                key={tag.id}
+                className="bg-secondary rounded-full px-3 py-1"
+                style={tag.color ? { backgroundColor: tag.color } : undefined}
+              >
+                <Text className="text-secondary-foreground text-xs">
+                  {tag.name}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text className="text-muted-foreground text-sm">
+            {tags.isLoading ? "Loading…" : "No tags yet."}
           </Text>
         )}
       </View>

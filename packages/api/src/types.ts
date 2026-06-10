@@ -259,6 +259,51 @@ export interface Database {
         };
         Relationships: [];
       };
+      tags: {
+        Row: {
+          id: string;
+          name: string;
+          color: string | null;
+          is_system: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          color?: string | null;
+          is_system?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          color?: string | null;
+          is_system?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      user_tags: {
+        Row: {
+          id: string;
+          user_id: string;
+          tag_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tag_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          tag_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       push_tokens: {
         Row: {
           id: string;

@@ -12,9 +12,11 @@ import {
   useDeleteAccount,
   useProfile,
   useUpdateProfile,
+  useUserTags,
 } from "@acme/app";
 import { toast } from "@acme/ui/toast";
 
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -27,6 +29,7 @@ export default function ProfilePage() {
   const profile = useProfile();
   const updateProfile = useUpdateProfile();
   const deleteAccount = useDeleteAccount();
+  const tags = useUserTags();
 
   const {
     register,
@@ -114,6 +117,31 @@ export default function ProfilePage() {
           {updateProfile.isPending ? "Saving…" : "Save"}
         </Button>
       </form>
+
+      <div className="grid gap-2">
+        <Label>Tags</Label>
+        {tags.data && tags.data.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {tags.data.map((tag) => (
+              <Badge
+                key={tag.id}
+                variant="secondary"
+                style={
+                  tag.color
+                    ? { backgroundColor: tag.color, color: "#fff" }
+                    : undefined
+                }
+              >
+                {tag.name}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            {tags.isLoading ? "Loading…" : "No tags yet."}
+          </p>
+        )}
+      </div>
 
       <div className="border-destructive/30 mt-4 rounded-lg border p-4">
         <h2 className="text-destructive font-medium">Danger zone</h2>
