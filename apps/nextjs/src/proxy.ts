@@ -11,6 +11,7 @@ const PROTECTED_PREFIXES = [
   "/dashboard",
   "/reminders",
   "/notifications",
+  "/billing",
 ];
 // Auth pages a signed-in user shouldn't see.
 const AUTH_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password"];
