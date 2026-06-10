@@ -1,6 +1,7 @@
+import { writeFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
-import { FOUNDER_STORAGE_STATE } from "./helpers/founder";
+import { FOUNDER_META, FOUNDER_STORAGE_STATE } from "./helpers/founder";
 import { signUpAndConfirm } from "./helpers/mailpit";
 
 /**
@@ -47,6 +48,8 @@ test("founder sign-up seeds the CMS before /admin", async ({ page }) => {
   const body = (await status.json()) as { seeded?: boolean };
   expect(body.seeded).toBe(true);
 
-  // Persist the founder session for specs that act as staff (staff-invite).
+  // Persist the founder session (staff-invite.spec.ts acts as staff) and
+  // email (admin-login.spec.ts signs in fresh with it).
   await page.context().storageState({ path: FOUNDER_STORAGE_STATE });
+  await writeFile(FOUNDER_META, JSON.stringify({ email }));
 });

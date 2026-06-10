@@ -10,8 +10,11 @@ import { expect, test } from "@playwright/test";
 test.describe("public content", () => {
   test("home renders the hero inside the public chrome", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("header")).toBeVisible();
-    await expect(page.locator("footer")).toBeVisible();
+    // Landmark roles, not bare header/footer locators: Next's dev-tools
+    // overlay injects its own <footer>, which trips strict mode — but nested
+    // inside the overlay it doesn't get the banner/contentinfo role.
+    await expect(page.getByRole("banner")).toBeVisible();
+    await expect(page.getByRole("contentinfo")).toBeVisible();
     // The Launch UI hero renders the page's leading <h1>.
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });

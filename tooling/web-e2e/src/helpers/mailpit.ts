@@ -73,17 +73,18 @@ function parseAuthEmail(
 const DEFAULT_PASSWORD = "password123";
 
 /**
- * Sign up through the UI and complete email confirmation by following the
- * emailed link. Email confirmations are ON locally (matching hosted Supabase),
- * so submitting the form lands on /check-email, not the app.
+ * Sign up through the UI, ending on the /check-email screen. Email
+ * confirmations are ON locally (matching hosted Supabase), so submitting the
+ * form routes there instead of into the app.
  *
- * The link is opened in the SAME page: the confirmation link is PKCE-coupled
- * (the code verifier cookie was set at sign-up), so it only completes in the
- * browser context that signed up. It ends on /auth/callback → /welcome, which
- * routes the founder to /cms-setup and everyone else to /dashboard — assert
- * the destination in the caller.
+ * Resilience: under local load (next dev compile storms starving Docker),
+ * GoTrue can blow its 10s gateway deadline and answer 504 — even though the
+ * user WAS created and the confirmation email sent. The form then stays on
+ * /sign-up showing an error toast. Rather than fail on infra slowness, fall
+ * through to /check-email ourselves; the Mailpit fetch that follows still
+ * fails loudly if no email ever arrived (a real signup failure).
  */
-export async function signUpAndConfirm(
+export async function signUpToCheckEmail(
   page: Page,
   {
     name,
@@ -97,11 +98,31 @@ export async function signUpAndConfirm(
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Create Account" }).click();
 
-  await page.waitForURL(/\/check-email/);
+  await page.waitForURL(/\/check-email/, { timeout: 20_000 }).catch(() =>
+    // Signup response lost (e.g. GoTrue 504) — the account usually exists
+    // anyway; continue on /check-email and let the email fetch decide.
+    page.goto(`/check-email?email=${encodeURIComponent(email)}`),
+  );
   await expect(
     page.getByRole("heading", { name: "Check your email" }),
   ).toBeVisible();
+}
 
-  const { link } = await fetchAuthEmail(email);
+/**
+ * Sign up through the UI and complete email confirmation by following the
+ * emailed link from Mailpit.
+ *
+ * The link is opened in the SAME page: the confirmation link is PKCE-coupled
+ * (the code verifier cookie was set at sign-up), so it only completes in the
+ * browser context that signed up. It ends on /auth/callback → /welcome, which
+ * routes the founder to /cms-setup and everyone else to /dashboard — assert
+ * the destination in the caller.
+ */
+export async function signUpAndConfirm(
+  page: Page,
+  opts: { name: string; email: string; password?: string },
+): Promise<void> {
+  await signUpToCheckEmail(page, opts);
+  const { link } = await fetchAuthEmail(opts.email);
   await page.goto(link);
 }

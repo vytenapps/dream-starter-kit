@@ -1,6 +1,17 @@
 import { expect, test } from "@playwright/test";
 
-import { fetchAuthEmail, signUpAndConfirm } from "./helpers/mailpit";
+import {
+  fetchAuthEmail,
+  signUpAndConfirm,
+  signUpToCheckEmail,
+} from "./helpers/mailpit";
+
+// Run this file's tests sequentially (one worker): every test starts with a
+// sign-up, and firing all three simultaneously can push local GoTrue past its
+// 10s request deadline (each signup sends a confirmation email) → 504s. Other
+// spec files still run in parallel; "default" (unlike "serial") doesn't skip
+// the remaining tests when one fails.
+test.describe.configure({ mode: "default" });
 
 /**
  * Auth e2e against local Supabase. The kit ships an EMPTY seed (no seeded
@@ -27,12 +38,7 @@ test("signing up + entering the email code manually lands on the dashboard", asy
   page,
 }) => {
   const email = uniqueEmail();
-  await page.goto("/sign-up");
-  await page.getByLabel("Name").fill("E2E User");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill("password123");
-  await page.getByRole("button", { name: "Create Account" }).click();
-  await page.waitForURL(/\/check-email/);
+  await signUpToCheckEmail(page, { name: "E2E User", email });
 
   // The manual path: the same email carries a 6-digit code (verifyOtp — not
   // PKCE-coupled, so unlike the link it would work from any browser).

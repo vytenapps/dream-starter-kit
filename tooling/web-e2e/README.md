@@ -47,6 +47,7 @@ the same DB don't collide. The staff-invite spec also needs
 | `auth.spec.ts`          | Sign up → confirm (emailed link, and the manual 6-digit code path) → dashboard; a signed-in user is bounced away from auth pages.                                                        |
 | `critical-path.spec.ts` | Sign up → confirm → schedule a reminder (the reference RLS-backed CRUD flow).                                                                                                            |
 | `staff-invite.spec.ts`  | Founder invites a user from `/admin` → invite email → `/accept-invite` (fresh browser context) → set password → `/admin`.                                                                |
+| `admin-login.spec.ts`   | Signing in as the admin (founder credentials) routes through `/welcome` into `/admin`, with the Payload UI rendered.                                                                     |
 
 ## Deliberately not covered here
 
