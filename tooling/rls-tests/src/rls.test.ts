@@ -147,13 +147,11 @@ beforeAll(async () => {
   await clientA
     .from("push_tokens")
     .insert({ user_id: aId, token: `ExpoTok-${stamp}`, platform: "ios" });
-  await clientA
-    .from("files")
-    .insert({
-      user_id: aId,
-      path: `${aId}/avatar.png`,
-      mime_type: "image/png",
-    });
+  await clientA.from("files").insert({
+    user_id: aId,
+    path: `${aId}/avatar.png`,
+    mime_type: "image/png",
+  });
 
   // As service role: a customer row and a notification for A (these are written
   // by the server/webhook, never by clients — RLS only grants read-own).
