@@ -8,6 +8,7 @@ import type { NavItem } from "../ui/navigation";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetTitle,
   SheetTrigger,
 } from "~/components/ui/sheet";
@@ -120,6 +121,9 @@ export default function Navbar({
               </SheetTrigger>
               <SheetContent side="right">
                 <SheetTitle className="sr-only">Navigation menu</SheetTitle>
+                <SheetDescription className="sr-only">
+                  Site navigation links.
+                </SheetDescription>
                 <nav className="grid gap-6 p-6 text-lg font-medium">
                   <a
                     href={homeUrl}
