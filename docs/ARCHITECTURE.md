@@ -171,10 +171,19 @@ This is the part a founder most needs to get right, so it's enforced structurall
 
 ### 4.7 Payments — Stripe (web)
 
-Subscriptions are sold on the **web** with Stripe Checkout + the customer portal.
-The `stripe-webhook` edge function (signature-verified, idempotent) syncs the
-product/price catalog and subscription status into the database. There is one
-**Pro** plan with two prices — **$9.99/mo** and **$99/yr**.
+The billing catalog is **authored in Payload** (Payments → Plans/Coupons), not the
+Stripe dashboard. A staff-only **"Sync to Stripe"** action (`/api/stripe/sync` →
+`lib/stripe/sync.ts`) pushes plans/coupons into Stripe — creating a **new price and
+archiving the old** on any amount change, since Stripe prices are immutable. The
+`stripe-webhook` edge function (signature-verified, idempotent) then mirrors the
+product/price catalog and subscription status back into the database. So the data
+flow is one-way: **Payload → Stripe → DB**. Defaults: Dream Monthly ($9.99/mo),
+Annual ($99.99/yr, 7-day trial) and Lifetime ($399 one-time).
+
+Subscriptions are sold on the **web** with Stripe Checkout (plan-driven, with
+guest checkout that provisions the account post-payment) + the customer portal;
+`/billing` is the self-serve hub (change/cancel, invoices). Intro offers use a
+`duration:once` coupon; promotion/coupon codes are supported at checkout.
 
 The mobile apps stay free to download and unlock premium by reading the
 `subscriptions` table (RLS read-own) — so **no in-app-purchase tooling is

@@ -196,6 +196,25 @@ Deno.serve(async (req) => {
             await ensurePlanTag(admin, userId, priceId);
           }
         }
+
+        // Subscription mode: persist the subscription here too (not just from the
+        // customer.subscription.* event), so guest checkouts link correctly
+        // regardless of Stripe's event ordering.
+        if (userId && session.mode === "subscription" && session.subscription) {
+          const subId =
+            typeof session.subscription === "string"
+              ? session.subscription
+              : session.subscription.id;
+          const sub = await stripe.subscriptions.retrieve(subId);
+          await admin.from("subscriptions").upsert(mapSubscription(sub, userId));
+          if (sub.status === "active" || sub.status === "trialing") {
+            await ensurePlanTag(
+              admin,
+              userId,
+              sub.items.data[0]?.price.id ?? null,
+            );
+          }
+        }
         break;
       }
       case "customer.subscription.created":

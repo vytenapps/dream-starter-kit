@@ -256,6 +256,34 @@ hosted Supabase): the form routes to `/check-email`, which offers the emailed li
 (→ `/auth/callback` → `/welcome`) or manual entry of the emailed 6-digit code
 (`verifyOtp`). E2E specs pull both from Mailpit — see `tooling/web-e2e/README.md`.
 
+## Payments (Payload-authored plans → Stripe → DB)
+
+The billing catalog is **authored in Payload**, not the Stripe dashboard. `Plans` and
+`Coupons` live under the **Payments** admin nav group (`apps/nextjs/src/payload/collections/`),
+and `PricingSettings` (a global) curates the public `/pricing` page (which ≤3 plans to feature
++ a Free tier). The default three plans (Dream Monthly/Annual/Lifetime) + a welcome coupon are
+seeded by `seedCmsContent()`.
+
+- **Sync to Stripe** is a manual, staff-only action (a `ui` field button → `POST /api/stripe/sync`
+  → `lib/stripe/sync.ts`). It creates/updates the Stripe product and **creates a new price +
+  archives the old one** whenever the amount/interval changes (Stripe prices are **immutable** —
+  never mutate, always recreate). Coupons follow the same recreate-on-change rule. Resulting
+  Stripe ids are written back onto the Payload doc; the **existing Stripe webhook** then mirrors
+  products/prices into `public.*` for clients. Flow: **Payload → Stripe → DB**, one way.
+- **Intro offers** ("$1.99 first month, then $39.99") = a `duration:once` coupon auto-applied at
+  checkout. **Repeating** coupons take N months *or* N years (years × 12 → Stripe `duration_in_months`).
+- **Checkout is plan-driven** (`/api/stripe/checkout` takes a Payload `planId`) and supports
+  **guest checkout**: an anonymous buyer pays first, then the webhook matches their email to an
+  existing account or creates one + emails a Supabase invite (`/accept-invite` → `/dashboard`).
+  Stripe stays **web-only** (golden rule #4); mobile shows a read-only `/pricing` and links out.
+- Self-serve billing lives at `/billing` (current plan, change/cancel via the Stripe portal, past
+  invoices). Free→paid upgrade CTA is on `/dashboard`.
+
+**User tags** (`public.tags` / `public.user_tags`, RLS read-own) tag each user by plan name (the
+webhook auto-tags on active subscription; "Free" at signup) and are staff-manageable from the
+Payload **Users** page — which now mirrors **all** Supabase users (see `lib/cms/mirror-user.ts`;
+`profiles.is_staff` still gates admin login). Tags show on the app `/profile` (web + native).
+
 ## Theming (shadcn, one source of truth)
 
 The **front end** is driven by one editable shadcn theme; the Payload `/admin` panel
