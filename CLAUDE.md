@@ -242,10 +242,19 @@ pages, …), add a **Payload collection**, not a Supabase table. Content lives i
 is disabled; `apps/nextjs/src/payload/auth/supabase-strategy.ts` authenticates each CMS
 request from the Supabase session and provisions a `cms.users` row (linked by
 `supabaseUserId`). Access is **default-deny**: only users with `profiles.is_staff = true`
-get in (the first signup is auto-flagged; flip the flag to add editors). The bridge runs
-in the Next.js server — it reads `profiles` via the user's own RLS session and writes
-`cms.users` via the Local API — so it never uses the `payload_cms` DB role or the
-service-role key (golden rules #1–2 hold). `/admin` is gated in `proxy.ts`.
+get in. The first signup is auto-flagged; further staff are **invited from `/admin` →
+Users → Create New** — a collection hook (`payload/hooks/invite-user.ts`) emails a
+Supabase invite and flags `is_staff` via the service-role client
+(`lib/supabase/admin.ts`, server-only — the pattern golden rule #2 allows); the invitee
+sets a password on `/accept-invite`. The bridge itself runs in the Next.js server — it
+reads `profiles` via the user's own RLS session and writes `cms.users` via the Local
+API — so it never uses the `payload_cms` DB role or the service-role key (golden rules
+#1–2 hold). `/admin` is gated in `proxy.ts`.
+
+**Sign-up requires email confirmation** (`enable_confirmations = true` locally, matching
+hosted Supabase): the form routes to `/check-email`, which offers the emailed link
+(→ `/auth/callback` → `/welcome`) or manual entry of the emailed 6-digit code
+(`verifyOtp`). E2E specs pull both from Mailpit — see `tooling/web-e2e/README.md`.
 
 ## Theming (shadcn, one source of truth)
 

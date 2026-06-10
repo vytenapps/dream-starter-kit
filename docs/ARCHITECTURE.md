@@ -133,7 +133,11 @@ Built and shipped with EAS ([§4.11](#411-build--ship)).
 ### 4.5 Backend — Supabase
 
 One Supabase project provides Postgres, **Supabase Auth** (email/password, magic
-link, Google & Apple OAuth), Storage, and **Edge Functions** (Deno). The schema
+link, Google & Apple OAuth), Storage, and **Edge Functions** (Deno). Email
+**confirmations are on** (locally too, matching hosted defaults): sign-up routes
+to `/check-email`, completed by the emailed link (`/auth/callback` code exchange,
+then `/welcome` routes founder → `/cms-setup`, others → `/dashboard`) or by
+typing the emailed 6-digit code (`verifyOtp`). The schema
 and the canonical security pattern live in [`ERD.md`](./ERD.md) and are applied
 by the SQL files in `supabase/migrations/`. The kit ships the whole base schema
 as a **single baseline migration** (`20260609000001_initial.sql` — identity,
@@ -226,10 +230,17 @@ separate from the Supabase app data:
   CMS request from the caller's existing **Supabase** session and provisions a `cms.users`
   row on first access, linked by `supabaseUserId`. Authorization is **default-deny**: only
   app users flagged **`profiles.is_staff`** may enter the CMS (the first signup is
-  auto-flagged staff; flip the flag to add editors), and a column-level `revoke` stops
-  users self-escalating. The bridge stays within the kit's isolation rules — it runs in
-  the Next.js server (reading `profiles` via the user's own RLS session, provisioning via
-  Payload's Local API), **never** as the `payload_cms` role and **never** with the
+  auto-flagged staff), and a column-level `revoke` stops users self-escalating. Further
+  editors are **invited from the admin** (`/admin` → Users → Create New): a collection
+  hook (`payload/hooks/invite-user.ts`) sends `auth.admin.inviteUserByEmail` and flags
+  `is_staff` via a server-only service-role client (`lib/supabase/admin.ts`) — the one
+  sanctioned service-role use in the web app; the invitee lands on `/accept-invite`,
+  which verifies the emailed `token_hash` (custom invite template — keeps the one-time
+  token out of the redirect chain, where prefetchers/navigation restarts would burn it;
+  the default template's implicit-flow hash tokens are handled as a fallback) and sets
+  a password. The bridge stays within the kit's isolation rules — it runs
+  in the Next.js server (reading `profiles` via the user's own RLS session, provisioning
+  via Payload's Local API), **never** as the `payload_cms` role and **never** with the
   service-role key. The `/admin` route is gated in `proxy.ts` (anonymous → `/sign-in`,
   non-staff → `/dashboard`), which also refreshes the Supabase session on CMS paths.
 - **Media in Supabase Storage.** Uploads go to a dedicated **public-read** bucket
