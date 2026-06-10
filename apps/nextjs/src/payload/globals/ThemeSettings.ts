@@ -47,7 +47,7 @@ export const ThemeSettings: GlobalConfig = {
   slug: "theme-settings",
   label: "Theme",
   admin: {
-    group: "Admin",
+    group: "System",
     description:
       "Branding, colors, typography and styles for the entire app and this admin panel.",
   },

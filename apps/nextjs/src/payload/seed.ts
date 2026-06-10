@@ -520,6 +520,7 @@ export async function seedCmsContent(
           data: {
             heading: "Pricing",
             subheading: "Start free. Upgrade when you're ready.",
+            billingToggleDefault: "monthly",
             showFreeTier: true,
             featuredPlans: [monthly.id, annual.id, lifetime.id],
             freeTier: {

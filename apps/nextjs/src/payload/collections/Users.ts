@@ -44,6 +44,9 @@ export const Users: CollectionConfig = {
     strategies: [supabaseStrategy],
   },
   trash: true,
+  // Trim what comes back when users are populated via relationships (post
+  // authors, community feeds) — the single biggest mobile-payload lever.
+  defaultPopulate: { displayName: true, username: true, avatar: true },
   admin: {
     useAsTitle: "displayName",
     group: "People",
