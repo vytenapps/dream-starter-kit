@@ -19,8 +19,8 @@ export default function Home() {
         Signed in as {user?.email}
       </Text>
       <Button
-        title="Articles"
-        onPress={() => router.push("/content/articles")}
+        title="Posts"
+        onPress={() => router.push("/content/posts")}
       />
       <Button
         title="Chat"

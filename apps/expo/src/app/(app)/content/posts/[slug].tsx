@@ -1,20 +1,20 @@
 import { ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 
-import { useArticle } from "@acme/app";
+import { usePost } from "@acme/app";
 
 import { Text } from "~/components/ui/text";
 
-export default function ArticleDetail() {
+export default function PostDetail() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const article = useArticle(slug);
-  const doc = article.data;
+  const post = usePost(slug);
+  const doc = post.data;
 
   return (
     <ScrollView className="bg-background flex-1">
       <View className="gap-3 p-4">
-        <Stack.Screen options={{ title: doc?.title ?? "Article" }} />
-        {article.isLoading ? (
+        <Stack.Screen options={{ title: doc?.title ?? "Post" }} />
+        {post.isLoading ? (
           <Text className="text-muted-foreground">Loading…</Text>
         ) : !doc ? (
           <Text className="text-muted-foreground">Not found.</Text>
@@ -25,7 +25,7 @@ export default function ArticleDetail() {
               <Text className="text-muted-foreground">{doc.excerpt}</Text>
             ) : null}
             <Text className="text-muted-foreground text-xs">
-              Open the web app to read the full article.
+              Open the web app to read the full post.
             </Text>
           </>
         )}

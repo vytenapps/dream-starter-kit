@@ -51,7 +51,7 @@ function richText(paragraphs: string[]) {
 
 /**
  * Seed demo CMS content. Idempotent — returns `{ seeded: false }` without
- * changes if pages already exist. Assigns the first existing admin as article
+ * changes if pages already exist. Assigns the first existing admin as post
  * author when present; only creates the demo `editor@example.com` admin when no
  * users exist at all (the CLI path).
  */
@@ -68,7 +68,7 @@ export async function seedCmsContent(
   // Use the first existing admin (e.g. the just-created first user) as author;
   // otherwise create a placeholder author. Auth is SSO-only (no Payload password):
   // real editors are provisioned from their Supabase session by the auth bridge, so
-  // this demo row exists only as an article author for the CLI/headless path.
+  // this demo row exists only as a post author for the CLI/headless path.
   const users = await payload.find({ collection: "users", limit: 1 });
   let authorId = users.docs[0]?.id;
   if (!authorId) {
@@ -95,11 +95,11 @@ export async function seedCmsContent(
             header: [
               {
                 label: "Content",
-                url: "/articles",
+                url: "/posts",
                 submenu: [
                   {
-                    label: "Articles",
-                    url: "/articles",
+                    label: "Posts",
+                    url: "/posts",
                     description: "Long-form posts and updates.",
                   },
                   {
@@ -136,7 +136,7 @@ export async function seedCmsContent(
               {
                 title: "Content",
                 links: [
-                  { label: "Articles", url: "/articles" },
+                  { label: "Posts", url: "/posts" },
                   { label: "Events", url: "/events" },
                   { label: "Videos", url: "/videos" },
                 ],
@@ -180,7 +180,7 @@ export async function seedCmsContent(
                 badgeLinkHref: "/sign-in",
                 buttons: [
                   { text: "Get started", href: "/sign-in", variant: "default" },
-                  { text: "Read articles", href: "/articles", variant: "glow" },
+                  { text: "Read posts", href: "/posts", variant: "glow" },
                 ],
               },
               {
@@ -320,17 +320,17 @@ export async function seedCmsContent(
       },
     },
     {
-      label: "Articles",
+      label: "Posts",
       run: async () => {
         await payload.create({
-          collection: "articles",
+          collection: "posts",
           data: {
             title: "Welcome to the kit",
             slug: "welcome-to-the-kit",
             excerpt: "Your content-driven starter is ready to extend.",
             body: richText([
-              "Welcome to the Dream Starter Kit. This article is demo content seeded into the Payload CMS so the blog renders end to end on a fresh clone.",
-              "Edit or delete it from the admin at /admin, then publish your own posts. Articles support a hero image, an excerpt and this rich-text body.",
+              "Welcome to the Dream Starter Kit. This post is demo content seeded into the Payload CMS so the blog renders end to end on a fresh clone.",
+              "Edit or delete it from the admin at /admin, then publish your own posts. Posts support a hero image, an excerpt and this rich-text body.",
             ]),
             author: authorId,
             publishedAt: "2026-01-01T00:00:00.000Z",
@@ -338,14 +338,14 @@ export async function seedCmsContent(
           },
         });
         await payload.create({
-          collection: "articles",
+          collection: "posts",
           data: {
             title: "Modeling content in Payload",
             slug: "modeling-content-in-payload",
             excerpt:
-              "Articles, events, media and more — all in the cms schema.",
+              "Posts, events, media and more — all in the cms schema.",
             body: richText([
-              "Payload CMS owns the cms Postgres schema and powers every editorial collection in this kit: articles, events, videos, photos, audio and locations.",
+              "Payload CMS owns the cms Postgres schema and powers every editorial collection in this kit: posts, events, videos, photos, audio and locations.",
               "Each collection is a thin config file under src/payload/collections. Add a field, run pnpm cms:gen-types, and it flows straight through to the typed web and mobile screens.",
             ]),
             author: authorId,

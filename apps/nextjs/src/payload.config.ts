@@ -7,7 +7,7 @@ import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
-import { Articles } from "./payload/collections/Articles";
+import { Posts } from "./payload/collections/Posts";
 import { Audio } from "./payload/collections/Audio";
 import { Coupons } from "./payload/collections/Coupons";
 import { Events } from "./payload/collections/Events";
@@ -79,7 +79,7 @@ export default buildConfig({
   collections: [
     Users,
     Media,
-    Articles,
+    Posts,
     Events,
     Videos,
     Audio,
@@ -137,7 +137,7 @@ export default buildConfig({
       },
     }),
     seoPlugin({
-      collections: ["pages", "articles"],
+      collections: ["pages", "posts"],
       uploadsCollection: "media",
     }),
   ],

@@ -74,13 +74,13 @@ export function DashboardOverview() {
           <CardTitle className="text-base">Welcome</CardTitle>
           <CardDescription>
             Your account lives on the app side (Supabase Auth + Row-Level
-            Security). Public content — articles, events, pages and more — is
+            Security). Public content — posts, events, pages and more — is
             managed in the CMS and shown on the public site.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button asChild size="sm" variant="outline">
-            <Link href="/articles">Browse articles</Link>
+            <Link href="/posts">Browse posts</Link>
           </Button>
           <Button asChild size="sm" variant="outline">
             <Link href="/reminders">Reminders</Link>

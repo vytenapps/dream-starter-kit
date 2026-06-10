@@ -1,29 +1,29 @@
 import { FlatList, Pressable, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 
-import { useArticles } from "@acme/app";
+import { usePosts } from "@acme/app";
 
 import { Text } from "~/components/ui/text";
 
-export default function ArticlesList() {
+export default function PostsList() {
   const router = useRouter();
-  const articles = useArticles();
+  const posts = usePosts();
 
   return (
     <View className="bg-background flex-1 gap-3 p-4">
-      <Stack.Screen options={{ title: "Articles" }} />
+      <Stack.Screen options={{ title: "Posts" }} />
       <FlatList
-        data={articles.data ?? []}
-        keyExtractor={(article) => String(article.id)}
+        data={posts.data ?? []}
+        keyExtractor={(post) => String(post.id)}
         ListEmptyComponent={
           <Text className="text-muted-foreground">
-            {articles.isLoading ? "Loading…" : "No articles yet."}
+            {posts.isLoading ? "Loading…" : "No posts yet."}
           </Text>
         }
         renderItem={({ item }) => (
           <Pressable
             className="border-border border-b py-3"
-            onPress={() => router.push(`/content/articles/${item.slug}`)}
+            onPress={() => router.push(`/content/posts/${item.slug}`)}
           >
             <Text className="text-base font-medium">{item.title}</Text>
             {item.excerpt ? (

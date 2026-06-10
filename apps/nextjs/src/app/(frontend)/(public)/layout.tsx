@@ -5,7 +5,7 @@ import { SiteFooter } from "~/components/site-footer";
 
 /**
  * Public marketing/content chrome (header + footer), wrapping the Payload-backed
- * pages: home, about/contact/terms/privacy, articles, events, videos, audio,
+ * pages: home, about/contact/terms/privacy, posts, events, videos, audio,
  * photos, locations. Auth and the signed-in app live in sibling route groups
  * with their own layouts.
  */

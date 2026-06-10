@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import type {
-  Article,
+  Post,
   Audio as AudioDoc,
   Event as EventDoc,
   Location as LocationDoc,
@@ -65,9 +65,9 @@ function useDoc<T>(collection: string, slug: string) {
   });
 }
 
-export const useArticles = () =>
-  useList<Article>("articles", "&sort=-publishedAt");
-export const useArticle = (slug: string) => useDoc<Article>("articles", slug);
+export const usePosts = () =>
+  useList<Post>("posts", "&sort=-publishedAt");
+export const usePost = (slug: string) => useDoc<Post>("posts", slug);
 export const useEvents = () => useList<EventDoc>("events", "&sort=startsAt");
 export const useEvent = (slug: string) => useDoc<EventDoc>("events", slug);
 export const useVideos = () => useList<Video>("videos");

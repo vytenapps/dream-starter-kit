@@ -1,7 +1,7 @@
 import type { Config } from "@acme/cms";
 
 // Wires Payload's Local API generics to our generated collection types, so
-// `payload.find({ collection: "articles" })` returns `Article`, etc. This lives
+// `payload.find({ collection: "posts" })` returns `Post`, etc. This lives
 // in the web app (which has `payload` installed); the shared `@acme/cms` package
 // stays augmentation-free so the Expo app needn't depend on `payload`.
 declare module "payload" {

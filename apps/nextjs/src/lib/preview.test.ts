@@ -15,7 +15,7 @@ describe("docPath", () => {
   });
 
   it("maps other collections to /{collection}/{slug}", () => {
-    expect(docPath("articles", "hello-world")).toBe("/articles/hello-world");
+    expect(docPath("posts", "hello-world")).toBe("/posts/hello-world");
   });
 });
 

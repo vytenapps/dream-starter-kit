@@ -6,7 +6,7 @@ import config from "@payload-config";
 import { getPayload } from "payload";
 
 import type {
-  Article,
+  Post,
   Audio as AudioDoc,
   Coupon,
   Event as EventDoc,
@@ -68,11 +68,11 @@ export function getPage(slug: string): Promise<Page | null> {
   }, null);
 }
 
-export function listArticles(): Promise<Article[]> {
+export function listPosts(): Promise<Post[]> {
   return safe(async () => {
     const payload = await client();
     const { docs } = await payload.find({
-      collection: "articles",
+      collection: "posts",
       where: PUBLISHED,
       sort: "-publishedAt",
       depth: 1,
@@ -82,11 +82,11 @@ export function listArticles(): Promise<Article[]> {
   }, []);
 }
 
-export function getArticle(slug: string): Promise<Article | null> {
+export function getPost(slug: string): Promise<Post | null> {
   return safe(async () => {
     const payload = await client();
     const { docs } = await payload.find({
-      collection: "articles",
+      collection: "posts",
       where: publishedSlug(slug),
       depth: 1,
       limit: 1,

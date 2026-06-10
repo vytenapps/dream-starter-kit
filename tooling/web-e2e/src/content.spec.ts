@@ -19,10 +19,10 @@ test.describe("public content", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
-  test("articles list renders", async ({ page }) => {
-    await page.goto("/articles");
+  test("posts list renders", async ({ page }) => {
+    await page.goto("/posts");
     await expect(
-      page.getByRole("heading", { name: /articles/i }),
+      page.getByRole("heading", { name: /posts/i }),
     ).toBeVisible();
   });
 

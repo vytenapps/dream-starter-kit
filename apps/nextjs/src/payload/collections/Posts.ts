@@ -3,8 +3,8 @@ import type { CollectionConfig } from "payload";
 import { isStaff, publishedOrStaff } from "../access";
 import { slugField } from "../fields/slug";
 
-export const Articles: CollectionConfig = {
-  slug: "articles",
+export const Posts: CollectionConfig = {
+  slug: "posts",
   admin: {
     useAsTitle: "title",
     group: "Content",

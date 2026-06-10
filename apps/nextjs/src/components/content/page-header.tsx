@@ -1,7 +1,7 @@
 import { Section } from "~/components/launch-ui/ui/section";
 
 /**
- * Launch UI-styled page header for content collection pages (articles, events,
+ * Launch UI-styled page header for content collection pages (posts, events,
  * …) — a centered title + optional description inside a Section, matching the
  * marketing sections' rhythm.
  */

@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { listArticles, listEvents, listLocations } from "~/lib/payload";
+import { listPosts, listEvents, listLocations } from "~/lib/payload";
 import { getSiteUrl } from "~/lib/site-url";
 
 /** Public, crawlable routes. Authed (app) routes are excluded (see robots.ts). */
@@ -33,14 +33,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Append published CMS content. Wrapped so a build without a reachable DB
   // (e.g. placeholder env) still emits the static routes above.
   try {
-    const [articles, events, locations] = await Promise.all([
-      listArticles(),
+    const [posts, events, locations] = await Promise.all([
+      listPosts(),
       listEvents(),
       listLocations(),
     ]);
-    for (const article of articles) {
+    for (const post of posts) {
       entries.push({
-        url: `${base}/articles/${article.slug}`,
+        url: `${base}/posts/${post.slug}`,
         lastModified,
         changeFrequency: "weekly",
         priority: 0.6,
