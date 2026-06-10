@@ -1,3 +1,5 @@
+import { UserTagsManager as UserTagsManager_64b519a6bf17065a9701fc17ac4b5fce } from '~/payload/components/UserTagsManager'
+import { GrantStaffButton as GrantStaffButton_83e8612b2df5e03b420d054ae94fab87 } from '~/payload/components/GrantStaffButton'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -36,6 +38,8 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "~/payload/components/UserTagsManager#UserTagsManager": UserTagsManager_64b519a6bf17065a9701fc17ac4b5fce,
+  "~/payload/components/GrantStaffButton#GrantStaffButton": GrantStaffButton_83e8612b2df5e03b420d054ae94fab87,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,

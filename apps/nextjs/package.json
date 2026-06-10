@@ -10,6 +10,7 @@
     "lint": "eslint --flag unstable_native_nodejs_ts_config",
     "payload": "pnpm with-env payload",
     "seed": "pnpm with-env tsx src/payload/seed.ts",
+    "backfill-users": "pnpm with-env tsx src/payload/backfill-users.ts",
     "start": "pnpm with-env next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
