@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { GalleryVerticalEnd } from "lucide-react";
 
 import { resendSignUpEmail, verifySignUpCode } from "@acme/app";
 import { cn } from "@acme/ui";
+import { toast } from "@acme/ui/toast";
 
 import { Button } from "~/components/ui/button";
 import { Field, FieldDescription, FieldGroup } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
 import { authCallbackUrl } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/client";
-import { authErrorMessage } from "~/lib/supabase/config";
+import { authErrorMessage, localMailpitUrl } from "~/lib/supabase/config";
 
 /**
  * Post-sign-up "Check your email" screen (email confirmations are on, the
@@ -45,6 +46,27 @@ export function CheckEmailForm({
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // On a local Supabase stack no email is ever sent — Mailpit captures it.
+  // Point the developer straight at the inbox. The fixed `id` dedupes the
+  // StrictMode double-effect; stays up until dismissed since the emailed
+  // link/code is the only way forward.
+  useEffect(() => {
+    const mailpit = localMailpitUrl();
+    if (!mailpit) return;
+    toast.info("Local dev: emails land in Mailpit", {
+      id: "mailpit-hint",
+      description: "Confirmation emails are captured locally, never sent.",
+      duration: Infinity,
+      action: {
+        label: "Open Mailpit",
+        onClick: () => window.open(mailpit, "_blank", "noopener,noreferrer"),
+      },
+    });
+    return () => {
+      toast.dismiss("mailpit-hint");
+    };
+  }, []);
 
   async function onVerifyCode(e: React.FormEvent) {
     e.preventDefault();

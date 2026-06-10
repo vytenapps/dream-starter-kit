@@ -16,6 +16,25 @@ export function isSupabaseConfigured(): boolean {
 }
 
 /**
+ * Mailpit web UI URL when the app points at a *local* Supabase stack, else
+ * null. Locally GoTrue never sends real email — every auth email is captured
+ * by Mailpit instead — so this is non-null exactly when "check your inbox"
+ * actually means "check Mailpit". The port is pinned in supabase/config.toml
+ * (`[inbucket] port = 54324`).
+ */
+export function localMailpitUrl(): string | null {
+  try {
+    const url = new URL(env.NEXT_PUBLIC_SUPABASE_URL);
+    if (url.hostname !== "127.0.0.1" && url.hostname !== "localhost") {
+      return null;
+    }
+    return `${url.protocol}//${url.hostname}:54324`;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Turns an auth error into a user-facing message. Converts the bare
  * "Failed to fetch" you get from an unconfigured/unreachable Supabase into
  * something actionable instead of surfacing the raw network error.
