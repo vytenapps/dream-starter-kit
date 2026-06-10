@@ -11,9 +11,15 @@ import { inviteUserOnCreate } from "../hooks/invite-user";
  * Supabase user by `supabaseUserId`. Only app users flagged `profiles.is_staff`
  * may sign in. See payload/auth/supabase-strategy.ts and docs/ARCHITECTURE.md.
  *
- * Creating a user here invites them as staff: a Supabase invite email goes out
- * (or, for an existing app user, their account is promoted without an email)
- * and `profiles.is_staff` is flagged. See payload/hooks/invite-user.ts.
+ * This collection represents ALL app users — every Supabase signup is mirrored
+ * here (see lib/cms/mirror-user.ts) so the admin can manage everyone and their
+ * tags. Admin LOGIN is still gated on `profiles.is_staff` by the SSO strategy,
+ * so mirrored non-staff rows can't access /admin.
+ *
+ * Creating a user here (new email) emails them a Supabase invite and grants
+ * staff access. For an existing user, use "Grant staff access". Tags shown here
+ * live in Supabase and include the auto plan-name tag from the Stripe webhook.
+ * See payload/hooks/invite-user.ts.
  */
 export const Users: CollectionConfig = {
   slug: "users",
@@ -26,9 +32,11 @@ export const Users: CollectionConfig = {
   admin: {
     useAsTitle: "email",
     group: "Admin",
+    defaultColumns: ["email", "name", "role"],
     description:
-      "Creating a user emails them a Supabase invite and grants staff access. " +
-      "If the email already has an account, it is promoted to staff instead (no email is sent).",
+      "All app users. Creating a NEW email emails a Supabase invite and grants " +
+      "staff access; for an existing user use “Grant staff access”. Tags " +
+      "(incl. the plan-name tag) are managed below.",
   },
   hooks: { beforeChange: [inviteUserOnCreate] },
   access: {
@@ -63,6 +71,25 @@ export const Users: CollectionConfig = {
         { label: "Admin", value: "admin" },
         { label: "Editor", value: "editor" },
       ],
+    },
+    {
+      name: "tagsManager",
+      type: "ui",
+      admin: {
+        components: {
+          Field: "~/payload/components/UserTagsManager#UserTagsManager",
+        },
+      },
+    },
+    {
+      name: "grantStaff",
+      type: "ui",
+      admin: {
+        position: "sidebar",
+        components: {
+          Field: "~/payload/components/GrantStaffButton#GrantStaffButton",
+        },
+      },
     },
   ],
 };

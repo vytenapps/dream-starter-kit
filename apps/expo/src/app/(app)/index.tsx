@@ -38,6 +38,11 @@ export default function Home() {
         onPress={() => router.push("/notifications")}
       />
       <Button
+        title="Pricing"
+        variant="outline"
+        onPress={() => router.push("/pricing")}
+      />
+      <Button
         title="Profile"
         variant="outline"
         onPress={() => router.push("/profile")}

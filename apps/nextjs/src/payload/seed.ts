@@ -120,6 +120,7 @@ export async function seedCmsContent(
                 ],
               },
               { label: "Locations", url: "/locations" },
+              { label: "Pricing", url: "/pricing" },
               { label: "About", url: "/about" },
             ],
             headerActions: [
@@ -401,6 +402,122 @@ export async function seedCmsContent(
             sourceType: "url",
             url: "https://example.com/intro.mp4",
             _status: "published",
+          },
+        });
+      },
+    },
+    {
+      // Default billing catalog (Payload only — pushed to Stripe later via the
+      // per-row "Sync to Stripe" button). Three live plans + one inactive demo
+      // showing an introductory offer, plus a welcome coupon for signup codes,
+      // and the pricing-page settings that feature the three live plans.
+      label: "Plans & pricing",
+      run: async () => {
+        const monthly = await payload.create({
+          collection: "plans",
+          data: {
+            name: "Dream Monthly Plan",
+            slug: "dream-monthly",
+            description: "Full access, billed monthly.",
+            pricingType: "recurring",
+            interval: "month",
+            unitAmount: 999,
+            currency: "usd",
+            displayOrder: 1,
+            features: [
+              { text: "Everything in Free" },
+              { text: "Unlimited AI chat" },
+              { text: "Priority support" },
+            ],
+          },
+        });
+        const annual = await payload.create({
+          collection: "plans",
+          data: {
+            name: "Dream Annual Plan",
+            slug: "dream-annual",
+            description:
+              "Full access, billed yearly. Includes a 7-day free trial.",
+            pricingType: "recurring",
+            interval: "year",
+            unitAmount: 9999,
+            currency: "usd",
+            trialDays: 7,
+            badge: "Best value",
+            highlighted: true,
+            displayOrder: 2,
+            features: [
+              { text: "Everything in Monthly" },
+              { text: "7-day free trial" },
+              { text: "2 months free vs monthly" },
+            ],
+          },
+        });
+        const lifetime = await payload.create({
+          collection: "plans",
+          data: {
+            name: "Dream Lifetime Plan",
+            slug: "dream-lifetime",
+            description: "One payment, lifetime access.",
+            pricingType: "one_time",
+            unitAmount: 39900,
+            currency: "usd",
+            displayOrder: 3,
+            features: [
+              { text: "Everything in Annual" },
+              { text: "Pay once, own forever" },
+              { text: "All future updates" },
+            ],
+          },
+        });
+        // Inactive demo of an introductory offer ($1.99 first month → $39.99/mo)
+        // so the capability is visible out of the box without affecting pricing.
+        await payload.create({
+          collection: "plans",
+          data: {
+            name: "Dream Pro (intro demo)",
+            slug: "dream-pro-intro-demo",
+            description: "$1.99 for the first month, then $39.99/month.",
+            pricingType: "recurring",
+            interval: "month",
+            unitAmount: 3999,
+            currency: "usd",
+            active: false,
+            displayOrder: 99,
+            introOffer: { enabled: true, introAmount: 199 },
+            features: [{ text: "Example intro pricing" }],
+          },
+        });
+
+        // Welcome coupon — the signup flow mints a unique, expiring promotion
+        // code for this coupon per new free account.
+        await payload.create({
+          collection: "coupons",
+          data: {
+            name: "Welcome offer",
+            discountType: "percent_off",
+            value: 20,
+            duration: "once",
+            isWelcomeOffer: true,
+          },
+        });
+
+        await payload.updateGlobal({
+          slug: "pricing-settings",
+          data: {
+            heading: "Pricing",
+            subheading: "Start free. Upgrade when you're ready.",
+            showFreeTier: true,
+            featuredPlans: [monthly.id, annual.id, lifetime.id],
+            freeTier: {
+              name: "Free",
+              description: "Everything you need to get started.",
+              ctaLabel: "Get started",
+              features: [
+                { text: "Core features" },
+                { text: "Community support" },
+              ],
+            },
           },
         });
       },

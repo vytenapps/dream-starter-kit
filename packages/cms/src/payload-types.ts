@@ -76,6 +76,8 @@ export interface Config {
     photos: Photo;
     locations: Location;
     pages: Page;
+    plans: Plan;
+    coupons: Coupon;
     "payload-kv": PayloadKv;
     "payload-locked-documents": PayloadLockedDocument;
     "payload-preferences": PayloadPreference;
@@ -92,6 +94,8 @@ export interface Config {
     photos: PhotosSelect<false> | PhotosSelect<true>;
     locations: LocationsSelect<false> | LocationsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
+    plans: PlansSelect<false> | PlansSelect<true>;
+    coupons: CouponsSelect<false> | CouponsSelect<true>;
     "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
     "payload-locked-documents":
       | PayloadLockedDocumentsSelect<false>
@@ -110,10 +114,14 @@ export interface Config {
   globals: {
     "site-settings": SiteSetting;
     "theme-settings": ThemeSetting;
+    "pricing-settings": PricingSetting;
   };
   globalsSelect: {
     "site-settings": SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     "theme-settings": ThemeSettingsSelect<false> | ThemeSettingsSelect<true>;
+    "pricing-settings":
+      | PricingSettingsSelect<false>
+      | PricingSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -144,6 +152,8 @@ export interface UserAuthOperations {
   };
 }
 /**
+ * Creating a user emails them a Supabase invite and grants staff access. If the email already has an account, it is promoted to staff instead (no email is sent).
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -576,6 +586,115 @@ export interface ProseBlock {
   blockType: "prose";
 }
 /**
+ * Author plans here, then press “Sync to Stripe” to create/update the matching Stripe product and price. Stripe prices are immutable, so changing the amount creates a new price and archives the old one.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plans".
+ */
+export interface Plan {
+  id: number;
+  name: string;
+  active?: boolean | null;
+  slug: string;
+  description?: string | null;
+  pricingType: "recurring" | "one_time";
+  interval?: ("month" | "year") | null;
+  /**
+   * Amount in the smallest currency unit, e.g. 999 = $9.99.
+   */
+  unitAmount: number;
+  /**
+   * ISO code, e.g. usd.
+   */
+  currency: string;
+  /**
+   * 0 / empty = no trial.
+   */
+  trialDays?: number | null;
+  /**
+   * Discount the first billing period only (e.g. $1.99 first month, then the standard price recurs). Implemented as a Stripe coupon with duration=once, applied automatically at checkout.
+   */
+  introOffer?: {
+    enabled?: boolean | null;
+    /**
+     * First-period price, e.g. 199 = $1.99.
+     */
+    introAmount?: number | null;
+  };
+  /**
+   * Shown on the public pricing card.
+   */
+  features?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * e.g. "Save 17%" or "Best value".
+   */
+  badge?: string | null;
+  highlighted?: boolean | null;
+  displayOrder?: number | null;
+  stripeProductId?: string | null;
+  stripePriceId?: string | null;
+  stripeIntroCouponId?: string | null;
+  syncStatus?: ("unsynced" | "synced" | "error") | null;
+  syncError?: string | null;
+  lastSyncedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Discounts pushed to Stripe. Changing amount/duration creates a new Stripe coupon (they're immutable) and archives the old one.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons".
+ */
+export interface Coupon {
+  id: number;
+  name: string;
+  discountType: "percent_off" | "amount_off";
+  /**
+   * Percent (1–100) or amount in cents.
+   */
+  value: number;
+  currency?: string | null;
+  duration: "once" | "repeating" | "forever";
+  durationCount?: number | null;
+  /**
+   * Years are converted to months for Stripe (2 years → 24 months).
+   */
+  durationUnit?: ("month" | "year") | null;
+  /**
+   * Total redemptions allowed.
+   */
+  maxRedemptions?: number | null;
+  /**
+   * Stripe redeem_by — no new redemptions after this.
+   */
+  redeemBy?: string | null;
+  /**
+   * Restrict to specific plans (empty = applies to all).
+   */
+  appliesTo?: (number | Plan)[] | null;
+  /**
+   * Optional customer-facing code (e.g. LAUNCH20). Created as a Stripe promotion code on sync. Leave blank for a code-less coupon.
+   */
+  code?: string | null;
+  /**
+   * When set, new free signups get a unique, expiring promotion code for this coupon. Keep at most one active.
+   */
+  isWelcomeOffer?: boolean | null;
+  stripeCouponId?: string | null;
+  stripePromotionCodeId?: string | null;
+  syncStatus?: ("unsynced" | "synced" | "error") | null;
+  syncError?: string | null;
+  lastSyncedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -634,6 +753,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: "pages";
         value: number | Page;
+      } | null)
+    | ({
+        relationTo: "plans";
+        value: number | Plan;
+      } | null)
+    | ({
+        relationTo: "coupons";
+        value: number | Coupon;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -994,6 +1121,69 @@ export interface ProseBlockSelect<T extends boolean = true> {
   content?: T;
   id?: T;
   blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plans_select".
+ */
+export interface PlansSelect<T extends boolean = true> {
+  name?: T;
+  active?: T;
+  slug?: T;
+  description?: T;
+  pricingType?: T;
+  interval?: T;
+  unitAmount?: T;
+  currency?: T;
+  trialDays?: T;
+  introOffer?:
+    | T
+    | {
+        enabled?: T;
+        introAmount?: T;
+      };
+  features?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  badge?: T;
+  highlighted?: T;
+  displayOrder?: T;
+  stripeProductId?: T;
+  stripePriceId?: T;
+  stripeIntroCouponId?: T;
+  syncStatus?: T;
+  syncError?: T;
+  lastSyncedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons_select".
+ */
+export interface CouponsSelect<T extends boolean = true> {
+  name?: T;
+  discountType?: T;
+  value?: T;
+  currency?: T;
+  duration?: T;
+  durationCount?: T;
+  durationUnit?: T;
+  maxRedemptions?: T;
+  redeemBy?: T;
+  appliesTo?: T;
+  code?: T;
+  isWelcomeOffer?: T;
+  stripeCouponId?: T;
+  stripePromotionCodeId?: T;
+  syncStatus?: T;
+  syncError?: T;
+  lastSyncedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1453,6 +1643,33 @@ export interface ThemeSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pricing-settings".
+ */
+export interface PricingSetting {
+  id: number;
+  heading?: string | null;
+  showFreeTier?: boolean | null;
+  subheading?: string | null;
+  /**
+   * Pick up to three paid plans to feature, in display order. Empty = all active plans by display order.
+   */
+  featuredPlans?: (number | Plan)[] | null;
+  freeTier?: {
+    name?: string | null;
+    description?: string | null;
+    ctaLabel?: string | null;
+    features?:
+      | {
+          text: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -1619,6 +1836,32 @@ export interface ThemeSettingsSelect<T extends boolean = true> {
         offsetY?: T;
       };
   _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pricing-settings_select".
+ */
+export interface PricingSettingsSelect<T extends boolean = true> {
+  heading?: T;
+  showFreeTier?: T;
+  subheading?: T;
+  featuredPlans?: T;
+  freeTier?:
+    | T
+    | {
+        name?: T;
+        description?: T;
+        ctaLabel?: T;
+        features?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+            };
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

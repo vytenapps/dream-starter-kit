@@ -3,9 +3,14 @@
 // verified; handlers upsert by primary key so redelivered/out-of-order events
 // are idempotent.
 //
+// It also drives the "checkout-first" signup flow: when an anonymous visitor
+// pays, this matches the checkout email to an existing user (and attaches the
+// subscription) or creates the account and emails a Supabase invite. Active
+// plans tag the user with the plan name (public.user_tags).
+//
 // config.toml sets verify_jwt = false for this function (Stripe has no Supabase
 // JWT). Local: `stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook`.
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@22";
 
 import {
@@ -21,6 +26,84 @@ const stripeSecret = Deno.env.get("STRIPE_SECRET_KEY");
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+// Where guest invitees set their password. Must be an allowed Supabase redirect.
+const siteUrl =
+  Deno.env.get("SITE_URL") ??
+  Deno.env.get("NEXT_PUBLIC_APP_URL") ??
+  "http://localhost:3000";
+
+/** Find an auth user id by email (paged scan — fine at starter-kit scale). */
+async function findUserIdByEmail(
+  admin: SupabaseClient,
+  email: string,
+): Promise<string | null> {
+  const target = email.toLowerCase();
+  const perPage = 200;
+  for (let page = 1; ; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+    const match = data.users.find((u) => u.email?.toLowerCase() === target);
+    if (match) return match.id;
+    if (data.users.length < perPage) return null;
+  }
+}
+
+/**
+ * Resolve the buyer to a Supabase user id for a guest checkout: match an
+ * existing account by email, else create one and email a Supabase invite (the
+ * invitee sets a password on /accept-invite, then lands on /dashboard).
+ */
+async function resolveOrInviteGuest(
+  admin: SupabaseClient,
+  email: string,
+  displayName: string | null,
+): Promise<string | null> {
+  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${siteUrl}/accept-invite`,
+    data: displayName ? { display_name: displayName } : undefined,
+  });
+  if (!error) return data.user?.id ?? null;
+  // Already an app user → link to the existing account (no email sent).
+  if (error.code === "email_exists" || /already/i.test(error.message)) {
+    return await findUserIdByEmail(admin, email);
+  }
+  console.error("guest invite failed", error);
+  return null;
+}
+
+/** Tag the user with their plan name (price → product → name). Idempotent. */
+async function ensurePlanTag(
+  admin: SupabaseClient,
+  userId: string,
+  priceId: string | null,
+): Promise<void> {
+  if (!priceId) return;
+  const { data: price } = await admin
+    .from("prices")
+    .select("product_id")
+    .eq("id", priceId)
+    .maybeSingle();
+  if (!price?.product_id) return;
+  const { data: product } = await admin
+    .from("products")
+    .select("name")
+    .eq("id", price.product_id)
+    .maybeSingle();
+  const name = product?.name;
+  if (!name) return;
+  const { data: tag } = await admin
+    .from("tags")
+    .upsert({ name, is_system: true }, { onConflict: "name" })
+    .select("id")
+    .maybeSingle();
+  if (!tag?.id) return;
+  await admin
+    .from("user_tags")
+    .upsert(
+      { user_id: userId, tag_id: tag.id },
+      { onConflict: "user_id,tag_id" },
+    );
+}
 
 Deno.serve(async (req) => {
   if (req.method !== "POST")
@@ -68,9 +151,21 @@ Deno.serve(async (req) => {
         break;
       }
       case "checkout.session.completed": {
-        const { userId, customerId } = resolveCheckoutCustomer(
-          event.data.object as Stripe.Checkout.Session,
-        );
+        const session = event.data.object as Stripe.Checkout.Session;
+        const { userId: refUserId, customerId } =
+          resolveCheckoutCustomer(session);
+
+        // Guest checkout: no app user referenced → match by email or create one.
+        let userId = refUserId;
+        const email = session.customer_details?.email ?? null;
+        if (!userId && email) {
+          userId = await resolveOrInviteGuest(
+            admin,
+            email,
+            session.customer_details?.name ?? null,
+          );
+        }
+
         if (userId && customerId) {
           await admin
             .from("customers")
@@ -78,6 +173,47 @@ Deno.serve(async (req) => {
               { user_id: userId, stripe_customer_id: customerId },
               { onConflict: "user_id" },
             );
+        }
+
+        // One-time (lifetime) purchases create no subscription, so record an
+        // active row keyed by the session id to unlock premium, and tag the user.
+        if (userId && session.mode === "payment") {
+          const items = await stripe.checkout.sessions.listLineItems(
+            session.id,
+            { limit: 1 },
+          );
+          const priceId = items.data[0]?.price?.id ?? null;
+          if (priceId) {
+            await admin.from("subscriptions").upsert({
+              id: session.id,
+              user_id: userId,
+              price_id: priceId,
+              status: "active",
+              quantity: 1,
+              cancel_at_period_end: false,
+              current_period_end: null,
+            });
+            await ensurePlanTag(admin, userId, priceId);
+          }
+        }
+
+        // Subscription mode: persist the subscription here too (not just from the
+        // customer.subscription.* event), so guest checkouts link correctly
+        // regardless of Stripe's event ordering.
+        if (userId && session.mode === "subscription" && session.subscription) {
+          const subId =
+            typeof session.subscription === "string"
+              ? session.subscription
+              : session.subscription.id;
+          const sub = await stripe.subscriptions.retrieve(subId);
+          await admin.from("subscriptions").upsert(mapSubscription(sub, userId));
+          if (sub.status === "active" || sub.status === "trialing") {
+            await ensurePlanTag(
+              admin,
+              userId,
+              sub.items.data[0]?.price.id ?? null,
+            );
+          }
         }
         break;
       }
@@ -95,9 +231,10 @@ Deno.serve(async (req) => {
           userId = data?.user_id ?? null;
         }
         if (userId) {
-          await admin
-            .from("subscriptions")
-            .upsert(mapSubscription(sub, userId));
+          await admin.from("subscriptions").upsert(mapSubscription(sub, userId));
+          if (sub.status === "active" || sub.status === "trialing") {
+            await ensurePlanTag(admin, userId, sub.items.data[0]?.price.id ?? null);
+          }
         }
         break;
       }

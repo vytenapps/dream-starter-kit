@@ -19,6 +19,7 @@
     "cms:migrate": "pnpm -F @acme/nextjs payload migrate",
     "cms:migrate:create": "pnpm -F @acme/nextjs payload migrate:create",
     "cms:seed": "pnpm -F @acme/nextjs seed",
+    "cms:backfill-users": "pnpm -F @acme/nextjs backfill-users",
     "dev": "turbo watch dev --continue",
     "dev:next": "turbo watch dev -F @acme/nextjs...",
     "format": "turbo run format --continue -- --cache --cache-location .cache/.prettiercache",

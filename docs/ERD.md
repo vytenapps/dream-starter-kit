@@ -41,6 +41,8 @@ erDiagram
     profiles ||--o{ files : "owns"
     profiles ||--o{ chat_threads : "starts"
     chat_threads ||--o{ chat_messages : "contains"
+    profiles ||--o{ user_tags : "tagged"
+    tags ||--o{ user_tags : "applied to"
 
     auth_users {
         uuid id PK "managed by Supabase Auth"
@@ -167,6 +169,10 @@ erDiagram
 - `reminders` — scheduled nudges/follow-ups (due time, channel, status).
 - `push_tokens` — Expo push tokens per device.
 - `notifications` — in-app notification feed with `read_at`.
+
+**Tags** *(user segmentation)*
+- `tags` — reusable tag definitions (`name`, `color`, `is_system`). Readable by any authenticated user; written by the server only.
+- `user_tags` — links a user to a tag (read-own via RLS). Assigned automatically by the Stripe webhook (a plan-name tag when a subscription is active; a "Free" tag at signup) and manually by staff from the admin. No client write policy — the service role is the only writer.
 
 **Files** *(keep if the app stores uploads)*
 - `files` — metadata for objects in **Supabase Storage** (bucket + path + mime + size), in the RLS-governed `user-files` bucket.

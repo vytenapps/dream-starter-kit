@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   IconBell,
   IconClock,
+  IconCreditCard,
   IconDashboard,
   IconInnerShadowTop,
   IconMessageCircle,
@@ -29,6 +30,7 @@ const navMain = [
   { title: "Chat", url: "/chat", icon: IconMessageCircle },
   { title: "Reminders", url: "/reminders", icon: IconClock },
   { title: "Notifications", url: "/notifications", icon: IconBell },
+  { title: "Billing", url: "/billing", icon: IconCreditCard },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

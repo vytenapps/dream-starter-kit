@@ -6,6 +6,7 @@
 
 export * from "./validators/auth";
 export * from "./validators/reminder";
+export * from "./validators/tag";
 export * from "./auth";
 export * from "./reminders";
 export * from "./hooks/use-content";
@@ -29,3 +30,5 @@ export {
   useCreateReminder,
   useDeleteReminder,
 } from "./hooks/use-reminders";
+export { useUserTags } from "./hooks/use-tags";
+export type { UserTag } from "./hooks/use-tags";

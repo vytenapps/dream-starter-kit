@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { ensureCmsUser, ensureFreeTag } from "~/lib/cms/mirror-user";
 import { getSiteUrl } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/server";
 
@@ -31,6 +32,17 @@ export async function GET() {
   if (!user) {
     return NextResponse.redirect(`${siteUrl}/sign-in`);
   }
+
+  // Mirror the user into the Payload Users collection (all users) and ensure a
+  // default "Free" tag. Best-effort — never blocks the redirect.
+  await ensureCmsUser({
+    id: user.id,
+    email: user.email,
+    name:
+      (user.user_metadata.display_name as string | undefined) ??
+      (user.user_metadata.name as string | undefined),
+  });
+  await ensureFreeTag(user.id);
 
   const { data: profile } = await supabase
     .from("profiles")
