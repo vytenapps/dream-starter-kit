@@ -4,6 +4,7 @@ import { postgresAdapter } from "@payloadcms/db-postgres";
 import { formBuilderPlugin } from "@payloadcms/plugin-form-builder";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { seoPlugin } from "@payloadcms/plugin-seo";
+import { stripePlugin } from "@payloadcms/plugin-stripe";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
@@ -35,6 +36,7 @@ import { Reports } from "./payload/collections/Reports";
 import { Reviews } from "./payload/collections/Reviews";
 import { Series } from "./payload/collections/Series";
 import { SpaceGroups } from "./payload/collections/SpaceGroups";
+import { Subscriptions } from "./payload/collections/Subscriptions";
 import { TagGroups, Tags } from "./payload/collections/Tags";
 import { Users } from "./payload/collections/Users";
 import { Videos } from "./payload/collections/Videos";
@@ -43,6 +45,7 @@ import { ProfileFields } from "./payload/globals/ProfileFields";
 import { SiteSettings } from "./payload/globals/SiteSettings";
 import { ThemeSettings } from "./payload/globals/ThemeSettings";
 import { migrations } from "./payload/migrations";
+import { syncSubscriptionFromStripe } from "./payload/stripe/webhooks";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -127,6 +130,7 @@ export default buildConfig({
     // Commerce
     Plans,
     Coupons,
+    Subscriptions,
     // Marketing
     Pages,
     Onboarding,
@@ -207,6 +211,23 @@ export default buildConfig({
     // trees and community space groups.
     nestedDocsPlugin({
       collections: ["categories", "pages", "space-groups"],
+    }),
+    // Stripe: the plugin provides the signed webhook endpoint
+    // (POST /cms-api/stripe/webhooks) that mirrors subscriptions into the CMS
+    // (payload/stripe/webhooks.ts). NO declarative `sync` config on purpose —
+    // it can't express immutable price recreate-and-archive or intro coupons,
+    // so plans/coupons sync via their afterChange hooks instead
+    // (payload/hooks/sync-*-to-stripe.ts). The REST proxy stays off.
+    stripePlugin({
+      stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
+      isTestKey: (process.env.STRIPE_SECRET_KEY ?? "").startsWith("sk_test"),
+      stripeWebhooksEndpointSecret: process.env.STRIPE_WEBHOOKS_ENDPOINT_SECRET,
+      rest: false,
+      webhooks: {
+        "customer.subscription.created": syncSubscriptionFromStripe,
+        "customer.subscription.updated": syncSubscriptionFromStripe,
+        "customer.subscription.deleted": syncSubscriptionFromStripe,
+      },
     }),
     formBuilderPlugin({
       fields: {

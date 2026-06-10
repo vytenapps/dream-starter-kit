@@ -1,12 +1,14 @@
 import type { CollectionConfig } from "payload";
 
 import { anyone, isAdmin } from "../access";
+import { syncCouponAfterChange } from "../hooks/sync-coupon-to-stripe";
 
 /**
  * Discount coupons + (optionally) a customer-facing promotion code. Authored
- * here, then pushed to Stripe with the "Sync to Stripe" button (see
- * lib/stripe/sync.ts). A coupon is the backend discount definition; a promotion
- * code is the shareable code customers type at checkout that maps to it.
+ * here and synced to Stripe automatically on save (see
+ * payload/hooks/sync-coupon-to-stripe.ts + lib/stripe/sync.ts). A coupon is
+ * the backend discount definition; a promotion code is the shareable code
+ * customers type at checkout that maps to it.
  *
  * Stripe coupons are immutable for amount/duration — changing those creates a
  * NEW Stripe coupon and archives the old one (the sync handles this). Read is
@@ -19,11 +21,11 @@ export const Coupons: CollectionConfig = {
   slug: "coupons",
   admin: {
     useAsTitle: "name",
-    group: "Payments",
+    group: "Commerce",
     defaultColumns: ["name", "discountType", "value", "duration", "syncStatus"],
     description:
-      "Discounts pushed to Stripe. Changing amount/duration creates a new " +
-      "Stripe coupon (they're immutable) and archives the old one.",
+      "Discounts synced to Stripe on save. Changing amount/duration creates " +
+      "a new Stripe coupon (they're immutable) and archives the old one.",
   },
   access: {
     read: anyone,
@@ -31,6 +33,7 @@ export const Coupons: CollectionConfig = {
     update: isAdmin,
     delete: isAdmin,
   },
+  hooks: { afterChange: [syncCouponAfterChange] },
   fields: [
     { name: "name", type: "text", required: true },
     {
@@ -121,19 +124,45 @@ export const Coupons: CollectionConfig = {
           name: "maxRedemptions",
           type: "number",
           min: 1,
-          admin: { width: "50%", description: "Total redemptions allowed." },
+          admin: { width: "33%", description: "Total redemptions allowed." },
         },
         {
           name: "redeemBy",
           type: "date",
           label: "Expires on",
           admin: {
-            width: "50%",
+            width: "33%",
             date: { pickerAppearance: "dayAndTime" },
             description: "Stripe redeem_by — no new redemptions after this.",
           },
         },
+        {
+          name: "minimumAmount",
+          type: "number",
+          min: 0,
+          admin: {
+            width: "33%",
+            description:
+              "Optional minimum order amount (cents) — enforced at checkout.",
+          },
+        },
       ],
+    },
+    {
+      name: "timesRedeemed",
+      type: "number",
+      defaultValue: 0,
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description: "Mirrored from Stripe.",
+      },
+    },
+    {
+      name: "active",
+      type: "checkbox",
+      defaultValue: true,
+      admin: { position: "sidebar" },
     },
     {
       name: "appliesTo",
@@ -166,15 +195,14 @@ export const Coupons: CollectionConfig = {
       },
     },
 
-    // --- Stripe sync state (read-only) ---
+    // --- Stripe sync state (read-only; written by the afterChange sync hook) ---
     {
-      name: "syncToStripe",
-      type: "ui",
+      name: "skipSync",
+      type: "checkbox",
+      defaultValue: false,
       admin: {
         position: "sidebar",
-        components: {
-          Field: "~/payload/components/SyncToStripeButton#SyncToStripeButton",
-        },
+        description: "Don't push this coupon to Stripe on save.",
       },
     },
     {

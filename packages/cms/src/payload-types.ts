@@ -92,6 +92,7 @@ export interface Config {
     reports: Report;
     plans: Plan;
     coupons: Coupon;
+    subscriptions: Subscription;
     pages: Page;
     onboarding: Onboarding;
     banners: Banner;
@@ -107,6 +108,7 @@ export interface Config {
   };
   collectionsJoins: {
     users: {
+      subscriptions: 'subscriptions';
       favorites: 'favorites';
       enrollments: 'enrollments';
       devices: 'device-tokens';
@@ -135,6 +137,9 @@ export interface Config {
     };
     comments: {
       replies: 'comments';
+    };
+    plans: {
+      subscriptions: 'subscriptions';
     };
     'payload-folders': {
       documentsAndFolders:
@@ -176,6 +181,7 @@ export interface Config {
     reports: ReportsSelect<false> | ReportsSelect<true>;
     plans: PlansSelect<false> | PlansSelect<true>;
     coupons: CouponsSelect<false> | CouponsSelect<true>;
+    subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     onboarding: OnboardingSelect<false> | OnboardingSelect<true>;
     banners: BannersSelect<false> | BannersSelect<true>;
@@ -409,6 +415,11 @@ export interface User {
    */
   lastActiveAt?: string | null;
   stripeCustomerID?: string | null;
+  subscriptions?: {
+    docs?: (number | Subscription)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   favorites?: {
     docs?: (number | Favorite)[];
     hasNextPage?: boolean;
@@ -950,7 +961,7 @@ export interface SpaceGroup {
   deletedAt?: string | null;
 }
 /**
- * Author plans here, then press “Sync to Stripe” to create/update the matching Stripe product and price. Stripe prices are immutable, so changing the amount creates a new price and archives the old one.
+ * Plans sync to Stripe automatically on save. Stripe prices are immutable, so changing the amount creates a new price and archives the old one.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "plans".
@@ -962,7 +973,11 @@ export interface Plan {
   slug: string;
   description?: string | null;
   pricingType: 'recurring' | 'one_time';
-  interval?: ('month' | 'year') | null;
+  interval?: ('day' | 'week' | 'month' | 'year') | null;
+  /**
+   * Bill every N intervals, e.g. every 3 months.
+   */
+  intervalCount?: number | null;
   /**
    * Amount in the smallest currency unit, e.g. 999 = $9.99.
    */
@@ -981,16 +996,26 @@ export interface Plan {
   introOffer?: {
     enabled?: boolean | null;
     /**
-     * First-period price, e.g. 199 = $1.99.
+     * Intro-period price, e.g. 199 = $1.99.
      */
     introAmount?: number | null;
+    introInterval?: ('month' | 'year') | null;
+    /**
+     * How many intro periods the discount lasts (1 = first invoice only; years count as 12 months each).
+     */
+    introPeriods?: number | null;
   };
+  /**
+   * Content accessLevel this plan unlocks.
+   */
+  entitlement?: ('members' | 'premium') | null;
   /**
    * Shown on the public pricing card.
    */
   features?:
     | {
         text: string;
+        included?: boolean | null;
         id?: string | null;
       }[]
     | null;
@@ -1000,9 +1025,108 @@ export interface Plan {
   badge?: string | null;
   highlighted?: boolean | null;
   displayOrder?: number | null;
+  /**
+   * Don't push this plan to Stripe on save.
+   */
+  skipSync?: boolean | null;
   stripeProductId?: string | null;
   stripePriceId?: string | null;
   stripeIntroCouponId?: string | null;
+  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
+  syncError?: string | null;
+  lastSyncedAt?: string | null;
+  subscriptions?: {
+    docs?: (number | Subscription)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Read-only mirror written by the Stripe webhook. Manage billing in Stripe; author the catalog under Plans.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptions".
+ */
+export interface Subscription {
+  id: number;
+  user?: (number | null) | User;
+  plan?: (number | null) | Plan;
+  coupon?: (number | null) | Coupon;
+  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'churned' | 'paused';
+  startedAt?: string | null;
+  trialEndsAt?: string | null;
+  currentPeriodStart?: string | null;
+  currentPeriodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean | null;
+  canceledAt?: string | null;
+  lastPaymentAt?: string | null;
+  /**
+   * Cents.
+   */
+  lastPaymentAmount?: number | null;
+  stripeSubscriptionID: string;
+  stripeCustomerID?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Discounts synced to Stripe on save. Changing amount/duration creates a new Stripe coupon (they're immutable) and archives the old one.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons".
+ */
+export interface Coupon {
+  id: number;
+  name: string;
+  discountType: 'percent_off' | 'amount_off';
+  /**
+   * Percent (1–100) or amount in cents.
+   */
+  value: number;
+  currency?: string | null;
+  duration: 'once' | 'repeating' | 'forever';
+  durationCount?: number | null;
+  /**
+   * Years are converted to months for Stripe (2 years → 24 months).
+   */
+  durationUnit?: ('month' | 'year') | null;
+  /**
+   * Total redemptions allowed.
+   */
+  maxRedemptions?: number | null;
+  /**
+   * Stripe redeem_by — no new redemptions after this.
+   */
+  redeemBy?: string | null;
+  /**
+   * Optional minimum order amount (cents) — enforced at checkout.
+   */
+  minimumAmount?: number | null;
+  /**
+   * Mirrored from Stripe.
+   */
+  timesRedeemed?: number | null;
+  active?: boolean | null;
+  /**
+   * Restrict to specific plans (empty = applies to all).
+   */
+  appliesTo?: (number | Plan)[] | null;
+  /**
+   * Optional customer-facing code (e.g. LAUNCH20). Created as a Stripe promotion code on sync. Leave blank for a code-less coupon.
+   */
+  code?: string | null;
+  /**
+   * When set, new free signups get a unique, expiring promotion code for this coupon. Keep at most one active.
+   */
+  isWelcomeOffer?: boolean | null;
+  /**
+   * Don't push this coupon to Stripe on save.
+   */
+  skipSync?: boolean | null;
+  stripeCouponId?: string | null;
+  stripePromotionCodeId?: string | null;
   syncStatus?: ('unsynced' | 'synced' | 'error') | null;
   syncError?: string | null;
   lastSyncedAt?: string | null;
@@ -2097,6 +2221,10 @@ export interface Enrollment {
   enrolledAt: string;
   status: 'active' | 'completed' | 'refunded' | 'expired';
   source?: ('purchase' | 'subscription' | 'free' | 'manual') | null;
+  /**
+   * When access comes from a plan.
+   */
+  subscription?: (number | null) | Subscription;
   progress?:
     | {
         lesson: number | Lesson;
@@ -2156,55 +2284,6 @@ export interface FeedToken {
    * Updated on each feed fetch.
    */
   lastAccessedAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Discounts pushed to Stripe. Changing amount/duration creates a new Stripe coupon (they're immutable) and archives the old one.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "coupons".
- */
-export interface Coupon {
-  id: number;
-  name: string;
-  discountType: 'percent_off' | 'amount_off';
-  /**
-   * Percent (1–100) or amount in cents.
-   */
-  value: number;
-  currency?: string | null;
-  duration: 'once' | 'repeating' | 'forever';
-  durationCount?: number | null;
-  /**
-   * Years are converted to months for Stripe (2 years → 24 months).
-   */
-  durationUnit?: ('month' | 'year') | null;
-  /**
-   * Total redemptions allowed.
-   */
-  maxRedemptions?: number | null;
-  /**
-   * Stripe redeem_by — no new redemptions after this.
-   */
-  redeemBy?: string | null;
-  /**
-   * Restrict to specific plans (empty = applies to all).
-   */
-  appliesTo?: (number | Plan)[] | null;
-  /**
-   * Optional customer-facing code (e.g. LAUNCH20). Created as a Stripe promotion code on sync. Leave blank for a code-less coupon.
-   */
-  code?: string | null;
-  /**
-   * When set, new free signups get a unique, expiring promotion code for this coupon. Keep at most one active.
-   */
-  isWelcomeOffer?: boolean | null;
-  stripeCouponId?: string | null;
-  stripePromotionCodeId?: string | null;
-  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
-  syncError?: string | null;
-  lastSyncedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2835,6 +2914,10 @@ export interface PayloadLockedDocument {
         value: number | Coupon;
       } | null)
     | ({
+        relationTo: 'subscriptions';
+        value: number | Subscription;
+      } | null)
+    | ({
         relationTo: 'pages';
         value: number | Page;
       } | null)
@@ -2971,6 +3054,7 @@ export interface UsersSelect<T extends boolean = true> {
   onboardingCompleted?: T;
   lastActiveAt?: T;
   stripeCustomerID?: T;
+  subscriptions?: T;
   favorites?: T;
   enrollments?: T;
   devices?: T;
@@ -3029,6 +3113,7 @@ export interface EnrollmentsSelect<T extends boolean = true> {
   enrolledAt?: T;
   status?: T;
   source?: T;
+  subscription?: T;
   progress?:
     | T
     | {
@@ -3746,6 +3831,7 @@ export interface PlansSelect<T extends boolean = true> {
   description?: T;
   pricingType?: T;
   interval?: T;
+  intervalCount?: T;
   unitAmount?: T;
   currency?: T;
   trialDays?: T;
@@ -3754,22 +3840,28 @@ export interface PlansSelect<T extends boolean = true> {
     | {
         enabled?: T;
         introAmount?: T;
+        introInterval?: T;
+        introPeriods?: T;
       };
+  entitlement?: T;
   features?:
     | T
     | {
         text?: T;
+        included?: T;
         id?: T;
       };
   badge?: T;
   highlighted?: T;
   displayOrder?: T;
+  skipSync?: T;
   stripeProductId?: T;
   stripePriceId?: T;
   stripeIntroCouponId?: T;
   syncStatus?: T;
   syncError?: T;
   lastSyncedAt?: T;
+  subscriptions?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3787,14 +3879,40 @@ export interface CouponsSelect<T extends boolean = true> {
   durationUnit?: T;
   maxRedemptions?: T;
   redeemBy?: T;
+  minimumAmount?: T;
+  timesRedeemed?: T;
+  active?: T;
   appliesTo?: T;
   code?: T;
   isWelcomeOffer?: T;
+  skipSync?: T;
   stripeCouponId?: T;
   stripePromotionCodeId?: T;
   syncStatus?: T;
   syncError?: T;
   lastSyncedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptions_select".
+ */
+export interface SubscriptionsSelect<T extends boolean = true> {
+  user?: T;
+  plan?: T;
+  coupon?: T;
+  status?: T;
+  startedAt?: T;
+  trialEndsAt?: T;
+  currentPeriodStart?: T;
+  currentPeriodEnd?: T;
+  cancelAtPeriodEnd?: T;
+  canceledAt?: T;
+  lastPaymentAt?: T;
+  lastPaymentAmount?: T;
+  stripeSubscriptionID?: T;
+  stripeCustomerID?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -378,6 +378,12 @@ export const Users: CollectionConfig = {
       ],
     },
     {
+      name: "subscriptions",
+      type: "join",
+      collection: "subscriptions",
+      on: "user",
+    },
+    {
       name: "favorites",
       type: "join",
       collection: "favorites",

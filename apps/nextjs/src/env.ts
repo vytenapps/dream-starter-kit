@@ -38,6 +38,10 @@ export const env = createEnv({
     AI_GATEWAY_API_KEY: z.string().min(1).optional(),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+    // Signing secret for the PAYLOAD Stripe webhook endpoint
+    // (/cms-api/stripe/webhooks, via @payloadcms/plugin-stripe) — a separate
+    // Stripe endpoint from the Supabase edge function's STRIPE_WEBHOOK_SECRET.
+    STRIPE_WEBHOOKS_ENDPOINT_SECRET: z.string().min(1).optional(),
     STRIPE_PRICE_MONTHLY: z.string().min(1).optional(),
     STRIPE_PRICE_YEARLY: z.string().min(1).optional(),
     // Payload CMS (server-only). Payload reads these directly from process.env

@@ -69,6 +69,15 @@ export const Enrollments: CollectionConfig = {
       ],
     },
     {
+      name: "subscription",
+      type: "relationship",
+      relationTo: "subscriptions",
+      admin: {
+        condition: (data) => data.source === "subscription",
+        description: "When access comes from a plan.",
+      },
+    },
+    {
       name: "progress",
       type: "array",
       fields: [

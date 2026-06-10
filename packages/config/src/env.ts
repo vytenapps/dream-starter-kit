@@ -28,6 +28,12 @@ export const serverEnvSchema = z.object({
   // --- Stripe — optional until Phase 5 is configured ---
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  /**
+   * Signing secret for the Payload Stripe webhook endpoint
+   * (/cms-api/stripe/webhooks) — a SECOND Stripe endpoint, separate from the
+   * Supabase edge function's STRIPE_WEBHOOK_SECRET.
+   */
+  STRIPE_WEBHOOKS_ENDPOINT_SECRET: z.string().min(1).optional(),
   STRIPE_PRICE_MONTHLY: z.string().min(1).optional(),
   STRIPE_PRICE_YEARLY: z.string().min(1).optional(),
 

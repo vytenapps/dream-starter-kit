@@ -415,14 +415,15 @@ export async function seedCmsContent(
       },
     },
     {
-      // Default billing catalog (Payload only — pushed to Stripe later via the
-      // per-row "Sync to Stripe" button). Three live plans + one inactive demo
+      // Default billing catalog (Payload only — plans sync to Stripe on their
+      // first admin save; the seed itself skips the sync hook). Three live plans + one inactive demo
       // showing an introductory offer, plus a welcome coupon for signup codes,
       // and the pricing-page settings that feature the three live plans.
       label: "Plans & pricing",
       run: async () => {
         const monthly = await payload.create({
           collection: "plans",
+          context: { skipStripeSync: true },
           data: {
             name: "Dream Monthly Plan",
             slug: "dream-monthly",
@@ -441,6 +442,7 @@ export async function seedCmsContent(
         });
         const annual = await payload.create({
           collection: "plans",
+          context: { skipStripeSync: true },
           data: {
             name: "Dream Annual Plan",
             slug: "dream-annual",
@@ -463,6 +465,7 @@ export async function seedCmsContent(
         });
         const lifetime = await payload.create({
           collection: "plans",
+          context: { skipStripeSync: true },
           data: {
             name: "Dream Lifetime Plan",
             slug: "dream-lifetime",
@@ -482,6 +485,7 @@ export async function seedCmsContent(
         // so the capability is visible out of the box without affecting pricing.
         await payload.create({
           collection: "plans",
+          context: { skipStripeSync: true },
           data: {
             name: "Dream Pro (intro demo)",
             slug: "dream-pro-intro-demo",
@@ -501,6 +505,7 @@ export async function seedCmsContent(
         // code for this coupon per new free account.
         await payload.create({
           collection: "coupons",
+          context: { skipStripeSync: true },
           data: {
             name: "Welcome offer",
             discountType: "percent_off",
