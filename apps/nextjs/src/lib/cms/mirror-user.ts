@@ -37,13 +37,29 @@ export async function ensureCmsUser(user: {
       trash: true,
     });
     if (existing.totalDocs === 0) {
+      // A staff-flagged profile without a CMS row at mirror time is the
+      // FOUNDER (the first signup, auto-flagged is_staff) — provision them as
+      // the full CMS admin. Invited staff already have a row (the invite hook
+      // created it with `editor`), so this path never demotes/promotes them.
+      let isStaff = false;
+      try {
+        const { data: profile } = await createAdminClient()
+          .from("profiles")
+          .select("is_staff")
+          .eq("id", user.id)
+          .maybeSingle();
+        isStaff = Boolean(profile?.is_staff);
+      } catch {
+        // Service key unavailable — mirror as a plain member; the SSO bridge
+        // still grants a staff role on their first /admin visit.
+      }
       await payload.create({
         collection: "users",
         data: {
           supabaseUserId: user.id,
           email: user.email ?? `${user.id}@users.noreply.local`,
           name: user.name ?? undefined,
-          roles: ["member"],
+          roles: isStaff ? ["admin"] : ["member"],
         },
         overrideAccess: true,
       });
