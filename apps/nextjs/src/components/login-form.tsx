@@ -38,12 +38,14 @@ export function LoginForm({
   const configured = isSupabaseConfigured();
   // Only honor same-origin paths — this value drives a full-page navigation
   // (and the OAuth callback `next`), so an absolute/protocol-relative URL would
-  // be an open redirect.
+  // be an open redirect. Default destination is /welcome, which routes by role:
+  // staff/admin into the CMS (/admin, seeding first if needed), everyone else
+  // to /dashboard. An explicit redirectTo (e.g. a deep link) still wins.
   const redirectParam = useSearchParams().get("redirectTo");
   const redirectTo =
     redirectParam?.startsWith("/") && !redirectParam.startsWith("//")
       ? redirectParam
-      : "/dashboard";
+      : "/welcome";
   const callback = authCallbackUrl(redirectTo);
 
   const {

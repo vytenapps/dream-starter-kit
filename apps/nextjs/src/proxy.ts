@@ -57,7 +57,9 @@ export async function proxy(request: NextRequest) {
 
   if (user && AUTH_PREFIXES.some((p) => pathname.startsWith(p))) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    // /welcome routes by role: staff into the CMS, everyone else to /dashboard
+    // — same destination logic as a fresh sign-in.
+    url.pathname = "/welcome";
     url.search = "";
     return NextResponse.redirect(url);
   }
