@@ -241,7 +241,11 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+# ON to match hosted Supabase defaults: sign-up sends a confirmation email and the
+# app shows the /check-email screen (link + manual code entry). Local emails land
+# in Mailpit at http://127.0.0.1:54324 ([inbucket] above). Changing this requires
+# `supabase stop && supabase start`, not just `db reset`.
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
@@ -261,10 +265,26 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Sign-up confirmation email. Customized so the email carries BOTH the confirm
+# link (handled by /auth/callback) and the 6-digit OTP code ({{ .Token }}) that
+# the /check-email screen's "Enter code manually" path verifies via verifyOtp.
+# HOSTED projects must mirror this template in the Dashboard (Authentication ->
+# Emails -> Confirm signup) — see README -> Deploy.
+[auth.email.template.confirmation]
+subject = "Confirm your email"
+content_path = "./supabase/templates/confirmation.html"
+
+# Staff invite email (sent by the /admin Users-collection hook). Customized to
+# link straight to /accept-invite?token_hash=… so the one-time token is verified
+# by an explicit verifyOtp call from the page, NOT consumed by following a
+# redirect — GoTrue's default link-style invite token gets burned by anything
+# that GETs the URL (email-scanner prefetch, or a browser restarting the
+# redirect chain for Critical-CH client hints, which Payload sets site-wide).
+# HOSTED projects must mirror this template in the Dashboard (Authentication ->
+# Emails -> Invite user) — see README -> Deploy.
+[auth.email.template.invite]
+subject = "You have been invited"
+content_path = "./supabase/templates/invite.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

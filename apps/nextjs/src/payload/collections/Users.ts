@@ -2,6 +2,7 @@ import type { CollectionConfig } from "payload";
 
 import { isAdmin } from "../access";
 import { supabaseStrategy } from "../auth/supabase-strategy";
+import { inviteUserOnCreate } from "../hooks/invite-user";
 
 /**
  * Payload admin users (content editors / staff). Authentication is bridged from
@@ -9,6 +10,10 @@ import { supabaseStrategy } from "../auth/supabase-strategy";
  * password. A `cms.users` row is provisioned on first access and linked to its
  * Supabase user by `supabaseUserId`. Only app users flagged `profiles.is_staff`
  * may sign in. See payload/auth/supabase-strategy.ts and docs/ARCHITECTURE.md.
+ *
+ * Creating a user here invites them as staff: a Supabase invite email goes out
+ * (or, for an existing app user, their account is promoted without an email)
+ * and `profiles.is_staff` is flagged. See payload/hooks/invite-user.ts.
  */
 export const Users: CollectionConfig = {
   slug: "users",
@@ -18,7 +23,14 @@ export const Users: CollectionConfig = {
     disableLocalStrategy: true,
     strategies: [supabaseStrategy],
   },
-  admin: { useAsTitle: "email", group: "Admin" },
+  admin: {
+    useAsTitle: "email",
+    group: "Admin",
+    description:
+      "Creating a user emails them a Supabase invite and grants staff access. " +
+      "If the email already has an account, it is promoted to staff instead (no email is sent).",
+  },
+  hooks: { beforeChange: [inviteUserOnCreate] },
   access: {
     create: isAdmin,
     read: isAdmin,

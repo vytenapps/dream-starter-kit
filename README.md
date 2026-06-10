@@ -131,12 +131,16 @@ pnpm db:reset      # applies migrations + seed.sql (ships EMPTY — the first si
 > with `password authentication failed for user "payload_cms"`.
 
 Payload's `cms` tables are auto-created in dev on first boot. **The CMS shares your
-Supabase login — there's no separate Payload account.** Sign up through the app (step 4);
-the **first** signup is automatically flagged staff (the founder/admin). Open `/admin`
-while signed in and you're let straight into the CMS — the kit provisions your CMS user,
-then seeds demo content (pages, articles, an event, site nav) with a progress bar and
-drops you into the admin. To add more editors later, set `is_staff = true` on their
-`profiles` row. The `pnpm cms:seed` CLI is still available for headless/CI setup.
+Supabase login — there's no separate Payload account.** Sign up through the app (step 4)
+and confirm your email — confirmations are on locally to match hosted Supabase; the
+confirmation email (link + a manual 6-digit code) lands in **Mailpit** at
+http://127.0.0.1:54324. The **first** signup is automatically flagged staff (the
+founder/admin). Open `/admin` while signed in and you're let straight into the CMS — the
+kit provisions your CMS user, then seeds demo content (pages, articles, an event, site
+nav) with a progress bar and drops you into the admin. To add more editors later, invite
+them from **`/admin` → Users → Create New** — they get a Supabase invite email and set a
+password on `/accept-invite` (requires `SUPABASE_SERVICE_ROLE_KEY` in the web app's env).
+The `pnpm cms:seed` CLI is still available for headless/CI setup.
 
 Paste the printed **API URL**, **anon key**, and **service_role key** into `.env`
 (see [Environment variables](#environment-variables) for which is which). The Payload
@@ -349,6 +353,23 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
    auto-detected from Vercel's `NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL` (set
    `NEXT_PUBLIC_SITE_URL` only to pin a custom domain). For billing/AI add `STRIPE_*` +
    `AI_GATEWAY_API_KEY` in Vercel (the AI Gateway credential is auto-injected on Vercel).
+
+   Hosted projects have **email confirmations ON** by default — the kit's sign-up flow
+   handles this (`/check-email`, link or manual code), and local dev matches
+   (`enable_confirmations = true` in `supabase/config.toml`). Mirror the kit's two email
+   templates in **Authentication → Emails**:
+   - **Confirm signup** ← [`supabase/templates/confirmation.html`](./supabase/templates/confirmation.html)
+     — the default template has the link but not the `{{ .Token }}` code, so the
+     manual-code option on `/check-email` would have nothing to enter.
+   - **Invite user** ← [`supabase/templates/invite.html`](./supabase/templates/invite.html)
+     — links straight to `/accept-invite?token_hash=…` so the one-time invite token is
+     verified explicitly by the page instead of being consumed by following a redirect;
+     the default link-style token gets burned by mail-scanner prefetch or a browser
+     navigation restart. (`/accept-invite` is covered by the `/**` Redirect URL wildcard
+     above — no extra entry needed.)
+
+   Also consider custom SMTP (**Authentication → Emails → SMTP**): Supabase's built-in
+   sender is heavily rate-limited (~2 emails/hour) and meant for testing only.
 6. **Set up the CMS** — run `supabase/payload/00_cms_role.sql` once in the SQL editor,
    add the `PAYLOAD_*` + `S3_*` env, create + run Payload migrations, then log into
    `/admin` — see [Content backend (Payload CMS)](#content-backend-payload-cms).
@@ -387,12 +408,15 @@ captured by `supabase db push` (`CREATE ROLE` isn't diffed), so set them up once
    collection, regenerate with `pnpm cms:migrate:create` and **commit** the new file; the
    next deploy applies it. (`pnpm cms:migrate` still works for applying against any DB by
    hand, but isn't needed in the deploy flow.)
-4. **Log in** — sign up through the app first; the **first** signup is auto-flagged
-   staff. Then open `https://<your-domain>/admin` while signed in — the CMS shares your
-   Supabase login (no separate Payload account), provisions your CMS user, and triggers
-   the demo-content seed (with a progress bar) before landing in the admin, so the CMS is
-   populated out of the box; edit or replace that content for real prod. Grant more
-   editors by setting `is_staff = true` on their `profiles` row.
+4. **Log in** — sign up through the app first (confirm via the email Supabase sends);
+   the **first** signup is auto-flagged staff. Then open `https://<your-domain>/admin`
+   while signed in — the CMS shares your Supabase login (no separate Payload account),
+   provisions your CMS user, and triggers the demo-content seed (with a progress bar)
+   before landing in the admin, so the CMS is populated out of the box; edit or replace
+   that content for real prod. Grant more editors from **`/admin` → Users → Create
+   New** — they receive a Supabase invite email and set a password on `/accept-invite`
+   (needs `SUPABASE_SERVICE_ROLE_KEY` set in Vercel; inviting an email that already has
+   an account just promotes it to staff, without sending an email).
 
 > If the Payload admin fails to build/run under Next 16's default Turbopack, build
 > the web app with Webpack (`next build --webpack`).

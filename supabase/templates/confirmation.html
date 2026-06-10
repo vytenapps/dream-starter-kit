@@ -1,0 +1,21 @@
+<!--
+  Sign-up confirmation email (Supabase "Confirm signup" template).
+
+  Carries BOTH verification paths the /check-email screen offers:
+    - {{ .ConfirmationURL }} — the one-click link (PKCE: must be opened in the
+      same browser that signed up; handled by /auth/callback).
+    - {{ .Token }} — the 6-digit code for "Enter code manually" (verifyOtp;
+      works from any browser/device).
+
+  Hosted Supabase does not read this file — paste the same markup into the
+  Dashboard (Authentication -> Emails -> Confirm signup). See README -> Deploy.
+-->
+<h2>Confirm your email</h2>
+
+<p>Follow this link to confirm your email and finish creating your account:</p>
+<p><a href="{{ .ConfirmationURL }}">Confirm your email</a></p>
+
+<p>Or enter this code on the “Check your email” screen:</p>
+<p style="font-size: 24px; letter-spacing: 4px"><strong>{{ .Token }}</strong></p>
+
+<p>If you didn’t sign up, you can safely ignore this email.</p>

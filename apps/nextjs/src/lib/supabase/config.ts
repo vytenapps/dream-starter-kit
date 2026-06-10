@@ -35,5 +35,8 @@ export function authErrorMessage(
   ) {
     return "Couldn’t reach the authentication server. Check that your Supabase project is reachable, then try again.";
   }
-  return message || fallback;
+  // A gateway hiccup can produce an empty/JSON-blob "message" (e.g. "{}") —
+  // useless to a user, so fall back instead of toasting it verbatim.
+  if (!message.trim() || /^[{[\]}\s]*$/.test(message)) return fallback;
+  return message;
 }

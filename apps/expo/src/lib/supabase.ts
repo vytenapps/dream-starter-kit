@@ -21,6 +21,11 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
+      // PKCE so email links (confirmation / magic link / recovery) and OAuth
+      // redirect back with a ?code= the app exchanges in /auth-callback.
+      // The verifier lives in this app's storage, so those links only complete
+      // on this device — the manual confirmation code is the fallback.
+      flowType: "pkce",
     },
   },
 );

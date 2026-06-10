@@ -29,9 +29,10 @@ export const env = createEnv({
   },
   /** Server-only — secrets. Never exposed to the browser. */
   server: {
-    // Optional for the web app (it uses anon + the user's token); Supabase
-    // edge functions receive the service role from Supabase's injected env.
-    // Set it here only if you add admin server routes that bypass RLS.
+    // Optional so the kit boots without it, but needed by the staff-invite
+    // hook (payload/hooks/invite-user.ts → lib/supabase/admin.ts): inviting a
+    // user from /admin fails with a clear error until it's set. Supabase edge
+    // functions receive the service role from Supabase's injected env.
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
     SUPABASE_DB_URL: z.url().optional(),
     AI_GATEWAY_API_KEY: z.string().min(1).optional(),

@@ -21,22 +21,33 @@ pnpm --filter @acme/web-e2e exec playwright install --with-deps chromium
 pnpm test:e2e
 ```
 
-Local Supabase runs with email confirmations **off**, so sign-up is immediately
-usable. The kit ships an **empty seed** (no demo accounts) — the first UI signup
-becomes the owner, who is routed through `/welcome` → `/cms-setup` to seed the CMS
+Local Supabase runs with email confirmations **ON** (matching hosted Supabase
+defaults): sign-up lands on `/check-email`, and the specs complete it by pulling
+the confirmation email from **Mailpit** — the mail-catcher bundled with
+`supabase start`, at `http://127.0.0.1:54324` (`[inbucket]` in
+`supabase/config.toml`; override with `MAILPIT_URL`). See
+`src/helpers/mailpit.ts`. Changing auth config requires `supabase stop &&
+supabase start` — a `db reset` alone doesn't apply it.
+
+The kit ships an **empty seed** (no demo accounts) — the first UI signup becomes
+the owner, who is routed through `/welcome` → `/cms-setup` to seed the CMS
 before `/admin`; every later signup lands on the dashboard. The `setup` project
-(`founder.setup.ts`) provisions that founder first, so the parallel specs that
-assert "sign-up → dashboard" run as non-staff users. Each spec uses a unique email
-so repeated runs against the same DB don't collide.
+(`founder.setup.ts`) provisions that founder first (and saves their session for
+`staff-invite.spec.ts`), so the parallel specs that assert "sign-up → dashboard"
+run as non-staff users. Each spec uses a unique email so repeated runs against
+the same DB don't collide. The staff-invite spec also needs
+`SUPABASE_SERVICE_ROLE_KEY` in `.env` (the invite hook uses it).
 
 ## What's covered
 
-| Spec                    | Flow                                                                                                                                                          |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `founder.setup.ts`      | Setup project (runs first): founder sign-up → `/cms-setup` seeds the CMS → `/admin`. Provisions the founder + seeded content the rest of the suite relies on. |
-| `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`).                                                              |
-| `auth.spec.ts`          | Sign up → dashboard; a signed-in user is bounced away from auth pages.                                                                                        |
-| `critical-path.spec.ts` | Sign up → schedule a reminder (the reference RLS-backed CRUD flow).                                                                                           |
+| Spec                    | Flow                                                                                                                                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `founder.setup.ts`      | Setup project (runs first): founder sign-up → confirm via Mailpit link → `/cms-setup` seeds the CMS → `/admin`. Provisions the founder + seeded content the rest of the suite relies on. |
+| `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`).                                                                                         |
+| `auth.spec.ts`          | Sign up → confirm (emailed link, and the manual 6-digit code path) → dashboard; a signed-in user is bounced away from auth pages.                                                        |
+| `critical-path.spec.ts` | Sign up → confirm → schedule a reminder (the reference RLS-backed CRUD flow).                                                                                                            |
+| `staff-invite.spec.ts`  | Founder invites a user from `/admin` → invite email → `/accept-invite` (fresh browser context) → set password → `/admin`.                                                                |
+| `admin-login.spec.ts`   | Signing in as the admin (founder credentials) routes through `/welcome` into `/admin`, with the Payload UI rendered.                                                                     |
 
 ## Deliberately not covered here
 
