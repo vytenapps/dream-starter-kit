@@ -41,7 +41,7 @@ export function LoginForm({
   // (and the OAuth callback `next`), so an absolute/protocol-relative URL would
   // be an open redirect. Default destination is /welcome, which routes by role:
   // staff/admin into the CMS (/admin, seeding first if needed), everyone else
-  // to /dashboard. An explicit redirectTo (e.g. a deep link) still wins.
+  // to /a. An explicit redirectTo (e.g. a deep link) still wins.
   const redirectParam = useSearchParams().get("redirectTo");
   const redirectTo =
     redirectParam?.startsWith("/") && !redirectParam.startsWith("//")

@@ -31,7 +31,7 @@ export function SignupForm({
   const configured = isSupabaseConfigured();
   // First account = the founder, so route every sign-up through /welcome, which
   // sends the founder into the CMS seed flow (/cms-setup) and everyone else to
-  // /dashboard. Used for both the password redirect below and the OAuth callback.
+  // /a. Used for both the password redirect below and the OAuth callback.
   const callback = authCallbackUrl("/welcome");
 
   const {
@@ -52,7 +52,7 @@ export function SignupForm({
         // client-side by supabase-js, and a soft App-Router navigation doesn't
         // reliably pick it up. A hard navigation makes the server re-read the
         // fresh session — /welcome then routes the founder to the CMS seed flow
-        // and everyone else to /dashboard. (Verified via e2e.)
+        // and everyone else to /a. (Verified via e2e.)
         window.location.assign("/welcome");
       } else {
         // Confirmations are on (the hosted default): no session until the user

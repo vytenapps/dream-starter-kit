@@ -342,8 +342,7 @@ export async function seedCmsContent(
           data: {
             title: "Modeling content in Payload",
             slug: "modeling-content-in-payload",
-            excerpt:
-              "Posts, events, media and more — all in the cms schema.",
+            excerpt: "Posts, events, media and more — all in the cms schema.",
             body: richText([
               "Payload CMS owns the cms Postgres schema and powers every editorial collection in this kit: posts, events, videos, photos, audio and locations.",
               "Each collection is a thin config file under src/payload/collections. Add a field, run pnpm cms:gen-types, and it flows straight through to the typed web and mobile screens.",

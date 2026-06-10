@@ -31,7 +31,7 @@ export default async function CheckoutReturnPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) redirect("/dashboard?checkout=success");
+  if (user) redirect("/a?checkout=success");
 
   return (
     <main className="container mx-auto flex max-w-lg flex-col items-center gap-6 px-4 py-24 text-center">

@@ -15,12 +15,12 @@ import { signUpAndConfirm } from "./helpers/mailpit";
  * then route through `/welcome` into the CMS seed flow (`/cms-setup`, the
  * shadcn progress bar) and reach `/admin` only after seeding completes. This
  * asserts that flow end-to-end AND leaves a founder + seeded CMS in place, so
- * every other spec's sign-up is a NON-staff user that lands on `/dashboard`
+ * every other spec's sign-up is a NON-staff user that lands on `/a`
  * and content.spec has data to render.
  *
- * Strict on purpose: the founder MUST reach `/cms-setup` (not `/dashboard`). A
+ * Strict on purpose: the founder MUST reach `/cms-setup` (not `/a`). A
  * regression in `/welcome` routing or the `is_staff` flag would send them to
- * `/dashboard` — this test then fails loudly instead of passing silently.
+ * `/a` — this test then fails loudly instead of passing silently.
  */
 test("founder sign-up seeds the CMS before /admin", async ({ page }) => {
   // Well past the default 30s: confirmation email round-trip + CMS seeding +
@@ -31,7 +31,7 @@ test("founder sign-up seeds the CMS before /admin", async ({ page }) => {
 
   await signUpAndConfirm(page, { name: "Founder", email });
 
-  // The founder (first user) must be routed into the seed flow — NOT /dashboard.
+  // The founder (first user) must be routed into the seed flow — NOT /a.
   await page.waitForURL(/\/cms-setup/, { timeout: 15_000 });
 
   // The shadcn progress screen, then hand-off to /admin once seeding completes.

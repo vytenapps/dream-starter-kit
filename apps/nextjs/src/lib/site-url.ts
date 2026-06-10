@@ -42,6 +42,6 @@ export function getSiteUrl(): string {
  * the post-auth destination encoded in `next`. Pass this as Supabase's
  * `emailRedirectTo` / `redirectTo`.
  */
-export function authCallbackUrl(next = "/dashboard"): string {
+export function authCallbackUrl(next = "/a"): string {
   return `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}`;
 }

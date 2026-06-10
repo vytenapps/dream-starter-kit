@@ -21,9 +21,7 @@ test.describe("public content", () => {
 
   test("posts list renders", async ({ page }) => {
     await page.goto("/posts");
-    await expect(
-      page.getByRole("heading", { name: /posts/i }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /posts/i })).toBeVisible();
   });
 
   test("a static page renders its CMS blocks", async ({ page }) => {
