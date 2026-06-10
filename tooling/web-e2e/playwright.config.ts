@@ -7,7 +7,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? "github" : "list",
+  // CI: annotate the run via the `github` reporter AND emit the static HTML
+  // report into `playwright-report/` (default dir) so the workflow's
+  // upload-artifact step has files to publish. `open: "never"` keeps it from
+  // trying to launch a browser on failure. Local: concise `list` output.
+  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   // Tests run against `next dev`, where parallel workers all trigger
   // first-compiles of their routes — the 30s default times tests out on the
   // email-confirmation flows (sign-up → Mailpit → verify-link redirect chain).
