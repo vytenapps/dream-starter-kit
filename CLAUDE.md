@@ -253,8 +253,12 @@ API — so it never uses the `payload_cms` DB role or the service-role key (gold
 
 **Sign-up requires email confirmation** (`enable_confirmations = true` locally, matching
 hosted Supabase): the form routes to `/check-email`, which offers the emailed link
-(→ `/auth/callback` → `/welcome`) or manual entry of the emailed 6-digit code
-(`verifyOtp`). E2E specs pull both from Mailpit — see `tooling/web-e2e/README.md`.
+(→ `/confirm-email`, which verifies the `token_hash` and forwards to `/welcome`) or
+manual entry of the emailed 6-digit code (`verifyOtp`). Both kit email templates
+(`supabase/templates/`) link via `token_hash` pages — never GoTrue's redirect-style
+links, whose one-time tokens break for re-sent emails (no PKCE state) and get burned
+by prefetchers/navigation restarts. E2E specs pull link + code from Mailpit — see
+`tooling/web-e2e/README.md`.
 
 ## Theming (shadcn, one source of truth)
 

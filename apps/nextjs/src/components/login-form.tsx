@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import type { SignInInput } from "@acme/app";
 import {
   emailSchema,
+  resendSignUpEmail,
   signInSchema,
   signInWithOAuth,
   signInWithOtp,
@@ -60,6 +61,23 @@ export function LoginForm({
       await signInWithPassword(supabase, values);
       window.location.assign(redirectTo);
     } catch (e) {
+      // Unconfirmed email (correct password): don't dead-end on an error
+      // toast — re-send the confirmation and continue on /check-email, which
+      // offers the fresh link and the manual 6-digit code. Covers users whose
+      // original link expired or redirected to a misconfigured Site URL.
+      if ((e as { code?: string }).code === "email_not_confirmed") {
+        try {
+          await resendSignUpEmail(supabase, values.email, {
+            emailRedirectTo: authCallbackUrl("/welcome"),
+          });
+        } catch {
+          // Rate-limited or transient — /check-email can re-send manually.
+        }
+        window.location.assign(
+          `/check-email?email=${encodeURIComponent(values.email)}`,
+        );
+        return;
+      }
       toast.error(authErrorMessage(e, "Sign in failed"));
     }
   }

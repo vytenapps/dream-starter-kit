@@ -134,8 +134,9 @@ export default function SignUp() {
 
 /**
  * Post-sign-up confirmation view (mirrors the web /check-email screen). The
- * emailed link must be opened on THIS device (PKCE); the emailed 6-digit code
- * works from anywhere and is verified inline here.
+ * emailed link opens the WEB /confirm-email page (kit template, token_hash) —
+ * it confirms the account but signs in the browser, not this app — so the
+ * 6-digit code verified inline here is the primary path on native.
  */
 function CheckEmail({ email, onBack }: { email: string; onBack: () => void }) {
   const [enterCode, setEnterCode] = useState(false);

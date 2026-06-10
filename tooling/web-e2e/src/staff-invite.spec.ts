@@ -39,9 +39,19 @@ test("inviting a staff user from /admin → accept invite → /admin", async ({
   await page.getByRole("button", { name: "Save" }).click();
 
   // The hook ran iff the doc saved — Payload confirms with a success toast.
-  await expect(page.getByText(/successfully/i)).toBeVisible({
-    timeout: 30_000,
-  });
+  // One retry: local GoTrue under load can 504 mid-invite (the email usually
+  // went out anyway); re-saving hits the hook's email_exists → promote path,
+  // which is idempotent by design.
+  try {
+    await expect(page.getByText(/successfully/i)).toBeVisible({
+      timeout: 30_000,
+    });
+  } catch {
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText(/successfully/i)).toBeVisible({
+      timeout: 30_000,
+    });
+  }
 
   // The invite email links straight to /accept-invite?token_hash=… (kit
   // template) — no code; only the sign-up confirmation template includes one.

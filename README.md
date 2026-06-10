@@ -359,8 +359,10 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
    (`enable_confirmations = true` in `supabase/config.toml`). Mirror the kit's two email
    templates in **Authentication → Emails**:
    - **Confirm signup** ← [`supabase/templates/confirmation.html`](./supabase/templates/confirmation.html)
-     — the default template has the link but not the `{{ .Token }}` code, so the
-     manual-code option on `/check-email` would have nothing to enter.
+     — links to `/confirm-email?token_hash=…` (works for original **and re-sent**
+     confirmations, from any browser — re-sent links from the default template are
+     broken by design, since re-sends carry no PKCE state) and shows the
+     `{{ .Token }}` code the manual-code option on `/check-email` needs.
    - **Invite user** ← [`supabase/templates/invite.html`](./supabase/templates/invite.html)
      — links straight to `/accept-invite?token_hash=…` so the one-time invite token is
      verified explicitly by the page instead of being consumed by following a redirect;
@@ -370,6 +372,16 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
 
    Also consider custom SMTP (**Authentication → Emails → SMTP**): Supabase's built-in
    sender is heavily rate-limited (~2 emails/hour) and meant for testing only.
+
+   > **Signed up before configuring the URLs?** The first confirmation link will have
+   > redirected to `localhost` (or expired on a retry) — the account is fine. The
+   > `is_staff` founder flag is granted at **sign-up**, not at confirmation, and the
+   > link's first click usually confirmed the email anyway (only the redirect broke).
+   > Just **sign in**: you'll be routed through `/welcome` into `/cms-setup` (the CMS
+   > seeds on the founder's first entry) and on to `/admin`. If the email really is
+   > still unconfirmed, signing in re-sends a fresh confirmation and lands on
+   > `/check-email`, and `/profile` shows a **Verify email** button — signing up again
+   > with the same address also re-sends.
 6. **Set up the CMS** — run `supabase/payload/00_cms_role.sql` once in the SQL editor,
    add the `PAYLOAD_*` + `S3_*` env, create + run Payload migrations, then log into
    `/admin` — see [Content backend (Payload CMS)](#content-backend-payload-cms).

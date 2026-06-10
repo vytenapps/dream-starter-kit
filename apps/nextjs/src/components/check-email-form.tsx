@@ -20,10 +20,10 @@ import { authErrorMessage } from "~/lib/supabase/config";
  * hosted Supabase default). Three views:
  *
  * - `link` (default, arriving with ?email=): the confirmation email is out;
- *   clicking its link completes sign-up via /auth/callback. That link is
- *   PKCE-coupled (same browser only), so we also offer…
+ *   its link lands on /confirm-email, which verifies the token_hash (works
+ *   from any browser/device, including for re-sent emails).
  * - `code`: manual entry of the 6-digit code from the same email — verifyOtp
- *   establishes the session from any browser/device.
+ *   establishes the session right here.
  * - `email` (no ?email=, e.g. direct navigation): ask for the address and
  *   re-send the confirmation email.
  *
