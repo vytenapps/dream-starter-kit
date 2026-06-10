@@ -1,77 +1,105 @@
+import type Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { z } from "zod/v4";
 
 import { env } from "~/env";
+import { getPlan } from "~/lib/payload";
 import { getSiteUrl } from "~/lib/site-url";
 import { getStripe } from "~/lib/stripe";
 import { createClient } from "~/lib/supabase/server";
 
-const bodySchema = z.object({ plan: z.enum(["monthly", "yearly"]) });
-
 /**
- * Create a Stripe Checkout session for the chosen plan. Authed; the price ids
- * stay server-side. The webhook persists the customer/subscription rows.
+ * Create a Stripe Checkout session for a Payload plan. Plan-driven: the plan's
+ * Stripe price / trial / intro-coupon come from the synced Payload doc, so there
+ * are no hardcoded price ids. Works for both signed-in users (upgrade) and
+ * anonymous visitors (guest checkout — the webhook provisions the account from
+ * the checkout email after payment). The webhook persists customer/subscription.
  */
+const bodySchema = z.object({ planId: z.union([z.string(), z.number()]) });
+
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: "Billing not configured" }, { status: 503 });
   }
 
-  const body: unknown = await request.json();
-  const parsed = bodySchema.safeParse(body);
+  const parsed = bodySchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
 
-  const priceId =
-    parsed.data.plan === "monthly"
-      ? env.STRIPE_PRICE_MONTHLY
-      : env.STRIPE_PRICE_YEARLY;
-  if (!priceId || !env.STRIPE_SECRET_KEY) {
+  const plan = await getPlan(parsed.data.planId);
+  if (!plan?.stripePriceId) {
     return NextResponse.json(
-      { error: "Billing not configured" },
-      { status: 503 },
+      { error: "This plan isn't available for purchase yet." },
+      { status: 409 },
     );
   }
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const stripe = getStripe();
+  const isSubscription = plan.pricingType === "recurring";
 
-  // Reuse the user's Stripe customer if we have one (the webhook persists it);
-  // otherwise reuse by email or create a fresh customer.
-  const { data: existing } = await supabase
-    .from("customers")
-    .select("stripe_customer_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  let customerId = existing?.stripe_customer_id;
-  if (!customerId) {
-    const byEmail = user.email
-      ? await stripe.customers.list({ email: user.email, limit: 1 })
-      : null;
-    customerId =
-      byEmail?.data[0]?.id ??
-      (
-        await stripe.customers.create({
-          email: user.email ?? undefined,
-          metadata: { supabase_user_id: user.id },
-        })
-      ).id;
+  // Reuse the user's Stripe customer when signed in; guests let Checkout collect
+  // the email and we create the account from it in the webhook.
+  let customerId: string | undefined;
+  if (user) {
+    const { data: existing } = await supabase
+      .from("customers")
+      .select("stripe_customer_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    customerId = existing?.stripe_customer_id;
+    if (!customerId) {
+      const byEmail = user.email
+        ? await stripe.customers.list({ email: user.email, limit: 1 })
+        : null;
+      customerId =
+        byEmail?.data[0]?.id ??
+        (
+          await stripe.customers.create({
+            email: user.email ?? undefined,
+            metadata: { supabase_user_id: user.id },
+          })
+        ).id;
+    }
   }
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    client_reference_id: user.id,
-    subscription_data: { metadata: { supabase_user_id: user.id } },
-    success_url: `${getSiteUrl()}/dashboard?checkout=success`,
-    cancel_url: `${getSiteUrl()}/dashboard?checkout=cancelled`,
-  });
+  // An intro offer is auto-applied via its duration:once coupon. Otherwise allow
+  // customers to enter a promotion code (Stripe forbids combining the two).
+  const introCoupon = isSubscription ? plan.stripeIntroCouponId : null;
+  const metadata: Record<string, string> = {
+    plan_id: String(plan.id),
+    ...(user ? { supabase_user_id: user.id } : {}),
+  };
 
+  const params: Stripe.Checkout.SessionCreateParams = {
+    mode: isSubscription ? "subscription" : "payment",
+    line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+    metadata,
+    success_url: `${getSiteUrl()}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${getSiteUrl()}/pricing`,
+    ...(customerId ? { customer: customerId } : {}),
+    ...(user ? { client_reference_id: user.id } : {}),
+    ...(introCoupon
+      ? { discounts: [{ coupon: introCoupon }] }
+      : { allow_promotion_codes: true }),
+  };
+
+  if (isSubscription) {
+    params.subscription_data = {
+      metadata,
+      ...(plan.trialDays ? { trial_period_days: plan.trialDays } : {}),
+    };
+  } else {
+    // One-time (lifetime): ensure a Customer exists so the webhook can link it.
+    params.payment_intent_data = { metadata };
+    if (!customerId) params.customer_creation = "always";
+  }
+
+  const session = await stripe.checkout.sessions.create(params);
   return NextResponse.json({ url: session.url });
 }
