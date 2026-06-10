@@ -12,12 +12,45 @@ import { BUTTON_VARIANTS } from "../blocks/shared";
  */
 export const SiteSettings: GlobalConfig = {
   slug: "site-settings",
-  admin: { group: "Admin" },
+  admin: { group: "System" },
   access: { read: anyone, update: isStaff },
   fields: [
     {
       type: "tabs",
       tabs: [
+        {
+          label: "General",
+          fields: [
+            {
+              name: "siteName",
+              type: "text",
+              admin: {
+                description:
+                  "Canonical site name for meta/SEO. The DISPLAYED app " +
+                  "name/logo come from theme-settings branding (getBranding()).",
+              },
+            },
+            {
+              name: "siteDescription",
+              type: "textarea",
+              admin: { description: "Default meta-description fallback." },
+            },
+            { name: "contactEmail", type: "email" },
+            {
+              name: "defaultMeta",
+              type: "group",
+              admin: {
+                description:
+                  "Default Open Graph/meta values for pages without their own.",
+              },
+              fields: [
+                { name: "title", type: "text" },
+                { name: "description", type: "textarea" },
+                { name: "image", type: "upload", relationTo: "media" },
+              ],
+            },
+          ],
+        },
         {
           label: "Header",
           fields: [
@@ -195,6 +228,10 @@ export const SiteSettings: GlobalConfig = {
               fields: [
                 { name: "twitter", type: "text" },
                 { name: "github", type: "text" },
+                { name: "instagram", type: "text" },
+                { name: "facebook", type: "text" },
+                { name: "youtube", type: "text" },
+                { name: "linkedin", type: "text" },
               ],
             },
           ],

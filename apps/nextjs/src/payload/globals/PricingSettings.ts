@@ -1,6 +1,7 @@
 import type { GlobalConfig } from "payload";
 
 import { anyone, isStaff } from "../access";
+import { linkField } from "../fields/link";
 
 /**
  * Controls what the public /pricing page shows. Staff curate up to three paid
@@ -11,7 +12,7 @@ import { anyone, isStaff } from "../access";
 export const PricingSettings: GlobalConfig = {
   slug: "pricing-settings",
   label: "Pricing Page",
-  admin: { group: "Payments" },
+  admin: { group: "System" },
   access: { read: anyone, update: isStaff },
   fields: [
     {
@@ -36,6 +37,18 @@ export const PricingSettings: GlobalConfig = {
       name: "subheading",
       type: "textarea",
       defaultValue: "Start free. Upgrade when you're ready.",
+    },
+    {
+      name: "billingToggleDefault",
+      type: "radio",
+      defaultValue: "monthly",
+      options: [
+        { label: "Monthly", value: "monthly" },
+        { label: "Annual", value: "annual" },
+      ],
+      admin: {
+        description: "Which billing cadence the pricing page preselects.",
+      },
     },
     {
       name: "featuredPlans",
@@ -66,12 +79,23 @@ export const PricingSettings: GlobalConfig = {
           type: "text",
           defaultValue: "Get started",
         },
+        linkField("link", {
+          description: "Where the Free tier CTA goes (defaults to /sign-up).",
+        }),
         {
           name: "features",
           type: "array",
-          fields: [{ name: "text", type: "text", required: true }],
+          fields: [
+            { name: "text", type: "text", required: true },
+            { name: "included", type: "checkbox", defaultValue: true },
+          ],
         },
       ],
+    },
+    {
+      name: "disclaimer",
+      type: "textarea",
+      admin: { description: "Fine print shown under the pricing grid." },
     },
   ],
 };

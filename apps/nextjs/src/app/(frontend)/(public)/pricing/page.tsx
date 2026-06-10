@@ -86,6 +86,8 @@ export default async function PricingPage() {
 
   if (settings?.showFreeTier !== false) {
     const free = settings?.freeTier;
+    // Staff-configurable CTA target; blank falls back to sign-up.
+    const freeHref = free?.link?.url?.trim() ?? "";
     columns.push({
       name: free?.name ?? "Free",
       description: free?.description ?? "Everything you need to get started.",
@@ -94,7 +96,7 @@ export default async function PricingPage() {
       features: (free?.features ?? []).map((f) => f.text),
       cta: (
         <Link
-          href="/sign-up"
+          href={freeHref.length > 0 ? freeHref : "/sign-up"}
           className={buttonVariants({ variant: "outline" })}
         >
           {free?.ctaLabel ?? "Get started"}

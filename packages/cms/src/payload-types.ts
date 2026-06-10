@@ -4471,6 +4471,23 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 export interface SiteSetting {
   id: number;
   /**
+   * Canonical site name for meta/SEO. The DISPLAYED app name/logo come from theme-settings branding (getBranding()).
+   */
+  siteName?: string | null;
+  /**
+   * Default meta-description fallback.
+   */
+  siteDescription?: string | null;
+  contactEmail?: string | null;
+  /**
+   * Default Open Graph/meta values for pages without their own.
+   */
+  defaultMeta?: {
+    title?: string | null;
+    description?: string | null;
+    image?: (number | null) | Media;
+  };
+  /**
    * Top-level nav items. Add sub-items to render a dropdown menu.
    */
   header?:
@@ -4527,6 +4544,10 @@ export interface SiteSetting {
   social?: {
     twitter?: string | null;
     github?: string | null;
+    instagram?: string | null;
+    facebook?: string | null;
+    youtube?: string | null;
+    linkedin?: string | null;
   };
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -4890,6 +4911,10 @@ export interface PricingSetting {
   showFreeTier?: boolean | null;
   subheading?: string | null;
   /**
+   * Which billing cadence the pricing page preselects.
+   */
+  billingToggleDefault?: ("monthly" | "annual") | null;
+  /**
    * Pick up to three paid plans to feature, in display order. Empty = all active plans by display order.
    */
   featuredPlans?: (number | Plan)[] | null;
@@ -4897,13 +4922,28 @@ export interface PricingSetting {
     name?: string | null;
     description?: string | null;
     ctaLabel?: string | null;
+    /**
+     * Where the Free tier CTA goes (defaults to /sign-up).
+     */
+    link?: {
+      /**
+       * Internal path (e.g. /pricing) or full external URL (https://example.com).
+       */
+      url?: string | null;
+      newTab?: boolean | null;
+    };
     features?:
       | {
           text: string;
+          included?: boolean | null;
           id?: string | null;
         }[]
       | null;
   };
+  /**
+   * Fine print shown under the pricing grid.
+   */
+  disclaimer?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -4953,6 +4993,16 @@ export interface ProfileField {
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
+  siteName?: T;
+  siteDescription?: T;
+  contactEmail?: T;
+  defaultMeta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
   header?:
     | T
     | {
@@ -5003,6 +5053,10 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | {
         twitter?: T;
         github?: T;
+        instagram?: T;
+        facebook?: T;
+        youtube?: T;
+        linkedin?: T;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -5128,6 +5182,7 @@ export interface PricingSettingsSelect<T extends boolean = true> {
   heading?: T;
   showFreeTier?: T;
   subheading?: T;
+  billingToggleDefault?: T;
   featuredPlans?: T;
   freeTier?:
     | T
@@ -5135,13 +5190,21 @@ export interface PricingSettingsSelect<T extends boolean = true> {
         name?: T;
         description?: T;
         ctaLabel?: T;
+        link?:
+          | T
+          | {
+              url?: T;
+              newTab?: T;
+            };
         features?:
           | T
           | {
               text?: T;
+              included?: T;
               id?: T;
             };
       };
+  disclaimer?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
