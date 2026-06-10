@@ -23,15 +23,15 @@ export default async function PhotosPage() {
           {photos.length > 0 ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {photos.map((photo) => {
-                const image =
-                  typeof photo.image === "object" ? photo.image : null;
+                // photos is an upload collection — the doc IS the image.
+                const url = photo.sizes?.card?.url ?? photo.url;
                 return (
                   <figure key={photo.id} className="space-y-2">
-                    {image?.url && (
+                    {url && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={image.url}
-                        alt={image.alt}
+                        src={url}
+                        alt={photo.altText ?? photo.title}
                         className="aspect-square w-full rounded-lg object-cover"
                       />
                     )}

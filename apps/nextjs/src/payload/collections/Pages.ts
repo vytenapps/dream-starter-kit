@@ -23,9 +23,10 @@ const previewBreakpoints = [
  */
 export const Pages: CollectionConfig = {
   slug: "pages",
+  trash: true,
   admin: {
     useAsTitle: "title",
-    group: "Content",
+    group: "Marketing",
     defaultColumns: ["title", "slug", "_status"],
     // Live Preview: the admin iframe loads /next/preview, which enables draft
     // mode and renders the page's draft (see lib/preview + /next/preview route).
@@ -43,7 +44,7 @@ export const Pages: CollectionConfig = {
         slug: typeof doc.slug === "string" ? doc.slug : undefined,
       }),
   },
-  versions: { drafts: true },
+  versions: { drafts: { schedulePublish: true }, maxPerDoc: 25 },
   access: {
     read: publishedOrStaff,
     create: isStaff,
@@ -58,6 +59,20 @@ export const Pages: CollectionConfig = {
       type: "blocks",
       labels: { singular: "Section", plural: "Sections" },
       blocks: pageBlocks,
+    },
+    {
+      name: "showInNav",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "publishedAt",
+      type: "date",
+      admin: {
+        position: "sidebar",
+        date: { pickerAppearance: "dayAndTime" },
+      },
     },
   ],
 };

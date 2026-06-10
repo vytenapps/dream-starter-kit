@@ -1,21 +1,26 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { postgresAdapter } from "@payloadcms/db-postgres";
+import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { seoPlugin } from "@payloadcms/plugin-seo";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
-import { Posts } from "./payload/collections/Posts";
 import { Audio } from "./payload/collections/Audio";
+import { Categories } from "./payload/collections/Categories";
 import { Coupons } from "./payload/collections/Coupons";
 import { Events } from "./payload/collections/Events";
+import { Lessons } from "./payload/collections/Lessons";
 import { Locations } from "./payload/collections/Locations";
 import { Media } from "./payload/collections/Media";
 import { Pages } from "./payload/collections/Pages";
 import { Photos } from "./payload/collections/Photos";
 import { Plans } from "./payload/collections/Plans";
+import { Posts } from "./payload/collections/Posts";
+import { Series } from "./payload/collections/Series";
+import { TagGroups, Tags } from "./payload/collections/Tags";
 import { Users } from "./payload/collections/Users";
 import { Videos } from "./payload/collections/Videos";
 import { PricingSettings } from "./payload/globals/PricingSettings";
@@ -77,19 +82,31 @@ export default buildConfig({
     api: "/cms-api",
   },
   collections: [
+    // People
     Users,
+    // Content
     Media,
     Posts,
-    Events,
     Videos,
     Audio,
     Photos,
+    Series,
+    Lessons,
     Locations,
-    Pages,
+    Events,
+    Categories,
+    Tags,
+    TagGroups,
+    // Commerce
     Plans,
     Coupons,
+    // Marketing
+    Pages,
   ],
   globals: [SiteSettings, ThemeSettings, PricingSettings],
+  // One shared, cross-collection folder tree ("Browse by Folder") for the
+  // collections that enable `folders: true`.
+  folders: { browseByFolder: true },
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET ?? "",
   // Generated types are published from the @acme/cms package so the Expo app and
@@ -124,7 +141,14 @@ export default buildConfig({
   sharp,
   plugins: [
     s3Storage({
-      collections: { media: true },
+      // photos + audio are upload collections in their own right (the app's
+      // Photos/Podcast sections); prefixes keep their objects separated from
+      // the general media store inside the one bucket.
+      collections: {
+        media: true,
+        photos: { prefix: "photos" },
+        audio: { prefix: "audio" },
+      },
       bucket: process.env.S3_BUCKET ?? "cms-media",
       config: {
         endpoint: process.env.S3_ENDPOINT,
@@ -137,8 +161,22 @@ export default buildConfig({
       },
     }),
     seoPlugin({
-      collections: ["pages", "posts"],
+      collections: [
+        "posts",
+        "videos",
+        "audio",
+        "photos",
+        "pages",
+        "events",
+        "locations",
+        "series",
+      ],
       uploadsCollection: "media",
+    }),
+    // Hierarchies (parent + auto-maintained breadcrumbs) for taxonomy and
+    // page trees. space-groups joins this list with the community feature.
+    nestedDocsPlugin({
+      collections: ["categories", "pages"],
     }),
   ],
 });

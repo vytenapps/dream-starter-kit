@@ -30,8 +30,8 @@ export default async function PostPage({
   if (!post) notFound();
 
   const image =
-    typeof post.heroImage === "object" && post.heroImage?.url
-      ? { url: post.heroImage.url, alt: post.heroImage.alt }
+    typeof post.featuredImage === "object" && post.featuredImage?.url
+      ? { url: post.featuredImage.url, alt: post.featuredImage.alt }
       : null;
 
   return (

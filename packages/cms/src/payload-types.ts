@@ -70,33 +70,69 @@ export interface Config {
     users: User;
     media: Media;
     posts: Post;
-    events: Event;
     videos: Video;
     audio: Audio;
     photos: Photo;
+    series: Series;
+    lessons: Lesson;
     locations: Location;
-    pages: Page;
+    events: Event;
+    categories: Category;
+    tags: Tag;
+    'tag-groups': TagGroup;
     plans: Plan;
     coupons: Coupon;
+    pages: Page;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
+    'payload-folders': FolderInterface;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    series: {
+      videoEpisodes: 'videos';
+      audioEpisodes: 'audio';
+      lessons: 'lessons';
+    };
+    locations: {
+      events: 'events';
+    };
+    'payload-folders': {
+      documentsAndFolders:
+        | 'payload-folders'
+        | 'media'
+        | 'posts'
+        | 'videos'
+        | 'audio'
+        | 'photos'
+        | 'series'
+        | 'lessons'
+        | 'locations'
+        | 'events';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
-    events: EventsSelect<false> | EventsSelect<true>;
     videos: VideosSelect<false> | VideosSelect<true>;
     audio: AudioSelect<false> | AudioSelect<true>;
     photos: PhotosSelect<false> | PhotosSelect<true>;
+    series: SeriesSelect<false> | SeriesSelect<true>;
+    lessons: LessonsSelect<false> | LessonsSelect<true>;
     locations: LocationsSelect<false> | LocationsSelect<true>;
-    pages: PagesSelect<false> | PagesSelect<true>;
+    events: EventsSelect<false> | EventsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
+    'tag-groups': TagGroupsSelect<false> | TagGroupsSelect<true>;
     plans: PlansSelect<false> | PlansSelect<true>;
     coupons: CouponsSelect<false> | CouponsSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
+    'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -121,7 +157,13 @@ export interface Config {
   };
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      schedulePublish: TaskSchedulePublish;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -306,8 +348,16 @@ export interface Media {
   id: number;
   alt: string;
   caption?: string | null;
+  credit?: string | null;
+  /**
+   * LQIP placeholder — generated on upload.
+   */
+  blurDataURL?: string | null;
+  tags?: (number | Tag)[] | null;
+  folder?: (number | null) | FolderInterface;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   url?: string | null;
   thumbnailURL?: string | null;
   filename?: string | null;
@@ -346,14 +396,108 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: number;
+  title: string;
+  slug: string;
+  /**
+   * Optional filter facet this tag belongs to.
+   */
+  group?: (number | null) | TagGroup;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tag-groups".
+ */
+export interface TagGroup {
+  id: number;
+  /**
+   * e.g. "Topic", "Format", "Region".
+   */
+  title: string;
+  slug: string;
+  description?: string | null;
+  displayOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-folders".
+ */
+export interface FolderInterface {
+  id: number;
+  name: string;
+  folder?: (number | null) | FolderInterface;
+  documentsAndFolders?: {
+    docs?: (
+      | {
+          relationTo?: 'payload-folders';
+          value: number | FolderInterface;
+        }
+      | {
+          relationTo?: 'media';
+          value: number | Media;
+        }
+      | {
+          relationTo?: 'posts';
+          value: number | Post;
+        }
+      | {
+          relationTo?: 'videos';
+          value: number | Video;
+        }
+      | {
+          relationTo?: 'audio';
+          value: number | Audio;
+        }
+      | {
+          relationTo?: 'photos';
+          value: number | Photo;
+        }
+      | {
+          relationTo?: 'series';
+          value: number | Series;
+        }
+      | {
+          relationTo?: 'lessons';
+          value: number | Lesson;
+        }
+      | {
+          relationTo?: 'locations';
+          value: number | Location;
+        }
+      | {
+          relationTo?: 'events';
+          value: number | Event;
+        }
+    )[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  folderType?:
+    | ('media' | 'posts' | 'videos' | 'audio' | 'photos' | 'series' | 'lessons' | 'locations' | 'events')[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts".
  */
 export interface Post {
   id: number;
   title: string;
   slug: string;
+  /**
+   * Feed/preview text.
+   */
   excerpt?: string | null;
-  heroImage?: (number | null) | Media;
   body?: {
     root: {
       type: string;
@@ -369,8 +513,43 @@ export interface Post {
     };
     [k: string]: unknown;
   } | null;
+  /**
+   * Landscape hero image.
+   */
+  featuredImage?: (number | null) | Media;
+  /**
+   * Portrait card for the mobile feed (optional).
+   */
+  cardImage?: (number | null) | Media;
+  /**
+   * Inline images.
+   */
+  gallery?: (number | Media)[] | null;
   author?: (number | null) | User;
-  tags?: string[] | null;
+  coAuthors?: (number | User)[] | null;
+  categories?: (number | Category)[] | null;
+  tags?: (number | Tag)[] | null;
+  /**
+   * “Read next” suggestions.
+   */
+  relatedPosts?: (number | Post)[] | null;
+  /**
+   * Computed minutes (not stored).
+   */
+  readingTime?: number | null;
+  authorName?: string | null;
+  /**
+   * Who can view this content in the app.
+   */
+  accessLevel?: ('public' | 'members' | 'premium') | null;
+  /**
+   * Pin to home/feed.
+   */
+  featured?: boolean | null;
+  /**
+   * Allow members to comment on this item.
+   */
+  commentsEnabled?: boolean | null;
   publishedAt?: string | null;
   meta?: {
     title?: string | null;
@@ -380,71 +559,44 @@ export interface Post {
      */
     image?: (number | null) | Media;
   };
+  folder?: (number | null) | FolderInterface;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "events".
+ * via the `definition` "categories".
  */
-export interface Event {
+export interface Category {
   id: number;
   title: string;
   slug: string;
-  description?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  startsAt: string;
-  endsAt?: string | null;
-  location?: (number | null) | Location;
+  description?: string | null;
+  /**
+   * Icon name for app navigation.
+   */
+  icon?: string | null;
+  /**
+   * Hex label/theme color, e.g. #7c3aed.
+   */
+  color?: string | null;
   image?: (number | null) | Media;
+  featured?: boolean | null;
+  displayOrder?: number | null;
+  parent?: (number | null) | Category;
+  breadcrumbs?:
+    | {
+        doc?: (number | null) | Category;
+        url?: string | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "locations".
- */
-export interface Location {
-  id: number;
-  name: string;
-  slug: string;
-  address?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  description?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  image?: (number | null) | Media;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
+  deletedAt?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -455,17 +607,327 @@ export interface Video {
   title: string;
   slug: string;
   description?: string | null;
-  sourceType: 'url' | 'upload';
+  /**
+   * Show notes (optional).
+   */
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Drives the player and which feed this is in.
+   */
+  orientation: 'landscape' | 'vertical';
+  /**
+   * Defaults from orientation when unset.
+   */
+  aspectRatio?: ('16:9' | '9:16' | '1:1' | '4:5') | null;
+  sourceType: 'url' | 'upload' | 'mux' | 'youtube' | 'vimeo';
+  /**
+   * External URL or provider playback ID.
+   */
   url?: string | null;
-  file?: (number | null) | Media;
+  videoFile?: (number | null) | Media;
+  /**
+   * Landscape poster (16:9).
+   */
   thumbnail?: (number | null) | Media;
+  /**
+   * Portrait poster for the shorts feed.
+   */
+  verticalThumbnail?: (number | null) | Media;
+  /**
+   * Muted autoplay loop for feeds (optional).
+   */
+  previewClip?: (number | null) | Media;
   /**
    * Length in seconds.
    */
   duration?: number | null;
+  captions?:
+    | {
+        label: string;
+        language?: ('en' | 'es' | 'fr' | 'de' | 'pt' | 'it' | 'ja' | 'ko' | 'zh') | null;
+        file?: (number | null) | Media;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Long-form landscape only.
+   */
+  chapters?:
+    | {
+        title: string;
+        /**
+         * Seconds from the start.
+         */
+        startTime: number;
+        id?: string | null;
+      }[]
+    | null;
+  series?: (number | null) | Series;
+  episodeNumber?: number | null;
+  seasonNumber?: number | null;
+  categories?: (number | Category)[] | null;
+  tags?: (number | Tag)[] | null;
+  /**
+   * Who can view this content in the app.
+   */
+  accessLevel?: ('public' | 'members' | 'premium') | null;
+  featured?: boolean | null;
+  /**
+   * Allow members to comment on this item.
+   */
+  commentsEnabled?: boolean | null;
+  publishedAt?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  folder?: (number | null) | FolderInterface;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "series".
+ */
+export interface Series {
+  id: number;
+  title: string;
+  slug: string;
+  kind: 'series' | 'season' | 'playlist' | 'album' | 'podcast' | 'course';
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  coverArt?: (number | null) | Media;
+  featuredImage?: (number | null) | Media;
+  /**
+   * Seasons under a parent series.
+   */
+  parentSeries?: (number | null) | Series;
+  categories?: (number | Category)[] | null;
+  tags?: (number | Tag)[] | null;
+  /**
+   * Who can view this content in the app.
+   */
+  accessLevel?: ('public' | 'members' | 'premium') | null;
+  /**
+   * Plans that unlock this show/course (premium gating).
+   */
+  requiredPlans?: (number | Plan)[] | null;
+  displayOrder?: number | null;
+  featured?: boolean | null;
+  podcast?: {
+    itunesAuthor?: string | null;
+    owner?: {
+      name?: string | null;
+      email?: string | null;
+    };
+    summary?: string | null;
+    /**
+     * Square show art, ≥1400×1400.
+     */
+    artwork?: (number | null) | Media;
+    category?:
+      | (
+          | 'arts'
+          | 'business'
+          | 'comedy'
+          | 'education'
+          | 'fiction'
+          | 'government'
+          | 'health_fitness'
+          | 'history'
+          | 'kids_family'
+          | 'leisure'
+          | 'music'
+          | 'news'
+          | 'religion_spirituality'
+          | 'science'
+          | 'society_culture'
+          | 'sports'
+          | 'tv_film'
+          | 'technology'
+          | 'true_crime'
+        )
+      | null;
+    subcategory?:
+      | (
+          | 'arts'
+          | 'business'
+          | 'comedy'
+          | 'education'
+          | 'fiction'
+          | 'government'
+          | 'health_fitness'
+          | 'history'
+          | 'kids_family'
+          | 'leisure'
+          | 'music'
+          | 'news'
+          | 'religion_spirituality'
+          | 'science'
+          | 'society_culture'
+          | 'sports'
+          | 'tv_film'
+          | 'technology'
+          | 'true_crime'
+        )
+      | null;
+    explicit?: boolean | null;
+    type?: ('episodic' | 'serial') | null;
+    language?: string | null;
+    copyright?: string | null;
+    /**
+     * Show website URL.
+     */
+    link?: string | null;
+    /**
+     * Stable UUID for podcast:guid.
+     */
+    podcastGuid?: string | null;
+    locked?: boolean | null;
+    lockedOwner?: string | null;
+    funding?:
+      | {
+          url: string;
+          label?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    complete?: boolean | null;
+    newFeedUrl?: string | null;
+    /**
+     * Members-only feed (forces itunes:block; served via feed-tokens).
+     */
+    isPrivate?: boolean | null;
+  };
+  course?: {
+    instructors?: (number | User)[] | null;
+    summary?: string | null;
+    dripEnabled?: boolean | null;
+    dripAnchor?: ('enrollment' | 'fixed_date') | null;
+    certificateOnComplete?: boolean | null;
+    estimatedHours?: number | null;
+  };
+  videoEpisodes?: {
+    docs?: (number | Video)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  audioEpisodes?: {
+    docs?: (number | Audio)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  lessons?: {
+    docs?: (number | Lesson)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  folder?: (number | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Author plans here, then press “Sync to Stripe” to create/update the matching Stripe product and price. Stripe prices are immutable, so changing the amount creates a new price and archives the old one.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plans".
+ */
+export interface Plan {
+  id: number;
+  name: string;
+  active?: boolean | null;
+  slug: string;
+  description?: string | null;
+  pricingType: 'recurring' | 'one_time';
+  interval?: ('month' | 'year') | null;
+  /**
+   * Amount in the smallest currency unit, e.g. 999 = $9.99.
+   */
+  unitAmount: number;
+  /**
+   * ISO code, e.g. usd.
+   */
+  currency: string;
+  /**
+   * 0 / empty = no trial.
+   */
+  trialDays?: number | null;
+  /**
+   * Discount the first billing period only (e.g. $1.99 first month, then the standard price recurs). Implemented as a Stripe coupon with duration=once, applied automatically at checkout.
+   */
+  introOffer?: {
+    enabled?: boolean | null;
+    /**
+     * First-period price, e.g. 199 = $1.99.
+     */
+    introAmount?: number | null;
+  };
+  /**
+   * Shown on the public pricing card.
+   */
+  features?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * e.g. "Save 17%" or "Best value".
+   */
+  badge?: string | null;
+  highlighted?: boolean | null;
+  displayOrder?: number | null;
+  stripeProductId?: string | null;
+  stripePriceId?: string | null;
+  stripeIntroCouponId?: string | null;
+  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
+  syncError?: string | null;
+  lastSyncedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -475,14 +937,185 @@ export interface Audio {
   id: number;
   title: string;
   slug: string;
-  description?: string | null;
-  audioFile: number | Media;
   /**
-   * Length in seconds.
+   * Stable RSS <guid> (isPermaLink false) — never change once published.
+   */
+  guid?: string | null;
+  subtitle?: string | null;
+  /**
+   * itunes:summary / <description>.
+   */
+  description?: string | null;
+  /**
+   * Show notes → content:encoded.
+   */
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Square episode art (≥1400×1400); falls back to the show art.
+   */
+  coverArt?: (number | null) | Media;
+  /**
+   * Seconds → itunes:duration.
    */
   duration?: number | null;
+  episodeNumber?: number | null;
+  seasonNumber?: number | null;
+  episodeType?: ('full' | 'trailer' | 'bonus') | null;
+  explicit?: boolean | null;
+  transcript?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * podcast:transcript file (VTT/SRT/JSON).
+   */
+  transcriptFile?: (number | null) | Media;
+  chapters?:
+    | {
+        title: string;
+        startTime: number;
+        id?: string | null;
+      }[]
+    | null;
+  soundbites?:
+    | {
+        startTime: number;
+        duration: number;
+        title?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The show (kind: podcast) this episode belongs to.
+   */
+  series?: (number | null) | Series;
+  /**
+   * Hide this single episode from directories.
+   */
+  itunesBlock?: boolean | null;
+  categories?: (number | Category)[] | null;
+  tags?: (number | Tag)[] | null;
+  /**
+   * Who can view this content in the app.
+   */
+  accessLevel?: ('public' | 'members' | 'premium') | null;
+  featured?: boolean | null;
+  /**
+   * Allow members to comment on this item.
+   */
+  commentsEnabled?: boolean | null;
+  /**
+   * RSS <pubDate>.
+   */
+  publishedAt?: string | null;
+  prefix?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  folder?: (number | null) | FolderInterface;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lessons".
+ */
+export interface Lesson {
+  id: number;
+  title: string;
+  slug: string;
+  course: number | Series;
+  /**
+   * Section/module label for grouping.
+   */
+  module?: string | null;
+  /**
+   * Sequence within the course.
+   */
+  order?: number | null;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  video?: (number | null) | Video;
+  audio?: (number | null) | Audio;
+  /**
+   * Downloadable resources.
+   */
+  attachments?: (number | Media)[] | null;
+  /**
+   * Estimated minutes.
+   */
+  duration?: number | null;
+  /**
+   * Free preview — bypasses gating.
+   */
+  preview?: boolean | null;
+  dripType?: ('none' | 'scheduled' | 'relative') | null;
+  releaseAt?: string | null;
+  releaseAfterDays?: number | null;
+  dripMode?: ('gate_content' | 'notify_only') | null;
+  notifyPush?: boolean | null;
+  notifyEmail?: boolean | null;
+  /**
+   * Computed release time for countdowns (scheduled drip only; relative drip is resolved per user from the enrollment).
+   */
+  unlocksAt?: string | null;
+  folder?: (number | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
 }
 /**
@@ -493,18 +1126,343 @@ export interface Photo {
   id: number;
   title: string;
   slug: string;
-  image: number | Media;
   caption?: string | null;
-  gallery?:
+  /**
+   * Accessibility description.
+   */
+  altText?: string | null;
+  /**
+   * Photographer / source.
+   */
+  credit?: string | null;
+  takenAt?: string | null;
+  location?: (number | null) | Location;
+  album?: (number | null) | Series;
+  categories?: (number | Category)[] | null;
+  tags?: (number | Tag)[] | null;
+  /**
+   * Who can view this content in the app.
+   */
+  accessLevel?: ('public' | 'members' | 'premium') | null;
+  featured?: boolean | null;
+  /**
+   * Allow members to comment on this item.
+   */
+  commentsEnabled?: boolean | null;
+  publishedAt?: string | null;
+  prefix?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  folder?: (number | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    card?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    hero?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "locations".
+ */
+export interface Location {
+  id: number;
+  name: string;
+  slug: string;
+  /**
+   * Map-pin/card text.
+   */
+  shortDescription?: string | null;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  address?: {
+    street?: string | null;
+    street2?: string | null;
+    city?: string | null;
+    region?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+  };
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  coordinates?: [number, number] | null;
+  hours?:
     | {
-        image: number | Media;
-        caption?: string | null;
+        day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+        opensAt?: string | null;
+        closesAt?: string | null;
+        closed?: boolean | null;
         id?: string | null;
       }[]
     | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  priceRange?: ('$' | '$$' | '$$$' | '$$$$') | null;
+  amenities?:
+    | ('wifi' | 'parking' | 'accessible' | 'pets' | 'outdoor_seating' | 'restrooms' | 'food' | 'drinks')[]
+    | null;
+  featuredImage?: (number | null) | Media;
+  gallery?: (number | Media)[] | null;
+  locationType?: (number | null) | Category;
+  tags?: (number | Tag)[] | null;
+  /**
+   * Denormalized from approved reviews.
+   */
+  ratingAverage?: number | null;
+  temporarilyClosed?: boolean | null;
+  featured?: boolean | null;
+  /**
+   * Allow members to comment on this item.
+   */
+  commentsEnabled?: boolean | null;
+  events?: {
+    docs?: (number | Event)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  folder?: (number | null) | FolderInterface;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  title: string;
+  slug: string;
+  /**
+   * Card text.
+   */
+  shortDescription?: string | null;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  eventType?: (number | null) | Category;
+  startsAt: string;
+  endsAt?: string | null;
+  allDay?: boolean | null;
+  timezone?:
+    | (
+        | 'Pacific/Midway'
+        | 'Pacific/Niue'
+        | 'Pacific/Honolulu'
+        | 'Pacific/Rarotonga'
+        | 'America/Anchorage'
+        | 'Pacific/Gambier'
+        | 'America/Los_Angeles'
+        | 'America/Tijuana'
+        | 'America/Denver'
+        | 'America/Phoenix'
+        | 'America/Chicago'
+        | 'America/Guatemala'
+        | 'America/New_York'
+        | 'America/Bogota'
+        | 'America/Caracas'
+        | 'America/Santiago'
+        | 'America/Buenos_Aires'
+        | 'America/Sao_Paulo'
+        | 'Atlantic/South_Georgia'
+        | 'Atlantic/Azores'
+        | 'Atlantic/Cape_Verde'
+        | 'Europe/London'
+        | 'Europe/Berlin'
+        | 'Africa/Lagos'
+        | 'Europe/Athens'
+        | 'Africa/Cairo'
+        | 'Europe/Moscow'
+        | 'Asia/Riyadh'
+        | 'Asia/Dubai'
+        | 'Asia/Baku'
+        | 'Asia/Karachi'
+        | 'Asia/Tashkent'
+        | 'Asia/Calcutta'
+        | 'Asia/Dhaka'
+        | 'Asia/Almaty'
+        | 'Asia/Jakarta'
+        | 'Asia/Bangkok'
+        | 'Asia/Shanghai'
+        | 'Asia/Singapore'
+        | 'Asia/Tokyo'
+        | 'Asia/Seoul'
+        | 'Australia/Brisbane'
+        | 'Australia/Sydney'
+        | 'Pacific/Guam'
+        | 'Pacific/Noumea'
+        | 'Pacific/Auckland'
+        | 'Pacific/Fiji'
+      )
+    | null;
+  /**
+   * Optional recurring schedule.
+   */
+  recurrence?: {
+    frequency?: ('daily' | 'weekly' | 'monthly' | 'yearly') | null;
+    /**
+     * Every N periods.
+     */
+    interval?: number | null;
+    until?: string | null;
+  };
+  isVirtual?: boolean | null;
+  location?: (number | null) | Location;
+  virtualUrl?: string | null;
+  featuredImage?: (number | null) | Media;
+  gallery?: (number | Media)[] | null;
+  isFree?: boolean | null;
+  price?: number | null;
+  currency?: ('usd' | 'eur' | 'gbp' | 'cad' | 'aud') | null;
+  ticketUrl?: string | null;
+  capacity?: number | null;
+  registrationRequired?: boolean | null;
+  organizer?: (number | null) | User;
+  speakers?: (number | User)[] | null;
+  eventStatus?: ('scheduled' | 'rescheduled' | 'cancelled' | 'sold_out') | null;
+  featured?: boolean | null;
+  /**
+   * Allow members to comment on this item.
+   */
+  commentsEnabled?: boolean | null;
+  publishedAt?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  folder?: (number | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Discounts pushed to Stripe. Changing amount/duration creates a new Stripe coupon (they're immutable) and archives the old one.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons".
+ */
+export interface Coupon {
+  id: number;
+  name: string;
+  discountType: 'percent_off' | 'amount_off';
+  /**
+   * Percent (1–100) or amount in cents.
+   */
+  value: number;
+  currency?: string | null;
+  duration: 'once' | 'repeating' | 'forever';
+  durationCount?: number | null;
+  /**
+   * Years are converted to months for Stripe (2 years → 24 months).
+   */
+  durationUnit?: ('month' | 'year') | null;
+  /**
+   * Total redemptions allowed.
+   */
+  maxRedemptions?: number | null;
+  /**
+   * Stripe redeem_by — no new redemptions after this.
+   */
+  redeemBy?: string | null;
+  /**
+   * Restrict to specific plans (empty = applies to all).
+   */
+  appliesTo?: (number | Plan)[] | null;
+  /**
+   * Optional customer-facing code (e.g. LAUNCH20). Created as a Stripe promotion code on sync. Leave blank for a code-less coupon.
+   */
+  code?: string | null;
+  /**
+   * When set, new free signups get a unique, expiring promotion code for this coupon. Keep at most one active.
+   */
+  isWelcomeOffer?: boolean | null;
+  stripeCouponId?: string | null;
+  stripePromotionCodeId?: string | null;
+  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
+  syncError?: string | null;
+  lastSyncedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -515,6 +1473,8 @@ export interface Page {
   title: string;
   slug: string;
   layout?: (HeroBlock | ItemsBlock | LogosBlock | StatsBlock | CTABlock | FAQBlock | ProseBlock)[] | null;
+  showInNav?: boolean | null;
+  publishedAt?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -523,8 +1483,18 @@ export interface Page {
      */
     image?: (number | null) | Media;
   };
+  parent?: (number | null) | Page;
+  breadcrumbs?:
+    | {
+        doc?: (number | null) | Page;
+        url?: string | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
 }
 /**
@@ -704,115 +1674,6 @@ export interface ProseBlock {
   blockType: 'prose';
 }
 /**
- * Author plans here, then press “Sync to Stripe” to create/update the matching Stripe product and price. Stripe prices are immutable, so changing the amount creates a new price and archives the old one.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plans".
- */
-export interface Plan {
-  id: number;
-  name: string;
-  active?: boolean | null;
-  slug: string;
-  description?: string | null;
-  pricingType: 'recurring' | 'one_time';
-  interval?: ('month' | 'year') | null;
-  /**
-   * Amount in the smallest currency unit, e.g. 999 = $9.99.
-   */
-  unitAmount: number;
-  /**
-   * ISO code, e.g. usd.
-   */
-  currency: string;
-  /**
-   * 0 / empty = no trial.
-   */
-  trialDays?: number | null;
-  /**
-   * Discount the first billing period only (e.g. $1.99 first month, then the standard price recurs). Implemented as a Stripe coupon with duration=once, applied automatically at checkout.
-   */
-  introOffer?: {
-    enabled?: boolean | null;
-    /**
-     * First-period price, e.g. 199 = $1.99.
-     */
-    introAmount?: number | null;
-  };
-  /**
-   * Shown on the public pricing card.
-   */
-  features?:
-    | {
-        text: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * e.g. "Save 17%" or "Best value".
-   */
-  badge?: string | null;
-  highlighted?: boolean | null;
-  displayOrder?: number | null;
-  stripeProductId?: string | null;
-  stripePriceId?: string | null;
-  stripeIntroCouponId?: string | null;
-  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
-  syncError?: string | null;
-  lastSyncedAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Discounts pushed to Stripe. Changing amount/duration creates a new Stripe coupon (they're immutable) and archives the old one.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "coupons".
- */
-export interface Coupon {
-  id: number;
-  name: string;
-  discountType: 'percent_off' | 'amount_off';
-  /**
-   * Percent (1–100) or amount in cents.
-   */
-  value: number;
-  currency?: string | null;
-  duration: 'once' | 'repeating' | 'forever';
-  durationCount?: number | null;
-  /**
-   * Years are converted to months for Stripe (2 years → 24 months).
-   */
-  durationUnit?: ('month' | 'year') | null;
-  /**
-   * Total redemptions allowed.
-   */
-  maxRedemptions?: number | null;
-  /**
-   * Stripe redeem_by — no new redemptions after this.
-   */
-  redeemBy?: string | null;
-  /**
-   * Restrict to specific plans (empty = applies to all).
-   */
-  appliesTo?: (number | Plan)[] | null;
-  /**
-   * Optional customer-facing code (e.g. LAUNCH20). Created as a Stripe promotion code on sync. Leave blank for a code-less coupon.
-   */
-  code?: string | null;
-  /**
-   * When set, new free signups get a unique, expiring promotion code for this coupon. Keep at most one active.
-   */
-  isWelcomeOffer?: boolean | null;
-  stripeCouponId?: string | null;
-  stripePromotionCodeId?: string | null;
-  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
-  syncError?: string | null;
-  lastSyncedAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -828,6 +1689,98 @@ export interface PayloadKv {
     | number
     | boolean
     | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: number;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'schedulePublish';
+        taskID: string;
+        input?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'schedulePublish') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processing?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -849,10 +1802,6 @@ export interface PayloadLockedDocument {
         value: number | Post;
       } | null)
     | ({
-        relationTo: 'events';
-        value: number | Event;
-      } | null)
-    | ({
         relationTo: 'videos';
         value: number | Video;
       } | null)
@@ -865,12 +1814,32 @@ export interface PayloadLockedDocument {
         value: number | Photo;
       } | null)
     | ({
+        relationTo: 'series';
+        value: number | Series;
+      } | null)
+    | ({
+        relationTo: 'lessons';
+        value: number | Lesson;
+      } | null)
+    | ({
         relationTo: 'locations';
         value: number | Location;
       } | null)
     | ({
-        relationTo: 'pages';
-        value: number | Page;
+        relationTo: 'events';
+        value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: number | Tag;
+      } | null)
+    | ({
+        relationTo: 'tag-groups';
+        value: number | TagGroup;
       } | null)
     | ({
         relationTo: 'plans';
@@ -879,6 +1848,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'coupons';
         value: number | Coupon;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'payload-folders';
+        value: number | FolderInterface;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -997,8 +1974,13 @@ export interface UsersSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   caption?: T;
+  credit?: T;
+  blurDataURL?: T;
+  tags?: T;
+  folder?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
   url?: T;
   thumbnailURL?: T;
   filename?: T;
@@ -1051,10 +2033,20 @@ export interface PostsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   excerpt?: T;
-  heroImage?: T;
   body?: T;
+  featuredImage?: T;
+  cardImage?: T;
+  gallery?: T;
   author?: T;
+  coAuthors?: T;
+  categories?: T;
   tags?: T;
+  relatedPosts?: T;
+  readingTime?: T;
+  authorName?: T;
+  accessLevel?: T;
+  featured?: T;
+  commentsEnabled?: T;
   publishedAt?: T;
   meta?:
     | T
@@ -1063,24 +2055,10 @@ export interface PostsSelect<T extends boolean = true> {
         description?: T;
         image?: T;
       };
+  folder?: T;
   updatedAt?: T;
   createdAt?: T;
-  _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "events_select".
- */
-export interface EventsSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
-  description?: T;
-  startsAt?: T;
-  endsAt?: T;
-  location?: T;
-  image?: T;
-  updatedAt?: T;
-  createdAt?: T;
+  deletedAt?: T;
   _status?: T;
 }
 /**
@@ -1091,13 +2069,51 @@ export interface VideosSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   description?: T;
+  body?: T;
+  orientation?: T;
+  aspectRatio?: T;
   sourceType?: T;
   url?: T;
-  file?: T;
+  videoFile?: T;
   thumbnail?: T;
+  verticalThumbnail?: T;
+  previewClip?: T;
   duration?: T;
+  captions?:
+    | T
+    | {
+        label?: T;
+        language?: T;
+        file?: T;
+        id?: T;
+      };
+  chapters?:
+    | T
+    | {
+        title?: T;
+        startTime?: T;
+        id?: T;
+      };
+  series?: T;
+  episodeNumber?: T;
+  seasonNumber?: T;
+  categories?: T;
+  tags?: T;
+  accessLevel?: T;
+  featured?: T;
+  commentsEnabled?: T;
+  publishedAt?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  folder?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
   _status?: T;
 }
 /**
@@ -1107,12 +2123,62 @@ export interface VideosSelect<T extends boolean = true> {
 export interface AudioSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
+  guid?: T;
+  subtitle?: T;
   description?: T;
-  audioFile?: T;
+  body?: T;
+  coverArt?: T;
   duration?: T;
+  episodeNumber?: T;
+  seasonNumber?: T;
+  episodeType?: T;
+  explicit?: T;
+  transcript?: T;
+  transcriptFile?: T;
+  chapters?:
+    | T
+    | {
+        title?: T;
+        startTime?: T;
+        id?: T;
+      };
+  soundbites?:
+    | T
+    | {
+        startTime?: T;
+        duration?: T;
+        title?: T;
+        id?: T;
+      };
+  series?: T;
+  itunesBlock?: T;
+  categories?: T;
+  tags?: T;
+  accessLevel?: T;
+  featured?: T;
+  commentsEnabled?: T;
+  publishedAt?: T;
+  prefix?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  folder?: T;
   updatedAt?: T;
   createdAt?: T;
-  _status?: T;
+  deletedAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1121,17 +2187,178 @@ export interface AudioSelect<T extends boolean = true> {
 export interface PhotosSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
-  image?: T;
   caption?: T;
-  gallery?:
+  altText?: T;
+  credit?: T;
+  takenAt?: T;
+  location?: T;
+  album?: T;
+  categories?: T;
+  tags?: T;
+  accessLevel?: T;
+  featured?: T;
+  commentsEnabled?: T;
+  publishedAt?: T;
+  prefix?: T;
+  meta?:
     | T
     | {
+        title?: T;
+        description?: T;
         image?: T;
-        caption?: T;
-        id?: T;
       };
+  folder?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        card?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        hero?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "series_select".
+ */
+export interface SeriesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  kind?: T;
+  description?: T;
+  coverArt?: T;
+  featuredImage?: T;
+  parentSeries?: T;
+  categories?: T;
+  tags?: T;
+  accessLevel?: T;
+  requiredPlans?: T;
+  displayOrder?: T;
+  featured?: T;
+  podcast?:
+    | T
+    | {
+        itunesAuthor?: T;
+        owner?:
+          | T
+          | {
+              name?: T;
+              email?: T;
+            };
+        summary?: T;
+        artwork?: T;
+        category?: T;
+        subcategory?: T;
+        explicit?: T;
+        type?: T;
+        language?: T;
+        copyright?: T;
+        link?: T;
+        podcastGuid?: T;
+        locked?: T;
+        lockedOwner?: T;
+        funding?:
+          | T
+          | {
+              url?: T;
+              label?: T;
+              id?: T;
+            };
+        complete?: T;
+        newFeedUrl?: T;
+        isPrivate?: T;
+      };
+  course?:
+    | T
+    | {
+        instructors?: T;
+        summary?: T;
+        dripEnabled?: T;
+        dripAnchor?: T;
+        certificateOnComplete?: T;
+        estimatedHours?: T;
+      };
+  videoEpisodes?: T;
+  audioEpisodes?: T;
+  lessons?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  folder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lessons_select".
+ */
+export interface LessonsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  course?: T;
+  module?: T;
+  order?: T;
+  content?: T;
+  video?: T;
+  audio?: T;
+  attachments?: T;
+  duration?: T;
+  preview?: T;
+  dripType?: T;
+  releaseAt?: T;
+  releaseAfterDays?: T;
+  dripMode?: T;
+  notifyPush?: T;
+  notifyEmail?: T;
+  unlocksAt?: T;
+  folder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
   _status?: T;
 }
 /**
@@ -1141,14 +2368,218 @@ export interface PhotosSelect<T extends boolean = true> {
 export interface LocationsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
-  address?: T;
-  latitude?: T;
-  longitude?: T;
+  shortDescription?: T;
   description?: T;
-  image?: T;
+  address?:
+    | T
+    | {
+        street?: T;
+        street2?: T;
+        city?: T;
+        region?: T;
+        postalCode?: T;
+        country?: T;
+      };
+  coordinates?: T;
+  hours?:
+    | T
+    | {
+        day?: T;
+        opensAt?: T;
+        closesAt?: T;
+        closed?: T;
+        id?: T;
+      };
+  phone?: T;
+  email?: T;
+  website?: T;
+  priceRange?: T;
+  amenities?: T;
+  featuredImage?: T;
+  gallery?: T;
+  locationType?: T;
+  tags?: T;
+  ratingAverage?: T;
+  temporarilyClosed?: T;
+  featured?: T;
+  commentsEnabled?: T;
+  events?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  folder?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  shortDescription?: T;
+  description?: T;
+  eventType?: T;
+  startsAt?: T;
+  endsAt?: T;
+  allDay?: T;
+  timezone?: T;
+  recurrence?:
+    | T
+    | {
+        frequency?: T;
+        interval?: T;
+        until?: T;
+      };
+  isVirtual?: T;
+  location?: T;
+  virtualUrl?: T;
+  featuredImage?: T;
+  gallery?: T;
+  isFree?: T;
+  price?: T;
+  currency?: T;
+  ticketUrl?: T;
+  capacity?: T;
+  registrationRequired?: T;
+  organizer?: T;
+  speakers?: T;
+  eventStatus?: T;
+  featured?: T;
+  commentsEnabled?: T;
+  publishedAt?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  folder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  description?: T;
+  icon?: T;
+  color?: T;
+  image?: T;
+  featured?: T;
+  displayOrder?: T;
+  parent?: T;
+  breadcrumbs?:
+    | T
+    | {
+        doc?: T;
+        url?: T;
+        label?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  group?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tag-groups_select".
+ */
+export interface TagGroupsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  description?: T;
+  displayOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plans_select".
+ */
+export interface PlansSelect<T extends boolean = true> {
+  name?: T;
+  active?: T;
+  slug?: T;
+  description?: T;
+  pricingType?: T;
+  interval?: T;
+  unitAmount?: T;
+  currency?: T;
+  trialDays?: T;
+  introOffer?:
+    | T
+    | {
+        enabled?: T;
+        introAmount?: T;
+      };
+  features?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  badge?: T;
+  highlighted?: T;
+  displayOrder?: T;
+  stripeProductId?: T;
+  stripePriceId?: T;
+  stripeIntroCouponId?: T;
+  syncStatus?: T;
+  syncError?: T;
+  lastSyncedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons_select".
+ */
+export interface CouponsSelect<T extends boolean = true> {
+  name?: T;
+  discountType?: T;
+  value?: T;
+  currency?: T;
+  duration?: T;
+  durationCount?: T;
+  durationUnit?: T;
+  maxRedemptions?: T;
+  redeemBy?: T;
+  appliesTo?: T;
+  code?: T;
+  isWelcomeOffer?: T;
+  stripeCouponId?: T;
+  stripePromotionCodeId?: T;
+  syncStatus?: T;
+  syncError?: T;
+  lastSyncedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1168,6 +2599,8 @@ export interface PagesSelect<T extends boolean = true> {
         faq?: T | FAQBlockSelect<T>;
         prose?: T | ProseBlockSelect<T>;
       };
+  showInNav?: T;
+  publishedAt?: T;
   meta?:
     | T
     | {
@@ -1175,8 +2608,18 @@ export interface PagesSelect<T extends boolean = true> {
         description?: T;
         image?: T;
       };
+  parent?: T;
+  breadcrumbs?:
+    | T
+    | {
+        doc?: T;
+        url?: T;
+        label?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
   _status?: T;
 }
 /**
@@ -1298,74 +2741,54 @@ export interface ProseBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plans_select".
- */
-export interface PlansSelect<T extends boolean = true> {
-  name?: T;
-  active?: T;
-  slug?: T;
-  description?: T;
-  pricingType?: T;
-  interval?: T;
-  unitAmount?: T;
-  currency?: T;
-  trialDays?: T;
-  introOffer?:
-    | T
-    | {
-        enabled?: T;
-        introAmount?: T;
-      };
-  features?:
-    | T
-    | {
-        text?: T;
-        id?: T;
-      };
-  badge?: T;
-  highlighted?: T;
-  displayOrder?: T;
-  stripeProductId?: T;
-  stripePriceId?: T;
-  stripeIntroCouponId?: T;
-  syncStatus?: T;
-  syncError?: T;
-  lastSyncedAt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "coupons_select".
- */
-export interface CouponsSelect<T extends boolean = true> {
-  name?: T;
-  discountType?: T;
-  value?: T;
-  currency?: T;
-  duration?: T;
-  durationCount?: T;
-  durationUnit?: T;
-  maxRedemptions?: T;
-  redeemBy?: T;
-  appliesTo?: T;
-  code?: T;
-  isWelcomeOffer?: T;
-  stripeCouponId?: T;
-  stripePromotionCodeId?: T;
-  syncStatus?: T;
-  syncError?: T;
-  lastSyncedAt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processing?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-folders_select".
+ */
+export interface PayloadFoldersSelect<T extends boolean = true> {
+  name?: T;
+  folder?: T;
+  documentsAndFolders?: T;
+  folderType?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2049,6 +3472,48 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSchedulePublish".
+ */
+export interface TaskSchedulePublish {
+  input: {
+    type?: ('publish' | 'unpublish') | null;
+    locale?: string | null;
+    doc?:
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null)
+      | ({
+          relationTo: 'videos';
+          value: number | Video;
+        } | null)
+      | ({
+          relationTo: 'series';
+          value: number | Series;
+        } | null)
+      | ({
+          relationTo: 'lessons';
+          value: number | Lesson;
+        } | null)
+      | ({
+          relationTo: 'locations';
+          value: number | Location;
+        } | null)
+      | ({
+          relationTo: 'events';
+          value: number | Event;
+        } | null)
+      | ({
+          relationTo: 'pages';
+          value: number | Page;
+        } | null);
+    global?: string | null;
+    user?: (number | null) | User;
+  };
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

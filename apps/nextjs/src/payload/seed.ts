@@ -363,7 +363,14 @@ export async function seedCmsContent(
           data: {
             name: "Demo HQ",
             slug: "demo-hq",
-            address: "123 Demo St",
+            shortDescription: "A sample location record.",
+            address: {
+              street: "123 Demo St",
+              city: "Demo City",
+              region: "CA",
+              postalCode: "90210",
+              country: "USA",
+            },
             description: richText([
               "Demo HQ is a sample location record. Locations pair an address with a rich-text description — use them for stores, venues or offices.",
               "Replace this with your own places from the admin, or delete the locations collection if your product doesn't need it.",
@@ -399,6 +406,7 @@ export async function seedCmsContent(
           data: {
             title: "Intro video",
             slug: "intro-video",
+            orientation: "landscape",
             sourceType: "url",
             url: "https://example.com/intro.mp4",
             _status: "published",

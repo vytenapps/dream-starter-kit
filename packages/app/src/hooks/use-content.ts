@@ -44,12 +44,17 @@ const PUBLISHED = "where[_status][equals]=published";
 const bySlug = (slug: string) =>
   `where[slug][equals]=${encodeURIComponent(slug)}`;
 
-function useList<T>(collection: string, extraQuery = "") {
+function useList<T>(
+  collection: string,
+  extraQuery = "",
+  // audio/photos are draft-less upload collections (no `_status` to filter).
+  { published = true }: { published?: boolean } = {},
+) {
   return useQuery({
-    queryKey: ["cms", collection, extraQuery],
+    queryKey: ["cms", collection, extraQuery, published],
     queryFn: () =>
       cmsFetch<Paginated<T>>(
-        `${collection}?${PUBLISHED}&depth=1&limit=50${extraQuery}`,
+        `${collection}?${published ? `${PUBLISHED}&` : ""}depth=1&limit=50${extraQuery}`,
       ).then((r) => r.docs),
   });
 }
@@ -71,8 +76,10 @@ export const usePost = (slug: string) => useDoc<Post>("posts", slug);
 export const useEvents = () => useList<EventDoc>("events", "&sort=startsAt");
 export const useEvent = (slug: string) => useDoc<EventDoc>("events", slug);
 export const useVideos = () => useList<Video>("videos");
-export const useAudioTracks = () => useList<AudioDoc>("audio");
-export const usePhotos = () => useList<Photo>("photos");
+export const useAudioTracks = () =>
+  useList<AudioDoc>("audio", "&sort=-publishedAt", { published: false });
+export const usePhotos = () =>
+  useList<Photo>("photos", "&sort=-publishedAt", { published: false });
 export const useLocations = () => useList<LocationDoc>("locations");
 export const useLocation = (slug: string) =>
   useDoc<LocationDoc>("locations", slug);

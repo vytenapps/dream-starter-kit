@@ -135,12 +135,14 @@ export function listVideos(): Promise<Video[]> {
   }, []);
 }
 
+// audio + photos are draft-less upload collections (no `_status`): list them
+// all, newest first — gating is by accessLevel/publishedAt in the app.
 export function listAudio(): Promise<AudioDoc[]> {
   return safe(async () => {
     const payload = await client();
     const { docs } = await payload.find({
       collection: "audio",
-      where: PUBLISHED,
+      sort: "-publishedAt",
       depth: 1,
       limit: 100,
     });
@@ -153,7 +155,7 @@ export function listPhotos(): Promise<Photo[]> {
     const payload = await client();
     const { docs } = await payload.find({
       collection: "photos",
-      where: PUBLISHED,
+      sort: "-publishedAt",
       depth: 1,
       limit: 100,
     });
@@ -172,6 +174,22 @@ export function listLocations(): Promise<LocationDoc[]> {
     });
     return docs;
   }, []);
+}
+
+/** One-line postal address from a location's structured `address` group. */
+export function formatAddress(
+  address: LocationDoc["address"],
+): string | null {
+  if (!address) return null;
+  const parts = [
+    address.street,
+    address.street2,
+    address.city,
+    address.region,
+    address.postalCode,
+    address.country,
+  ].filter((p): p is string => Boolean(p?.trim()));
+  return parts.length > 0 ? parts.join(", ") : null;
 }
 
 export function getLocation(slug: string): Promise<LocationDoc | null> {
