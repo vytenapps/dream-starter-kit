@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { usePremium } from "@acme/app";
+import { toast } from "@acme/ui/toast";
 
-import { ManageBillingButton, Paywall } from "~/components/paywall";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -16,6 +19,19 @@ import {
 
 export function DashboardOverview() {
   const premium = usePremium();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const checkout = searchParams.get("checkout");
+
+  // Surface the Stripe Checkout result and refresh the subscription on success.
+  useEffect(() => {
+    if (checkout === "success") {
+      toast.success("Subscription active — welcome to Pro!");
+      void queryClient.invalidateQueries({ queryKey: ["subscription"] });
+    } else if (checkout === "cancelled") {
+      toast("Checkout cancelled.");
+    }
+  }, [checkout, queryClient]);
 
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6">
@@ -29,7 +45,15 @@ export function DashboardOverview() {
               </CardTitle>
             </div>
             {!premium.isLoading &&
-              (premium.isPremium ? <ManageBillingButton /> : <Paywall />)}
+              (premium.isPremium ? (
+                <Button asChild variant="outline">
+                  <Link href="/billing">Manage billing</Link>
+                </Button>
+              ) : (
+                <Button asChild>
+                  <Link href="/pricing">Upgrade</Link>
+                </Button>
+              ))}
           </CardHeader>
         </Card>
         <Card>
