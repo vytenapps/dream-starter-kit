@@ -48,6 +48,9 @@ let clientA: SupabaseClient<Database>;
 let clientB: SupabaseClient<Database>;
 let threadAId = "";
 let reminderAId = "";
+let orgAId = "";
+let msgAId = "";
+let notifAId = "";
 
 async function createUser(email: string, password: string): Promise<string> {
   const { data, error } = await admin.auth.admin.createUser({
@@ -115,10 +118,64 @@ beforeAll(async () => {
     price_id: "price_rls",
     status: "active",
   });
+
+  // As A: an organization. The on_organization_created trigger (SECURITY
+  // DEFINER) auto-enrolls A as an 'owner' member — this is what makes the
+  // relational org/membership/invitation policies (is_org_member/is_org_admin)
+  // grant A access in the first place.
+  const org = await clientA
+    .from("organizations")
+    .insert({ name: "A's org", owner_id: aId })
+    .select()
+    .single();
+  expect(org.error).toBeNull();
+  if (!org.data) throw new Error("organizations insert returned no row");
+  orgAId = org.data.id;
+
+  // As A: a message under A's own thread. chat_messages' policy is INDIRECT —
+  // it authorizes via ownership of the parent chat_thread, not a user_id column.
+  const msg = await clientA
+    .from("chat_messages")
+    .insert({ thread_id: threadAId, role: "user", content: "hello" })
+    .select()
+    .single();
+  expect(msg.error).toBeNull();
+  if (!msg.data) throw new Error("chat_messages insert returned no row");
+  msgAId = msg.data.id;
+
+  // As A: owner-scoped push token + file metadata rows.
+  await clientA
+    .from("push_tokens")
+    .insert({ user_id: aId, token: `ExpoTok-${stamp}`, platform: "ios" });
+  await clientA
+    .from("files")
+    .insert({
+      user_id: aId,
+      path: `${aId}/avatar.png`,
+      mime_type: "image/png",
+    });
+
+  // As service role: a customer row and a notification for A (these are written
+  // by the server/webhook, never by clients — RLS only grants read-own).
+  await admin
+    .from("customers")
+    .insert({ user_id: aId, stripe_customer_id: `cus_rls_${stamp}` });
+  const notif = await admin
+    .from("notifications")
+    .insert({ user_id: aId, type: "reminder", title: "Hi" })
+    .select()
+    .single();
+  if (!notif.data) throw new Error("notifications insert returned no row");
+  notifAId = notif.data.id;
 });
 
 afterAll(async () => {
   await admin.from("subscriptions").delete().eq("user_id", aId);
+  if (orgAId) await admin.from("organizations").delete().eq("id", orgAId); // cascades memberships + invitations
+  await admin.from("customers").delete().eq("user_id", aId);
+  await admin.from("notifications").delete().eq("user_id", aId);
+  await admin.from("push_tokens").delete().eq("user_id", aId);
+  await admin.from("files").delete().eq("user_id", aId);
   if (threadAId) await admin.from("chat_threads").delete().eq("id", threadAId); // cascades chat_messages
   if (reminderAId) await admin.from("reminders").delete().eq("id", reminderAId);
   if (aId) await admin.auth.admin.deleteUser(aId);
@@ -205,5 +262,214 @@ describe("RLS: public catalog is readable", () => {
     const { data, error } = await clientB.from("products").select("*");
     expect(error).toBeNull();
     expect(Array.isArray(data)).toBe(true);
+  });
+});
+
+describe("RLS: profiles are private to their owner", () => {
+  it("A can read A's own profile", async () => {
+    const { data, error } = await clientA
+      .from("profiles")
+      .select("*")
+      .eq("id", aId);
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+  });
+
+  it("B cannot read A's profile", async () => {
+    const { data } = await clientB.from("profiles").select("*").eq("id", aId);
+    expect(data).toHaveLength(0);
+  });
+
+  it("a user cannot escalate their own is_staff flag", async () => {
+    // The UPDATE privilege is column-scoped to (display_name, avatar_url), so an
+    // attempt to flip is_staff is rejected by Postgres and the value is unchanged.
+    await clientB.from("profiles").update({ is_staff: true }).eq("id", bId);
+    const { data } = await admin
+      .from("profiles")
+      .select("is_staff")
+      .eq("id", bId)
+      .single();
+    expect(data?.is_staff).toBe(false);
+  });
+});
+
+describe("RLS: organizations / memberships / invitations (relational)", () => {
+  it("creating an org auto-enrolls the owner as an 'owner' member (trigger)", async () => {
+    const { data, error } = await clientA
+      .from("memberships")
+      .select("role")
+      .eq("org_id", orgAId)
+      .eq("user_id", aId);
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+    expect(data?.[0]?.role).toBe("owner");
+  });
+
+  it("A (a member) can read A's org", async () => {
+    const { data } = await clientA
+      .from("organizations")
+      .select("*")
+      .eq("id", orgAId);
+    expect(data).toHaveLength(1);
+  });
+
+  it("B (a non-member) cannot read A's org", async () => {
+    const { data } = await clientB
+      .from("organizations")
+      .select("*")
+      .eq("id", orgAId);
+    expect(data).toHaveLength(0);
+  });
+
+  it("B cannot read A's org memberships", async () => {
+    const { data } = await clientB
+      .from("memberships")
+      .select("*")
+      .eq("org_id", orgAId);
+    expect(data).toHaveLength(0);
+  });
+
+  it("B (not an admin) cannot insert a membership into A's org", async () => {
+    const { error } = await clientB
+      .from("memberships")
+      .insert({ org_id: orgAId, user_id: bId, role: "member" });
+    expect(error).not.toBeNull(); // is_org_admin(org_id) is false for B
+  });
+
+  it("A (an admin) can create an invitation; B can neither read nor create one", async () => {
+    const created = await clientA
+      .from("invitations")
+      .insert({ org_id: orgAId, email: "invitee@test.local", role: "member" })
+      .select()
+      .single();
+    expect(created.error).toBeNull();
+    expect(created.data).not.toBeNull();
+
+    const readByB = await clientB
+      .from("invitations")
+      .select("*")
+      .eq("org_id", orgAId);
+    expect(readByB.data).toHaveLength(0);
+
+    const writeByB = await clientB
+      .from("invitations")
+      .insert({ org_id: orgAId, email: "evil@test.local", role: "admin" });
+    expect(writeByB.error).not.toBeNull();
+  });
+});
+
+describe("RLS: chat_messages inherit their thread's owner", () => {
+  it("A can read A's own message", async () => {
+    const { data, error } = await clientA
+      .from("chat_messages")
+      .select("*")
+      .eq("id", msgAId);
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+  });
+
+  it("B cannot read a message inside A's thread", async () => {
+    const { data } = await clientB
+      .from("chat_messages")
+      .select("*")
+      .eq("id", msgAId);
+    expect(data).toHaveLength(0);
+  });
+
+  it("B cannot insert a message into A's thread", async () => {
+    const { error } = await clientB
+      .from("chat_messages")
+      .insert({ thread_id: threadAId, role: "user", content: "intrusion" });
+    expect(error).not.toBeNull(); // the EXISTS-on-own-thread check fails for B
+  });
+});
+
+describe("RLS: notifications are private to their owner", () => {
+  it("A can read A's notification", async () => {
+    const { data } = await clientA
+      .from("notifications")
+      .select("*")
+      .eq("id", notifAId);
+    expect(data).toHaveLength(1);
+  });
+
+  it("A can mark A's own notification read", async () => {
+    const { error } = await clientA
+      .from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("id", notifAId);
+    expect(error).toBeNull();
+    const { data } = await admin
+      .from("notifications")
+      .select("read_at")
+      .eq("id", notifAId)
+      .single();
+    expect(data?.read_at).not.toBeNull();
+  });
+
+  it("B cannot read or modify A's notification", async () => {
+    const { data } = await clientB
+      .from("notifications")
+      .select("*")
+      .eq("id", notifAId);
+    expect(data).toHaveLength(0);
+
+    await clientB
+      .from("notifications")
+      .update({ title: "hacked" })
+      .eq("id", notifAId);
+    const { data: after } = await admin
+      .from("notifications")
+      .select("title")
+      .eq("id", notifAId)
+      .single();
+    expect(after?.title).toBe("Hi");
+  });
+});
+
+describe("RLS: push_tokens and files are owner-scoped", () => {
+  it("B cannot read A's push token", async () => {
+    const { data } = await clientB
+      .from("push_tokens")
+      .select("*")
+      .eq("user_id", aId);
+    expect(data).toHaveLength(0);
+  });
+
+  it("B cannot register a push token owned by A", async () => {
+    const { error } = await clientB
+      .from("push_tokens")
+      .insert({ user_id: aId, token: `evil-${stamp}`, platform: "ios" });
+    expect(error).not.toBeNull();
+  });
+
+  it("B cannot read A's file metadata", async () => {
+    const { data } = await clientB.from("files").select("*").eq("user_id", aId);
+    expect(data).toHaveLength(0);
+  });
+
+  it("B cannot insert file metadata owned by A", async () => {
+    const { error } = await clientB
+      .from("files")
+      .insert({ user_id: aId, path: `${aId}/evil.png` });
+    expect(error).not.toBeNull();
+  });
+});
+
+describe("RLS: customers are read-own (service-role written)", () => {
+  it("A can read A's own customer row", async () => {
+    const { data } = await clientA
+      .from("customers")
+      .select("*")
+      .eq("user_id", aId);
+    expect(data?.length ?? 0).toBeGreaterThanOrEqual(1);
+  });
+
+  it("B cannot read A's customer row", async () => {
+    const { data } = await clientB
+      .from("customers")
+      .select("*")
+      .eq("user_id", aId);
+    expect(data).toHaveLength(0);
   });
 });
