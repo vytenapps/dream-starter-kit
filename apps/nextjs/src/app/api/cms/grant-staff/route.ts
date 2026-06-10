@@ -25,7 +25,9 @@ const bodySchema = z.object({
 export async function POST(request: Request) {
   const payload = await getPayload({ config });
   const { user } = await payload.auth({ headers: await headers() });
-  if (!user)
+  // The SSO bridge only authenticates staff, but check the role explicitly
+  // for defense in depth (only admins/editors may grant or revoke staff).
+  if (!user?.roles.some((r) => ["admin", "editor"].includes(r)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = bodySchema.safeParse(await request.json());
@@ -49,5 +51,23 @@ export async function POST(request: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 502 });
   }
+
+  // Keep the CMS row's roles in step with the Supabase-side grant: granting
+  // adds `editor` (unless they already hold a staff role); revoking strips
+  // the staff roles back to a plain member.
+  const roles = doc?.roles ?? [];
+  const staff = ["admin", "editor", "author"];
+  const nextRoles = parsed.data.grant
+    ? roles.some((r) => staff.includes(r))
+      ? roles
+      : [...roles, "editor" as const]
+    : roles.filter((r) => !staff.includes(r));
+  await payload.update({
+    collection: "users",
+    id: parsed.data.docId,
+    data: { roles: nextRoles.length > 0 ? nextRoles : ["member"] },
+    overrideAccess: true,
+  });
+
   return NextResponse.json({ ok: true, is_staff: parsed.data.grant });
 }

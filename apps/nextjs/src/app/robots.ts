@@ -12,7 +12,7 @@ export default function robots(): MetadataRoute.Robots {
         "/api/",
         "/cms-api/",
         "/admin",
-        "/dashboard",
+        "/a",
         "/chat",
         "/profile",
         "/reminders",

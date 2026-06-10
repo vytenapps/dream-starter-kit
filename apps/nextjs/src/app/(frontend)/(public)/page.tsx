@@ -29,8 +29,8 @@ export default async function HomePage() {
             one Supabase backend.
           </p>
           <div className="flex gap-3">
-            <Link href="/articles" className={buttonVariants()}>
-              Read articles
+            <Link href="/posts" className={buttonVariants()}>
+              Read posts
             </Link>
             <Link
               href="/sign-in"

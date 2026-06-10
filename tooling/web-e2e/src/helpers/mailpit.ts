@@ -113,7 +113,7 @@ export async function signUpToCheckEmail(
  * Sign up through the UI and complete email confirmation by following the
  * emailed link from Mailpit (/confirm-email?token_hash=… — verified by the
  * page via verifyOtp, no PKCE coupling). It ends on /welcome, which routes
- * the founder to /cms-setup and everyone else to /dashboard — assert the
+ * the founder to /cms-setup and everyone else to /a — assert the
  * destination in the caller.
  */
 export async function signUpAndConfirm(

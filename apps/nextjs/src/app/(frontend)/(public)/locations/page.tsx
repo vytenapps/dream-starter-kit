@@ -7,7 +7,7 @@ import {
 } from "~/components/content/content-card";
 import { PageHeader } from "~/components/content/page-header";
 import { Section } from "~/components/launch-ui/ui/section";
-import { listLocations } from "~/lib/payload";
+import { formatAddress, listLocations } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +27,12 @@ export default async function LocationsPage() {
           <ContentGrid>
             {locations.map((location) => {
               const image =
-                typeof location.image === "object" && location.image?.url
-                  ? { url: location.image.url, alt: location.image.alt }
+                typeof location.featuredImage === "object" &&
+                location.featuredImage?.url
+                  ? {
+                      url: location.featuredImage.url,
+                      alt: location.featuredImage.alt,
+                    }
                   : null;
               return (
                 <ContentCard
@@ -36,7 +40,9 @@ export default async function LocationsPage() {
                   href={`/locations/${location.slug}`}
                   title={location.name}
                   image={image}
-                  description={location.address}
+                  description={
+                    location.shortDescription ?? formatAddress(location.address)
+                  }
                 />
               );
             })}

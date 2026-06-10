@@ -31,7 +31,7 @@ supabase start` — a `db reset` alone doesn't apply it.
 
 The kit ships an **empty seed** (no demo accounts) — the first UI signup becomes
 the owner, who is routed through `/welcome` → `/cms-setup` to seed the CMS
-before `/admin`; every later signup lands on the dashboard. The `setup` project
+before `/admin`; every later signup lands on the app home (`/a`, the dashboard). The `setup` project
 (`founder.setup.ts`) provisions that founder first (and saves their session for
 `staff-invite.spec.ts`), so the parallel specs that assert "sign-up → dashboard"
 run as non-staff users. Each spec uses a unique email so repeated runs against
@@ -40,21 +40,23 @@ the same DB don't collide. The staff-invite spec also needs
 
 ## What's covered
 
-| Spec                    | Flow                                                                                                                                                                                     |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `founder.setup.ts`      | Setup project (runs first): founder sign-up → confirm via Mailpit link → `/cms-setup` seeds the CMS → `/admin`. Provisions the founder + seeded content the rest of the suite relies on. |
-| `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`).                                                                                         |
-| `auth.spec.ts`          | Sign up → confirm (emailed link, and the manual 6-digit code path) → dashboard; unconfirmed sign-in re-sends the confirmation; a signed-in user is bounced away from auth pages.         |
-| `critical-path.spec.ts` | Sign up → confirm → schedule a reminder (the reference RLS-backed CRUD flow).                                                                                                            |
-| `staff-invite.spec.ts`  | Founder invites a user from `/admin` → invite email → `/accept-invite` (fresh browser context) → set password → `/admin`.                                                                |
-| `admin-login.spec.ts`   | Signing in as the admin (founder credentials) routes through `/welcome` into `/admin`, with the Payload UI rendered.                                                                     |
+| Spec                    | Flow                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `founder.setup.ts`      | Setup project (runs first): founder sign-up → confirm via Mailpit link → `/cms-setup` seeds the CMS → `/admin`. Provisions the founder + seeded content the rest of the suite relies on.                                                                                                                                                                                                                           |
+| `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`).                                                                                                                                                                                                                                                                                                                   |
+| `auth.spec.ts`          | Sign up → confirm (emailed link, and the manual 6-digit code path) → dashboard; unconfirmed sign-in re-sends the confirmation; a signed-in user is bounced away from auth pages.                                                                                                                                                                                                                                   |
+| `critical-path.spec.ts` | Sign up → confirm → schedule a reminder (the reference RLS-backed CRUD flow).                                                                                                                                                                                                                                                                                                                                      |
+| `staff-invite.spec.ts`  | Founder invites a user from `/admin` → invite email → `/accept-invite` (fresh browser context) → set password → `/admin`.                                                                                                                                                                                                                                                                                          |
+| `admin-login.spec.ts`   | Signing in as the admin (founder credentials) routes through `/welcome` into `/admin`, with the Payload UI rendered.                                                                                                                                                                                                                                                                                               |
+| `subscription.spec.ts`  | The Payload Stripe webhook mirror (self-signed `customer.subscription.*` events → the read-only CMS `subscriptions` collection; bad signatures rejected), its access control (anonymous denied, staff read-only, REST proxy off), and — when a test-mode `STRIPE_SECRET_KEY` is set — real Stripe Checkout subscription creation as an authenticated user and as a guest with the `4242 4242 4242 4242` test card. |
 
 ## Deliberately not covered here
 
-- **Billing / paywall checkout** — completing a subscription redirects to Stripe's
-  hosted checkout, which needs Stripe **test-mode** keys + `stripe listen` for the
-  webhook. RLS read-own of `subscriptions` and the gating helper are unit/RLS
-  tested instead; add a `paywall.spec.ts` once you wire test-mode Stripe.
+- **Stripe → `public.*` webhook delivery** — the edge-function side of the
+  pipeline needs `stripe listen` forwarding to the local function. The Payload
+  webhook mirror IS covered (see `subscription.spec.ts`, which signs its own
+  events); the Checkout flows there also stay skipped until you provide
+  test-mode keys.
 - **AI chat round-trip** — sending a message needs a real `AI_GATEWAY_API_KEY`
   (not present in CI). Thread/message persistence + isolation are covered by the
   RLS regression (`pnpm test:rls`); add a `chat.spec.ts` with a mocked or

@@ -21,7 +21,7 @@ import { createClient } from "~/lib/supabase/client";
  *
  * On success we hard-navigate to /welcome (the server must re-read the fresh
  * auth cookie), which routes the founder into /cms-setup and everyone else to
- * /dashboard.
+ * /a.
  */
 export default function ConfirmEmailPage() {
   const [supabase] = useState(createClient);

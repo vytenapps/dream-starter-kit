@@ -11,7 +11,7 @@ import { SidebarTrigger } from "~/components/ui/sidebar";
 /** Section label shown in the header, keyed by the active route's first segment.
  *  Add an entry here when you add a top-level authenticated page. */
 const SECTION_TITLES: Record<string, string> = {
-  dashboard: "Dashboard",
+  a: "Dashboard",
   chat: "Chat",
   reminders: "Reminders",
   notifications: "Notifications",

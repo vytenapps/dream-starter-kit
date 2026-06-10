@@ -1,7 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { generatePreviewPath } from "../../lib/preview";
-import { isAdmin, publishedOrAdmin } from "../access";
+import { isStaff, publishedOrStaff } from "../access";
 import { pageBlocks } from "../blocks";
 import { slugField } from "../fields/slug";
 
@@ -23,9 +23,10 @@ const previewBreakpoints = [
  */
 export const Pages: CollectionConfig = {
   slug: "pages",
+  trash: true,
   admin: {
     useAsTitle: "title",
-    group: "Content",
+    group: "Marketing",
     defaultColumns: ["title", "slug", "_status"],
     // Live Preview: the admin iframe loads /next/preview, which enables draft
     // mode and renders the page's draft (see lib/preview + /next/preview route).
@@ -43,12 +44,12 @@ export const Pages: CollectionConfig = {
         slug: typeof doc.slug === "string" ? doc.slug : undefined,
       }),
   },
-  versions: { drafts: true },
+  versions: { drafts: { schedulePublish: true }, maxPerDoc: 25 },
   access: {
-    read: publishedOrAdmin,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    read: publishedOrStaff,
+    create: isStaff,
+    update: isStaff,
+    delete: isStaff,
   },
   fields: [
     { name: "title", type: "text", required: true },
@@ -58,6 +59,20 @@ export const Pages: CollectionConfig = {
       type: "blocks",
       labels: { singular: "Section", plural: "Sections" },
       blocks: pageBlocks,
+    },
+    {
+      name: "showInNav",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "publishedAt",
+      type: "date",
+      admin: {
+        position: "sidebar",
+        date: { pickerAppearance: "dayAndTime" },
+      },
     },
   ],
 };

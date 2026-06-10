@@ -2,25 +2,26 @@ import type { CollectionConfig } from "payload";
 
 import { anyone, isAdmin } from "../access";
 import { slugField } from "../fields/slug";
+import { syncPlanAfterChange } from "../hooks/sync-plan-to-stripe";
 
 /**
- * Billing plans — the source of truth for the product catalog. Authored here in
- * Payload (the `cms` schema), then pushed to Stripe with the per-row "Sync to
- * Stripe" button (see payload/components/SyncToStripeButton.tsx and
- * lib/stripe/sync.ts). The Stripe webhook mirrors the resulting products/prices
- * back into the RLS-governed `public.products`/`public.prices` tables so clients
- * can read the catalog. The read-only `stripe*` fields below are written back by
- * the sync; never hand-edit them.
+ * Billing plans — the source of truth for the product catalog. Authored here
+ * in Payload (the `cms` schema) and synced to Stripe automatically on save
+ * (see payload/hooks/sync-plan-to-stripe.ts + lib/stripe/sync.ts). The Stripe
+ * webhook mirrors the resulting products/prices back into the RLS-governed
+ * `public.products`/`public.prices` tables so clients can read the catalog.
+ * The read-only `stripe*` fields below are written back by the sync; never
+ * hand-edit them.
  *
  * Pricing is NOT editorial, so there is no draft/publish workflow — `active`
  * gates visibility instead. Read is public (the pricing page is anonymous);
- * writes are staff-only.
+ * writes are admin-only.
  */
 export const Plans: CollectionConfig = {
   slug: "plans",
   admin: {
     useAsTitle: "name",
-    group: "Payments",
+    group: "Commerce",
     defaultColumns: [
       "name",
       "pricingType",
@@ -29,9 +30,9 @@ export const Plans: CollectionConfig = {
       "syncStatus",
     ],
     description:
-      "Author plans here, then press “Sync to Stripe” to create/update the " +
-      "matching Stripe product and price. Stripe prices are immutable, so " +
-      "changing the amount creates a new price and archives the old one.",
+      "Plans sync to Stripe automatically on save. Stripe prices are " +
+      "immutable, so changing the amount creates a new price and archives " +
+      "the old one.",
   },
   access: {
     read: anyone,
@@ -39,6 +40,7 @@ export const Plans: CollectionConfig = {
     update: isAdmin,
     delete: isAdmin,
   },
+  hooks: { afterChange: [syncPlanAfterChange] },
   fields: [
     {
       type: "row",
@@ -78,12 +80,25 @@ export const Plans: CollectionConfig = {
           type: "select",
           defaultValue: "month",
           options: [
+            { label: "Daily", value: "day" },
+            { label: "Weekly", value: "week" },
             { label: "Monthly", value: "month" },
             { label: "Yearly", value: "year" },
           ],
           admin: {
-            width: "50%",
+            width: "25%",
             // Only meaningful for recurring plans.
+            condition: (data) => data.pricingType === "recurring",
+          },
+        },
+        {
+          name: "intervalCount",
+          type: "number",
+          min: 1,
+          defaultValue: 1,
+          admin: {
+            width: "25%",
+            description: "Bill every N intervals, e.g. every 3 months.",
             condition: (data) => data.pricingType === "recurring",
           },
         },
@@ -143,18 +158,63 @@ export const Plans: CollectionConfig = {
           min: 0,
           label: "Intro price (in cents)",
           admin: {
-            description: "First-period price, e.g. 199 = $1.99.",
+            description: "Intro-period price, e.g. 199 = $1.99.",
             condition: (_data, sibling) => Boolean(sibling.enabled),
           },
         },
+        {
+          type: "row",
+          fields: [
+            {
+              name: "introInterval",
+              type: "select",
+              defaultValue: "month",
+              options: [
+                { label: "Months", value: "month" },
+                { label: "Years", value: "year" },
+              ],
+              admin: {
+                condition: (_data, sibling) => Boolean(sibling.enabled),
+              },
+            },
+            {
+              name: "introPeriods",
+              type: "number",
+              min: 1,
+              defaultValue: 1,
+              admin: {
+                description:
+                  "How many intro periods the discount lasts (1 = first " +
+                  "invoice only; years count as 12 months each).",
+                condition: (_data, sibling) => Boolean(sibling.enabled),
+              },
+            },
+          ],
+        },
       ],
+    },
+    {
+      name: "entitlement",
+      type: "select",
+      defaultValue: "premium",
+      options: [
+        { label: "Members", value: "members" },
+        { label: "Premium", value: "premium" },
+      ],
+      admin: {
+        position: "sidebar",
+        description: "Content accessLevel this plan unlocks.",
+      },
     },
     {
       name: "features",
       type: "array",
       label: "Feature bullets",
       admin: { description: "Shown on the public pricing card." },
-      fields: [{ name: "text", type: "text", required: true }],
+      fields: [
+        { name: "text", type: "text", required: true },
+        { name: "included", type: "checkbox", defaultValue: true },
+      ],
     },
     {
       type: "row",
@@ -183,15 +243,14 @@ export const Plans: CollectionConfig = {
       ],
     },
 
-    // --- Stripe sync state (read-only; written by the Sync to Stripe action) ---
+    // --- Stripe sync state (read-only; written by the afterChange sync hook) ---
     {
-      name: "syncToStripe",
-      type: "ui",
+      name: "skipSync",
+      type: "checkbox",
+      defaultValue: false,
       admin: {
         position: "sidebar",
-        components: {
-          Field: "~/payload/components/SyncToStripeButton#SyncToStripeButton",
-        },
+        description: "Don't push this plan to Stripe on save.",
       },
     },
     {
@@ -237,6 +296,12 @@ export const Plans: CollectionConfig = {
         readOnly: true,
         date: { pickerAppearance: "dayAndTime" },
       },
+    },
+    {
+      name: "subscriptions",
+      type: "join",
+      collection: "subscriptions",
+      on: "plan",
     },
   ],
 };

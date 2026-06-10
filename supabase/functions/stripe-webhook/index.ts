@@ -51,7 +51,7 @@ async function findUserIdByEmail(
 /**
  * Resolve the buyer to a Supabase user id for a guest checkout: match an
  * existing account by email, else create one and email a Supabase invite (the
- * invitee sets a password on /accept-invite, then lands on /dashboard).
+ * invitee sets a password on /accept-invite, then lands on /a).
  */
 async function resolveOrInviteGuest(
   admin: SupabaseClient,

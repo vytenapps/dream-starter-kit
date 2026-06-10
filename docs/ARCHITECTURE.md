@@ -92,7 +92,7 @@ Supabase; it is kept as a one-time snapshot (see [§7](#7-licensing) / `NOTICE`)
 
 ### 4.2 Web app — Next.js (App Router)
 
-The landing page, public content pages, auth pages, the signed-in dashboard, the
+The landing page, public content pages, auth pages, the signed-in app home (`/a`), the
 paywall, the AI chat, and the server API routes (AI proxy, Stripe checkout/portal,
 push test). UI is built from **shadcn/ui** components (Radix + Tailwind) copied
 into `apps/nextjs/src/components/ui`.
@@ -117,7 +117,7 @@ Built and shipped with EAS ([§4.11](#411-build--ship)).
   session provider, and the react-query query client. The single way the apps
   talk to the backend.
 - **`@acme/app`** — cross-platform feature code: zod validators, react-query
-  hooks (`useReminders`, `useChat`, `useNotifications`, the `useArticles`/`useEvents`/…
+  hooks (`useReminders`, `useChat`, `useNotifications`, the `usePosts`/`useEvents`/…
   content hooks, …), and pure helper logic. This is where most features live; both
   apps import from here.
 - **`@acme/cms`** — Payload's **generated content types only** (no Payload runtime),
@@ -137,7 +137,7 @@ link, Google & Apple OAuth), Storage, and **Edge Functions** (Deno). Email
 **confirmations are on** (locally too, matching hosted defaults): sign-up routes
 to `/check-email`, completed by the emailed link (`/confirm-email` verifies the
 `token_hash`, then `/welcome` routes founder → `/cms-setup`, others →
-`/dashboard`) or by typing the emailed 6-digit code (`verifyOtp`). Both kit email
+`/a`) or by typing the emailed 6-digit code (`verifyOtp`). Both kit email
 templates link via `token_hash` pages rather than GoTrue redirect links, so
 re-sent emails, cross-browser opens, and prefetch-happy mail scanners all work.
 The schema
@@ -174,14 +174,26 @@ This is the part a founder most needs to get right, so it's enforced structurall
 
 ### 4.7 Payments — Stripe (web)
 
-The billing catalog is **authored in Payload** (Payments → Plans/Coupons), not the
-Stripe dashboard. A staff-only **"Sync to Stripe"** action (`/api/stripe/sync` →
-`lib/stripe/sync.ts`) pushes plans/coupons into Stripe — creating a **new price and
-archiving the old** on any amount change, since Stripe prices are immutable. The
-`stripe-webhook` edge function (signature-verified, idempotent) then mirrors the
-product/price catalog and subscription status back into the database. So the data
-flow is one-way: **Payload → Stripe → DB**. Defaults: Dream Monthly ($9.99/mo),
-Annual ($99.99/yr, 7-day trial) and Lifetime ($399 one-time).
+The billing catalog is **authored in Payload** (Commerce → Plans/Coupons), not the
+Stripe dashboard. Saving a plan or coupon syncs it to Stripe **automatically** via
+collection `afterChange` hooks (`payload/hooks/sync-*-to-stripe.ts` →
+`lib/stripe/sync.ts`) — creating a **new price and archiving the old** on any
+amount change, since Stripe prices are immutable (a per-doc `skipSync` checkbox
+opts out; sync failures are recorded on the doc, never failing the save).
+**`@payloadcms/plugin-stripe`** provides the second half of the channel: a
+signature-verified webhook endpoint at **`/cms-api/stripe/webhooks`** (its own
+`STRIPE_WEBHOOKS_ENDPOINT_SECRET`) that mirrors `customer.subscription.*` events
+into the read-only CMS **`subscriptions`** collection. The plugin's Stripe REST
+proxy stays **off** (`rest: false`) and its declarative sync is unused — it can't
+express price immutability or intro coupons, so the hooks own Payload → Stripe.
+
+The `stripe-webhook` **edge function** (signature-verified, idempotent — a
+separate Stripe endpoint with `STRIPE_WEBHOOK_SECRET`) keeps mirroring the
+product/price catalog and subscription status into the RLS-governed `public.*`
+tables for app clients. So: **Payload → Stripe** via hooks; **Stripe → CMS
+`subscriptions`** via the Payload webhook; **Stripe → `public.*`** via the edge
+function. Defaults: Dream Monthly ($9.99/mo), Annual ($99.99/yr, 7-day trial)
+and Lifetime ($399 one-time).
 
 Subscriptions are sold on the **web** with Stripe Checkout (plan-driven, with
 guest checkout that provisions the account post-payment) + the customer portal;
@@ -216,11 +228,47 @@ surface unread items.
 
 ### 4.10 Content — Payload CMS
 
-Editorial and marketing content (the parts that are the same for every visitor —
-articles, events, videos, audio, photos, locations, plus `pages` like home/about/
-contact/terms/privacy and a `site-settings` global for nav) is managed by
-**Payload CMS v3 (MIT)**. This is the kit's **second backend**, deliberately kept
-separate from the Supabase app data:
+Content AND member-engagement data are managed by **Payload CMS v3 (MIT)** — the
+kit's **second backend**, deliberately kept separate from the Supabase app data.
+The registry spans five admin groups:
+
+- **Content** — `posts` (the blog), `videos` (16:9 + vertical shorts), `audio`
+  (podcast episodes as an upload collection, with RSS fields + tokenized private
+  feeds via `feed-tokens`), `photos` (upload collection), `series` (shows /
+  albums / playlists / drip **courses**, with `lessons` + `enrollments`),
+  `locations`, `events`, and the `categories` / `tags` / `tag-groups` taxonomy.
+  Content collections share folders (one cross-collection tree), soft delete
+  (trash), drafts + scheduled publish, SEO metadata and `accessLevel` gating
+  (public / members / premium).
+- **Community** — `space-groups` (nested) → `community-spaces` →
+  `community-posts`, with one `comments` system (threaded, gated per document
+  by `commentsEnabled`) and a `reports` moderation queue.
+- **People** — the single `users` collection (see SSO below), `device-tokens`,
+  `feed-tokens`, `favorites`, `enrollments` and `reviews`.
+- **Commerce** — `plans`, `coupons` and the webhook-written `subscriptions`
+  mirror (§4.7).
+- **Marketing** — block-based `pages`, `onboarding` slides, `banners`,
+  `notifications`, and the Form Builder plugin's `forms`/`form-submissions`.
+
+Globals: `site-settings`, `pricing-settings`, `theme-settings` and
+`profile-fields` (admin-defined custom member fields validated into
+`users.customFields`). Plugins: SEO, Nested Docs (categories / pages /
+space-groups), Form Builder and Stripe (§4.7).
+
+Access control is **role-based**: `users.roles` is a multi-select of
+`admin | editor | author | member`. Staff (admin/editor, plus author for the
+panel) get the admin UI; every app signup is mirrored in as a `member`.
+Member-scoped collections (favorites, comments, device-tokens, …) carry
+owner-scoped access rules (`ownsOrStaff`), with the owner forced to the
+requesting user on create — but note the **SSO bridge currently authenticates
+staff only**, so members reach this data through your own server routes for
+now; opening `/cms-api` to member sessions is a documented follow-up.
+
+Boundary with Supabase: security-critical per-user state that RLS clients
+consume directly (auth, `profiles`, billing entitlements in
+`public.subscriptions`, chat, reminders) stays in `public` under RLS.
+
+How the two backends stay separate:
 
 - **Web/server only.** Payload runs inside the Next.js server (Node) — never in the
   mobile bundle. Its admin UI is at **`/admin`** and its REST API at **`/cms-api`**
@@ -229,7 +277,7 @@ separate from the Supabase app data:
   config is `apps/nextjs/src/payload.config.ts`.
 - **Its own `cms` schema, outside RLS.** Payload owns a dedicated **`cms`** Postgres
   schema *inside the same Supabase database*, but **outside Supabase RLS** by design
-  — access is enforced by Payload's own access-control (e.g. published-or-admin). It
+  — access is enforced by Payload's own role-based access-control (e.g. published-or-staff, owner-scoped rows). It
   connects as a least-privilege role **`payload_cms`** (USAGE+CREATE on `cms` only;
   nothing on `public`/`auth`) — **not** the service-role key, and server-only. The
   role + schema are created by `supabase/payload/00_cms_role.sql`, applied
@@ -254,14 +302,14 @@ separate from the Supabase app data:
   in the Next.js server (reading `profiles` via the user's own RLS session, provisioning
   via Payload's Local API), **never** as the `payload_cms` role and **never** with the
   service-role key. The `/admin` route is gated in `proxy.ts` (anonymous → `/sign-in`,
-  non-staff → `/dashboard`), which also refreshes the Supabase session on CMS paths.
+  non-staff → `/a`), which also refreshes the Supabase session on CMS paths.
 - **Media in Supabase Storage.** Uploads go to a dedicated **public-read** bucket
   **`cms-media`** (separate from the RLS-governed `user-files` bucket) via the S3
   storage adapter (`forcePathStyle: true`).
 - **How each surface reads content.** The **web** renders public pages as React
   Server Components via Payload's **Local API** (in-process, fast, SEO-friendly),
   under `app/(frontend)/(public)/`. **Mobile** reads the same content over **REST**
-  (`/cms-api`) through shared hooks in `@acme/app` (`useArticles`, `useEvents`, …),
+  (`/cms-api`) through shared hooks in `@acme/app` (`usePosts`, `useEvents`, …),
   typed by `@acme/cms`, with native screens under `apps/expo/src/app/(app)/content/`.
 
 ### 4.11 Build & ship

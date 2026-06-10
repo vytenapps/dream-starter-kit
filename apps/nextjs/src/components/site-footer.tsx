@@ -6,7 +6,7 @@ const DEFAULT_COLUMNS: FooterColumnProps[] = [
   {
     title: "Content",
     links: [
-      { text: "Articles", href: "/articles" },
+      { text: "Posts", href: "/posts" },
       { text: "Events", href: "/events" },
       { text: "Videos", href: "/videos" },
     ],

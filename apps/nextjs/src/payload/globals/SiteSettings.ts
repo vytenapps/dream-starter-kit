@@ -1,6 +1,6 @@
 import type { GlobalConfig } from "payload";
 
-import { anyone, isAdmin } from "../access";
+import { anyone, isStaff } from "../access";
 import { BUTTON_VARIANTS } from "../blocks/shared";
 
 /**
@@ -13,7 +13,7 @@ import { BUTTON_VARIANTS } from "../blocks/shared";
 export const SiteSettings: GlobalConfig = {
   slug: "site-settings",
   admin: { group: "Admin" },
-  access: { read: anyone, update: isAdmin },
+  access: { read: anyone, update: isStaff },
   fields: [
     {
       type: "tabs",

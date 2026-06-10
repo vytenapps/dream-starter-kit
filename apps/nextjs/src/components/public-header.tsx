@@ -5,7 +5,7 @@ import { getBranding, getSiteSettings } from "~/lib/payload";
 
 /** Nav shown when the CMS is unreachable (e.g. a placeholder-env build). */
 const DEFAULT_NAV: NavItem[] = [
-  { title: "Articles", href: "/articles" },
+  { title: "Posts", href: "/posts" },
   { title: "Events", href: "/events" },
   { title: "Videos", href: "/videos" },
   { title: "Photos", href: "/photos" },

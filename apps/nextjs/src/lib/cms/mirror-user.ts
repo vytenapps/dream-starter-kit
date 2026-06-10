@@ -25,20 +25,41 @@ export async function ensureCmsUser(user: {
 }): Promise<void> {
   try {
     const payload = await getPayload({ config });
+    // `trash: true` includes soft-deleted rows: a member an admin moved to the
+    // Trash must stay deleted (restore happens from the admin Trash view), not
+    // be resurrected — and re-creating would trip the unique supabaseUserId
+    // constraint and get masked by the catch below.
     const existing = await payload.find({
       collection: "users",
       where: { supabaseUserId: { equals: user.id } },
       limit: 1,
       depth: 0,
+      trash: true,
     });
     if (existing.totalDocs === 0) {
+      // A staff-flagged profile without a CMS row at mirror time is the
+      // FOUNDER (the first signup, auto-flagged is_staff) — provision them as
+      // the full CMS admin. Invited staff already have a row (the invite hook
+      // created it with `editor`), so this path never demotes/promotes them.
+      let isStaff = false;
+      try {
+        const { data: profile } = await createAdminClient()
+          .from("profiles")
+          .select("is_staff")
+          .eq("id", user.id)
+          .maybeSingle();
+        isStaff = Boolean(profile?.is_staff);
+      } catch {
+        // Service key unavailable — mirror as a plain member; the SSO bridge
+        // still grants a staff role on their first /admin visit.
+      }
       await payload.create({
         collection: "users",
         data: {
           supabaseUserId: user.id,
           email: user.email ?? `${user.id}@users.noreply.local`,
           name: user.name ?? undefined,
-          role: "editor",
+          roles: isStaff ? ["admin"] : ["member"],
         },
         overrideAccess: true,
       });

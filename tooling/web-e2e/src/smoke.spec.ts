@@ -17,9 +17,9 @@ test.describe("smoke", () => {
   test("a protected route redirects to sign-in when signed out", async ({
     page,
   }) => {
-    await page.goto("/dashboard");
+    await page.goto("/a");
     await expect(page).toHaveURL(/\/sign-in/);
     // The original destination is preserved for post-login redirect.
-    await expect(page).toHaveURL(/redirectTo=%2Fdashboard/);
+    await expect(page).toHaveURL(/redirectTo=%2Fa/);
   });
 });

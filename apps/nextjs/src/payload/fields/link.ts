@@ -13,7 +13,14 @@ import type { Field } from "payload";
  */
 export const linkField = (
   name = "link",
-  options: { label?: string; description?: string } = {},
+  options: {
+    label?: string;
+    description?: string;
+    /** Include a `label` text field (CTA button text). */
+    withLabel?: boolean;
+    /** Include an `appearance` select (default/button/outline/link). */
+    withAppearance?: boolean;
+  } = {},
 ): Field => ({
   name,
   type: "group",
@@ -22,6 +29,15 @@ export const linkField = (
     description: options.description ?? "Optional link.",
   },
   fields: [
+    ...(options.withLabel
+      ? [
+          {
+            name: "label",
+            type: "text" as const,
+            admin: { description: "Link/button text." },
+          },
+        ]
+      : []),
     {
       name: "url",
       type: "text",
@@ -37,5 +53,15 @@ export const linkField = (
       label: "Open in new tab",
       defaultValue: false,
     },
+    ...(options.withAppearance
+      ? [
+          {
+            name: "appearance",
+            type: "select" as const,
+            defaultValue: "default",
+            options: ["default", "button", "outline", "link"],
+          },
+        ]
+      : []),
   ],
 });

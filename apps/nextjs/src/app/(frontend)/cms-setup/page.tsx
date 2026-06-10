@@ -41,7 +41,7 @@ export default function CmsSetupPage() {
     // Not staff (or no session) — this page isn't for them. Send them into the
     // app rather than bouncing through the /admin gate.
     if (res.status === 401) {
-      window.location.assign("/dashboard");
+      window.location.assign("/a");
       return;
     }
 

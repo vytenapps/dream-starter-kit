@@ -1,12 +1,13 @@
 import type Stripe from "stripe";
 
 /**
- * Push Payload-authored plans and coupons into Stripe (the manual "Sync to
- * Stripe" action). Stripe prices and coupons are **immutable** for their core
- * fields — you cannot change a price's amount or a coupon's discount/duration.
- * So when those change we CREATE a new resource and ARCHIVE the old one, keeping
- * the Payload doc pointed at the current Stripe id. Name/description/metadata are
- * updated in place.
+ * Push Payload-authored plans and coupons into Stripe — called automatically
+ * on save by the collection afterChange hooks (payload/hooks/sync-plan-to-
+ * stripe.ts / sync-coupon-to-stripe.ts). Stripe prices and coupons are
+ * **immutable** for their core fields — you cannot change a price's amount or
+ * a coupon's discount/duration. So when those change we CREATE a new resource
+ * and ARCHIVE the old one, keeping the Payload doc pointed at the current
+ * Stripe id. Name/description/metadata are updated in place.
  *
  * The Stripe webhook (supabase/functions/stripe-webhook) mirrors the resulting
  * products/prices back into the RLS-governed public.* tables, so this is the
@@ -23,12 +24,21 @@ export interface PlanSyncInput {
   name: string;
   description?: string | null;
   pricingType: "recurring" | "one_time";
-  interval?: "month" | "year" | null;
+  interval?: "day" | "week" | "month" | "year" | null;
+  /** Bill every N intervals (Stripe `interval_count`, default 1). */
+  intervalCount?: number | null;
   /** Amount in the smallest currency unit (cents). */
   unitAmount: number;
   currency: string;
   active: boolean;
-  introOffer?: { enabled?: boolean | null; introAmount?: number | null } | null;
+  introOffer?: {
+    enabled?: boolean | null;
+    introAmount?: number | null;
+    /** Unit for `introPeriods` (years count as 12 months). */
+    introInterval?: "month" | "year" | null;
+    /** How many intro periods the discount lasts (1 = first invoice only). */
+    introPeriods?: number | null;
+  } | null;
   stripeProductId?: string | null;
   stripePriceId?: string | null;
   stripeIntroCouponId?: string | null;
@@ -101,7 +111,29 @@ export function priceNeedsRecreate(
   if (wantRecurring !== liveRecurring) return true;
   if (wantRecurring && live.recurring?.interval !== (plan.interval ?? "month"))
     return true;
+  if (
+    wantRecurring &&
+    (live.recurring?.interval_count ?? 1) !== (plan.intervalCount ?? 1)
+  )
+    return true;
   return false;
+}
+
+/**
+ * The Stripe coupon duration for a plan's intro offer: one intro period =
+ * `once`; more = `repeating` for N months (years × 12 — Stripe only takes
+ * months).
+ */
+export function introCouponDuration(
+  plan: PlanSyncInput,
+):
+  | { duration: "once" }
+  | { duration: "repeating"; duration_in_months: number } {
+  const periods = Math.max(1, Math.floor(plan.introOffer?.introPeriods ?? 1));
+  const unit = plan.introOffer?.introInterval ?? "month";
+  const months = unit === "year" ? periods * 12 : periods;
+  if (months <= 1) return { duration: "once" };
+  return { duration: "repeating", duration_in_months: months };
 }
 
 /** The amount_off (cents) for a plan's intro offer, or null when not applicable. */
@@ -158,7 +190,10 @@ export async function syncPlanToStripe(
       unit_amount: plan.unitAmount,
       recurring:
         plan.pricingType === "recurring"
-          ? { interval: plan.interval ?? "month" }
+          ? {
+              interval: plan.interval ?? "month",
+              interval_count: Math.max(1, Math.floor(plan.intervalCount ?? 1)),
+            }
           : undefined,
       metadata,
     });
@@ -171,14 +206,16 @@ export async function syncPlanToStripe(
     priceId = newPrice.id;
   }
 
-  // 3. Intro offer — a duration:once coupon applied at checkout.
+  // 3. Intro offer — a coupon applied automatically at checkout: `once` for a
+  // single intro period, `repeating` (N months) for longer intro pricing.
   let introCouponId = plan.stripeIntroCouponId ?? null;
   const amountOff = introAmountOff(plan);
   if (amountOff != null) {
+    const introDuration = introCouponDuration(plan);
     const desired = {
       amount_off: amountOff,
       currency: plan.currency.toLowerCase(),
-      duration: "once" as const,
+      ...introDuration,
       name: `${plan.name} — intro offer`,
       metadata,
     };
@@ -190,7 +227,9 @@ export async function syncPlanToStripe(
           live.valid &&
           live.amount_off === amountOff &&
           live.currency === desired.currency &&
-          live.duration === "once";
+          live.duration === introDuration.duration &&
+          (introDuration.duration !== "repeating" ||
+            live.duration_in_months === introDuration.duration_in_months);
         if (reuse)
           await stripe.coupons.update(introCouponId, { name: desired.name });
       } catch {

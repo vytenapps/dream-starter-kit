@@ -29,7 +29,7 @@ import { authErrorMessage } from "~/lib/supabase/config";
  *
  * On success we hard-navigate to /welcome (same reasoning as signup-form: the
  * server must re-read the fresh auth cookie), which routes the founder into
- * /cms-setup and everyone else to /dashboard.
+ * /cms-setup and everyone else to /a.
  */
 export function CheckEmailForm({
   className,

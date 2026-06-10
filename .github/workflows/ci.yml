@@ -124,6 +124,10 @@ jobs:
           EXPO_PUBLIC_API_URL=http://localhost:3000
           PAYLOAD_DATABASE_URL=postgresql://payload_cms:payload_local_dev_only@127.0.0.1:54322/postgres?options=-c%20search_path%3Dcms
           PAYLOAD_SECRET=ci-not-a-real-secret-change-me
+          # Throwaway signing secret for the Payload Stripe webhook endpoint so
+          # subscription.spec.ts can exercise the mirror with self-signed events
+          # (no Stripe account involved; never used against the Stripe API).
+          STRIPE_WEBHOOKS_ENDPOINT_SECRET=whsec_e2e_test_secret
           NEXT_PUBLIC_CMS_URL=http://localhost:3000
           S3_ENDPOINT=$API_URL/storage/v1/s3
           S3_REGION=local

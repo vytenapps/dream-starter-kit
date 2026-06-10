@@ -19,7 +19,7 @@ test("sign up → schedule a reminder", async ({ page }) => {
   // Sign up + confirm via the emailed link; a non-staff user (the founder
   // already exists from founder.setup.ts) lands on the dashboard.
   await signUpAndConfirm(page, { name: "E2E User", email });
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page).toHaveURL(/\/a(?:[/?#]|$)/);
 
   // Schedule a reminder.
   await page.goto("/reminders");

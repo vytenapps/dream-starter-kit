@@ -9,12 +9,10 @@ import { createClient } from "~/lib/supabase/server";
  * Only allow internal absolute paths as the post-auth destination, so a crafted
  * `?next=` can't turn the callback into an open redirect. `//evil.com` and
  * `https://evil.com` are rejected; legitimate values are app paths like
- * `/dashboard`.
+ * `/a`.
  */
 function safeNext(raw: string | null): string {
-  return raw && raw.startsWith("/") && !raw.startsWith("//")
-    ? raw
-    : "/dashboard";
+  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/a";
 }
 
 /**

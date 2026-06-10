@@ -31,7 +31,7 @@ test("signing up + confirming via the email link lands on the dashboard", async 
   page,
 }) => {
   await signUpAndConfirm(page, { name: "E2E User", email: uniqueEmail() });
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page).toHaveURL(/\/a(?:[/?#]|$)/);
 });
 
 test("signing up + entering the email code manually lands on the dashboard", async ({
@@ -48,7 +48,7 @@ test("signing up + entering the email code manually lands on the dashboard", asy
   await page.getByRole("button", { name: "Continue with login code" }).click();
 
   // verifyOtp + hard nav through /welcome; allow for cold compiles under load.
-  await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
+  await page.waitForURL(/\/a(?:[/?#]|$)/, { timeout: 30_000 });
 });
 
 test("signing in before confirming re-sends the confirmation email", async ({
@@ -78,12 +78,12 @@ test("signing in before confirming re-sends the confirmation email", async ({
 
   // The new link completes the flow.
   await page.goto(link);
-  await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
+  await page.waitForURL(/\/a(?:[/?#]|$)/, { timeout: 30_000 });
 });
 
 test("a signed-in user is bounced away from auth pages", async ({ page }) => {
   await signUpAndConfirm(page, { name: "E2E User", email: uniqueEmail() });
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page).toHaveURL(/\/a(?:[/?#]|$)/);
   await page.goto("/sign-in");
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page).toHaveURL(/\/a(?:[/?#]|$)/);
 });

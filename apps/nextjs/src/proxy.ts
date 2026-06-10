@@ -8,13 +8,18 @@ import { updateSession } from "~/lib/supabase/middleware";
 const PROTECTED_PREFIXES = [
   "/profile",
   "/chat",
-  "/dashboard",
+  "/a",
   "/reminders",
   "/notifications",
   "/billing",
 ];
 // Auth pages a signed-in user shouldn't see.
 const AUTH_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password"];
+
+// Segment-boundary prefix match: "/a" must protect "/a" and "/a/…" but NOT
+// "/about" (bare startsWith would).
+const matchesPrefix = (pathname: string, prefix: string) =>
+  pathname === prefix || pathname.startsWith(`${prefix}/`);
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -41,7 +46,7 @@ export async function proxy(request: NextRequest) {
         .single();
       if (!profile?.is_staff) {
         const url = request.nextUrl.clone();
-        url.pathname = "/dashboard";
+        url.pathname = "/a";
         url.search = "";
         return NextResponse.redirect(url);
       }
@@ -49,16 +54,16 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  if (!user && PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
+  if (!user && PROTECTED_PREFIXES.some((p) => matchesPrefix(pathname, p))) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
     url.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(url);
   }
 
-  if (user && AUTH_PREFIXES.some((p) => pathname.startsWith(p))) {
+  if (user && AUTH_PREFIXES.some((p) => matchesPrefix(pathname, p))) {
     const url = request.nextUrl.clone();
-    // /welcome routes by role: staff into the CMS, everyone else to /dashboard
+    // /welcome routes by role: staff into the CMS, everyone else to /a
     // — same destination logic as a fresh sign-in.
     url.pathname = "/welcome";
     url.search = "";

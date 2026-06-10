@@ -27,8 +27,12 @@ export default async function EventsPage() {
           <ContentGrid>
             {events.map((event) => {
               const image =
-                typeof event.image === "object" && event.image?.url
-                  ? { url: event.image.url, alt: event.image.alt }
+                typeof event.featuredImage === "object" &&
+                event.featuredImage?.url
+                  ? {
+                      url: event.featuredImage.url,
+                      alt: event.featuredImage.alt,
+                    }
                   : null;
               return (
                 <ContentCard

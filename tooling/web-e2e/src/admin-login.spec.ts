@@ -6,7 +6,7 @@ import { readFounderEmail } from "./helpers/founder";
  * Admin sign-IN routing: an existing staff/admin user who logs in lands in the
  * CMS admin, not the app dashboard. Sign-in defaults to /welcome, which routes
  * by role — staff → /cms-setup (already seeded by founder.setup.ts, so it
- * forwards straight on) → /admin; everyone else → /dashboard (covered by
+ * forwards straight on) → /admin; everyone else → /a (covered by
  * auth.spec.ts).
  *
  * Uses the founder credentials persisted by founder.setup.ts (password is the

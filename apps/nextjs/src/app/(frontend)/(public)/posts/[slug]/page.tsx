@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { DetailLayout } from "~/components/content/detail-layout";
 import { CmsRichText } from "~/components/rich-text";
-import { getArticle } from "~/lib/payload";
+import { getPost } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
 
@@ -13,38 +13,38 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const article = await getArticle(slug).catch(() => null);
+  const post = await getPost(slug).catch(() => null);
   return {
-    title: article?.meta?.title ?? article?.title ?? "Article",
-    description: article?.meta?.description ?? article?.excerpt ?? undefined,
+    title: post?.meta?.title ?? post?.title ?? "Post",
+    description: post?.meta?.description ?? post?.excerpt ?? undefined,
   };
 }
 
-export default async function ArticlePage({
+export default async function PostPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const article = await getArticle(slug);
-  if (!article) notFound();
+  const post = await getPost(slug);
+  if (!post) notFound();
 
   const image =
-    typeof article.heroImage === "object" && article.heroImage?.url
-      ? { url: article.heroImage.url, alt: article.heroImage.alt }
+    typeof post.featuredImage === "object" && post.featuredImage?.url
+      ? { url: post.featuredImage.url, alt: post.featuredImage.alt }
       : null;
 
   return (
     <DetailLayout
-      title={article.title}
+      title={post.title}
       image={image}
       meta={
-        article.publishedAt
-          ? new Date(article.publishedAt).toLocaleDateString()
+        post.publishedAt
+          ? new Date(post.publishedAt).toLocaleDateString()
           : undefined
       }
     >
-      <CmsRichText data={article.body} />
+      <CmsRichText data={post.body} />
     </DetailLayout>
   );
 }

@@ -26,7 +26,7 @@ import {
 } from "~/components/ui/sidebar";
 
 const navMain = [
-  { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
+  { title: "Dashboard", url: "/a", icon: IconDashboard },
   { title: "Chat", url: "/chat", icon: IconMessageCircle },
   { title: "Reminders", url: "/reminders", icon: IconClock },
   { title: "Notifications", url: "/notifications", icon: IconBell },
@@ -54,7 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="/dashboard">
+              <a href="/a">
                 {(branding.logoLightUrl ?? branding.logoDarkUrl) ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}

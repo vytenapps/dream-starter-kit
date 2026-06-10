@@ -72,9 +72,12 @@ if [ ! -f .env ]; then
     -e "s|^S3_ACCESS_KEY_ID=.*|S3_ACCESS_KEY_ID=\"$S3_PROTOCOL_ACCESS_KEY_ID\"|" \
     -e "s|^S3_SECRET_ACCESS_KEY=.*|S3_SECRET_ACCESS_KEY=\"$S3_PROTOCOL_ACCESS_KEY_SECRET\"|" \
     -e "s|^CRON_SECRET=.*|CRON_SECRET=\"local-dev-cron-secret\"|" \
+    -e "s|^AI_GATEWAY_API_KEY=.*|AI_GATEWAY_API_KEY=\"dummy-local-key-not-real\"|" \
+    -e "s|^STRIPE_WEBHOOKS_ENDPOINT_SECRET=.*|STRIPE_WEBHOOKS_ENDPOINT_SECRET=\"whsec_e2e_test_secret\"|" \
     .env
   # Unset optional vars must be absent, not empty — min(1) rejects "".
-  sed -i -E 's|^(AI_GATEWAY_API_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET|STRIPE_PRICE_MONTHLY|STRIPE_PRICE_YEARLY|PAYLOAD_PREVIEW_SECRET|NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY|SUPABASE_AUTH_EXTERNAL_[A-Z_]+|EXPO_PUBLIC_EAS_PROJECT_ID)=""|# \1=""|' .env
+  # (Use `/` as the s-delimiter: `|` would collide with the alternation.)
+  sed -i -E 's/^(AI_GATEWAY_API_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET|STRIPE_WEBHOOKS_ENDPOINT_SECRET|STRIPE_PRICE_MONTHLY|STRIPE_PRICE_YEARLY|PAYLOAD_PREVIEW_SECRET|NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY|SUPABASE_AUTH_EXTERNAL_[A-Z_]+|EXPO_PUBLIC_EAS_PROJECT_ID|SITE_URL)=""$/# \1=""/' .env
 fi
 
 echo "[session-start] 6/7 db reset (supabase + payload migrations)"

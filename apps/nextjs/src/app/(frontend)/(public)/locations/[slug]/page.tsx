@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { DetailLayout } from "~/components/content/detail-layout";
 import { CmsRichText } from "~/components/rich-text";
-import { getLocation } from "~/lib/payload";
+import { formatAddress, getLocation } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,10 @@ export async function generateMetadata({
   const location = await getLocation(slug).catch(() => null);
   return {
     title: location?.name ?? "Location",
-    description: location?.address ?? undefined,
+    description:
+      location?.shortDescription ??
+      formatAddress(location?.address) ??
+      undefined,
   };
 }
 
@@ -30,9 +33,12 @@ export default async function LocationPage({
   if (!location) notFound();
 
   const image =
-    typeof location.image === "object" && location.image?.url
-      ? { url: location.image.url, alt: location.image.alt }
+    typeof location.featuredImage === "object" && location.featuredImage?.url
+      ? { url: location.featuredImage.url, alt: location.featuredImage.alt }
       : null;
+  const address = formatAddress(location.address);
+  // Payload `point` stores [lng, lat].
+  const coords = location.coordinates;
 
   return (
     <DetailLayout
@@ -40,10 +46,10 @@ export default async function LocationPage({
       image={image}
       meta={
         <dl className="space-y-1">
-          {location.address && <div>{location.address}</div>}
-          {location.latitude != null && location.longitude != null && (
+          {address && <div>{address}</div>}
+          {coords && (
             <div>
-              {location.latitude}, {location.longitude}
+              {coords[1]}, {coords[0]}
             </div>
           )}
         </dl>
