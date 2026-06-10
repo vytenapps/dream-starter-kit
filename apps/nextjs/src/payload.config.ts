@@ -9,13 +9,16 @@ import sharp from "sharp";
 
 import { Articles } from "./payload/collections/Articles";
 import { Audio } from "./payload/collections/Audio";
+import { Coupons } from "./payload/collections/Coupons";
 import { Events } from "./payload/collections/Events";
 import { Locations } from "./payload/collections/Locations";
 import { Media } from "./payload/collections/Media";
 import { Pages } from "./payload/collections/Pages";
 import { Photos } from "./payload/collections/Photos";
+import { Plans } from "./payload/collections/Plans";
 import { Users } from "./payload/collections/Users";
 import { Videos } from "./payload/collections/Videos";
+import { PricingSettings } from "./payload/globals/PricingSettings";
 import { SiteSettings } from "./payload/globals/SiteSettings";
 import { ThemeSettings } from "./payload/globals/ThemeSettings";
 import { migrations } from "./payload/migrations";
@@ -83,8 +86,10 @@ export default buildConfig({
     Photos,
     Locations,
     Pages,
+    Plans,
+    Coupons,
   ],
-  globals: [SiteSettings, ThemeSettings],
+  globals: [SiteSettings, ThemeSettings, PricingSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET ?? "",
   // Generated types are published from the @acme/cms package so the Expo app and

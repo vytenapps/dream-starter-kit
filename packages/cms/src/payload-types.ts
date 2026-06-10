@@ -13,53 +13,53 @@
  * via the `definition` "supportedTimezones".
  */
 export type SupportedTimezones =
-  | "Pacific/Midway"
-  | "Pacific/Niue"
-  | "Pacific/Honolulu"
-  | "Pacific/Rarotonga"
-  | "America/Anchorage"
-  | "Pacific/Gambier"
-  | "America/Los_Angeles"
-  | "America/Tijuana"
-  | "America/Denver"
-  | "America/Phoenix"
-  | "America/Chicago"
-  | "America/Guatemala"
-  | "America/New_York"
-  | "America/Bogota"
-  | "America/Caracas"
-  | "America/Santiago"
-  | "America/Buenos_Aires"
-  | "America/Sao_Paulo"
-  | "Atlantic/South_Georgia"
-  | "Atlantic/Azores"
-  | "Atlantic/Cape_Verde"
-  | "Europe/London"
-  | "Europe/Berlin"
-  | "Africa/Lagos"
-  | "Europe/Athens"
-  | "Africa/Cairo"
-  | "Europe/Moscow"
-  | "Asia/Riyadh"
-  | "Asia/Dubai"
-  | "Asia/Baku"
-  | "Asia/Karachi"
-  | "Asia/Tashkent"
-  | "Asia/Calcutta"
-  | "Asia/Dhaka"
-  | "Asia/Almaty"
-  | "Asia/Jakarta"
-  | "Asia/Bangkok"
-  | "Asia/Shanghai"
-  | "Asia/Singapore"
-  | "Asia/Tokyo"
-  | "Asia/Seoul"
-  | "Australia/Brisbane"
-  | "Australia/Sydney"
-  | "Pacific/Guam"
-  | "Pacific/Noumea"
-  | "Pacific/Auckland"
-  | "Pacific/Fiji";
+  | 'Pacific/Midway'
+  | 'Pacific/Niue'
+  | 'Pacific/Honolulu'
+  | 'Pacific/Rarotonga'
+  | 'America/Anchorage'
+  | 'Pacific/Gambier'
+  | 'America/Los_Angeles'
+  | 'America/Tijuana'
+  | 'America/Denver'
+  | 'America/Phoenix'
+  | 'America/Chicago'
+  | 'America/Guatemala'
+  | 'America/New_York'
+  | 'America/Bogota'
+  | 'America/Caracas'
+  | 'America/Santiago'
+  | 'America/Buenos_Aires'
+  | 'America/Sao_Paulo'
+  | 'Atlantic/South_Georgia'
+  | 'Atlantic/Azores'
+  | 'Atlantic/Cape_Verde'
+  | 'Europe/London'
+  | 'Europe/Berlin'
+  | 'Africa/Lagos'
+  | 'Europe/Athens'
+  | 'Africa/Cairo'
+  | 'Europe/Moscow'
+  | 'Asia/Riyadh'
+  | 'Asia/Dubai'
+  | 'Asia/Baku'
+  | 'Asia/Karachi'
+  | 'Asia/Tashkent'
+  | 'Asia/Calcutta'
+  | 'Asia/Dhaka'
+  | 'Asia/Almaty'
+  | 'Asia/Jakarta'
+  | 'Asia/Bangkok'
+  | 'Asia/Shanghai'
+  | 'Asia/Singapore'
+  | 'Asia/Tokyo'
+  | 'Asia/Seoul'
+  | 'Australia/Brisbane'
+  | 'Australia/Sydney'
+  | 'Pacific/Guam'
+  | 'Pacific/Noumea'
+  | 'Pacific/Auckland'
+  | 'Pacific/Fiji';
 
 export interface Config {
   auth: {
@@ -76,10 +76,12 @@ export interface Config {
     photos: Photo;
     locations: Location;
     pages: Page;
-    "payload-kv": PayloadKv;
-    "payload-locked-documents": PayloadLockedDocument;
-    "payload-preferences": PayloadPreference;
-    "payload-migrations": PayloadMigration;
+    plans: Plan;
+    coupons: Coupon;
+    'payload-kv': PayloadKv;
+    'payload-locked-documents': PayloadLockedDocument;
+    'payload-preferences': PayloadPreference;
+    'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {};
   collectionsSelect: {
@@ -92,28 +94,26 @@ export interface Config {
     photos: PhotosSelect<false> | PhotosSelect<true>;
     locations: LocationsSelect<false> | LocationsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
-    "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
-    "payload-locked-documents":
-      | PayloadLockedDocumentsSelect<false>
-      | PayloadLockedDocumentsSelect<true>;
-    "payload-preferences":
-      | PayloadPreferencesSelect<false>
-      | PayloadPreferencesSelect<true>;
-    "payload-migrations":
-      | PayloadMigrationsSelect<false>
-      | PayloadMigrationsSelect<true>;
+    plans: PlansSelect<false> | PlansSelect<true>;
+    coupons: CouponsSelect<false> | CouponsSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
+    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
+    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
     defaultIDType: number;
   };
   fallbackLocale: null;
   globals: {
-    "site-settings": SiteSetting;
-    "theme-settings": ThemeSetting;
+    'site-settings': SiteSetting;
+    'theme-settings': ThemeSetting;
+    'pricing-settings': PricingSetting;
   };
   globalsSelect: {
-    "site-settings": SiteSettingsSelect<false> | SiteSettingsSelect<true>;
-    "theme-settings": ThemeSettingsSelect<false> | ThemeSettingsSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'theme-settings': ThemeSettingsSelect<false> | ThemeSettingsSelect<true>;
+    'pricing-settings': PricingSettingsSelect<false> | PricingSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -144,6 +144,8 @@ export interface UserAuthOperations {
   };
 }
 /**
+ * Creating a user emails them a Supabase invite and grants staff access. If the email already has an account, it is promoted to staff instead (no email is sent).
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -155,10 +157,10 @@ export interface User {
    * Linked Supabase auth user id (managed by the SSO bridge).
    */
   supabaseUserId?: string | null;
-  role: "admin" | "editor";
+  role: 'admin' | 'editor';
   updatedAt: string;
   createdAt: string;
-  collection: "users";
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -224,8 +226,8 @@ export interface Article {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -244,7 +246,7 @@ export interface Article {
   };
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -262,8 +264,8 @@ export interface Event {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -275,7 +277,7 @@ export interface Event {
   image?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -296,8 +298,8 @@ export interface Location {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -306,7 +308,7 @@ export interface Location {
   image?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -317,7 +319,7 @@ export interface Video {
   title: string;
   slug: string;
   description?: string | null;
-  sourceType: "url" | "upload";
+  sourceType: 'url' | 'upload';
   url?: string | null;
   file?: (number | null) | Media;
   thumbnail?: (number | null) | Media;
@@ -327,7 +329,7 @@ export interface Video {
   duration?: number | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -345,7 +347,7 @@ export interface Audio {
   duration?: number | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -366,7 +368,7 @@ export interface Photo {
     | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -376,17 +378,7 @@ export interface Page {
   id: number;
   title: string;
   slug: string;
-  layout?:
-    | (
-        | HeroBlock
-        | ItemsBlock
-        | LogosBlock
-        | StatsBlock
-        | CTABlock
-        | FAQBlock
-        | ProseBlock
-      )[]
-    | null;
+  layout?: (HeroBlock | ItemsBlock | LogosBlock | StatsBlock | CTABlock | FAQBlock | ProseBlock)[] | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -397,7 +389,7 @@ export interface Page {
   };
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -416,7 +408,7 @@ export interface HeroBlock {
     | {
         text: string;
         href: string;
-        variant?: ("default" | "glow" | "outline" | "secondary") | null;
+        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
         id?: string | null;
       }[]
     | null;
@@ -430,7 +422,7 @@ export interface HeroBlock {
   mockupDark?: (number | null) | Media;
   id?: string | null;
   blockName?: string | null;
-  blockType: "hero";
+  blockType: 'hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -447,26 +439,26 @@ export interface ItemsBlock {
          */
         icon?:
           | (
-              | "Rocket"
-              | "Zap"
-              | "ShieldCheck"
-              | "Sparkles"
-              | "Star"
-              | "Heart"
-              | "Globe"
-              | "Code"
-              | "Layers"
-              | "Smartphone"
-              | "Palette"
-              | "Lock"
-              | "Check"
-              | "Cloud"
-              | "Bell"
-              | "Settings"
-              | "Users"
-              | "ChartBar"
-              | "Search"
-              | "Mail"
+              | 'Rocket'
+              | 'Zap'
+              | 'ShieldCheck'
+              | 'Sparkles'
+              | 'Star'
+              | 'Heart'
+              | 'Globe'
+              | 'Code'
+              | 'Layers'
+              | 'Smartphone'
+              | 'Palette'
+              | 'Lock'
+              | 'Check'
+              | 'Cloud'
+              | 'Bell'
+              | 'Settings'
+              | 'Users'
+              | 'ChartBar'
+              | 'Search'
+              | 'Mail'
             )
           | null;
         id?: string | null;
@@ -474,7 +466,7 @@ export interface ItemsBlock {
     | null;
   id?: string | null;
   blockName?: string | null;
-  blockType: "items";
+  blockType: 'items';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -495,7 +487,7 @@ export interface LogosBlock {
     | null;
   id?: string | null;
   blockName?: string | null;
-  blockType: "logos";
+  blockType: 'logos';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -513,7 +505,7 @@ export interface StatsBlock {
     | null;
   id?: string | null;
   blockName?: string | null;
-  blockType: "stats";
+  blockType: 'stats';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -525,13 +517,13 @@ export interface CTABlock {
     | {
         text: string;
         href: string;
-        variant?: ("default" | "glow" | "outline" | "secondary") | null;
+        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
         id?: string | null;
       }[]
     | null;
   id?: string | null;
   blockName?: string | null;
-  blockType: "cta";
+  blockType: 'cta';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -548,7 +540,7 @@ export interface FAQBlock {
     | null;
   id?: string | null;
   blockName?: string | null;
-  blockType: "faq";
+  blockType: 'faq';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -564,8 +556,8 @@ export interface ProseBlock {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -573,7 +565,116 @@ export interface ProseBlock {
   };
   id?: string | null;
   blockName?: string | null;
-  blockType: "prose";
+  blockType: 'prose';
+}
+/**
+ * Author plans here, then press “Sync to Stripe” to create/update the matching Stripe product and price. Stripe prices are immutable, so changing the amount creates a new price and archives the old one.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plans".
+ */
+export interface Plan {
+  id: number;
+  name: string;
+  active?: boolean | null;
+  slug: string;
+  description?: string | null;
+  pricingType: 'recurring' | 'one_time';
+  interval?: ('month' | 'year') | null;
+  /**
+   * Amount in the smallest currency unit, e.g. 999 = $9.99.
+   */
+  unitAmount: number;
+  /**
+   * ISO code, e.g. usd.
+   */
+  currency: string;
+  /**
+   * 0 / empty = no trial.
+   */
+  trialDays?: number | null;
+  /**
+   * Discount the first billing period only (e.g. $1.99 first month, then the standard price recurs). Implemented as a Stripe coupon with duration=once, applied automatically at checkout.
+   */
+  introOffer?: {
+    enabled?: boolean | null;
+    /**
+     * First-period price, e.g. 199 = $1.99.
+     */
+    introAmount?: number | null;
+  };
+  /**
+   * Shown on the public pricing card.
+   */
+  features?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * e.g. "Save 17%" or "Best value".
+   */
+  badge?: string | null;
+  highlighted?: boolean | null;
+  displayOrder?: number | null;
+  stripeProductId?: string | null;
+  stripePriceId?: string | null;
+  stripeIntroCouponId?: string | null;
+  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
+  syncError?: string | null;
+  lastSyncedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Discounts pushed to Stripe. Changing amount/duration creates a new Stripe coupon (they're immutable) and archives the old one.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons".
+ */
+export interface Coupon {
+  id: number;
+  name: string;
+  discountType: 'percent_off' | 'amount_off';
+  /**
+   * Percent (1–100) or amount in cents.
+   */
+  value: number;
+  currency?: string | null;
+  duration: 'once' | 'repeating' | 'forever';
+  durationCount?: number | null;
+  /**
+   * Years are converted to months for Stripe (2 years → 24 months).
+   */
+  durationUnit?: ('month' | 'year') | null;
+  /**
+   * Total redemptions allowed.
+   */
+  maxRedemptions?: number | null;
+  /**
+   * Stripe redeem_by — no new redemptions after this.
+   */
+  redeemBy?: string | null;
+  /**
+   * Restrict to specific plans (empty = applies to all).
+   */
+  appliesTo?: (number | Plan)[] | null;
+  /**
+   * Optional customer-facing code (e.g. LAUNCH20). Created as a Stripe promotion code on sync. Leave blank for a code-less coupon.
+   */
+  code?: string | null;
+  /**
+   * When set, new free signups get a unique, expiring promotion code for this coupon. Keep at most one active.
+   */
+  isWelcomeOffer?: boolean | null;
+  stripeCouponId?: string | null;
+  stripePromotionCodeId?: string | null;
+  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
+  syncError?: string | null;
+  lastSyncedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -600,44 +701,52 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: "users";
+        relationTo: 'users';
         value: number | User;
       } | null)
     | ({
-        relationTo: "media";
+        relationTo: 'media';
         value: number | Media;
       } | null)
     | ({
-        relationTo: "articles";
+        relationTo: 'articles';
         value: number | Article;
       } | null)
     | ({
-        relationTo: "events";
+        relationTo: 'events';
         value: number | Event;
       } | null)
     | ({
-        relationTo: "videos";
+        relationTo: 'videos';
         value: number | Video;
       } | null)
     | ({
-        relationTo: "audio";
+        relationTo: 'audio';
         value: number | Audio;
       } | null)
     | ({
-        relationTo: "photos";
+        relationTo: 'photos';
         value: number | Photo;
       } | null)
     | ({
-        relationTo: "locations";
+        relationTo: 'locations';
         value: number | Location;
       } | null)
     | ({
-        relationTo: "pages";
+        relationTo: 'pages';
         value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'plans';
+        value: number | Plan;
+      } | null)
+    | ({
+        relationTo: 'coupons';
+        value: number | Coupon;
       } | null);
   globalSlug?: string | null;
   user: {
-    relationTo: "users";
+    relationTo: 'users';
     value: number | User;
   };
   updatedAt: string;
@@ -650,7 +759,7 @@ export interface PayloadLockedDocument {
 export interface PayloadPreference {
   id: number;
   user: {
-    relationTo: "users";
+    relationTo: 'users';
     value: number | User;
   };
   key?: string | null;
@@ -997,6 +1106,69 @@ export interface ProseBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plans_select".
+ */
+export interface PlansSelect<T extends boolean = true> {
+  name?: T;
+  active?: T;
+  slug?: T;
+  description?: T;
+  pricingType?: T;
+  interval?: T;
+  unitAmount?: T;
+  currency?: T;
+  trialDays?: T;
+  introOffer?:
+    | T
+    | {
+        enabled?: T;
+        introAmount?: T;
+      };
+  features?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  badge?: T;
+  highlighted?: T;
+  displayOrder?: T;
+  stripeProductId?: T;
+  stripePriceId?: T;
+  stripeIntroCouponId?: T;
+  syncStatus?: T;
+  syncError?: T;
+  lastSyncedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons_select".
+ */
+export interface CouponsSelect<T extends boolean = true> {
+  name?: T;
+  discountType?: T;
+  value?: T;
+  currency?: T;
+  duration?: T;
+  durationCount?: T;
+  durationUnit?: T;
+  maxRedemptions?: T;
+  redeemBy?: T;
+  appliesTo?: T;
+  code?: T;
+  isWelcomeOffer?: T;
+  stripeCouponId?: T;
+  stripePromotionCodeId?: T;
+  syncStatus?: T;
+  syncError?: T;
+  lastSyncedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -1066,7 +1238,7 @@ export interface SiteSetting {
     | {
         label: string;
         url: string;
-        variant?: ("default" | "glow" | "outline" | "secondary") | null;
+        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
         isButton?: boolean | null;
         id?: string | null;
       }[]
@@ -1415,15 +1587,15 @@ export interface ThemeSetting {
   /**
    * Body / UI font (--font-sans)
    */
-  fontSans?: ("geist" | "inter" | "system") | null;
+  fontSans?: ('geist' | 'inter' | 'system') | null;
   /**
    * Serif font (--font-serif)
    */
-  fontSerif?: ("merriweather" | "lora" | "system") | null;
+  fontSerif?: ('merriweather' | 'lora' | 'system') | null;
   /**
    * Monospace font (--font-mono)
    */
-  fontMono?: ("geist-mono" | "jetbrains-mono") | null;
+  fontMono?: ('geist-mono' | 'jetbrains-mono') | null;
   /**
    * Base letter spacing, e.g. 0rem (--tracking-normal)
    */
@@ -1447,7 +1619,34 @@ export interface ThemeSetting {
     offsetX?: number | null;
     offsetY?: number | null;
   };
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pricing-settings".
+ */
+export interface PricingSetting {
+  id: number;
+  heading?: string | null;
+  showFreeTier?: boolean | null;
+  subheading?: string | null;
+  /**
+   * Pick up to three paid plans to feature, in display order. Empty = all active plans by display order.
+   */
+  featuredPlans?: (number | Plan)[] | null;
+  freeTier?: {
+    name?: string | null;
+    description?: string | null;
+    ctaLabel?: string | null;
+    features?:
+      | {
+          text: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1625,13 +1824,39 @@ export interface ThemeSettingsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pricing-settings_select".
+ */
+export interface PricingSettingsSelect<T extends boolean = true> {
+  heading?: T;
+  showFreeTier?: T;
+  subheading?: T;
+  featuredPlans?: T;
+  freeTier?:
+    | T
+    | {
+        name?: T;
+        description?: T;
+        ctaLabel?: T;
+        features?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
   data?: {
     [k: string]: unknown;
   };
-  width: "full";
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
