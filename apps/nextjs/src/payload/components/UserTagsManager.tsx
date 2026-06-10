@@ -40,7 +40,10 @@ export function UserTagsManager() {
       .catch(() => undefined);
   }, []);
 
-  async function mutate(method: "POST" | "DELETE", body: Record<string, unknown>) {
+  async function mutate(
+    method: "POST" | "DELETE",
+    body: Record<string, unknown>,
+  ) {
     if (!docId) return;
     setLoading(true);
     try {
@@ -73,7 +76,14 @@ export function UserTagsManager() {
   return (
     <div className="field-type" style={{ marginBottom: "1rem" }}>
       <label className="field-label">Tags</label>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: "0.5rem" }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.4rem",
+          marginBottom: "0.5rem",
+        }}
+      >
         {tags.length === 0 ? (
           <span style={{ fontSize: "0.8rem", opacity: 0.7 }}>No tags yet.</span>
         ) : (
@@ -97,7 +107,12 @@ export function UserTagsManager() {
                 aria-label={`Remove ${tag.name}`}
                 disabled={loading}
                 onClick={() => void mutate("DELETE", { tagId: tag.id })}
-                style={{ cursor: "pointer", background: "none", border: 0, color: "inherit" }}
+                style={{
+                  cursor: "pointer",
+                  background: "none",
+                  border: 0,
+                  color: "inherit",
+                }}
               >
                 ×
               </button>

@@ -88,7 +88,9 @@ export function SyncToStripeButton() {
           style={{
             fontSize: "0.8rem",
             marginTop: "0.5rem",
-            color: message.ok ? "var(--theme-success-500)" : "var(--theme-error-500)",
+            color: message.ok
+              ? "var(--theme-success-500)"
+              : "var(--theme-error-500)",
           }}
         >
           {message.text}

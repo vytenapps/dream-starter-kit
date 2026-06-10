@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
-import { usePremium } from "@acme/app";
 import { useSupabase } from "@acme/api";
+import { usePremium } from "@acme/app";
 
 import { ManageBillingButton } from "~/components/paywall";
 import { Badge } from "~/components/ui/badge";
@@ -42,10 +42,11 @@ function usePlanName(priceId: string | null | undefined) {
     queryKey: ["plan-name", priceId],
     enabled: !!priceId,
     queryFn: async () => {
+      if (!priceId) return null;
       const { data: price } = await supabase
         .from("prices")
         .select("product_id")
-        .eq("id", priceId!)
+        .eq("id", priceId)
         .maybeSingle();
       if (!price?.product_id) return null;
       const { data: product } = await supabase
@@ -103,7 +104,10 @@ export default function BillingPage() {
               Upgrade
             </Link>
           )}
-          <Link href="/pricing" className={buttonVariants({ variant: "outline" })}>
+          <Link
+            href="/pricing"
+            className={buttonVariants({ variant: "outline" })}
+          >
             View plans
           </Link>
         </CardContent>
@@ -125,9 +129,7 @@ export default function BillingPage() {
                   className="flex items-center justify-between gap-4 py-3"
                 >
                   <div className="flex flex-col">
-                    <span className="font-medium">
-                      {inv.number ?? inv.id}
-                    </span>
+                    <span className="font-medium">{inv.number ?? inv.id}</span>
                     <span className="text-muted-foreground">
                       {new Date(inv.created * 1000).toLocaleDateString()} ·{" "}
                       {inv.status}

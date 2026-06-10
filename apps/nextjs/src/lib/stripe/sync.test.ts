@@ -26,15 +26,31 @@ describe("pure helpers", () => {
       durationInMonths({ duration: "repeating", ...c } as CouponSyncInput);
     expect(months({ durationCount: 6, durationUnit: "month" })).toBe(6);
     expect(months({ durationCount: 2, durationUnit: "year" })).toBe(24);
-    expect(durationInMonths({ duration: "once" } as CouponSyncInput)).toBeUndefined();
+    expect(
+      durationInMonths({ duration: "once" } as CouponSyncInput),
+    ).toBeUndefined();
   });
 
   it("intro amount_off is the difference, or null when not applicable", () => {
     expect(
-      introAmountOff({ ...basePlan, introOffer: { enabled: true, introAmount: 199 } }),
+      introAmountOff({
+        ...basePlan,
+        introOffer: { enabled: true, introAmount: 199 },
+      }),
     ).toBe(800);
-    expect(introAmountOff({ ...basePlan, introOffer: { enabled: false, introAmount: 199 } })).toBeNull();
-    expect(introAmountOff({ ...basePlan, pricingType: "one_time", introOffer: { enabled: true, introAmount: 1 } })).toBeNull();
+    expect(
+      introAmountOff({
+        ...basePlan,
+        introOffer: { enabled: false, introAmount: 199 },
+      }),
+    ).toBeNull();
+    expect(
+      introAmountOff({
+        ...basePlan,
+        pricingType: "one_time",
+        introOffer: { enabled: true, introAmount: 1 },
+      }),
+    ).toBeNull();
   });
 
   it("toUnixSeconds converts ISO to seconds and tolerates null", () => {
@@ -43,11 +59,23 @@ describe("pure helpers", () => {
   });
 
   it("priceNeedsRecreate flags amount/interval/currency divergence", () => {
-    const live = { unit_amount: 999, currency: "usd", recurring: { interval: "month" }, active: true } as Parameters<typeof priceNeedsRecreate>[0];
+    const live = {
+      unit_amount: 999,
+      currency: "usd",
+      recurring: { interval: "month" },
+      active: true,
+    } as Parameters<typeof priceNeedsRecreate>[0];
     expect(priceNeedsRecreate(live, basePlan)).toBe(false);
-    expect(priceNeedsRecreate({ ...live, unit_amount: 1299 }, basePlan)).toBe(true);
+    expect(priceNeedsRecreate({ ...live, unit_amount: 1299 }, basePlan)).toBe(
+      true,
+    );
     expect(priceNeedsRecreate({ ...live, active: false }, basePlan)).toBe(true);
-    expect(priceNeedsRecreate({ ...live, recurring: { interval: "year" } } as typeof live, basePlan)).toBe(true);
+    expect(
+      priceNeedsRecreate(
+        { ...live, recurring: { interval: "year" } } as typeof live,
+        basePlan,
+      ),
+    ).toBe(true);
   });
 });
 
@@ -55,22 +83,22 @@ describe("pure helpers", () => {
 function mockStripe() {
   return {
     products: {
-      create: vi.fn(async () => ({ id: "prod_new" })),
-      update: vi.fn(async () => ({})),
+      create: vi.fn(() => Promise.resolve({ id: "prod_new" })),
+      update: vi.fn(() => Promise.resolve({})),
     },
     prices: {
-      create: vi.fn(async () => ({ id: "price_new" })),
+      create: vi.fn(() => Promise.resolve({ id: "price_new" })),
       retrieve: vi.fn(),
-      update: vi.fn(async () => ({})),
+      update: vi.fn(() => Promise.resolve({})),
     },
     coupons: {
-      create: vi.fn(async () => ({ id: "coupon_new" })),
+      create: vi.fn(() => Promise.resolve({ id: "coupon_new" })),
       retrieve: vi.fn(),
-      update: vi.fn(async () => ({})),
-      del: vi.fn(async () => ({})),
+      update: vi.fn(() => Promise.resolve({})),
+      del: vi.fn(() => Promise.resolve({})),
     },
     promotionCodes: {
-      create: vi.fn(async () => ({ id: "promo_new" })),
+      create: vi.fn(() => Promise.resolve({ id: "promo_new" })),
     },
   };
 }
@@ -121,7 +149,9 @@ describe("syncPlanToStripe", () => {
       stripePriceId: "price_old",
     });
     expect(stripe.prices.create).toHaveBeenCalledOnce();
-    expect(stripe.prices.update).toHaveBeenCalledWith("price_old", { active: false });
+    expect(stripe.prices.update).toHaveBeenCalledWith("price_old", {
+      active: false,
+    });
     expect(res.stripePriceId).toBe("price_new");
   });
 
@@ -132,7 +162,11 @@ describe("syncPlanToStripe", () => {
       introOffer: { enabled: true, introAmount: 199 },
     });
     expect(stripe.coupons.create).toHaveBeenCalledWith(
-      expect.objectContaining({ amount_off: 800, duration: "once", currency: "usd" }),
+      expect.objectContaining({
+        amount_off: 800,
+        duration: "once",
+        currency: "usd",
+      }),
     );
   });
 });

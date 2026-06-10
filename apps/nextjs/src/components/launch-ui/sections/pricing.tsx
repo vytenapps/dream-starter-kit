@@ -1,6 +1,6 @@
-import { Section } from "../ui/section";
 import type { PricingColumnProps } from "../ui/pricing-column";
 import { PricingColumn } from "../ui/pricing-column";
+import { Section } from "../ui/section";
 
 export interface PricingProps {
   heading?: string;

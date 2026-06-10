@@ -191,7 +191,8 @@ export async function syncPlanToStripe(
           live.amount_off === amountOff &&
           live.currency === desired.currency &&
           live.duration === "once";
-        if (reuse) await stripe.coupons.update(introCouponId, { name: desired.name });
+        if (reuse)
+          await stripe.coupons.update(introCouponId, { name: desired.name });
       } catch {
         reuse = false;
       }
@@ -206,7 +207,11 @@ export async function syncPlanToStripe(
     introCouponId = null;
   }
 
-  return { stripeProductId: productId, stripePriceId: priceId, stripeIntroCouponId: introCouponId };
+  return {
+    stripeProductId: productId,
+    stripePriceId: priceId,
+    stripeIntroCouponId: introCouponId,
+  };
 }
 
 // --- Coupon sync ----------------------------------------------------------
@@ -215,7 +220,10 @@ export async function syncCouponToStripe(
   stripe: Stripe,
   coupon: CouponSyncInput,
 ): Promise<CouponSyncResult> {
-  const metadata = { payloadId: String(coupon.id), payloadCollection: "coupons" };
+  const metadata = {
+    payloadId: String(coupon.id),
+    payloadCollection: "coupons",
+  };
   const months = durationInMonths(coupon);
   const productIds = coupon.appliesToProductIds ?? [];
   const redeemBy = toUnixSeconds(coupon.redeemBy);
@@ -226,8 +234,13 @@ export async function syncCouponToStripe(
     ...(coupon.duration === "repeating" ? { duration_in_months: months } : {}),
     ...(coupon.discountType === "percent_off"
       ? { percent_off: coupon.value }
-      : { amount_off: coupon.value, currency: (coupon.currency ?? "usd").toLowerCase() }),
-    ...(coupon.maxRedemptions ? { max_redemptions: coupon.maxRedemptions } : {}),
+      : {
+          amount_off: coupon.value,
+          currency: (coupon.currency ?? "usd").toLowerCase(),
+        }),
+    ...(coupon.maxRedemptions
+      ? { max_redemptions: coupon.maxRedemptions }
+      : {}),
     ...(redeemBy ? { redeem_by: redeemBy } : {}),
     ...(productIds.length ? { applies_to: { products: productIds } } : {}),
     metadata,
@@ -247,7 +260,8 @@ export async function syncCouponToStripe(
           ? live.percent_off === coupon.value
           : live.amount_off === coupon.value &&
             live.currency === (coupon.currency ?? "usd").toLowerCase());
-      if (reuse) await stripe.coupons.update(couponId, { name: coupon.name, metadata });
+      if (reuse)
+        await stripe.coupons.update(couponId, { name: coupon.name, metadata });
     } catch {
       reuse = false;
     }
@@ -267,7 +281,9 @@ export async function syncCouponToStripe(
       const promo = await stripe.promotionCodes.create({
         promotion: { type: "coupon", coupon: couponId },
         code: coupon.code.trim(),
-        ...(coupon.maxRedemptions ? { max_redemptions: coupon.maxRedemptions } : {}),
+        ...(coupon.maxRedemptions
+          ? { max_redemptions: coupon.maxRedemptions }
+          : {}),
         ...(redeemBy ? { expires_at: redeemBy } : {}),
         metadata,
       });

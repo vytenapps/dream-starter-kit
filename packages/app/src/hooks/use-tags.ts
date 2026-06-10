@@ -28,7 +28,7 @@ export function useUserTags() {
         .from("user_tags")
         .select("tag_id");
       if (linkErr) throw linkErr;
-      const ids = (links ?? []).map((l) => l.tag_id);
+      const ids = links.map((l) => l.tag_id);
       if (ids.length === 0) return [];
 
       const { data: tags, error: tagErr } = await supabase
@@ -37,7 +37,7 @@ export function useUserTags() {
         .in("id", ids)
         .order("name");
       if (tagErr) throw tagErr;
-      return tags ?? [];
+      return tags;
     },
   });
 }

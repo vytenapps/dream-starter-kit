@@ -45,7 +45,10 @@ export default function Pricing() {
       </Text>
 
       {plans.data?.map((plan) => (
-        <View key={plan.id} className="border-border gap-2 rounded-xl border p-4">
+        <View
+          key={plan.id}
+          className="border-border gap-2 rounded-xl border p-4"
+        >
           <View className="flex-row items-center justify-between">
             <Text className="text-lg font-semibold">{plan.name}</Text>
             {plan.badge ? (

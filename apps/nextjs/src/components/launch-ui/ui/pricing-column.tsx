@@ -65,7 +65,9 @@ export function PricingColumn({
           ) : null}
           <span className="text-4xl font-bold">{priceLabel}</span>
           {cadence ? (
-            <span className="text-muted-foreground pb-1 text-sm">{cadence}</span>
+            <span className="text-muted-foreground pb-1 text-sm">
+              {cadence}
+            </span>
           ) : null}
         </div>
         {note ? <p className="text-muted-foreground text-xs">{note}</p> : null}

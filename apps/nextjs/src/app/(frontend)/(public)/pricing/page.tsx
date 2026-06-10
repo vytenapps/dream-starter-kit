@@ -3,8 +3,8 @@ import Link from "next/link";
 
 import type { Plan } from "@acme/cms";
 
-import Pricing from "~/components/launch-ui/sections/pricing";
 import type { PricingColumnProps } from "~/components/launch-ui/ui/pricing-column";
+import Pricing from "~/components/launch-ui/sections/pricing";
 import { PlanCheckoutButton } from "~/components/plan-checkout-button";
 import { buttonVariants } from "~/components/ui/button";
 import { getPricingSettings, listActivePlans } from "~/lib/payload";
@@ -31,10 +31,13 @@ function cadence(plan: Plan): string {
 function toColumn(plan: Plan): PricingColumnProps {
   const features = (plan.features ?? []).map((f) => f.text);
   const intro = plan.introOffer;
-  const hasIntro =
+  const introAmount =
     plan.pricingType === "recurring" &&
     intro?.enabled &&
-    intro.introAmount != null;
+    intro.introAmount != null
+      ? intro.introAmount
+      : null;
+  const hasIntro = introAmount != null;
 
   const note = hasIntro
     ? `for the first ${plan.interval === "year" ? "year" : "month"}, then ${formatPrice(plan.unitAmount, plan.currency)}${cadence(plan)}`
@@ -47,10 +50,7 @@ function toColumn(plan: Plan): PricingColumnProps {
   return {
     name: plan.name,
     description: plan.description ?? undefined,
-    priceLabel: formatPrice(
-      hasIntro ? intro.introAmount! : plan.unitAmount,
-      plan.currency,
-    ),
+    priceLabel: formatPrice(introAmount ?? plan.unitAmount, plan.currency),
     cadence: cadence(plan),
     originalPriceLabel: hasIntro
       ? formatPrice(plan.unitAmount, plan.currency)
@@ -93,7 +93,10 @@ export default async function PricingPage() {
       cadence: "",
       features: (free?.features ?? []).map((f) => f.text),
       cta: (
-        <Link href="/sign-up" className={buttonVariants({ variant: "outline" })}>
+        <Link
+          href="/sign-up"
+          className={buttonVariants({ variant: "outline" })}
+        >
           {free?.ctaLabel ?? "Get started"}
         </Link>
       ),

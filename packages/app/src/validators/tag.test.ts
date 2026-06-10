@@ -18,8 +18,8 @@ describe("tag validators", () => {
   });
 
   it("rejects an over-long name", () => {
-    expect(
-      createTagSchema.safeParse({ name: "x".repeat(51) }).success,
-    ).toBe(false);
+    expect(createTagSchema.safeParse({ name: "x".repeat(51) }).success).toBe(
+      false,
+    );
   });
 });

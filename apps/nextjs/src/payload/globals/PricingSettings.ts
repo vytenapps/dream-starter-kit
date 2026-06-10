@@ -53,7 +53,7 @@ export const PricingSettings: GlobalConfig = {
       name: "freeTier",
       type: "group",
       label: "Free tier card",
-      admin: { condition: (data) => Boolean(data?.showFreeTier) },
+      admin: { condition: (data) => Boolean(data.showFreeTier) },
       fields: [
         { name: "name", type: "text", defaultValue: "Free" },
         {

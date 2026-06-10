@@ -436,7 +436,8 @@ export async function seedCmsContent(
           data: {
             name: "Dream Annual Plan",
             slug: "dream-annual",
-            description: "Full access, billed yearly. Includes a 7-day free trial.",
+            description:
+              "Full access, billed yearly. Includes a 7-day free trial.",
             pricingType: "recurring",
             interval: "year",
             unitAmount: 9999,

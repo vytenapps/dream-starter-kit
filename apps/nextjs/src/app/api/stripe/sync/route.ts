@@ -4,7 +4,7 @@ import config from "@payload-config";
 import { getPayload } from "payload";
 import { z } from "zod/v4";
 
-import type { Coupon, Plan } from "@acme/cms";
+import type { Coupon } from "@acme/cms";
 
 import { env } from "~/env";
 import { getStripe } from "~/lib/stripe";
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   if (!parsed.success || (!parsed.data.id && !parsed.data.all)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
-  const { collection, id, all } = parsed.data;
+  const { collection, id } = parsed.data;
   const stripe = getStripe();
 
   // Collect the doc ids to sync (one, or every doc in the collection).
@@ -64,11 +64,11 @@ export async function POST(request: Request) {
   for (const docId of ids) {
     try {
       if (collection === "plans") {
-        const plan = (await payload.findByID({
+        const plan = await payload.findByID({
           collection: "plans",
           id: docId,
           depth: 0,
-        })) as Plan;
+        });
         const res = await syncPlanToStripe(stripe, {
           id: plan.id,
           name: plan.name,
@@ -95,11 +95,11 @@ export async function POST(request: Request) {
           overrideAccess: true,
         });
       } else {
-        const coupon = (await payload.findByID({
+        const coupon = await payload.findByID({
           collection: "coupons",
           id: docId,
           depth: 1,
-        })) as Coupon;
+        });
         const res = await syncCouponToStripe(stripe, {
           id: coupon.id,
           name: coupon.name,

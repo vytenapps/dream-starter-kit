@@ -63,7 +63,7 @@ export const Coupons: CollectionConfig = {
           defaultValue: "usd",
           admin: {
             width: "30%",
-            condition: (data) => data?.discountType === "amount_off",
+            condition: (data) => data.discountType === "amount_off",
           },
         },
       ],
@@ -93,7 +93,7 @@ export const Coupons: CollectionConfig = {
           label: "Repeat for",
           admin: {
             width: "30%",
-            condition: (data) => data?.duration === "repeating",
+            condition: (data) => data.duration === "repeating",
           },
         },
         {
@@ -108,7 +108,7 @@ export const Coupons: CollectionConfig = {
             width: "30%",
             description:
               "Years are converted to months for Stripe (2 years → 24 months).",
-            condition: (data) => data?.duration === "repeating",
+            condition: (data) => data.duration === "repeating",
           },
         },
       ],
@@ -204,7 +204,7 @@ export const Coupons: CollectionConfig = {
       admin: {
         position: "sidebar",
         readOnly: true,
-        condition: (data) => data?.syncStatus === "error",
+        condition: (data) => data.syncStatus === "error",
       },
     },
     {

@@ -34,7 +34,8 @@ export function PlanCheckoutButton({
         body: JSON.stringify({ planId }),
       });
       const json = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !json.url) throw new Error(json.error ?? "Checkout failed");
+      if (!res.ok || !json.url)
+        throw new Error(json.error ?? "Checkout failed");
       window.location.href = json.url;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Checkout failed");

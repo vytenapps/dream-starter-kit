@@ -44,9 +44,11 @@ async function listTags(userId: string) {
 
 export async function GET(request: Request) {
   const docId = new URL(request.url).searchParams.get("docId");
-  if (!docId) return NextResponse.json({ error: "Missing docId" }, { status: 400 });
+  if (!docId)
+    return NextResponse.json({ error: "Missing docId" }, { status: 400 });
   const userId = await resolveSupabaseUserId(docId);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   return NextResponse.json({ tags: await listTags(userId) });
 }
 
@@ -58,7 +60,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
   const userId = await resolveSupabaseUserId(parsed.data.docId);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const admin = createAdminClient();
   const { data: tag, error } = await admin
@@ -70,11 +73,17 @@ export async function POST(request: Request) {
     .select("id")
     .maybeSingle();
   if (error || !tag) {
-    return NextResponse.json({ error: "Could not create tag" }, { status: 502 });
+    return NextResponse.json(
+      { error: "Could not create tag" },
+      { status: 502 },
+    );
   }
   await admin
     .from("user_tags")
-    .upsert({ user_id: userId, tag_id: tag.id }, { onConflict: "user_id,tag_id" });
+    .upsert(
+      { user_id: userId, tag_id: tag.id },
+      { onConflict: "user_id,tag_id" },
+    );
   return NextResponse.json({ tags: await listTags(userId) });
 }
 
@@ -86,7 +95,8 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
   const userId = await resolveSupabaseUserId(parsed.data.docId);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const admin = createAdminClient();
   await admin

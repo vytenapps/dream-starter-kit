@@ -19,7 +19,10 @@ const bodySchema = z.object({ planId: z.union([z.string(), z.number()]) });
 
 export async function POST(request: Request) {
   if (!env.STRIPE_SECRET_KEY) {
-    return NextResponse.json({ error: "Billing not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "Billing not configured" },
+      { status: 503 },
+    );
   }
 
   const parsed = bodySchema.safeParse(await request.json());

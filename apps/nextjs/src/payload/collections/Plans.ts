@@ -21,7 +21,13 @@ export const Plans: CollectionConfig = {
   admin: {
     useAsTitle: "name",
     group: "Payments",
-    defaultColumns: ["name", "pricingType", "unitAmount", "active", "syncStatus"],
+    defaultColumns: [
+      "name",
+      "pricingType",
+      "unitAmount",
+      "active",
+      "syncStatus",
+    ],
     description:
       "Author plans here, then press “Sync to Stripe” to create/update the " +
       "matching Stripe product and price. Stripe prices are immutable, so " +
@@ -78,7 +84,7 @@ export const Plans: CollectionConfig = {
           admin: {
             width: "50%",
             // Only meaningful for recurring plans.
-            condition: (data) => data?.pricingType === "recurring",
+            condition: (data) => data.pricingType === "recurring",
           },
         },
       ],
@@ -94,7 +100,8 @@ export const Plans: CollectionConfig = {
           label: "Price (in cents)",
           admin: {
             width: "50%",
-            description: "Amount in the smallest currency unit, e.g. 999 = $9.99.",
+            description:
+              "Amount in the smallest currency unit, e.g. 999 = $9.99.",
           },
         },
         {
@@ -112,7 +119,7 @@ export const Plans: CollectionConfig = {
           admin: {
             width: "25%",
             description: "0 / empty = no trial.",
-            condition: (data) => data?.pricingType === "recurring",
+            condition: (data) => data.pricingType === "recurring",
           },
         },
       ],
@@ -126,7 +133,7 @@ export const Plans: CollectionConfig = {
           "Discount the first billing period only (e.g. $1.99 first month, " +
           "then the standard price recurs). Implemented as a Stripe coupon with " +
           "duration=once, applied automatically at checkout.",
-        condition: (data) => data?.pricingType === "recurring",
+        condition: (data) => data.pricingType === "recurring",
       },
       fields: [
         { name: "enabled", type: "checkbox", defaultValue: false },
@@ -137,7 +144,7 @@ export const Plans: CollectionConfig = {
           label: "Intro price (in cents)",
           admin: {
             description: "First-period price, e.g. 199 = $1.99.",
-            condition: (_data, sibling) => Boolean(sibling?.enabled),
+            condition: (_data, sibling) => Boolean(sibling.enabled),
           },
         },
       ],
@@ -155,7 +162,10 @@ export const Plans: CollectionConfig = {
         {
           name: "badge",
           type: "text",
-          admin: { width: "40%", description: 'e.g. "Save 17%" or "Best value".' },
+          admin: {
+            width: "40%",
+            description: 'e.g. "Save 17%" or "Best value".',
+          },
         },
         {
           name: "highlighted",
@@ -216,7 +226,7 @@ export const Plans: CollectionConfig = {
       admin: {
         position: "sidebar",
         readOnly: true,
-        condition: (data) => data?.syncStatus === "error",
+        condition: (data) => data.syncStatus === "error",
       },
     },
     {

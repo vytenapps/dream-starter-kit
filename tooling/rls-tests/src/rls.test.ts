@@ -51,6 +51,7 @@ let reminderAId = "";
 let orgAId = "";
 let msgAId = "";
 let notifAId = "";
+let tagId = "";
 
 async function createUser(email: string, password: string): Promise<string> {
   const { data, error } = await admin.auth.admin.createUser({
@@ -165,6 +166,16 @@ beforeAll(async () => {
     .single();
   if (!notif.data) throw new Error("notifications insert returned no row");
   notifAId = notif.data.id;
+
+  // A tag definition + a link assigning it to A (service-role written).
+  const tag = await admin
+    .from("tags")
+    .insert({ name: `rls-tag-${stamp}`, is_system: false })
+    .select()
+    .single();
+  if (!tag.data) throw new Error("tags insert returned no row");
+  tagId = tag.data.id;
+  await admin.from("user_tags").insert({ user_id: aId, tag_id: tagId });
 });
 
 afterAll(async () => {
@@ -173,6 +184,7 @@ afterAll(async () => {
   if (orgAId) await admin.from("organizations").delete().eq("id", orgAId); // cascades memberships + invitations
   await admin.from("customers").delete().eq("user_id", aId);
   await admin.from("notifications").delete().eq("user_id", aId);
+  if (tagId) await admin.from("tags").delete().eq("id", tagId); // cascades user_tags
   await admin.from("push_tokens").delete().eq("user_id", aId);
   await admin.from("files").delete().eq("user_id", aId);
   if (threadAId) await admin.from("chat_threads").delete().eq("id", threadAId); // cascades chat_messages
@@ -470,6 +482,41 @@ describe("RLS: customers are read-own (service-role written)", () => {
       .select("*")
       .eq("user_id", aId);
     expect(data).toHaveLength(0);
+  });
+});
+
+describe("RLS: user_tags are private to their owner", () => {
+  it("A can read A's own tags", async () => {
+    const { data, error } = await clientA
+      .from("user_tags")
+      .select("*")
+      .eq("user_id", aId);
+    expect(error).toBeNull();
+    expect(data?.length ?? 0).toBeGreaterThanOrEqual(1);
+  });
+
+  it("B cannot read A's tags", async () => {
+    const { data } = await clientB
+      .from("user_tags")
+      .select("*")
+      .eq("user_id", aId);
+    expect(data).toHaveLength(0);
+  });
+
+  it("B cannot assign a tag to A (no client write policy)", async () => {
+    const { error } = await clientB
+      .from("user_tags")
+      .insert({ user_id: aId, tag_id: tagId });
+    expect(error).not.toBeNull();
+  });
+
+  it("tag definitions are readable by any authenticated user", async () => {
+    const { data, error } = await clientB
+      .from("tags")
+      .select("*")
+      .eq("id", tagId);
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
   });
 });
 

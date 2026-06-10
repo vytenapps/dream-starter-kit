@@ -17,12 +17,16 @@ import { createAdminClient } from "~/lib/supabase/admin";
  */
 export const dynamic = "force-dynamic";
 
-const bodySchema = z.object({ docId: z.string(), grant: z.boolean().default(true) });
+const bodySchema = z.object({
+  docId: z.string(),
+  grant: z.boolean().default(true),
+});
 
 export async function POST(request: Request) {
   const payload = await getPayload({ config });
   const { user } = await payload.auth({ headers: await headers() });
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = bodySchema.safeParse(await request.json());
   if (!parsed.success) {

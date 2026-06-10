@@ -22,8 +22,8 @@ async function main() {
         id: user.id,
         email: user.email,
         name:
-          (user.user_metadata?.display_name as string | undefined) ??
-          (user.user_metadata?.name as string | undefined),
+          (user.user_metadata.display_name as string | undefined) ??
+          (user.user_metadata.name as string | undefined),
       });
       await ensureFreeTag(user.id);
       total++;
