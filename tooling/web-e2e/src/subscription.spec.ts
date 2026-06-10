@@ -257,9 +257,7 @@ test.describe("stripe checkout (test mode)", () => {
     if (await postal.isVisible().catch(() => false)) {
       await postal.fill("90210");
     }
-    await page
-      .locator('[data-testid="hosted-payment-submit-button"]')
-      .click();
+    await page.locator('[data-testid="hosted-payment-submit-button"]').click();
   }
 
   /** Assert via the Stripe API that the returned session created a live sub. */

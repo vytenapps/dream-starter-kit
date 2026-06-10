@@ -12,9 +12,7 @@ import { createClient } from "~/lib/supabase/server";
  * `/a`.
  */
 function safeNext(raw: string | null): string {
-  return raw && raw.startsWith("/") && !raw.startsWith("//")
-    ? raw
-    : "/a";
+  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/a";
 }
 
 /**
