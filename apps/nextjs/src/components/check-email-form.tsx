@@ -151,11 +151,7 @@ export function CheckEmailForm({
                 />
               </Field>
               <Field>
-                <Button
-                  type="submit"
-                  variant="outline"
-                  disabled={pending || !email.trim()}
-                >
+                <Button type="submit" disabled={pending || !email.trim()}>
                   {pending ? "Sending…" : "Continue with email"}
                 </Button>
               </Field>
