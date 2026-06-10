@@ -88,6 +88,28 @@ CI (`.github/workflows/ci.yml`) runs all of these on every PR: lint · format ·
 typecheck · unit · license, plus an `integration` job that boots Supabase and runs
 `test:rls` + Playwright.
 
+## Cloud sessions (Claude Code on the web)
+
+Cloud session containers start bare: no Docker daemon, no Supabase CLI, no `.env`.
+The **SessionStart hook** (`.claude/hooks/session-start.sh`, registered in
+`.claude/settings.json`, cloud-only via `$CLAUDE_CODE_REMOTE`) bootstraps the full
+local stack automatically: it starts `dockerd`, installs the Supabase CLI,
+`pnpm install`s, boots Supabase, writes `.env` from `.env.example` with the local
+keys + a generated `PAYLOAD_SECRET`, and runs `pnpm db:reset`. Every step is
+idempotent, so resumed sessions are fast. Don't re-do these steps by hand — if the
+stack seems down, just rerun the hook.
+
+Cloud-session quirks:
+- **`supabase start` must exclude edge-runtime** (`-x edge-runtime`): that container
+  sets rlimits the sandboxed nested-container runtime forbids. Edge functions
+  (Stripe webhook, `process-reminders`) don't run in cloud sessions.
+- **Unset optional env vars must be absent, not `""`** — empty strings fail the zod
+  schema's `min(1)` checks. The hook comments them out when generating `.env`.
+- The hook does **not** start the dev server. Use the `web` configuration in
+  `.claude/launch.json` (the cloud preview browser) or `pnpm dev:next`.
+- Local URLs: app :3000 · Supabase API :54321 · Studio :54323 · Mailpit :54324
+  (sign-up confirmation emails land in Mailpit).
+
 ## How to add a modular feature
 
 Features in this kit are **modular**: each one spans the same predictable set of
