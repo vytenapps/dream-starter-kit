@@ -41,15 +41,24 @@ export default function Hero({
   mockup = false,
   className,
 }: HeroProps) {
+  // Tamer scale than upstream Launch UI (pt-16 + md:text-8xl on top of the
+  // old Section padding): the display size is capped at lg:text-7xl and the
+  // extra top padding reduced so the full hero — badge through buttons — fits
+  // a laptop viewport without scrolling. The fade-bottom mask (which melts the
+  // bottom of the section into the page) is applied only when a mockup is
+  // present: upstream always renders a screenshot below the buttons, so the
+  // mask eats the mockup's bottom edge — without one it would fade out the
+  // buttons.
   return (
     <Section
       className={cn(
-        "fade-bottom overflow-hidden pb-0 sm:pb-0 md:pb-0",
+        "overflow-hidden pb-0 sm:pb-0 md:pb-0",
+        mockup !== false && "fade-bottom",
         className,
       )}
     >
-      <div className="max-w-container mx-auto flex flex-col gap-12 pt-16 sm:gap-24">
-        <div className="flex flex-col items-center gap-6 text-center sm:gap-12">
+      <div className="max-w-container mx-auto flex flex-col gap-12 pt-4 sm:gap-16 sm:pt-8">
+        <div className="flex flex-col items-center gap-6 text-center sm:gap-8">
           {(badgeText || badgeLink) && (
             <Badge variant="outline" className="animate-appear gap-2">
               {badgeText && (
@@ -63,7 +72,7 @@ export default function Hero({
               )}
             </Badge>
           )}
-          <h1 className="animate-appear from-foreground to-foreground dark:to-muted-foreground relative z-10 inline-block bg-linear-to-r bg-clip-text text-4xl leading-tight font-semibold text-balance text-transparent drop-shadow-2xl sm:text-6xl sm:leading-tight md:text-8xl md:leading-tight">
+          <h1 className="animate-appear from-foreground to-foreground dark:to-muted-foreground relative z-10 inline-block bg-linear-to-r bg-clip-text text-4xl leading-[1.1] font-semibold text-balance text-transparent drop-shadow-2xl sm:text-5xl md:text-6xl lg:text-7xl">
             {title}
           </h1>
           <p className="text-md animate-appear text-muted-foreground relative z-10 max-w-[740px] font-medium text-balance opacity-0 delay-100 sm:text-xl">
