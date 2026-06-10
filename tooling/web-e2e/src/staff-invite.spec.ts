@@ -34,8 +34,10 @@ test("inviting a staff user from /admin → accept invite → /admin", async ({
   const email = `invitee-${Date.now()}@test.local`;
 
   await page.goto("/admin/collections/users/create");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Name").fill("Invited Editor");
+  // Target Payload's stable field ids — the users form now carries the full
+  // member profile (Display Name / First Name / …), so label text is ambiguous.
+  await page.locator("#field-email").fill(email);
+  await page.locator("#field-name").fill("Invited Editor");
   await page.getByRole("button", { name: "Save" }).click();
 
   // The hook ran iff the doc saved — Payload confirms with a success toast.

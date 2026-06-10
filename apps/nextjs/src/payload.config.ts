@@ -219,7 +219,12 @@ export default buildConfig({
     // so plans/coupons sync via their afterChange hooks instead
     // (payload/hooks/sync-*-to-stripe.ts). The REST proxy stays off.
     stripePlugin({
-      stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
+      // Placeholder when unconfigured: webhook SIGNATURE verification only
+      // needs the endpoint secret, but stripe v22's constructor rejects an
+      // empty key outright. API calls with the placeholder fail loudly (and
+      // the mirror handler catches its optional customer lookup).
+      stripeSecretKey:
+        process.env.STRIPE_SECRET_KEY ?? "sk_test_unconfigured_placeholder",
       isTestKey: (process.env.STRIPE_SECRET_KEY ?? "").startsWith("sk_test"),
       stripeWebhooksEndpointSecret: process.env.STRIPE_WEBHOOKS_ENDPOINT_SECRET,
       rest: false,

@@ -72,6 +72,8 @@ if [ ! -f .env ]; then
     -e "s|^S3_ACCESS_KEY_ID=.*|S3_ACCESS_KEY_ID=\"$S3_PROTOCOL_ACCESS_KEY_ID\"|" \
     -e "s|^S3_SECRET_ACCESS_KEY=.*|S3_SECRET_ACCESS_KEY=\"$S3_PROTOCOL_ACCESS_KEY_SECRET\"|" \
     -e "s|^CRON_SECRET=.*|CRON_SECRET=\"local-dev-cron-secret\"|" \
+    -e "s|^AI_GATEWAY_API_KEY=.*|AI_GATEWAY_API_KEY=\"dummy-local-key-not-real\"|" \
+    -e "s|^STRIPE_WEBHOOKS_ENDPOINT_SECRET=.*|STRIPE_WEBHOOKS_ENDPOINT_SECRET=\"whsec_e2e_test_secret\"|" \
     .env
   # Unset optional vars must be absent, not empty — min(1) rejects "".
   # (Use `/` as the s-delimiter: `|` would collide with the alternation.)

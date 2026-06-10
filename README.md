@@ -27,7 +27,7 @@ backend are wired in. Clone it, rename a few things, and extend it into a real p
   shared react-query hooks, fully protected by Row-Level Security. This is the
   reference pattern you copy for your own per-user tables.
 - **A content CMS** — **Payload CMS v3** manages editorial/marketing content
-  (`articles`, `events`, `videos`, `audio`, `photos`, `locations`, plus `pages`) from
+  (`posts`, `videos`, `audio`, `photos`, `series`/courses, `locations`, `events`, plus community, engagement and marketing collections) from
   an admin at **`/admin`**. Public pages render **server-side** for SEO; the mobile app
   reads the same content over REST. Payload runs web-only and owns its own `cms` schema
   outside RLS (see [Architecture → Content](./docs/ARCHITECTURE.md#410-content--payload-cms)).
@@ -136,7 +136,7 @@ and confirm your email — confirmations are on locally to match hosted Supabase
 confirmation email (link + a manual 6-digit code) lands in **Mailpit** at
 http://127.0.0.1:54324. The **first** signup is automatically flagged staff (the
 founder/admin). Open `/admin` while signed in and you're let straight into the CMS — the
-kit provisions your CMS user, then seeds demo content (pages, articles, an event, site
+kit provisions your CMS user, then seeds demo content (pages, posts, an event, site
 nav) with a progress bar and drops you into the admin. To add more editors later, invite
 them from **`/admin` → Users → Create New** — they get a Supabase invite email and set a
 password on `/accept-invite` (requires `SUPABASE_SERVICE_ROLE_KEY` in the web app's env).
@@ -286,7 +286,7 @@ The kit ships two reference shapes to copy, depending on whose data it is:
   **`reminders`** feature: a migration (table + RLS + FK index), a validator, shared
   react-query hooks, web + native screens, and an RLS test. Full recipe in
   [`CLAUDE.md`](./CLAUDE.md#how-to-add-a-modular-feature).
-- **Editorial / marketing content** (the same for every visitor — articles, events,
+- **Editorial / marketing content** (the same for every visitor — posts, events,
   pages) — add a **Payload collection** instead of a Supabase table. It's served on
   public pages and to mobile over REST, and is governed by Payload's access-control
   (not RLS). Recipe in

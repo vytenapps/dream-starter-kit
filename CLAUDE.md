@@ -34,13 +34,19 @@ clarity beat cleverness.
 
 ## The golden rules (do not violate)
 
-1. **RLS on every app table.** Authorization lives in Postgres, not app code. Every
-   table in the `public` schema has an owner (`user_id`/`owner_id`, or reachable via
-   `memberships`) and policies scoped to `(select auth.uid())`. See `docs/ERD.md`.
-   **The one allowed exception is Payload CMS**, which owns the separate `cms`
-   schema and enforces its own access-control; it's contained via a dedicated
-   least-privilege, server-only `payload_cms` role (no access to `public`/`auth`) —
-   so it's outside RLS _by design_, not by oversight. Don't put per-user app data there.
+1. **RLS on every app table.** Authorization for `public` lives in Postgres, not app
+   code. Every table in the `public` schema has an owner (`user_id`/`owner_id`, or
+   reachable via `memberships`) and policies scoped to `(select auth.uid())`. See
+   `docs/ERD.md`. **The one allowed exception is Payload CMS**, which owns the
+   separate `cms` schema and enforces its own **role-based access rules** — content
+   AND member-engagement data (profiles, favorites, comments, enrollments, the
+   `subscriptions` mirror) live there governed by Payload access control, contained
+   via a dedicated least-privilege, server-only `payload_cms` role (no access to
+   `public`/`auth`). Note the CMS API bridge is **staff-only today** — members reach
+   their CMS-side data through your own server routes until the member-auth
+   follow-up ships. Security-critical per-user state that RLS clients consume
+   directly (auth, chat, reminders, billing entitlements in `public.subscriptions`)
+   stays in `public` under RLS.
 2. **Service role key is server-only.** It bypasses RLS. It appears ONLY in
    Supabase edge functions / server code (e.g. the Stripe webhook). Never in
    `apps/expo` or web client code.
@@ -256,12 +262,24 @@ tables with the recipe above. For content-type guidance, see the README and
 
 ## How to add a Payload content type
 
-For **editorial/marketing content** (the same for every visitor — articles, events,
-pages, …), add a **Payload collection**, not a Supabase table. Content lives in the
-`cms` schema and is governed by **Payload's access-control, not RLS**.
+For **content and member engagement** (anything that isn't security-critical
+RLS-client state), add a **Payload collection**, not a Supabase table. The CMS ships
+a full registry across five admin groups — **Content** (posts, videos incl. vertical
+shorts, audio/podcast episodes, photos, series/courses + lessons, locations, events,
+categories/tags), **Community** (space-groups → community-spaces → community-posts,
+one threaded `comments` system, a `reports` moderation queue), **People** (users,
+device-tokens, feed-tokens, favorites, enrollments, reviews), **Commerce**
+(plans/coupons/subscriptions) and **Marketing** (pages, onboarding, banners,
+notifications, forms). Collections live in the `cms` schema and are governed by
+**Payload's role-based access-control, not RLS** (`payload/access/index.ts`:
+`isAdmin`/`isStaff`/`publishedOrStaff`/`ownsOrStaff`…; owner-scoped collections force
+the owner on create via `payload/hooks/assign-owner.ts`).
 
 1. **Collection.** Add a config in `apps/nextjs/src/payload/collections/` (copy
-   `Articles.ts`). Set fields, `slug`, and `access` (e.g. published-or-admin reads).
+   `Posts.ts` for editorial content, `Favorites.ts` for owner-scoped member data).
+   Set fields, `slug`, `admin.group`, and `access` (e.g. `publishedOrStaff` reads).
+   Reusable field helpers live in `payload/fields/` (slug, link, accessLevel,
+   commentsEnabled, destination).
 2. **Register it** in `apps/nextjs/src/payload.config.ts` (`collections: [...]`).
 3. **Types.** `pnpm cms:gen-types` regenerates Payload's types into `packages/cms`
    (`@acme/cms`) — never hand-edit. Then `pnpm cms:migrate:create` to generate a migration
@@ -272,7 +290,7 @@ pages, …), add a **Payload collection**, not a Supabase table. Content lives i
 4. **Web page.** Add a public RSC route under `apps/nextjs/src/app/(frontend)/(public)/`
    that fetches via Payload's **Local API** (`getPayload(...).find(...)`), for SEO.
 5. **Mobile.** Add a REST hook in `packages/app` (copy `use-content.ts`'s
-   `useArticles`/`useEvents`), typed by `@acme/cms`, and a native screen under
+   `usePosts`/`useEvents`), typed by `@acme/cms`, and a native screen under
    `apps/expo/src/app/(app)/content/`.
 6. **No RLS, no rls-tests.** Content is access-controlled by Payload — do **not**
    add it to `docs/ERD.md` or `tooling/rls-tests`. (Add a Playwright `content.spec.ts`
@@ -290,15 +308,22 @@ pages, …), add a **Payload collection**, not a Supabase table. Content lives i
 **CMS auth is SSO from Supabase — there is no second login.** Payload's local strategy
 is disabled; `apps/nextjs/src/payload/auth/supabase-strategy.ts` authenticates each CMS
 request from the Supabase session and provisions a `cms.users` row (linked by
-`supabaseUserId`). Access is **default-deny**: only users with `profiles.is_staff = true`
-get in. The first signup is auto-flagged; further staff are **invited from `/admin` →
-Users → Create New** — a collection hook (`payload/hooks/invite-user.ts`) emails a
-Supabase invite and flags `is_staff` via the service-role client
-(`lib/supabase/admin.ts`, server-only — the pattern golden rule #2 allows); the invitee
-sets a password on `/accept-invite`. The bridge itself runs in the Next.js server — it
-reads `profiles` via the user's own RLS session and writes `cms.users` via the Local
-API — so it never uses the `payload_cms` DB role or the service-role key (golden rules
-#1–2 hold). `/admin` is gated in `proxy.ts`.
+`supabaseUserId`). Users carry **`roles[]`** (`admin`/`editor`/`author`/`member`,
+WordPress-style): every app signup is mirrored in as a `member`
+(`lib/cms/mirror-user.ts`); staff get admin/editor and may enter `/admin`. Access is
+**default-deny**: only users with `profiles.is_staff = true` get in — **the bridge
+authenticates staff only for now**; member-scoped collections carry correct
+owner-scoped access rules, but opening `/cms-api` to member sessions is a documented
+follow-up. The first signup is auto-flagged (and JIT-provisioned `admin`); further
+staff are **invited from `/admin` → Users → Create New** — a collection hook
+(`payload/hooks/invite-user.ts`) emails a Supabase invite and flags `is_staff` via
+the service-role client (`lib/supabase/admin.ts`, server-only — the pattern golden
+rule #2 allows); the invitee sets a password on `/accept-invite`. Users are
+soft-deleted (`trash: true`): the bridge rejects trashed rows and the mirror won't
+resurrect them — restore from the admin Trash view. The bridge itself runs in the
+Next.js server — it reads `profiles` via the user's own RLS session and writes
+`cms.users` via the Local API — so it never uses the `payload_cms` DB role or the
+service-role key (golden rules #1–2 hold). `/admin` is gated in `proxy.ts`.
 
 **Sign-up requires email confirmation** (`enable_confirmations = true` locally, matching
 hosted Supabase): the form routes to `/check-email`, which offers the emailed link
@@ -309,28 +334,43 @@ links, whose one-time tokens break for re-sent emails (no PKCE state) and get bu
 by prefetchers/navigation restarts. E2E specs pull link + code from Mailpit — see
 `tooling/web-e2e/README.md`.
 
-## Payments (Payload-authored plans → Stripe → DB)
+## Payments (Payload ⇄ Stripe via @payloadcms/plugin-stripe)
 
-The billing catalog is **authored in Payload**, not the Stripe dashboard. `Plans` and
-`Coupons` live under the **Payments** admin nav group (`apps/nextjs/src/payload/collections/`),
-and `PricingSettings` (a global) curates the public `/pricing` page (which ≤3 plans to feature
-+ a Free tier). The default three plans (Dream Monthly/Annual/Lifetime) + a welcome coupon are
-seeded by `seedCmsContent()`.
+The billing catalog is **authored in Payload**, not the Stripe dashboard. `Plans`,
+`Coupons` and the read-only `Subscriptions` mirror live under the **Commerce** admin nav
+group (`apps/nextjs/src/payload/collections/`), and `PricingSettings` (a global) curates
+the public `/pricing` page (which ≤3 plans to feature + a Free tier). The default three
+plans (Dream Monthly/Annual/Lifetime) + a welcome coupon are seeded by `seedCmsContent()`.
 
-- **Sync to Stripe** is a manual, staff-only action (a `ui` field button → `POST /api/stripe/sync`
-  → `lib/stripe/sync.ts`). It creates/updates the Stripe product and **creates a new price +
-  archives the old one** whenever the amount/interval changes (Stripe prices are **immutable** —
-  never mutate, always recreate). Coupons follow the same recreate-on-change rule. Resulting
-  Stripe ids are written back onto the Payload doc; the **existing Stripe webhook** then mirrors
-  products/prices into `public.*` for clients. Flow: **Payload → Stripe → DB**, one way.
-- **Intro offers** ("$1.99 first month, then $39.99") = a `duration:once` coupon auto-applied at
-  checkout. **Repeating** coupons take N months *or* N years (years × 12 → Stripe `duration_in_months`).
+- **Payload → Stripe is automatic**: saving a plan/coupon runs an `afterChange` hook
+  (`payload/hooks/sync-plan-to-stripe.ts` / `sync-coupon-to-stripe.ts` →
+  `lib/stripe/sync.ts`). It creates/updates the Stripe product and **creates a new price +
+  archives the old one** whenever the amount/interval changes (Stripe prices are
+  **immutable** — never mutate, always recreate). Coupons follow the same
+  recreate-on-change rule. A per-doc `skipSync` checkbox opts out; failures land on
+  `syncStatus`/`syncError` instead of failing the save; the seed skips the hook
+  (`context.skipStripeSync`), so seeded plans stay `unsynced` until first saved.
+- **Stripe → Payload** runs through `@payloadcms/plugin-stripe`'s signature-verified
+  webhook endpoint (`POST /cms-api/stripe/webhooks`, secret
+  `STRIPE_WEBHOOKS_ENDPOINT_SECRET`): `customer.subscription.*` events upsert the
+  read-only CMS `subscriptions` collection (`payload/stripe/webhooks.ts`; user resolved
+  via `public.customers`, plan via `stripePriceId`). The plugin's Stripe REST proxy is
+  **off** (`rest: false`) and its declarative sync is unused (it can't express price
+  immutability/intro coupons). The **edge-function webhook** (separate Stripe endpoint,
+  `STRIPE_WEBHOOK_SECRET`) keeps mirroring products/prices/subscriptions into `public.*`
+  for RLS clients — unchanged.
+- **Intro offers** ("$1.99 first month, then $39.99") = a coupon auto-applied at checkout
+  (`once` for one intro period, `repeating` for several; years × 12 → Stripe
+  `duration_in_months`). **Repeating** coupons take N months *or* N years the same way.
 - **Checkout is plan-driven** (`/api/stripe/checkout` takes a Payload `planId`) and supports
   **guest checkout**: an anonymous buyer pays first, then the webhook matches their email to an
-  existing account or creates one + emails a Supabase invite (`/accept-invite` → `/dashboard`).
+  existing account or creates one + emails a Supabase invite (`/accept-invite` → `/a`).
   Stripe stays **web-only** (golden rule #4); mobile shows a read-only `/pricing` and links out.
 - Self-serve billing lives at `/billing` (current plan, change/cancel via the Stripe portal, past
-  invoices). Free→paid upgrade CTA is on `/dashboard`.
+  invoices). Free→paid upgrade CTA is on `/a` (the app home).
+- E2E: `tooling/web-e2e/src/subscription.spec.ts` covers the webhook mirror with
+  self-signed events and (when a test-mode `STRIPE_SECRET_KEY` is set) real Checkout
+  subscription creation — authenticated + guest — with Stripe's 4242 test card.
 
 **User tags** (`public.tags` / `public.user_tags`, RLS read-own) tag each user by plan name (the
 webhook auto-tags on active subscription; "Free" at signup) and are staff-manageable from the
@@ -380,7 +420,7 @@ Payload's native **Edit / API** tabs plus a **Versions** tab. Versioning is **dr
 does not change the live site until you **Publish** (the admin chrome is unaffected either way —
 it uses the fixed `admin-theme.ts` palette). Fields are grouped in tabs
 (Branding · Light · Dark · Typography · Other); branding uploads (app icon/logos) use standard
-Media upload fields. Read access is `publishedOrAdmin` (anonymous visitors get the published
+Media upload fields. Read access is `publishedOrStaff` (anonymous visitors get the published
 theme; staff see drafts); update + `readVersions` are staff-only. Pure color math lives in
 `lib/theme/color.ts` (consumed by `serialize.ts`). **Branding** (app name, favicon, sidebar logo)
 is read server-side by `getBranding()` (lib/payload.ts) and surfaced via `BrandingProvider`.
@@ -400,10 +440,13 @@ Serif fonts (Merriweather/Lora) are loaded on `<html>` alongside the sans/mono s
 
 ## Status
 
-The kit is **feature-complete and ready to clone**: auth, billing, the AI assistant,
-engagement (notifications/reminders/push), the **Payload CMS** content backend
-(articles/events/pages + admin at `/admin`), and the full test/CI suite are all built
-and green. There is **no** example app-domain table — `reminders` is the reference for
-adding your own. Extend it with the modular-feature recipe above, keep every checkpoint
-green (`pnpm typecheck && pnpm lint && pnpm test`), and update this file when
-conventions change.
+The kit is **feature-complete and ready to clone**: auth, billing (plan-driven Stripe
+checkout + the plugin-stripe subscription mirror), the AI assistant, engagement
+(notifications/reminders/push), the **Payload CMS** full registry (content + community
++ people + commerce + marketing collections, admin at `/admin`, app home at `/a`), and
+the full test/CI suite are all built and green. There is **no** example app-domain
+table — `reminders` is the reference for adding your own. The one documented follow-up
+is opening the CMS API bridge to member sessions (member-scoped collections already
+carry the right access rules). Extend the kit with the modular-feature recipe above,
+keep every checkpoint green (`pnpm typecheck && pnpm lint && pnpm test`), and update
+this file when conventions change.

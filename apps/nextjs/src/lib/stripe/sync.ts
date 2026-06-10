@@ -1,12 +1,13 @@
 import type Stripe from "stripe";
 
 /**
- * Push Payload-authored plans and coupons into Stripe (the manual "Sync to
- * Stripe" action). Stripe prices and coupons are **immutable** for their core
- * fields — you cannot change a price's amount or a coupon's discount/duration.
- * So when those change we CREATE a new resource and ARCHIVE the old one, keeping
- * the Payload doc pointed at the current Stripe id. Name/description/metadata are
- * updated in place.
+ * Push Payload-authored plans and coupons into Stripe — called automatically
+ * on save by the collection afterChange hooks (payload/hooks/sync-plan-to-
+ * stripe.ts / sync-coupon-to-stripe.ts). Stripe prices and coupons are
+ * **immutable** for their core fields — you cannot change a price's amount or
+ * a coupon's discount/duration. So when those change we CREATE a new resource
+ * and ARCHIVE the old one, keeping the Payload doc pointed at the current
+ * Stripe id. Name/description/metadata are updated in place.
  *
  * The Stripe webhook (supabase/functions/stripe-webhook) mirrors the resulting
  * products/prices back into the RLS-governed public.* tables, so this is the
