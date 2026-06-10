@@ -115,6 +115,10 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY
           SUPABASE_DB_URL=$DB_URL
           NEXT_PUBLIC_APP_URL=http://localhost:3000
+          # Dummy key so the AI chat route gets past its "AI not configured" 503
+          # guard to the auth check (enforcement.spec.ts asserts unauth → 401).
+          # Never used to call the gateway: the e2e request is unauthenticated.
+          AI_GATEWAY_API_KEY=dummy-ci-key-not-real
           EXPO_PUBLIC_SUPABASE_URL=$API_URL
           EXPO_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
           EXPO_PUBLIC_API_URL=http://localhost:3000
