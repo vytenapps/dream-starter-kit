@@ -144,6 +144,8 @@ export interface UserAuthOperations {
   };
 }
 /**
+ * Creating a user emails them a Supabase invite and grants staff access. If the email already has an account, it is promoted to staff instead (no email is sent).
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
