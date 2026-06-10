@@ -19,7 +19,8 @@
 #   6. pnpm db:reset  (supabase migrations + seeds + Payload CMS migrations)
 #   7. install Playwright's Chromium — the preview pane doesn't work in cloud
 #      sessions, so visual testing happens by driving the app headlessly with
-#      Playwright (screenshots, e2e specs in tooling/web-e2e).
+#      Playwright (screenshots, e2e specs in tooling/web-e2e). Cached under
+#      $PLAYWRIGHT_BROWSERS_PATH, so re-runs are no-ops.
 #
 # It does NOT start the Next.js dev server — use the "web" configuration in
 # .claude/launch.json (the cloud preview browser) or `pnpm dev:next`.
