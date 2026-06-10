@@ -221,6 +221,7 @@ export async function seedCmsContent(
                     description: "web + native apps",
                   },
                   {
+                    label: "built with",
                     value: "100",
                     suffix: "%",
                     description: "TypeScript, end to end",

@@ -45,15 +45,16 @@ export default function Hero({
   // old Section padding): the display size is capped at lg:text-7xl and the
   // extra top padding reduced so the full hero — badge through buttons — fits
   // a laptop viewport without scrolling. The fade-bottom mask (which melts the
-  // bottom of the section into the page) is applied only when a mockup is
-  // present: upstream always renders a screenshot below the buttons, so the
-  // mask eats the mockup's bottom edge — without one it would fade out the
-  // buttons.
+  // bottom of the section into the page) and the zeroed bottom padding are
+  // applied only when a mockup is present: upstream always renders a
+  // screenshot below the buttons, so the mask eats the mockup's bottom edge
+  // and the padding collapse lets it sit flush — without one they would fade
+  // out the buttons and leave them cramped against the section border.
   return (
     <Section
       className={cn(
-        "overflow-hidden pb-0 sm:pb-0 md:pb-0",
-        mockup !== false && "fade-bottom",
+        "overflow-hidden",
+        mockup !== false && "fade-bottom pb-0 sm:pb-0 md:pb-0",
         className,
       )}
     >
