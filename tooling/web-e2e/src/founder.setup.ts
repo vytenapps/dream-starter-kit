@@ -1,28 +1,33 @@
 import { expect, test } from "@playwright/test";
 
+import { FOUNDER_STORAGE_STATE } from "./helpers/founder";
+import { signUpAndConfirm } from "./helpers/mailpit";
+
 /**
  * Setup project — provisions the FOUNDER and asserts the seed-on-signup flow.
  *
  * Requires a FRESH/empty DB (CI starts empty; locally run `supabase db reset`).
- * The first sign-up becomes the owner (`is_staff = true`), so sign-up MUST route
- * through `/welcome` into the CMS seed flow (`/cms-setup`, the shadcn progress
- * bar) and reach `/admin` only after seeding completes. This asserts that flow
- * end-to-end AND leaves a founder + seeded CMS in place, so every other spec's
- * sign-up is a NON-staff user that lands on `/dashboard` and content.spec has
- * data to render.
+ * Email confirmations are ON (matching hosted Supabase), so sign-up first lands
+ * on /check-email and is completed via the confirmation link pulled from
+ * Mailpit. The first sign-up becomes the owner (`is_staff = true`), so it MUST
+ * then route through `/welcome` into the CMS seed flow (`/cms-setup`, the
+ * shadcn progress bar) and reach `/admin` only after seeding completes. This
+ * asserts that flow end-to-end AND leaves a founder + seeded CMS in place, so
+ * every other spec's sign-up is a NON-staff user that lands on `/dashboard`
+ * and content.spec has data to render.
  *
  * Strict on purpose: the founder MUST reach `/cms-setup` (not `/dashboard`). A
  * regression in `/welcome` routing or the `is_staff` flag would send them to
  * `/dashboard` — this test then fails loudly instead of passing silently.
  */
 test("founder sign-up seeds the CMS before /admin", async ({ page }) => {
+  // Well past the default 30s: confirmation email round-trip + CMS seeding +
+  // the Payload admin bundle's first compile on a cold dev server.
+  test.setTimeout(180_000);
+
   const email = `founder-${Date.now()}@test.local`;
 
-  await page.goto("/sign-up");
-  await page.getByLabel("Name").fill("Founder");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill("password123");
-  await page.getByRole("button", { name: "Create Account" }).click();
+  await signUpAndConfirm(page, { name: "Founder", email });
 
   // The founder (first user) must be routed into the seed flow — NOT /dashboard.
   await page.waitForURL(/\/cms-setup/, { timeout: 15_000 });
@@ -41,4 +46,7 @@ test("founder sign-up seeds the CMS before /admin", async ({ page }) => {
   expect(status.ok()).toBeTruthy();
   const body = (await status.json()) as { seeded?: boolean };
   expect(body.seeded).toBe(true);
+
+  // Persist the founder session for specs that act as staff (staff-invite).
+  await page.context().storageState({ path: FOUNDER_STORAGE_STATE });
 });

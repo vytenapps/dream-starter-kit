@@ -8,6 +8,15 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
+  // Tests run against `next dev`, where parallel workers all trigger
+  // first-compiles of their routes — the 30s default times tests out on the
+  // email-confirmation flows (sign-up → Mailpit → verify-link redirect chain).
+  timeout: 120_000,
+  // Local: cap the worker count — most specs start by signing up, and a
+  // simultaneous burst of signups (each sending a confirmation email inside
+  // GoTrue's request window) can push local GoTrue past its 10s transaction
+  // deadline (504s). CI keeps Playwright's default (cores/2).
+  workers: process.env.CI ? undefined : 4,
   use: {
     baseURL,
     trace: "on-first-retry",
