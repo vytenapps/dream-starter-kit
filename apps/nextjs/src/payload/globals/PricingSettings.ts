@@ -1,6 +1,6 @@
 import type { GlobalConfig } from "payload";
 
-import { anyone, isAdmin } from "../access";
+import { anyone, isStaff } from "../access";
 
 /**
  * Controls what the public /pricing page shows. Staff curate up to three paid
@@ -12,7 +12,7 @@ export const PricingSettings: GlobalConfig = {
   slug: "pricing-settings",
   label: "Pricing Page",
   admin: { group: "Payments" },
-  access: { read: anyone, update: isAdmin },
+  access: { read: anyone, update: isStaff },
   fields: [
     {
       type: "row",

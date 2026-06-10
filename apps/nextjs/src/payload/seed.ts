@@ -77,7 +77,7 @@ export async function seedCmsContent(
       data: {
         email: "editor@example.com",
         name: "Demo Editor",
-        role: "admin",
+        roles: ["admin"],
       },
     });
     authorId = demo.id;

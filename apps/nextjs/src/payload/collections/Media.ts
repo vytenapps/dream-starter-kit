@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { anyone, isAdmin } from "../access";
+import { anyone, isStaff } from "../access";
 
 /**
  * Uploaded assets (images, audio, video posters). Files are offloaded to
@@ -11,9 +11,9 @@ export const Media: CollectionConfig = {
   slug: "media",
   access: {
     read: anyone,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    create: isStaff,
+    update: isStaff,
+    delete: isStaff,
   },
   admin: { group: "Content" },
   upload: {

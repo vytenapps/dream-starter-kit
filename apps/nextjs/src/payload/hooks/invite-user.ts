@@ -91,7 +91,17 @@ export const inviteUserOnCreate: CollectionBeforeChangeHook<User> = async ({
     );
   }
 
-  return { ...data, supabaseUserId };
+  // An invited user is staff by definition (the grant above) — make sure the
+  // CMS row carries a staff role even if the form was left on the default
+  // `member`, so role-based access (access.admin, isStaff) matches.
+  const roles = data.roles ?? [];
+  const staffRoles = roles.some((r) =>
+    ["admin", "editor", "author"].includes(r),
+  )
+    ? roles
+    : [...roles, "editor" as const];
+
+  return { ...data, supabaseUserId, roles: staffRoles };
 };
 
 /**

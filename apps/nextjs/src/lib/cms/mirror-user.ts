@@ -25,11 +25,16 @@ export async function ensureCmsUser(user: {
 }): Promise<void> {
   try {
     const payload = await getPayload({ config });
+    // `trash: true` includes soft-deleted rows: a member an admin moved to the
+    // Trash must stay deleted (restore happens from the admin Trash view), not
+    // be resurrected — and re-creating would trip the unique supabaseUserId
+    // constraint and get masked by the catch below.
     const existing = await payload.find({
       collection: "users",
       where: { supabaseUserId: { equals: user.id } },
       limit: 1,
       depth: 0,
+      trash: true,
     });
     if (existing.totalDocs === 0) {
       await payload.create({
@@ -38,7 +43,7 @@ export async function ensureCmsUser(user: {
           supabaseUserId: user.id,
           email: user.email ?? `${user.id}@users.noreply.local`,
           name: user.name ?? undefined,
-          role: "editor",
+          roles: ["member"],
         },
         overrideAccess: true,
       });

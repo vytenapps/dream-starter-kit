@@ -36,10 +36,14 @@ export const supabaseStrategy: AuthStrategy = {
     if (!profile?.is_staff) return { user: null };
 
     const findBySupabaseId = async () => {
+      // `trash: true` includes soft-deleted rows: a trashed user must be
+      // rejected (not silently re-created, which would trip the unique
+      // supabaseUserId constraint).
       const { docs } = await payload.find({
         collection: "users",
         where: { supabaseUserId: { equals: user.id } },
         limit: 1,
+        trash: true,
         overrideAccess: true,
       });
       return docs[0];
@@ -59,7 +63,7 @@ export const supabaseStrategy: AuthStrategy = {
             supabaseUserId: user.id,
             email: user.email ?? `${user.id}@users.noreply.local`,
             name,
-            role: "admin",
+            roles: ["admin"],
           },
           overrideAccess: true,
         });
@@ -69,6 +73,22 @@ export const supabaseStrategy: AuthStrategy = {
       }
     }
     if (!cmsUser) return { user: null };
+
+    // Soft-deleted (trashed) users are locked out until restored from the
+    // admin Trash view — even if their profile is still flagged staff.
+    if (cmsUser.deletedAt) return { user: null };
+
+    // A mirrored member who has since been granted staff (profiles.is_staff)
+    // gets a CMS staff role on first admin visit, so role-based access
+    // (access.admin, isStaff) lines up with the Supabase-side grant.
+    if (!cmsUser.roles.some((r) => ["admin", "editor", "author"].includes(r))) {
+      cmsUser = await payload.update({
+        collection: "users",
+        id: cmsUser.id,
+        data: { roles: [...cmsUser.roles, "editor"] },
+        overrideAccess: true,
+      });
+    }
 
     return { user: { ...cmsUser, collection: "users" as const } };
   },

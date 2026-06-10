@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { isAdmin, publishedOrAdmin } from "../access";
+import { isStaff, publishedOrStaff } from "../access";
 import { slugField } from "../fields/slug";
 
 export const Photos: CollectionConfig = {
@@ -12,10 +12,10 @@ export const Photos: CollectionConfig = {
   },
   versions: { drafts: true },
   access: {
-    read: publishedOrAdmin,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    read: publishedOrStaff,
+    create: isStaff,
+    update: isStaff,
+    delete: isStaff,
   },
   fields: [
     { name: "title", type: "text", required: true },

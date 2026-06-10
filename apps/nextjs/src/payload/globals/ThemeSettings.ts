@@ -13,7 +13,7 @@ import {
   FONT_SANS_OPTIONS,
   FONT_SERIF_OPTIONS,
 } from "../../lib/theme/defaults";
-import { isAdmin, publishedOrAdmin } from "../access";
+import { isStaff, publishedOrStaff } from "../access";
 import { linkField } from "../fields/link";
 
 const colorFields = (mode: "light" | "dark"): Field[] =>
@@ -57,7 +57,7 @@ export const ThemeSettings: GlobalConfig = {
   versions: { drafts: true, max: 20 },
   // Public read of the PUBLISHED theme (anonymous visitors need it to render);
   // admins see drafts. Update + version history are staff-only.
-  access: { read: publishedOrAdmin, update: isAdmin, readVersions: isAdmin },
+  access: { read: publishedOrStaff, update: isStaff, readVersions: isStaff },
   fields: [
     {
       type: "tabs",
