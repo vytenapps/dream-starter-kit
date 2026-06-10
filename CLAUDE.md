@@ -14,20 +14,20 @@ clarity beat cleverness.
 
 ## Stack (and where each lives)
 
-| Concern | Choice | Location |
-|---|---|---|
-| Monorepo | Turborepo + pnpm (forked from create-t3-turbo) | root |
-| Web | Next.js (App Router), shadcn/ui, Tailwind | `apps/nextjs` |
-| Mobile | Expo + Expo Router, react-native-reusables, NativeWind | `apps/expo` |
-| Backend | Supabase: Postgres + Auth + Storage + Edge Functions | `supabase/` |
-| Content / CMS | Payload CMS v3 (web/server only) — own `cms` schema, `/admin`, REST at `/cms-api` | `apps/nextjs/src/payload`, `packages/cms` |
-| Data layer (client + generated types) | `@supabase/supabase-js` typed client, session provider | `packages/api` |
-| Shared features | cross-platform validators, react-query hooks, logic | `packages/app` |
-| Shared UI tokens / primitives | | `packages/ui` |
-| Env + constants | zod env schema, `DEFAULT_AI_MODEL`, etc. | `packages/config` |
-| Payments | Stripe (web only) + webhook edge function | `apps/nextjs`, `supabase/functions` |
-| AI | Vercel AI SDK v6 via the AI Gateway (Claude default) | server routes / edge fn |
-| Build/ship | EAS (mobile), Vercel (web), Expo Push | `eas.json`, Vercel |
+| Concern                               | Choice                                                                            | Location                                  |
+| ------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------- |
+| Monorepo                              | Turborepo + pnpm (forked from create-t3-turbo)                                    | root                                      |
+| Web                                   | Next.js (App Router), shadcn/ui, Tailwind                                         | `apps/nextjs`                             |
+| Mobile                                | Expo + Expo Router, react-native-reusables, NativeWind                            | `apps/expo`                               |
+| Backend                               | Supabase: Postgres + Auth + Storage + Edge Functions                              | `supabase/`                               |
+| Content / CMS                         | Payload CMS v3 (web/server only) — own `cms` schema, `/admin`, REST at `/cms-api` | `apps/nextjs/src/payload`, `packages/cms` |
+| Data layer (client + generated types) | `@supabase/supabase-js` typed client, session provider                            | `packages/api`                            |
+| Shared features                       | cross-platform validators, react-query hooks, logic                               | `packages/app`                            |
+| Shared UI tokens / primitives         |                                                                                   | `packages/ui`                             |
+| Env + constants                       | zod env schema, `DEFAULT_AI_MODEL`, etc.                                          | `packages/config`                         |
+| Payments                              | Stripe (web only) + webhook edge function                                         | `apps/nextjs`, `supabase/functions`       |
+| AI                                    | Vercel AI SDK v6 via the AI Gateway (Claude default)                              | server routes / edge fn                   |
+| Build/ship                            | EAS (mobile), Vercel (web), Expo Push                                             | `eas.json`, Vercel                        |
 
 > Package scope is `@acme/*` (inherited from the template). It's renameable —
 > see the README. Don't rename mid-build.
@@ -40,7 +40,7 @@ clarity beat cleverness.
    **The one allowed exception is Payload CMS**, which owns the separate `cms`
    schema and enforces its own access-control; it's contained via a dedicated
    least-privilege, server-only `payload_cms` role (no access to `public`/`auth`) —
-   so it's outside RLS *by design*, not by oversight. Don't put per-user app data there.
+   so it's outside RLS _by design_, not by oversight. Don't put per-user app data there.
 2. **Service role key is server-only.** It bypasses RLS. It appears ONLY in
    Supabase edge functions / server code (e.g. the Stripe webhook). Never in
    `apps/expo` or web client code.
@@ -49,7 +49,7 @@ clarity beat cleverness.
    - `NEXT_PUBLIC_*` / `EXPO_PUBLIC_*` = public (compiled into the client). Only
      anon/publishable values.
    - everything else = server-only.
-   The app must fail loudly if a required var is missing.
+     The app must fail loudly if a required var is missing.
 4. **Stripe is web-only.** No StoreKit / Play Billing / IAP. Mobile unlocks
    premium by reading the `subscriptions` table (RLS read-own).
 5. **AI model id is centralized & swappable.** Use `DEFAULT_AI_MODEL` from
@@ -88,6 +88,53 @@ CI (`.github/workflows/ci.yml`) runs all of these on every PR: lint · format ·
 typecheck · unit · license, plus an `integration` job that boots Supabase and runs
 `test:rls` + Playwright.
 
+## Cloud sessions (Claude Code on the web)
+
+Cloud session containers start bare: no Docker daemon, no Supabase CLI, no `.env`.
+The **SessionStart hook** (`.claude/hooks/session-start.sh`, registered in
+`.claude/settings.json`, cloud-only via `$CLAUDE_CODE_REMOTE`) bootstraps the full
+local stack automatically: it starts `dockerd`, installs the Supabase CLI,
+`pnpm install`s, boots Supabase, writes `.env` from `.env.example` with the local
+keys + a generated `PAYLOAD_SECRET`, runs `pnpm db:reset`, and installs
+**Playwright's Chromium** (`playwright install chromium`, cached in
+`$PLAYWRIGHT_BROWSERS_PATH`). Every step is idempotent, so resumed sessions are
+fast. Don't re-do these steps by hand — if the stack seems down, just rerun the hook.
+
+Cloud-session quirks:
+
+- **`supabase start` must exclude edge-runtime** (`-x edge-runtime`): that container
+  sets rlimits the sandboxed nested-container runtime forbids. Edge functions
+  (Stripe webhook, `process-reminders`) don't run in cloud sessions.
+- **Unset optional env vars must be absent, not `""`** — empty strings fail the zod
+  schema's `min(1)` checks. The hook comments them out when generating `.env`.
+- The hook does **not** start the dev server. Use the `web` configuration in
+  `.claude/launch.json` (the cloud preview browser) or `pnpm dev:next`.
+- Local URLs: app :3000 · Supabase API :54321 · Studio :54323 · Mailpit :54324
+  (sign-up confirmation emails land in Mailpit).
+
+### Testing in cloud sessions (full suite works)
+
+The hook leaves the stack + `.env` exactly the way the test suites expect, so run
+the **full** test matrix, same commands as local:
+
+- `pnpm test` — vitest unit/integration (no backend needed).
+- `pnpm test:rls` — RLS isolation (Supabase is already up; `.env` already has the
+  anon + service-role keys).
+- `pnpm test:e2e` — Playwright web E2E. Chromium is pre-installed by the hook;
+  Playwright boots `next dev` itself (or reuses one already running on :3000).
+  Auth flows pull confirmation links/codes from Mailpit (see
+  `tooling/web-e2e/README.md`). The founder/first-user flow needs a **fresh DB** —
+  run `pnpm db:reset` first if users were created since the hook ran.
+- Out of scope in cloud sessions: anything needing edge functions (Stripe webhook,
+  `process-reminders`) and `expo` device builds.
+
+**Visual testing:** the desktop Preview pane is local/SSH-only — in cloud sessions
+it is greyed out and there is no embedded browser. Verify UI changes by driving the
+app with the pre-installed Playwright Chromium instead: write a throwaway script
+(import `chromium` from `@playwright/test`, run it from `tooling/web-e2e/` so the
+package resolves), navigate, `page.screenshot(...)`, and **send the screenshots to
+the user** so they can see each step. Clean up throwaway scripts before committing.
+
 ## How to add a modular feature
 
 Features in this kit are **modular**: each one spans the same predictable set of
@@ -101,17 +148,17 @@ use Payload instead — see [How to add a Payload content type](#how-to-add-a-pa
 
 A feature is a vertical slice through these layers. Build them in this order:
 
-| # | Layer | Lives in | What goes here |
-|---|---|---|---|
-| 1 | **Schema + RLS** | `supabase/migrations/*.sql` | the table(s), RLS policies, FK indexes |
-| 2 | **Seed** | `supabase/seed.sql` | optional demo rows (ships **empty**; rls-tests provision their own users) |
-| 3 | **DB types** | `packages/api` (generated) | `pnpm db:gen-types` — never hand-edit |
-| 4 | **Validators** | `packages/app/src/validators` | zod schemas for create/update input |
-| 5 | **Hooks** | `packages/app/src/hooks` | react-query hooks over the typed client |
-| 6 | **Web UI** | `apps/nextjs/src/app/(frontend)/(app)/…` | shadcn + react-hook-form, calls the hooks |
-| 7 | **Native UI** | `apps/expo/src/app/(app)/…` | react-native-reusables, calls the same hooks |
-| 8 | **Server (only if needed)** | `apps/nextjs/src/app/api` or `supabase/functions` | privileged work (Stripe, AI, cron) |
-| 9 | **Tests** | `packages/app` + `tooling/rls-tests` + `tooling/web-e2e` | unit + RLS isolation + e2e |
+| #   | Layer                       | Lives in                                                 | What goes here                                                            |
+| --- | --------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------- |
+| 1   | **Schema + RLS**            | `supabase/migrations/*.sql`                              | the table(s), RLS policies, FK indexes                                    |
+| 2   | **Seed**                    | `supabase/seed.sql`                                      | optional demo rows (ships **empty**; rls-tests provision their own users) |
+| 3   | **DB types**                | `packages/api` (generated)                               | `pnpm db:gen-types` — never hand-edit                                     |
+| 4   | **Validators**              | `packages/app/src/validators`                            | zod schemas for create/update input                                       |
+| 5   | **Hooks**                   | `packages/app/src/hooks`                                 | react-query hooks over the typed client                                   |
+| 6   | **Web UI**                  | `apps/nextjs/src/app/(frontend)/(app)/…`                 | shadcn + react-hook-form, calls the hooks                                 |
+| 7   | **Native UI**               | `apps/expo/src/app/(app)/…`                              | react-native-reusables, calls the same hooks                              |
+| 8   | **Server (only if needed)** | `apps/nextjs/src/app/api` or `supabase/functions`        | privileged work (Stripe, AI, cron)                                        |
+| 9   | **Tests**                   | `packages/app` + `tooling/rls-tests` + `tooling/web-e2e` | unit + RLS isolation + e2e                                                |
 
 Layers 4–5 are shared by **both** apps — that's the whole point. Keep `apps/*`
 thin: a screen wires a hook to platform UI and nothing more.
@@ -156,6 +203,7 @@ Use `Tables<'tasks'>`, `TablesInsert<'tasks'>`, `TablesUpdate<'tasks'>` downstre
 
 ```ts
 import { z } from "zod/v4";
+
 export const createTaskSchema = z.object({ title: z.string().min(1).max(200) });
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 ```
@@ -181,6 +229,7 @@ from step 4 — no data logic in the screens. Add the route to the web sidebar /
 native home nav.
 
 **6. Tests (required).**
+
 - Vitest unit test for `createTaskSchema` (and any non-trivial pure logic).
 - Extend `tooling/rls-tests`: assert user B **cannot** read or write user A's tasks.
 - If it's a critical flow, add/extend a Playwright spec in `tooling/web-e2e`.
@@ -295,7 +344,7 @@ uses its own **fixed** palette (Tailwind v4, OKLCH tokens). Layers:
 
 1. **Static defaults (no-flash):** all design tokens live in **`tooling/tailwind/theme.css`**
    (`@acme/tailwind-config/theme`) — `:root` + `@variant dark`, plus the `@theme inline`
-   map. This is the *only* place tokens are defined. **Do not** redefine `:root`/`.dark`
+   map. This is the _only_ place tokens are defined. **Do not** redefine `:root`/`.dark`
    tokens in `apps/nextjs/src/app/styles.css` (it only holds imports, variants, base layer).
 2. **Front-end runtime override (site-wide, editable):** the **`theme-settings` Payload global**
    (`payload/globals/ThemeSettings.ts`, staff-editable in `/admin`) is the authoritative

@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
+import { fetchAuthUserByEmail, fetchProfile } from "./helpers/db";
 import { FOUNDER_META, FOUNDER_STORAGE_STATE } from "./helpers/founder";
 import { signUpAndConfirm } from "./helpers/mailpit";
 
@@ -40,6 +41,13 @@ test("founder sign-up seeds the CMS before /admin", async ({ page }) => {
   ).toBeVisible();
   await page.waitForURL(/\/admin/, { timeout: 90_000 });
 
+  // The founder can actually VIEW /admin — the Payload dashboard must render
+  // for them (the supabase-strategy bridge provisioned a cms.users row), not
+  // just resolve the URL. Generous: first admin paint compiles a big bundle.
+  await expect(
+    page.getByRole("link", { name: "Users", exact: true }),
+  ).toBeVisible({ timeout: 60_000 });
+
   // Directly assert the seed actually populated the CMS — not just that we
   // redirected. The status endpoint reports `seeded: true` once pages exist, and
   // uses the founder's authenticated session (cookies shared from the context).
@@ -47,6 +55,21 @@ test("founder sign-up seeds the CMS before /admin", async ({ page }) => {
   expect(status.ok()).toBeTruthy();
   const body = (await status.json()) as { seeded?: boolean };
   expect(body.seeded).toBe(true);
+
+  // And assert what sign-up persisted in the DB (service role, see helpers/db):
+  // a CONFIRMED auth.users row, mirrored by the signup trigger into
+  // public.profiles with the first user auto-flagged is_staff.
+  const authUser = await fetchAuthUserByEmail(email);
+  if (!authUser) {
+    throw new Error(`sign-up left no auth.users row for ${email}`);
+  }
+  expect(authUser.email_confirmed_at).toBeTruthy();
+  const profile = await fetchProfile(authUser.id);
+  if (!profile) {
+    throw new Error(`signup trigger created no profiles row for ${email}`);
+  }
+  expect(profile.display_name).toBe("Founder");
+  expect(profile.is_staff).toBe(true);
 
   // Persist the founder session (staff-invite.spec.ts acts as staff) and
   // email (admin-login.spec.ts signs in fresh with it).
