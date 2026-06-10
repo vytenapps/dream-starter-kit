@@ -126,5 +126,11 @@ export const Posts: CollectionConfig = {
         date: { pickerAppearance: "dayAndTime" },
       },
     },
+    {
+      name: "comments",
+      type: "join",
+      collection: "comments",
+      on: "target",
+    },
   ],
 };

@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { postgresAdapter } from "@payloadcms/db-postgres";
+import { formBuilderPlugin } from "@payloadcms/plugin-form-builder";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { seoPlugin } from "@payloadcms/plugin-seo";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
@@ -8,22 +9,37 @@ import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
+import { isStaff } from "./payload/access";
 import { Audio } from "./payload/collections/Audio";
+import { Banners } from "./payload/collections/Banners";
 import { Categories } from "./payload/collections/Categories";
+import { Comments } from "./payload/collections/Comments";
+import { CommunityPosts } from "./payload/collections/CommunityPosts";
+import { CommunitySpaces } from "./payload/collections/CommunitySpaces";
 import { Coupons } from "./payload/collections/Coupons";
+import { DeviceTokens } from "./payload/collections/DeviceTokens";
+import { Enrollments } from "./payload/collections/Enrollments";
 import { Events } from "./payload/collections/Events";
+import { Favorites } from "./payload/collections/Favorites";
+import { FeedTokens } from "./payload/collections/FeedTokens";
 import { Lessons } from "./payload/collections/Lessons";
 import { Locations } from "./payload/collections/Locations";
 import { Media } from "./payload/collections/Media";
+import { Notifications } from "./payload/collections/Notifications";
+import { Onboarding } from "./payload/collections/Onboarding";
 import { Pages } from "./payload/collections/Pages";
 import { Photos } from "./payload/collections/Photos";
 import { Plans } from "./payload/collections/Plans";
 import { Posts } from "./payload/collections/Posts";
+import { Reports } from "./payload/collections/Reports";
+import { Reviews } from "./payload/collections/Reviews";
 import { Series } from "./payload/collections/Series";
+import { SpaceGroups } from "./payload/collections/SpaceGroups";
 import { TagGroups, Tags } from "./payload/collections/Tags";
 import { Users } from "./payload/collections/Users";
 import { Videos } from "./payload/collections/Videos";
 import { PricingSettings } from "./payload/globals/PricingSettings";
+import { ProfileFields } from "./payload/globals/ProfileFields";
 import { SiteSettings } from "./payload/globals/SiteSettings";
 import { ThemeSettings } from "./payload/globals/ThemeSettings";
 import { migrations } from "./payload/migrations";
@@ -84,6 +100,11 @@ export default buildConfig({
   collections: [
     // People
     Users,
+    DeviceTokens,
+    FeedTokens,
+    Favorites,
+    Enrollments,
+    Reviews,
     // Content
     Media,
     Posts,
@@ -97,13 +118,22 @@ export default buildConfig({
     Categories,
     Tags,
     TagGroups,
+    // Community
+    SpaceGroups,
+    CommunitySpaces,
+    CommunityPosts,
+    Comments,
+    Reports,
     // Commerce
     Plans,
     Coupons,
     // Marketing
     Pages,
+    Onboarding,
+    Banners,
+    Notifications,
   ],
-  globals: [SiteSettings, ThemeSettings, PricingSettings],
+  globals: [SiteSettings, ThemeSettings, PricingSettings, ProfileFields],
   // One shared, cross-collection folder tree ("Browse by Folder") for the
   // collections that enable `folders: true`.
   folders: { browseByFolder: true },
@@ -173,10 +203,30 @@ export default buildConfig({
       ],
       uploadsCollection: "media",
     }),
-    // Hierarchies (parent + auto-maintained breadcrumbs) for taxonomy and
-    // page trees. space-groups joins this list with the community feature.
+    // Hierarchies (parent + auto-maintained breadcrumbs) for taxonomy, page
+    // trees and community space groups.
     nestedDocsPlugin({
-      collections: ["categories", "pages"],
+      collections: ["categories", "pages", "space-groups"],
+    }),
+    formBuilderPlugin({
+      fields: {
+        text: true,
+        textarea: true,
+        email: true,
+        select: true,
+        checkbox: true,
+        number: true,
+        message: true,
+        country: false,
+        state: false,
+        payment: false,
+      },
+      redirectRelationships: ["pages"],
+      formOverrides: { admin: { group: "Marketing" } },
+      formSubmissionOverrides: {
+        admin: { group: "Marketing" },
+        access: { read: isStaff, delete: isStaff },
+      },
     }),
   ],
 });

@@ -10,6 +10,7 @@ import {
 } from "../access";
 import { supabaseStrategy } from "../auth/supabase-strategy";
 import { inviteUserOnCreate } from "../hooks/invite-user";
+import { validateCustomFields } from "../hooks/validate-custom-fields";
 
 /**
  * The single `users` collection: app members AND CMS staff, differentiated by
@@ -198,6 +199,13 @@ export const Users: CollectionConfig = {
               ],
             },
             {
+              name: "interests",
+              type: "relationship",
+              relationTo: "tags",
+              hasMany: true,
+              admin: { description: "Member interests / skills (CMS tags)." },
+            },
+            {
               name: "profileVisibility",
               type: "select",
               defaultValue: "members",
@@ -211,6 +219,28 @@ export const Users: CollectionConfig = {
               name: "referralSource",
               type: "text",
               admin: { description: "How they found the app (optional)." },
+            },
+            {
+              name: "tags",
+              type: "relationship",
+              relationTo: "tags",
+              hasMany: true,
+              access: { update: staffFieldAccess },
+              admin: {
+                description:
+                  "Admin segmentation via CMS tags — distinct from the " +
+                  "Supabase plan-name user tags managed below.",
+              },
+            },
+            {
+              name: "customFields",
+              type: "json",
+              validate: validateCustomFields,
+              admin: {
+                description:
+                  "Values for the custom member fields defined in the " +
+                  "profile-fields global.",
+              },
             },
           ],
         },
@@ -346,6 +376,24 @@ export const Users: CollectionConfig = {
           ],
         },
       ],
+    },
+    {
+      name: "favorites",
+      type: "join",
+      collection: "favorites",
+      on: "user",
+    },
+    {
+      name: "enrollments",
+      type: "join",
+      collection: "enrollments",
+      on: "user",
+    },
+    {
+      name: "devices",
+      type: "join",
+      collection: "device-tokens",
+      on: "user",
     },
     {
       name: "tagsManager",

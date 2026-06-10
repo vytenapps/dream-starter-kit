@@ -142,6 +142,12 @@ export const Locations: CollectionConfig = {
     },
     commentsEnabledField(),
     {
+      name: "reviews",
+      type: "join",
+      collection: "reviews",
+      on: "target",
+    },
+    {
       name: "events",
       type: "join",
       collection: "events",

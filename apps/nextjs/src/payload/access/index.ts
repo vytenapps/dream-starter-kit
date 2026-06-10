@@ -70,6 +70,15 @@ export const publishedOrStaff: Access = ({ req: { user } }) => {
   return { _status: { equals: "published" } };
 };
 
+/**
+ * Moderated user content (comments, reviews): public reads see `approved`
+ * rows only; staff see everything.
+ */
+export const approvedOrStaff: Access = ({ req: { user } }) => {
+  if (hasRole(user, STAFF_ROLES)) return true;
+  return { status: { equals: "approved" } };
+};
+
 /** Field-level lock: only staff may read/update the field. */
 export const staffFieldAccess: FieldAccess = ({ req: { user } }) =>
   hasRole(user, STAFF_ROLES);

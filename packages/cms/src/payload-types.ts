@@ -68,6 +68,11 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    'device-tokens': DeviceToken;
+    'feed-tokens': FeedToken;
+    favorites: Favorite;
+    enrollments: Enrollment;
+    reviews: Review;
     media: Media;
     posts: Post;
     videos: Video;
@@ -80,9 +85,19 @@ export interface Config {
     categories: Category;
     tags: Tag;
     'tag-groups': TagGroup;
+    'space-groups': SpaceGroup;
+    'community-spaces': CommunitySpace;
+    'community-posts': CommunityPost;
+    comments: Comment;
+    reports: Report;
     plans: Plan;
     coupons: Coupon;
     pages: Page;
+    onboarding: Onboarding;
+    banners: Banner;
+    notifications: Notification;
+    forms: Form;
+    'form-submissions': FormSubmission;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-folders': FolderInterface;
@@ -91,13 +106,35 @@ export interface Config {
     'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {
+    users: {
+      favorites: 'favorites';
+      enrollments: 'enrollments';
+      devices: 'device-tokens';
+    };
+    posts: {
+      comments: 'comments';
+    };
     series: {
       videoEpisodes: 'videos';
       audioEpisodes: 'audio';
       lessons: 'lessons';
     };
     locations: {
+      reviews: 'reviews';
       events: 'events';
+    };
+    'space-groups': {
+      spaces: 'community-spaces';
+    };
+    'community-spaces': {
+      posts: 'community-posts';
+    };
+    'community-posts': {
+      comments: 'comments';
+      reports: 'reports';
+    };
+    comments: {
+      replies: 'comments';
     };
     'payload-folders': {
       documentsAndFolders:
@@ -115,6 +152,11 @@ export interface Config {
   };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    'device-tokens': DeviceTokensSelect<false> | DeviceTokensSelect<true>;
+    'feed-tokens': FeedTokensSelect<false> | FeedTokensSelect<true>;
+    favorites: FavoritesSelect<false> | FavoritesSelect<true>;
+    enrollments: EnrollmentsSelect<false> | EnrollmentsSelect<true>;
+    reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     videos: VideosSelect<false> | VideosSelect<true>;
@@ -127,9 +169,19 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
     'tag-groups': TagGroupsSelect<false> | TagGroupsSelect<true>;
+    'space-groups': SpaceGroupsSelect<false> | SpaceGroupsSelect<true>;
+    'community-spaces': CommunitySpacesSelect<false> | CommunitySpacesSelect<true>;
+    'community-posts': CommunityPostsSelect<false> | CommunityPostsSelect<true>;
+    comments: CommentsSelect<false> | CommentsSelect<true>;
+    reports: ReportsSelect<false> | ReportsSelect<true>;
     plans: PlansSelect<false> | PlansSelect<true>;
     coupons: CouponsSelect<false> | CouponsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
+    onboarding: OnboardingSelect<false> | OnboardingSelect<true>;
+    banners: BannersSelect<false> | BannersSelect<true>;
+    notifications: NotificationsSelect<false> | NotificationsSelect<true>;
+    forms: FormsSelect<false> | FormsSelect<true>;
+    'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
@@ -145,11 +197,13 @@ export interface Config {
     'site-settings': SiteSetting;
     'theme-settings': ThemeSetting;
     'pricing-settings': PricingSetting;
+    'profile-fields': ProfileField;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'theme-settings': ThemeSettingsSelect<false> | ThemeSettingsSelect<true>;
     'pricing-settings': PricingSettingsSelect<false> | PricingSettingsSelect<true>;
+    'profile-fields': ProfileFieldsSelect<false> | ProfileFieldsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -241,11 +295,31 @@ export interface User {
     tiktok?: string | null;
     github?: string | null;
   };
+  /**
+   * Member interests / skills (CMS tags).
+   */
+  interests?: (number | Tag)[] | null;
   profileVisibility?: ('public' | 'members' | 'private') | null;
   /**
    * How they found the app (optional).
    */
   referralSource?: string | null;
+  /**
+   * Admin segmentation via CMS tags — distinct from the Supabase plan-name user tags managed below.
+   */
+  tags?: (number | Tag)[] | null;
+  /**
+   * Values for the custom member fields defined in the profile-fields global.
+   */
+  customFields?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   /**
    * Required before any SMS send.
    */
@@ -335,6 +409,21 @@ export interface User {
    */
   lastActiveAt?: string | null;
   stripeCustomerID?: string | null;
+  favorites?: {
+    docs?: (number | Favorite)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  enrollments?: {
+    docs?: (number | Enrollment)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  devices?: {
+    docs?: (number | DeviceToken)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -551,6 +640,11 @@ export interface Post {
    */
   commentsEnabled?: boolean | null;
   publishedAt?: string | null;
+  comments?: {
+    docs?: (number | Comment)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -597,6 +691,532 @@ export interface Category {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
+}
+/**
+ * Member comments across community posts and content.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments".
+ */
+export interface Comment {
+  id: number;
+  author: number | User;
+  target:
+    | {
+        relationTo: 'community-posts';
+        value: number | CommunityPost;
+      }
+    | {
+        relationTo: 'posts';
+        value: number | Post;
+      }
+    | {
+        relationTo: 'videos';
+        value: number | Video;
+      }
+    | {
+        relationTo: 'audio';
+        value: number | Audio;
+      }
+    | {
+        relationTo: 'photos';
+        value: number | Photo;
+      }
+    | {
+        relationTo: 'events';
+        value: number | Event;
+      }
+    | {
+        relationTo: 'locations';
+        value: number | Location;
+      };
+  /**
+   * Set for threaded replies.
+   */
+  parent?: (number | null) | Comment;
+  body: string;
+  status: 'pending' | 'approved' | 'spam';
+  likeCount?: number | null;
+  reportCount?: number | null;
+  isPinned?: boolean | null;
+  editedAt?: string | null;
+  replies?: {
+    docs?: (number | Comment)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "community-posts".
+ */
+export interface CommunityPost {
+  id: number;
+  author: number | User;
+  /**
+   * Optional — which space/channel.
+   */
+  space?: (number | null) | CommunitySpace;
+  /**
+   * Optional — feeds fall back to a body excerpt.
+   */
+  title?: string | null;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Image/video attachments.
+   */
+  media?: (number | Media)[] | null;
+  link?: {
+    type?: ('page' | 'appScreen' | 'url') | null;
+    page?:
+      | ({
+          relationTo: 'pages';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null)
+      | ({
+          relationTo: 'videos';
+          value: number | Video;
+        } | null)
+      | ({
+          relationTo: 'audio';
+          value: number | Audio;
+        } | null)
+      | ({
+          relationTo: 'series';
+          value: number | Series;
+        } | null)
+      | ({
+          relationTo: 'events';
+          value: number | Event;
+        } | null)
+      | ({
+          relationTo: 'locations';
+          value: number | Location;
+        } | null);
+    /**
+     * Web route or Expo screen key, e.g. /courses/intro/lessons/1
+     */
+    screen?: string | null;
+    params?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    url?: string | null;
+  };
+  tags?: (number | Tag)[] | null;
+  /**
+   * Who can view this content in the app.
+   */
+  accessLevel?: ('public' | 'members' | 'premium') | null;
+  /**
+   * Allow members to comment on this item.
+   */
+  commentsEnabled?: boolean | null;
+  /**
+   * Mods pin to top.
+   */
+  pinned?: boolean | null;
+  status: 'published' | 'pending' | 'hidden' | 'flagged';
+  likeCount?: number | null;
+  commentCount?: number | null;
+  reportCount?: number | null;
+  authorName?: string | null;
+  publishedAt?: string | null;
+  comments?: {
+    docs?: (number | Comment)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  reports?: {
+    docs?: (number | Report)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "community-spaces".
+ */
+export interface CommunitySpace {
+  id: number;
+  name: string;
+  slug: string;
+  /**
+   * Which group/section this space sits in.
+   */
+  spaceGroup?: (number | null) | SpaceGroup;
+  /**
+   * Optional sub-space.
+   */
+  parentSpace?: (number | null) | CommunitySpace;
+  description?: string | null;
+  /**
+   * Space banner/icon.
+   */
+  image?: (number | null) | Media;
+  /**
+   * Who can view this content in the app.
+   */
+  accessLevel?: ('public' | 'members' | 'premium') | null;
+  /**
+   * Plans that unlock a premium space.
+   */
+  requiredPlans?: (number | Plan)[] | null;
+  postingPolicy: 'members' | 'moderators' | 'admins';
+  moderators?: (number | User)[] | null;
+  /**
+   * Sidebar order within the group.
+   */
+  order?: number | null;
+  posts?: {
+    docs?: (number | CommunityPost)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "space-groups".
+ */
+export interface SpaceGroup {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string | null;
+  /**
+   * Sidebar icon name.
+   */
+  icon?: string | null;
+  /**
+   * Who can view this content in the app.
+   */
+  accessLevel?: ('public' | 'members' | 'premium') | null;
+  /**
+   * Plans that unlock this group.
+   */
+  requiredPlans?: (number | Plan)[] | null;
+  /**
+   * Sidebar order within the parent.
+   */
+  order?: number | null;
+  spaces?: {
+    docs?: (number | CommunitySpace)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  parent?: (number | null) | SpaceGroup;
+  breadcrumbs?:
+    | {
+        doc?: (number | null) | SpaceGroup;
+        url?: string | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * Author plans here, then press “Sync to Stripe” to create/update the matching Stripe product and price. Stripe prices are immutable, so changing the amount creates a new price and archives the old one.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plans".
+ */
+export interface Plan {
+  id: number;
+  name: string;
+  active?: boolean | null;
+  slug: string;
+  description?: string | null;
+  pricingType: 'recurring' | 'one_time';
+  interval?: ('month' | 'year') | null;
+  /**
+   * Amount in the smallest currency unit, e.g. 999 = $9.99.
+   */
+  unitAmount: number;
+  /**
+   * ISO code, e.g. usd.
+   */
+  currency: string;
+  /**
+   * 0 / empty = no trial.
+   */
+  trialDays?: number | null;
+  /**
+   * Discount the first billing period only (e.g. $1.99 first month, then the standard price recurs). Implemented as a Stripe coupon with duration=once, applied automatically at checkout.
+   */
+  introOffer?: {
+    enabled?: boolean | null;
+    /**
+     * First-period price, e.g. 199 = $1.99.
+     */
+    introAmount?: number | null;
+  };
+  /**
+   * Shown on the public pricing card.
+   */
+  features?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * e.g. "Save 17%" or "Best value".
+   */
+  badge?: string | null;
+  highlighted?: boolean | null;
+  displayOrder?: number | null;
+  stripeProductId?: string | null;
+  stripePriceId?: string | null;
+  stripeIntroCouponId?: string | null;
+  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
+  syncError?: string | null;
+  lastSyncedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  title: string;
+  slug: string;
+  layout?: (HeroBlock | ItemsBlock | LogosBlock | StatsBlock | CTABlock | FAQBlock | ProseBlock)[] | null;
+  showInNav?: boolean | null;
+  publishedAt?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  parent?: (number | null) | Page;
+  breadcrumbs?:
+    | {
+        doc?: (number | null) | Page;
+        url?: string | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  title: string;
+  description?: string | null;
+  /**
+   * Small pill above the title.
+   */
+  badgeText?: string | null;
+  badgeLinkText?: string | null;
+  badgeLinkHref?: string | null;
+  buttons?:
+    | {
+        text: string;
+        href: string;
+        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Hero screenshot (light mode).
+   */
+  mockupLight?: (number | null) | Media;
+  /**
+   * Optional dark-mode variant of the screenshot.
+   */
+  mockupDark?: (number | null) | Media;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ItemsBlock".
+ */
+export interface ItemsBlock {
+  title?: string | null;
+  items?:
+    | {
+        title: string;
+        description: string;
+        /**
+         * Optional lucide icon.
+         */
+        icon?:
+          | (
+              | 'Rocket'
+              | 'Zap'
+              | 'ShieldCheck'
+              | 'Sparkles'
+              | 'Star'
+              | 'Heart'
+              | 'Globe'
+              | 'Code'
+              | 'Layers'
+              | 'Smartphone'
+              | 'Palette'
+              | 'Lock'
+              | 'Check'
+              | 'Cloud'
+              | 'Bell'
+              | 'Settings'
+              | 'Users'
+              | 'ChartBar'
+              | 'Search'
+              | 'Mail'
+            )
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'items';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LogosBlock".
+ */
+export interface LogosBlock {
+  title?: string | null;
+  badgeText?: string | null;
+  logos?:
+    | {
+        name: string;
+        /**
+         * Optional logo image; falls back to the name.
+         */
+        image?: (number | null) | Media;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'logos';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StatsBlock".
+ */
+export interface StatsBlock {
+  items?:
+    | {
+        label?: string | null;
+        value: string;
+        suffix?: string | null;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'stats';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CTABlock".
+ */
+export interface CTABlock {
+  title: string;
+  buttons?:
+    | {
+        text: string;
+        href: string;
+        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'cta';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FAQBlock".
+ */
+export interface FAQBlock {
+  title?: string | null;
+  items?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'faq';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ProseBlock".
+ */
+export interface ProseBlock {
+  title?: string | null;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'prose';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -870,66 +1490,6 @@ export interface Series {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Author plans here, then press “Sync to Stripe” to create/update the matching Stripe product and price. Stripe prices are immutable, so changing the amount creates a new price and archives the old one.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plans".
- */
-export interface Plan {
-  id: number;
-  name: string;
-  active?: boolean | null;
-  slug: string;
-  description?: string | null;
-  pricingType: 'recurring' | 'one_time';
-  interval?: ('month' | 'year') | null;
-  /**
-   * Amount in the smallest currency unit, e.g. 999 = $9.99.
-   */
-  unitAmount: number;
-  /**
-   * ISO code, e.g. usd.
-   */
-  currency: string;
-  /**
-   * 0 / empty = no trial.
-   */
-  trialDays?: number | null;
-  /**
-   * Discount the first billing period only (e.g. $1.99 first month, then the standard price recurs). Implemented as a Stripe coupon with duration=once, applied automatically at checkout.
-   */
-  introOffer?: {
-    enabled?: boolean | null;
-    /**
-     * First-period price, e.g. 199 = $1.99.
-     */
-    introAmount?: number | null;
-  };
-  /**
-   * Shown on the public pricing card.
-   */
-  features?:
-    | {
-        text: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * e.g. "Save 17%" or "Best value".
-   */
-  badge?: string | null;
-  highlighted?: boolean | null;
-  displayOrder?: number | null;
-  stripeProductId?: string | null;
-  stripePriceId?: string | null;
-  stripeIntroCouponId?: string | null;
-  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
-  syncError?: string | null;
-  lastSyncedAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "audio".
  */
@@ -1120,176 +1680,6 @@ export interface Lesson {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "photos".
- */
-export interface Photo {
-  id: number;
-  title: string;
-  slug: string;
-  caption?: string | null;
-  /**
-   * Accessibility description.
-   */
-  altText?: string | null;
-  /**
-   * Photographer / source.
-   */
-  credit?: string | null;
-  takenAt?: string | null;
-  location?: (number | null) | Location;
-  album?: (number | null) | Series;
-  categories?: (number | Category)[] | null;
-  tags?: (number | Tag)[] | null;
-  /**
-   * Who can view this content in the app.
-   */
-  accessLevel?: ('public' | 'members' | 'premium') | null;
-  featured?: boolean | null;
-  /**
-   * Allow members to comment on this item.
-   */
-  commentsEnabled?: boolean | null;
-  publishedAt?: string | null;
-  prefix?: string | null;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-  };
-  folder?: (number | null) | FolderInterface;
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-  sizes?: {
-    thumbnail?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    card?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    hero?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "locations".
- */
-export interface Location {
-  id: number;
-  name: string;
-  slug: string;
-  /**
-   * Map-pin/card text.
-   */
-  shortDescription?: string | null;
-  description?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  address?: {
-    street?: string | null;
-    street2?: string | null;
-    city?: string | null;
-    region?: string | null;
-    postalCode?: string | null;
-    country?: string | null;
-  };
-  /**
-   * @minItems 2
-   * @maxItems 2
-   */
-  coordinates?: [number, number] | null;
-  hours?:
-    | {
-        day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-        opensAt?: string | null;
-        closesAt?: string | null;
-        closed?: boolean | null;
-        id?: string | null;
-      }[]
-    | null;
-  phone?: string | null;
-  email?: string | null;
-  website?: string | null;
-  priceRange?: ('$' | '$$' | '$$$' | '$$$$') | null;
-  amenities?:
-    | ('wifi' | 'parking' | 'accessible' | 'pets' | 'outdoor_seating' | 'restrooms' | 'food' | 'drinks')[]
-    | null;
-  featuredImage?: (number | null) | Media;
-  gallery?: (number | Media)[] | null;
-  locationType?: (number | null) | Category;
-  tags?: (number | Tag)[] | null;
-  /**
-   * Denormalized from approved reviews.
-   */
-  ratingAverage?: number | null;
-  temporarilyClosed?: boolean | null;
-  featured?: boolean | null;
-  /**
-   * Allow members to comment on this item.
-   */
-  commentsEnabled?: boolean | null;
-  events?: {
-    docs?: (number | Event)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-  };
-  folder?: (number | null) | FolderInterface;
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "events".
  */
 export interface Event {
@@ -1416,6 +1806,360 @@ export interface Event {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "locations".
+ */
+export interface Location {
+  id: number;
+  name: string;
+  slug: string;
+  /**
+   * Map-pin/card text.
+   */
+  shortDescription?: string | null;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  address?: {
+    street?: string | null;
+    street2?: string | null;
+    city?: string | null;
+    region?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+  };
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  coordinates?: [number, number] | null;
+  hours?:
+    | {
+        day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+        opensAt?: string | null;
+        closesAt?: string | null;
+        closed?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  priceRange?: ('$' | '$$' | '$$$' | '$$$$') | null;
+  amenities?:
+    | ('wifi' | 'parking' | 'accessible' | 'pets' | 'outdoor_seating' | 'restrooms' | 'food' | 'drinks')[]
+    | null;
+  featuredImage?: (number | null) | Media;
+  gallery?: (number | Media)[] | null;
+  locationType?: (number | null) | Category;
+  tags?: (number | Tag)[] | null;
+  /**
+   * Denormalized from approved reviews.
+   */
+  ratingAverage?: number | null;
+  temporarilyClosed?: boolean | null;
+  featured?: boolean | null;
+  /**
+   * Allow members to comment on this item.
+   */
+  commentsEnabled?: boolean | null;
+  reviews?: {
+    docs?: (number | Review)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  events?: {
+    docs?: (number | Event)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  folder?: (number | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews".
+ */
+export interface Review {
+  id: number;
+  author: number | User;
+  target:
+    | {
+        relationTo: 'locations';
+        value: number | Location;
+      }
+    | {
+        relationTo: 'events';
+        value: number | Event;
+      };
+  rating: number;
+  title?: string | null;
+  body?: string | null;
+  photos?: (number | Media)[] | null;
+  status: 'pending' | 'approved' | 'rejected';
+  helpfulCount?: number | null;
+  verifiedVisit?: boolean | null;
+  /**
+   * Owner/staff response shown under the review.
+   */
+  response?: {
+    body?: string | null;
+    respondedBy?: (number | null) | User;
+    respondedAt?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * Moderation queue for member-reported content.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reports".
+ */
+export interface Report {
+  id: number;
+  reporter: number | User;
+  target:
+    | {
+        relationTo: 'community-posts';
+        value: number | CommunityPost;
+      }
+    | {
+        relationTo: 'comments';
+        value: number | Comment;
+      };
+  reason: 'spam' | 'harassment' | 'hate' | 'nudity' | 'violence' | 'misinformation' | 'other';
+  details?: string | null;
+  status: 'open' | 'reviewing' | 'actioned' | 'dismissed';
+  resolution?: ('none' | 'hidden' | 'deleted' | 'warned' | 'banned') | null;
+  resolvedBy?: (number | null) | User;
+  resolvedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photos".
+ */
+export interface Photo {
+  id: number;
+  title: string;
+  slug: string;
+  caption?: string | null;
+  /**
+   * Accessibility description.
+   */
+  altText?: string | null;
+  /**
+   * Photographer / source.
+   */
+  credit?: string | null;
+  takenAt?: string | null;
+  location?: (number | null) | Location;
+  album?: (number | null) | Series;
+  categories?: (number | Category)[] | null;
+  tags?: (number | Tag)[] | null;
+  /**
+   * Who can view this content in the app.
+   */
+  accessLevel?: ('public' | 'members' | 'premium') | null;
+  featured?: boolean | null;
+  /**
+   * Allow members to comment on this item.
+   */
+  commentsEnabled?: boolean | null;
+  publishedAt?: string | null;
+  prefix?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  folder?: (number | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    card?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    hero?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * Member bookmarks across content types.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "favorites".
+ */
+export interface Favorite {
+  id: number;
+  user: number | User;
+  target:
+    | {
+        relationTo: 'posts';
+        value: number | Post;
+      }
+    | {
+        relationTo: 'videos';
+        value: number | Video;
+      }
+    | {
+        relationTo: 'audio';
+        value: number | Audio;
+      }
+    | {
+        relationTo: 'photos';
+        value: number | Photo;
+      }
+    | {
+        relationTo: 'locations';
+        value: number | Location;
+      }
+    | {
+        relationTo: 'events';
+        value: number | Event;
+      };
+  /**
+   * Personal note (optional).
+   */
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "enrollments".
+ */
+export interface Enrollment {
+  id: number;
+  user: number | User;
+  course: number | Series;
+  /**
+   * Anchor for relative drip.
+   */
+  enrolledAt: string;
+  status: 'active' | 'completed' | 'refunded' | 'expired';
+  source?: ('purchase' | 'subscription' | 'free' | 'manual') | null;
+  progress?:
+    | {
+        lesson: number | Lesson;
+        completedAt?: string | null;
+        percent?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Push notification device registrations.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "device-tokens".
+ */
+export interface DeviceToken {
+  id: number;
+  user: number | User;
+  /**
+   * FCM/APNs token.
+   */
+  token: string;
+  platform: 'ios' | 'android' | 'web';
+  deviceModel?: string | null;
+  appVersion?: string | null;
+  osVersion?: string | null;
+  locale?: string | null;
+  pushEnabled?: boolean | null;
+  lastSeenAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Tokenized private podcast feed URLs.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "feed-tokens".
+ */
+export interface FeedToken {
+  id: number;
+  /**
+   * Opaque secret appearing in the feed URL.
+   */
+  token: string;
+  user: number | User;
+  /**
+   * Optional — scope to one podcast.
+   */
+  show?: (number | null) | Series;
+  /**
+   * Kill switch — the feed stops resolving.
+   */
+  revoked?: boolean | null;
+  /**
+   * Updated on each feed fetch.
+   */
+  lastAccessedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Discounts pushed to Stripe. Changing amount/duration creates a new Stripe coupon (they're immutable) and archives the old one.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1466,195 +2210,340 @@ export interface Coupon {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "pages".
+ * via the `definition` "onboarding".
  */
-export interface Page {
+export interface Onboarding {
   id: number;
   title: string;
-  slug: string;
-  layout?: (HeroBlock | ItemsBlock | LogosBlock | StatsBlock | CTABlock | FAQBlock | ProseBlock)[] | null;
-  showInNav?: boolean | null;
-  publishedAt?: string | null;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
+  body?: string | null;
+  image?: (number | null) | Media;
+  /**
+   * Lottie JSON (optional).
+   */
+  animation?: (number | null) | Media;
+  cta?: {
     /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     * Button text.
      */
-    image?: (number | null) | Media;
+    label?: string | null;
+    destination?: {
+      type?: ('page' | 'appScreen' | 'url') | null;
+      page?:
+        | ({
+            relationTo: 'pages';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null)
+        | ({
+            relationTo: 'videos';
+            value: number | Video;
+          } | null)
+        | ({
+            relationTo: 'audio';
+            value: number | Audio;
+          } | null)
+        | ({
+            relationTo: 'series';
+            value: number | Series;
+          } | null)
+        | ({
+            relationTo: 'events';
+            value: number | Event;
+          } | null)
+        | ({
+            relationTo: 'locations';
+            value: number | Location;
+          } | null);
+      /**
+       * Web route or Expo screen key, e.g. /courses/intro/lessons/1
+       */
+      screen?: string | null;
+      params?:
+        | {
+            [k: string]: unknown;
+          }
+        | unknown[]
+        | string
+        | number
+        | boolean
+        | null;
+      url?: string | null;
+    };
   };
-  parent?: (number | null) | Page;
-  breadcrumbs?:
+  /**
+   * Optional “Skip”/secondary action.
+   */
+  secondaryCta?: {
+    label?: string | null;
+    destination?: {
+      type?: ('page' | 'appScreen' | 'url') | null;
+      page?:
+        | ({
+            relationTo: 'pages';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null)
+        | ({
+            relationTo: 'videos';
+            value: number | Video;
+          } | null)
+        | ({
+            relationTo: 'audio';
+            value: number | Audio;
+          } | null)
+        | ({
+            relationTo: 'series';
+            value: number | Series;
+          } | null)
+        | ({
+            relationTo: 'events';
+            value: number | Event;
+          } | null)
+        | ({
+            relationTo: 'locations';
+            value: number | Location;
+          } | null);
+      /**
+       * Web route or Expo screen key, e.g. /courses/intro/lessons/1
+       */
+      screen?: string | null;
+      params?:
+        | {
+            [k: string]: unknown;
+          }
+        | unknown[]
+        | string
+        | number
+        | boolean
+        | null;
+      url?: string | null;
+    };
+  };
+  /**
+   * The “Get started” / finish screen.
+   */
+  isFinalSlide?: boolean | null;
+  order: number;
+  /**
+   * Hex (optional).
+   */
+  backgroundColor?: string | null;
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "banners".
+ */
+export interface Banner {
+  id: number;
+  title: string;
+  body?: string | null;
+  image?: (number | null) | Media;
+  icon?: string | null;
+  variant: 'info' | 'promo' | 'warning' | 'announcement';
+  /**
+   * Optional CTA.
+   */
+  link?: {
+    /**
+     * Link/button text.
+     */
+    label?: string | null;
+    /**
+     * Internal path (e.g. /pricing) or full external URL (https://example.com).
+     */
+    url?: string | null;
+    newTab?: boolean | null;
+    appearance?: ('default' | 'button' | 'outline' | 'link') | null;
+  };
+  placement: 'home' | 'global' | 'content' | 'onboarding';
+  /**
+   * Empty = all platforms.
+   */
+  targetPlatform?: ('ios' | 'android' | 'web')[] | null;
+  audience?: ('all' | 'guests' | 'members') | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  /**
+   * Higher wins.
+   */
+  priority?: number | null;
+  dismissible?: boolean | null;
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications".
+ */
+export interface Notification {
+  id: number;
+  title: string;
+  body?: string | null;
+  /**
+   * Rich push image.
+   */
+  image?: (number | null) | Media;
+  /**
+   * In-app route to open, e.g. /posts/welcome.
+   */
+  deepLink?: string | null;
+  /**
+   * Custom key/value payload.
+   */
+  data?:
     | {
-        doc?: (number | null) | Page;
-        url?: string | null;
-        label?: string | null;
-        id?: string | null;
-      }[]
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
     | null;
+  channel: ('push' | 'email' | 'sms' | 'in_app')[];
+  /**
+   * Short SMS variant (≤160 chars). Sends require smsOptIn + phone.
+   */
+  smsBody?: string | null;
+  audience: 'all' | 'segment' | 'users';
+  /**
+   * Filter criteria for the send job.
+   */
+  segment?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  targetUsers?: (number | User)[] | null;
+  scheduledAt?: string | null;
+  /**
+   * Set by the send job.
+   */
+  sentAt?: string | null;
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
+  sentCount?: number | null;
+  openCount?: number | null;
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
-  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HeroBlock".
+ * via the `definition` "forms".
  */
-export interface HeroBlock {
+export interface Form {
+  id: number;
   title: string;
-  description?: string | null;
+  fields?:
+    | (
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            required?: boolean | null;
+            defaultValue?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'checkbox';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'email';
+          }
+        | {
+            message?: {
+              root: {
+                type: string;
+                children: {
+                  type: any;
+                  version: number;
+                  [k: string]: unknown;
+                }[];
+                direction: ('ltr' | 'rtl') | null;
+                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                indent: number;
+                version: number;
+              };
+              [k: string]: unknown;
+            } | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'message';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            defaultValue?: number | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'number';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            defaultValue?: string | null;
+            placeholder?: string | null;
+            options?:
+              | {
+                  label: string;
+                  value: string;
+                  id?: string | null;
+                }[]
+              | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'select';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            defaultValue?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'text';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            defaultValue?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'textarea';
+          }
+      )[]
+    | null;
+  submitButtonLabel?: string | null;
   /**
-   * Small pill above the title.
+   * Choose whether to display an on-page message or redirect to a different page after they submit the form.
    */
-  badgeText?: string | null;
-  badgeLinkText?: string | null;
-  badgeLinkHref?: string | null;
-  buttons?:
-    | {
-        text: string;
-        href: string;
-        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Hero screenshot (light mode).
-   */
-  mockupLight?: (number | null) | Media;
-  /**
-   * Optional dark-mode variant of the screenshot.
-   */
-  mockupDark?: (number | null) | Media;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'hero';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ItemsBlock".
- */
-export interface ItemsBlock {
-  title?: string | null;
-  items?:
-    | {
-        title: string;
-        description: string;
-        /**
-         * Optional lucide icon.
-         */
-        icon?:
-          | (
-              | 'Rocket'
-              | 'Zap'
-              | 'ShieldCheck'
-              | 'Sparkles'
-              | 'Star'
-              | 'Heart'
-              | 'Globe'
-              | 'Code'
-              | 'Layers'
-              | 'Smartphone'
-              | 'Palette'
-              | 'Lock'
-              | 'Check'
-              | 'Cloud'
-              | 'Bell'
-              | 'Settings'
-              | 'Users'
-              | 'ChartBar'
-              | 'Search'
-              | 'Mail'
-            )
-          | null;
-        id?: string | null;
-      }[]
-    | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'items';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LogosBlock".
- */
-export interface LogosBlock {
-  title?: string | null;
-  badgeText?: string | null;
-  logos?:
-    | {
-        name: string;
-        /**
-         * Optional logo image; falls back to the name.
-         */
-        image?: (number | null) | Media;
-        id?: string | null;
-      }[]
-    | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'logos';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "StatsBlock".
- */
-export interface StatsBlock {
-  items?:
-    | {
-        label?: string | null;
-        value: string;
-        suffix?: string | null;
-        description?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'stats';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "CTABlock".
- */
-export interface CTABlock {
-  title: string;
-  buttons?:
-    | {
-        text: string;
-        href: string;
-        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
-        id?: string | null;
-      }[]
-    | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'cta';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "FAQBlock".
- */
-export interface FAQBlock {
-  title?: string | null;
-  items?:
-    | {
-        question: string;
-        answer: string;
-        id?: string | null;
-      }[]
-    | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'faq';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ProseBlock".
- */
-export interface ProseBlock {
-  title?: string | null;
-  content: {
+  confirmationType?: ('message' | 'redirect') | null;
+  confirmationMessage?: {
     root: {
       type: string;
       children: {
@@ -1668,10 +2557,66 @@ export interface ProseBlock {
       version: number;
     };
     [k: string]: unknown;
+  } | null;
+  redirect?: {
+    type?: ('reference' | 'custom') | null;
+    reference?: {
+      relationTo: 'pages';
+      value: number | Page;
+    } | null;
+    url?: string | null;
   };
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'prose';
+  /**
+   * Send custom emails when the form submits. Use comma separated lists to send the same email to multiple recipients. To reference a value from this form, wrap that field's name with double curly brackets, i.e. {{firstName}}. You can use a wildcard {{*}} to output all data and {{*:table}} to format it as an HTML table in the email.
+   */
+  emails?:
+    | {
+        emailTo?: string | null;
+        cc?: string | null;
+        bcc?: string | null;
+        replyTo?: string | null;
+        emailFrom?: string | null;
+        subject: string;
+        /**
+         * Enter the message that should be sent in this email.
+         */
+        message?: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        } | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-submissions".
+ */
+export interface FormSubmission {
+  id: number;
+  form: number | Form;
+  submissionData?:
+    | {
+        field: string;
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1794,6 +2739,26 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
+        relationTo: 'device-tokens';
+        value: number | DeviceToken;
+      } | null)
+    | ({
+        relationTo: 'feed-tokens';
+        value: number | FeedToken;
+      } | null)
+    | ({
+        relationTo: 'favorites';
+        value: number | Favorite;
+      } | null)
+    | ({
+        relationTo: 'enrollments';
+        value: number | Enrollment;
+      } | null)
+    | ({
+        relationTo: 'reviews';
+        value: number | Review;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -1842,6 +2807,26 @@ export interface PayloadLockedDocument {
         value: number | TagGroup;
       } | null)
     | ({
+        relationTo: 'space-groups';
+        value: number | SpaceGroup;
+      } | null)
+    | ({
+        relationTo: 'community-spaces';
+        value: number | CommunitySpace;
+      } | null)
+    | ({
+        relationTo: 'community-posts';
+        value: number | CommunityPost;
+      } | null)
+    | ({
+        relationTo: 'comments';
+        value: number | Comment;
+      } | null)
+    | ({
+        relationTo: 'reports';
+        value: number | Report;
+      } | null)
+    | ({
         relationTo: 'plans';
         value: number | Plan;
       } | null)
@@ -1852,6 +2837,26 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'pages';
         value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'onboarding';
+        value: number | Onboarding;
+      } | null)
+    | ({
+        relationTo: 'banners';
+        value: number | Banner;
+      } | null)
+    | ({
+        relationTo: 'notifications';
+        value: number | Notification;
+      } | null)
+    | ({
+        relationTo: 'forms';
+        value: number | Form;
+      } | null)
+    | ({
+        relationTo: 'form-submissions';
+        value: number | FormSubmission;
       } | null)
     | ({
         relationTo: 'payload-folders';
@@ -1933,8 +2938,11 @@ export interface UsersSelect<T extends boolean = true> {
         tiktok?: T;
         github?: T;
       };
+  interests?: T;
   profileVisibility?: T;
   referralSource?: T;
+  tags?: T;
+  customFields?: T;
   phone?: T;
   dateOfBirth?: T;
   timezone?: T;
@@ -1963,6 +2971,96 @@ export interface UsersSelect<T extends boolean = true> {
   onboardingCompleted?: T;
   lastActiveAt?: T;
   stripeCustomerID?: T;
+  favorites?: T;
+  enrollments?: T;
+  devices?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "device-tokens_select".
+ */
+export interface DeviceTokensSelect<T extends boolean = true> {
+  user?: T;
+  token?: T;
+  platform?: T;
+  deviceModel?: T;
+  appVersion?: T;
+  osVersion?: T;
+  locale?: T;
+  pushEnabled?: T;
+  lastSeenAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "feed-tokens_select".
+ */
+export interface FeedTokensSelect<T extends boolean = true> {
+  token?: T;
+  user?: T;
+  show?: T;
+  revoked?: T;
+  lastAccessedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "favorites_select".
+ */
+export interface FavoritesSelect<T extends boolean = true> {
+  user?: T;
+  target?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "enrollments_select".
+ */
+export interface EnrollmentsSelect<T extends boolean = true> {
+  user?: T;
+  course?: T;
+  enrolledAt?: T;
+  status?: T;
+  source?: T;
+  progress?:
+    | T
+    | {
+        lesson?: T;
+        completedAt?: T;
+        percent?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews_select".
+ */
+export interface ReviewsSelect<T extends boolean = true> {
+  author?: T;
+  target?: T;
+  rating?: T;
+  title?: T;
+  body?: T;
+  photos?: T;
+  status?: T;
+  helpfulCount?: T;
+  verifiedVisit?: T;
+  response?:
+    | T
+    | {
+        body?: T;
+        respondedBy?: T;
+        respondedAt?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;
@@ -2048,6 +3146,7 @@ export interface PostsSelect<T extends boolean = true> {
   featured?: T;
   commentsEnabled?: T;
   publishedAt?: T;
+  comments?: T;
   meta?:
     | T
     | {
@@ -2403,6 +3502,7 @@ export interface LocationsSelect<T extends boolean = true> {
   temporarilyClosed?: T;
   featured?: T;
   commentsEnabled?: T;
+  reviews?: T;
   events?: T;
   meta?:
     | T
@@ -2515,6 +3615,123 @@ export interface TagGroupsSelect<T extends boolean = true> {
   slug?: T;
   description?: T;
   displayOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "space-groups_select".
+ */
+export interface SpaceGroupsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  icon?: T;
+  accessLevel?: T;
+  requiredPlans?: T;
+  order?: T;
+  spaces?: T;
+  parent?: T;
+  breadcrumbs?:
+    | T
+    | {
+        doc?: T;
+        url?: T;
+        label?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "community-spaces_select".
+ */
+export interface CommunitySpacesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  spaceGroup?: T;
+  parentSpace?: T;
+  description?: T;
+  image?: T;
+  accessLevel?: T;
+  requiredPlans?: T;
+  postingPolicy?: T;
+  moderators?: T;
+  order?: T;
+  posts?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "community-posts_select".
+ */
+export interface CommunityPostsSelect<T extends boolean = true> {
+  author?: T;
+  space?: T;
+  title?: T;
+  body?: T;
+  media?: T;
+  link?:
+    | T
+    | {
+        type?: T;
+        page?: T;
+        screen?: T;
+        params?: T;
+        url?: T;
+      };
+  tags?: T;
+  accessLevel?: T;
+  commentsEnabled?: T;
+  pinned?: T;
+  status?: T;
+  likeCount?: T;
+  commentCount?: T;
+  reportCount?: T;
+  authorName?: T;
+  publishedAt?: T;
+  comments?: T;
+  reports?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments_select".
+ */
+export interface CommentsSelect<T extends boolean = true> {
+  author?: T;
+  target?: T;
+  parent?: T;
+  body?: T;
+  status?: T;
+  likeCount?: T;
+  reportCount?: T;
+  isPinned?: T;
+  editedAt?: T;
+  replies?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reports_select".
+ */
+export interface ReportsSelect<T extends boolean = true> {
+  reporter?: T;
+  target?: T;
+  reason?: T;
+  details?: T;
+  status?: T;
+  resolution?: T;
+  resolvedBy?: T;
+  resolvedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2738,6 +3955,234 @@ export interface ProseBlockSelect<T extends boolean = true> {
   content?: T;
   id?: T;
   blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "onboarding_select".
+ */
+export interface OnboardingSelect<T extends boolean = true> {
+  title?: T;
+  body?: T;
+  image?: T;
+  animation?: T;
+  cta?:
+    | T
+    | {
+        label?: T;
+        destination?:
+          | T
+          | {
+              type?: T;
+              page?: T;
+              screen?: T;
+              params?: T;
+              url?: T;
+            };
+      };
+  secondaryCta?:
+    | T
+    | {
+        label?: T;
+        destination?:
+          | T
+          | {
+              type?: T;
+              page?: T;
+              screen?: T;
+              params?: T;
+              url?: T;
+            };
+      };
+  isFinalSlide?: T;
+  order?: T;
+  backgroundColor?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "banners_select".
+ */
+export interface BannersSelect<T extends boolean = true> {
+  title?: T;
+  body?: T;
+  image?: T;
+  icon?: T;
+  variant?: T;
+  link?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        newTab?: T;
+        appearance?: T;
+      };
+  placement?: T;
+  targetPlatform?: T;
+  audience?: T;
+  startsAt?: T;
+  endsAt?: T;
+  priority?: T;
+  dismissible?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications_select".
+ */
+export interface NotificationsSelect<T extends boolean = true> {
+  title?: T;
+  body?: T;
+  image?: T;
+  deepLink?: T;
+  data?: T;
+  channel?: T;
+  smsBody?: T;
+  audience?: T;
+  segment?: T;
+  targetUsers?: T;
+  scheduledAt?: T;
+  sentAt?: T;
+  status?: T;
+  sentCount?: T;
+  openCount?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "forms_select".
+ */
+export interface FormsSelect<T extends boolean = true> {
+  title?: T;
+  fields?:
+    | T
+    | {
+        checkbox?:
+          | T
+          | {
+              name?: T;
+              label?: T;
+              width?: T;
+              required?: T;
+              defaultValue?: T;
+              id?: T;
+              blockName?: T;
+            };
+        email?:
+          | T
+          | {
+              name?: T;
+              label?: T;
+              width?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        message?:
+          | T
+          | {
+              message?: T;
+              id?: T;
+              blockName?: T;
+            };
+        number?:
+          | T
+          | {
+              name?: T;
+              label?: T;
+              width?: T;
+              defaultValue?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        select?:
+          | T
+          | {
+              name?: T;
+              label?: T;
+              width?: T;
+              defaultValue?: T;
+              placeholder?: T;
+              options?:
+                | T
+                | {
+                    label?: T;
+                    value?: T;
+                    id?: T;
+                  };
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        text?:
+          | T
+          | {
+              name?: T;
+              label?: T;
+              width?: T;
+              defaultValue?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        textarea?:
+          | T
+          | {
+              name?: T;
+              label?: T;
+              width?: T;
+              defaultValue?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  submitButtonLabel?: T;
+  confirmationType?: T;
+  confirmationMessage?: T;
+  redirect?:
+    | T
+    | {
+        type?: T;
+        reference?: T;
+        url?: T;
+      };
+  emails?:
+    | T
+    | {
+        emailTo?: T;
+        cc?: T;
+        bcc?: T;
+        replyTo?: T;
+        emailFrom?: T;
+        subject?: T;
+        message?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-submissions_select".
+ */
+export interface FormSubmissionsSelect<T extends boolean = true> {
+  form?: T;
+  submissionData?:
+    | T
+    | {
+        field?: T;
+        value?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3266,6 +4711,39 @@ export interface PricingSetting {
   createdAt?: string | null;
 }
 /**
+ * Custom member profile fields stored in users.customFields.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "profile-fields".
+ */
+export interface ProfileField {
+  id: number;
+  fields?:
+    | {
+        /**
+         * Stable key stored in users.customFields.
+         */
+        key: string;
+        label: string;
+        type: 'text' | 'textarea' | 'number' | 'select' | 'multiselect' | 'checkbox' | 'date' | 'url';
+        options?:
+          | {
+              label: string;
+              value: string;
+              id?: string | null;
+            }[]
+          | null;
+        required?: boolean | null;
+        visibility?: ('public' | 'members' | 'private' | 'admin') | null;
+        editableByMember?: boolean | null;
+        order?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
@@ -3458,6 +4936,34 @@ export interface PricingSettingsSelect<T extends boolean = true> {
               text?: T;
               id?: T;
             };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "profile-fields_select".
+ */
+export interface ProfileFieldsSelect<T extends boolean = true> {
+  fields?:
+    | T
+    | {
+        key?: T;
+        label?: T;
+        type?: T;
+        options?:
+          | T
+          | {
+              label?: T;
+              value?: T;
+              id?: T;
+            };
+        required?: T;
+        visibility?: T;
+        editableByMember?: T;
+        order?: T;
+        id?: T;
       };
   updatedAt?: T;
   createdAt?: T;

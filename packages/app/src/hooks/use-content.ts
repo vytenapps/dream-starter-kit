@@ -3,13 +3,15 @@
 import { useQuery } from "@tanstack/react-query";
 
 import type {
-  Post,
   Audio as AudioDoc,
+  Banner,
   Event as EventDoc,
   Location as LocationDoc,
+  Onboarding,
   Page,
   Photo,
   Plan,
+  Post,
   Video,
 } from "@acme/cms";
 
@@ -83,6 +85,23 @@ export const usePhotos = () =>
 export const useLocations = () => useList<LocationDoc>("locations");
 export const useLocation = (slug: string) =>
   useDoc<LocationDoc>("locations", slug);
+
+/** Active onboarding slides in display order (no drafts on this collection). */
+export const useOnboardingSlides = () =>
+  useList<Onboarding>("onboarding", "&where[active][equals]=true&sort=order", {
+    published: false,
+  });
+
+/**
+ * Active banners for a placement, highest priority first. The client still
+ * applies the schedule window / platform / audience targeting.
+ */
+export const useBanners = (placement: Banner["placement"]) =>
+  useList<Banner>(
+    "banners",
+    `&where[active][equals]=true&where[placement][equals]=${encodeURIComponent(placement)}&sort=-priority`,
+    { published: false },
+  );
 
 /**
  * Active billing plans, ordered for display. Plans aren't draft/publish content
