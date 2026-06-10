@@ -27,8 +27,12 @@ export default async function LocationsPage() {
           <ContentGrid>
             {locations.map((location) => {
               const image =
-                typeof location.featuredImage === "object" && location.featuredImage?.url
-                  ? { url: location.featuredImage.url, alt: location.featuredImage.alt }
+                typeof location.featuredImage === "object" &&
+                location.featuredImage?.url
+                  ? {
+                      url: location.featuredImage.url,
+                      alt: location.featuredImage.alt,
+                    }
                   : null;
               return (
                 <ContentCard
@@ -37,8 +41,7 @@ export default async function LocationsPage() {
                   title={location.name}
                   image={image}
                   description={
-                    location.shortDescription ??
-                    formatAddress(location.address)
+                    location.shortDescription ?? formatAddress(location.address)
                   }
                 />
               );

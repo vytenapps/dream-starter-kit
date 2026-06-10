@@ -80,7 +80,12 @@ export const Series: CollectionConfig = {
       relationTo: "series",
       admin: { description: "Seasons under a parent series." },
     },
-    { name: "categories", type: "relationship", relationTo: "categories", hasMany: true },
+    {
+      name: "categories",
+      type: "relationship",
+      relationTo: "categories",
+      hasMany: true,
+    },
     { name: "tags", type: "relationship", relationTo: "tags", hasMany: true },
     accessLevelField(),
     {

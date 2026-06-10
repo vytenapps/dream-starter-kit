@@ -27,7 +27,8 @@ export default async function PostsPage() {
           <ContentGrid>
             {posts.map((post) => {
               const image =
-                typeof post.featuredImage === "object" && post.featuredImage?.url
+                typeof post.featuredImage === "object" &&
+                post.featuredImage?.url
                   ? { url: post.featuredImage.url, alt: post.featuredImage.alt }
                   : null;
               return (

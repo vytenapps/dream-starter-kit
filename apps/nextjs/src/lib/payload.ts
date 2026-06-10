@@ -6,7 +6,6 @@ import config from "@payload-config";
 import { getPayload } from "payload";
 
 import type {
-  Post,
   Audio as AudioDoc,
   Coupon,
   Event as EventDoc,
@@ -14,6 +13,7 @@ import type {
   Page,
   Photo,
   Plan,
+  Post,
   PricingSetting,
   SiteSetting,
   Video,
@@ -177,9 +177,7 @@ export function listLocations(): Promise<LocationDoc[]> {
 }
 
 /** One-line postal address from a location's structured `address` group. */
-export function formatAddress(
-  address: LocationDoc["address"],
-): string | null {
+export function formatAddress(address: LocationDoc["address"]): string | null {
   if (!address) return null;
   const parts = [
     address.street,

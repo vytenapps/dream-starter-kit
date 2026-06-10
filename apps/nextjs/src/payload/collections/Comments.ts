@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { approvedOrStaff, ownsOrStaff, staffFieldAccess } from "../access";
+import { assignOwner } from "../hooks/assign-owner";
 import { requireCommentsEnabled } from "../hooks/comments-gate";
 
 /**
@@ -24,7 +25,10 @@ export const Comments: CollectionConfig = {
     update: ownsOrStaff("author"),
     delete: ownsOrStaff("author"),
   },
-  hooks: { beforeValidate: [requireCommentsEnabled] },
+  hooks: {
+    beforeChange: [assignOwner("author")],
+    beforeValidate: [requireCommentsEnabled],
+  },
   fields: [
     {
       name: "author",

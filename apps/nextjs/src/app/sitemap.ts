@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { listPosts, listEvents, listLocations } from "~/lib/payload";
+import { listEvents, listLocations, listPosts } from "~/lib/payload";
 import { getSiteUrl } from "~/lib/site-url";
 
 /** Public, crawlable routes. Authed (app) routes are excluded (see robots.ts). */

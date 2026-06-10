@@ -4,6 +4,7 @@ import { ownsOrStaff, staffFieldAccess } from "../access";
 import { accessLevelField } from "../fields/access-level";
 import { commentsEnabledField } from "../fields/comments-enabled";
 import { destinationField } from "../fields/destination";
+import { assignOwner } from "../hooks/assign-owner";
 
 /**
  * Member-authored posts on the community wall (distinct from editorial
@@ -30,6 +31,7 @@ export const CommunityPosts: CollectionConfig = {
     update: ownsOrStaff("author"),
     delete: ownsOrStaff("author"),
   },
+  hooks: { beforeChange: [assignOwner("author")] },
   fields: [
     {
       name: "author",

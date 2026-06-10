@@ -92,7 +92,10 @@ export const syncSubscriptionFromStripe: StripeWebhookHandler<
         user = docs[0] ?? null;
       }
     } catch (err) {
-      payload.logger.warn({ err }, "stripe-webhook: customer email fallback failed");
+      payload.logger.warn(
+        { err },
+        "stripe-webhook: customer email fallback failed",
+      );
     }
   }
 

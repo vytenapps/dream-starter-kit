@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { ownsOrStaff } from "../access";
+import { assignOwner } from "../hooks/assign-owner";
 
 /** Push tokens (FCM/APNs) registered per device, owned by a member. */
 export const DeviceTokens: CollectionConfig = {
@@ -13,10 +14,12 @@ export const DeviceTokens: CollectionConfig = {
   },
   access: {
     read: ownsOrStaff(),
-    create: ownsOrStaff(),
+    // create access cannot take a query constraint — owner is forced by hook.
+    create: ({ req: { user } }) => Boolean(user),
     update: ownsOrStaff(),
     delete: ownsOrStaff(),
   },
+  hooks: { beforeChange: [assignOwner()] },
   fields: [
     {
       name: "user",

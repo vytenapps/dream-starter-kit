@@ -72,8 +72,7 @@ function useDoc<T>(collection: string, slug: string) {
   });
 }
 
-export const usePosts = () =>
-  useList<Post>("posts", "&sort=-publishedAt");
+export const usePosts = () => useList<Post>("posts", "&sort=-publishedAt");
 export const usePost = (slug: string) => useDoc<Post>("posts", slug);
 export const useEvents = () => useList<EventDoc>("events", "&sort=startsAt");
 export const useEvent = (slug: string) => useDoc<EventDoc>("events", slug);

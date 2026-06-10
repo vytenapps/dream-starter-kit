@@ -19,7 +19,10 @@ const generateBlurDataUrl: CollectionBeforeChangeHook = async ({
       .resize(16, 16, { fit: "inside" })
       .webp({ quality: 30 })
       .toBuffer();
-    return { ...data, blurDataURL: `data:image/webp;base64,${buf.toString("base64")}` };
+    return {
+      ...data,
+      blurDataURL: `data:image/webp;base64,${buf.toString("base64")}`,
+    };
   } catch {
     return data;
   }

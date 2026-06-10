@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { isStaff } from "../access";
+import { assignOwner } from "../hooks/assign-owner";
 import { incrementReportCount } from "../hooks/report-count";
 import { uniquePolymorphic } from "../hooks/unique-polymorphic";
 
@@ -24,6 +25,7 @@ export const Reports: CollectionConfig = {
     delete: isStaff,
   },
   hooks: {
+    beforeChange: [assignOwner("reporter")],
     beforeValidate: [
       uniquePolymorphic({
         collection: "reports",

@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { approvedOrStaff, ownsOrStaff, staffFieldAccess } from "../access";
+import { assignOwner } from "../hooks/assign-owner";
 
 /**
  * Member reviews with a 1–5 rating, photos and an owner/staff response —
@@ -19,6 +20,7 @@ export const Reviews: CollectionConfig = {
     update: ownsOrStaff("author"),
     delete: ownsOrStaff("author"),
   },
+  hooks: { beforeChange: [assignOwner("author")] },
   fields: [
     {
       name: "author",

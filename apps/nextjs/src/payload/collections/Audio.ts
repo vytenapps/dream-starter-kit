@@ -119,7 +119,9 @@ export const Audio: CollectionConfig = {
       name: "series",
       type: "relationship",
       relationTo: "series",
-      admin: { description: "The show (kind: podcast) this episode belongs to." },
+      admin: {
+        description: "The show (kind: podcast) this episode belongs to.",
+      },
     },
     {
       name: "itunesBlock",

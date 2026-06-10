@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { ownsOrStaff } from "../access";
+import { assignOwner } from "../hooks/assign-owner";
 import { uniquePolymorphic } from "../hooks/unique-polymorphic";
 
 /**
@@ -17,11 +18,13 @@ export const Favorites: CollectionConfig = {
   },
   access: {
     read: ownsOrStaff(),
-    create: ownsOrStaff(),
+    // create access cannot take a query constraint — owner is forced by hook.
+    create: ({ req: { user } }) => Boolean(user),
     update: ownsOrStaff(),
     delete: ownsOrStaff(),
   },
   hooks: {
+    beforeChange: [assignOwner()],
     beforeValidate: [
       uniquePolymorphic({
         collection: "favorites",

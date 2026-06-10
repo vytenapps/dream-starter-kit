@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { ownsOrStaff } from "../access";
+import { assignOwner } from "../hooks/assign-owner";
 
 /**
  * Opaque per-member tokens for PRIVATE podcast feeds: podcast apps can't send
@@ -18,10 +19,12 @@ export const FeedTokens: CollectionConfig = {
   },
   access: {
     read: ownsOrStaff(),
-    create: ownsOrStaff(),
+    // create access cannot take a query constraint — owner is forced by hook.
+    create: ({ req: { user } }) => Boolean(user),
     update: ownsOrStaff(),
     delete: ownsOrStaff(),
   },
+  hooks: { beforeChange: [assignOwner()] },
   fields: [
     {
       name: "token",
