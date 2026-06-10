@@ -22,7 +22,7 @@ export default function Items({
 }: ItemsProps) {
   return (
     <Section className={className}>
-      <div className="max-w-container mx-auto flex flex-col items-center gap-6 sm:gap-20">
+      <div className="max-w-container mx-auto flex flex-col items-center gap-6 sm:gap-12">
         <h2 className="max-w-[560px] text-center text-3xl leading-tight font-semibold sm:text-5xl sm:leading-tight">
           {title}
         </h2>
