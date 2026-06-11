@@ -46,6 +46,13 @@ catalogs:
 
 linkWorkspacePackages: true
 
+# Postinstall scripts we deliberately don't run (silences pnpm's "Ignored build
+# scripts" warning): bufferutil is an optional native ws speedup with a pure-JS
+# fallback; core-js-pure's script only prints a funding banner.
+ignoredBuiltDependencies:
+  - bufferutil
+  - core-js-pure
+
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - esbuild

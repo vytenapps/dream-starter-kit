@@ -57,7 +57,17 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 // DB bootstrap creates the payload_cms role with the same derived password).
 const cmsCredentials = resolveCmsCredentials();
 
+// `next build` prerenders the public pages before any server has booted, so on
+// a fresh project Payload can't connect yet — the payload_cms role is created
+// at first server boot by the runtime DB bootstrap (lib/db/bootstrap.ts), not
+// at build time. Every build-time reader already degrades to defaults
+// (lib/payload.ts), but the adapter logs a pino ERROR ("cannot connect to
+// Postgres") before throwing; silence the logger for that expected failure so
+// build output stays clean. NEXT_PHASE is set by Next itself during the build.
+const buildPhase = process.env.NEXT_PHASE === "phase-production-build";
+
 export default buildConfig({
+  ...(buildPhase ? { logger: { options: { level: "silent" } } } : {}),
   // Payload's own admin auth (content editors), separate from Supabase Auth.
   admin: {
     user: Users.slug,
