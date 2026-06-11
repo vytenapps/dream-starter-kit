@@ -158,26 +158,43 @@ const MAX_ERROR_MESSAGE = 300;
 
 /**
  * Sanitized error summary for surfaces outside the server log (the public
- * /api/health/db endpoint): code + message only — no stack, and any embedded
- * connection string (credentials!) is redacted.
+ * /api/health/db endpoint, the /cms-setup error UI): code + message only —
+ * no stack, and any embedded connection string (credentials!) is redacted.
+ *
+ * Walks the `cause` chain (3 levels): drizzle wraps the real failure as
+ * "Failed query: SELECT …" with the actionable error (e.g. Supavisor's
+ * "max clients reached in session mode") buried in `cause` — without this a
+ * founder only sees the useless wrapper.
  */
 export function summarizeDbError(error: unknown): {
   code?: string;
   message: string;
 } {
-  const code =
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof error.code === "string"
-      ? error.code
-      : undefined;
-  const raw =
-    error instanceof Error
-      ? error.message
-      : typeof error === "string" && error
-        ? error
-        : "unknown error";
+  const messages: string[] = [];
+  let code: string | undefined;
+  let current: unknown = error;
+  for (let depth = 0; depth < 3 && current !== undefined; depth++) {
+    if (typeof current === "object" && current !== null) {
+      if (
+        code === undefined &&
+        "code" in current &&
+        typeof current.code === "string"
+      ) {
+        code = current.code;
+      }
+      if (current instanceof Error && current.message) {
+        // Drop drizzle's multi-line echo of the full query — the first line
+        // ("Failed query: …") is plenty of context.
+        messages.push(current.message.split("\n")[0] ?? current.message);
+      }
+      current =
+        "cause" in current ? (current as { cause?: unknown }).cause : undefined;
+    } else {
+      if (typeof current === "string" && current) messages.push(current);
+      break;
+    }
+  }
+  const raw = messages.join(" — caused by: ") || "unknown error";
   const message = raw
     .replace(CONNECTION_STRING_PATTERN, "[redacted]")
     .slice(0, MAX_ERROR_MESSAGE);

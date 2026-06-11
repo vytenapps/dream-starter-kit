@@ -169,7 +169,18 @@ export default buildConfig({
     // → encrypted-unverified, param stripped) — hosted Supabase's self-rooted
     // cert chain fails pg's default verify-full handling otherwise. Local
     // plaintext URLs pass through untouched.
-    pool: { ...pgConnectionOptions(cmsCredentials.databaseUrl) },
+    //
+    // The pool is deliberately SMALL: on serverless every instance gets its
+    // own pool, and hosted Supabase's session-mode pooler allows only
+    // ~pool_size (15 by default) clients per role — pg's default of 10 per
+    // instance exhausted it on a fresh deploy's cold-start burst
+    // ("EMAXCONNSESSION max clients reached in session mode"). Idle
+    // connections are released quickly so frozen instances give slots back.
+    pool: {
+      ...pgConnectionOptions(cmsCredentials.databaseUrl),
+      max: 2,
+      idleTimeoutMillis: 20_000,
+    },
     // Payload owns its own Postgres schema, isolated from the RLS-governed
     // `public` tables. It connects as the least-privilege `payload_cms` role.
     schemaName: "cms",

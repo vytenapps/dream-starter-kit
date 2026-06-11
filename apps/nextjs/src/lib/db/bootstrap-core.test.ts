@@ -232,6 +232,40 @@ describe("summarizeDbError", () => {
     expect(summarizeDbError("boom")).toEqual({ message: "boom" });
     expect(summarizeDbError(undefined)).toEqual({ message: "unknown error" });
   });
+
+  it("surfaces the root cause buried in drizzle's wrapper (cause chain)", () => {
+    // The shape that hid Supavisor's pool-exhaustion error from the founder:
+    // drizzle wraps the real failure as "Failed query: <multi-line SQL>".
+    const cause = Object.assign(
+      new Error(
+        "(EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15",
+      ),
+      { code: "XX000" },
+    );
+    const wrapper = new Error(
+      'Failed query: SELECT to_regclass(\'"cms"."payload_migrations"\') AS exists;\nparams: ',
+      { cause },
+    );
+    const summary = summarizeDbError(wrapper);
+    expect(summary.message).toContain("Failed query: SELECT to_regclass");
+    expect(summary.message).toContain(
+      "caused by: (EMAXCONNSESSION) max clients reached in session mode",
+    );
+    // The multi-line query echo is dropped — first line only.
+    expect(summary.message).not.toContain("params:");
+    expect(summary.code).toBe("XX000");
+  });
+
+  it("redacts connection strings anywhere in the cause chain", () => {
+    const wrapper = new Error("Failed query: SELECT 1", {
+      cause: new Error(
+        "connect failed for postgresql://payload_cms:s3cret@db.ref.supabase.co:5432/postgres",
+      ),
+    });
+    const summary = summarizeDbError(wrapper);
+    expect(summary.message).not.toContain("s3cret");
+    expect(summary.message).toContain("[redacted]");
+  });
 });
 
 describe("pendingMigrations", () => {

@@ -37,11 +37,16 @@ export async function register() {
   await bootstrapDatabase();
 
   try {
-    const [{ default: config }, { getPayload }] = await Promise.all([
-      import("@payload-config"),
-      import("payload"),
-    ]);
-    await getPayload({ config });
+    // The init lock serializes the warm-up ACROSS instances: on serverless,
+    // concurrent cold boots otherwise race `createExtensions` + the
+    // `prodMigrations` ledger (see lib/cms/init-lock.ts).
+    const [{ default: config }, { getPayload }, { withCmsInitLock }] =
+      await Promise.all([
+        import("@payload-config"),
+        import("payload"),
+        import("~/lib/cms/init-lock"),
+      ]);
+    await withCmsInitLock(() => getPayload({ config }));
   } catch {
     // CMS unreachable (e.g. local Postgres not running) — fine: the public
     // pages' fetchers (lib/payload.ts) degrade to built-in defaults on their own.
