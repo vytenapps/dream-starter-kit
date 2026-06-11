@@ -163,11 +163,29 @@ jobs:
           S3_BUCKET=cms-media
           EOF
 
-      # NOTE: the Payload `cms` schema + role are deliberately NOT provisioned
-      # here (00_cms_role.sql stays the local-dev path via `db reset`'s
-      # sql_paths). The runtime DB bootstrap creates them on the e2e app's
-      # first boot using credentials DERIVED from SUPABASE_SERVICE_ROLE_KEY —
-      # the same zero-touch path a fresh hosted deploy takes.
+      # Mirror a FRESH hosted project for the zero-touch CMS path: a first
+      # `supabase start` applies the [db.seed].sql_paths from config.toml,
+      # which includes 00_cms_role.sql — creating the payload_cms role with
+      # the LOCAL DEV password. Hosted projects have neither the role nor the
+      # cms schema, and the e2e run must exercise exactly that: the runtime
+      # DB bootstrap creates both on the app's first boot using credentials
+      # DERIVED from SUPABASE_SERVICE_ROLE_KEY (lib/cms/derived-credentials).
+      # Without this drop, the dev-password role shadows the derived one and
+      # Payload fails auth.
+      - name: Drop seeded CMS role/schema (mirror a fresh hosted project)
+        run: |
+          docker exec -i -e PGPASSWORD=postgres \
+            "$(docker ps --filter name=supabase_db_ --format '{{.Names}}' | head -n1)" \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          drop schema if exists cms cascade;
+          do $$ begin
+            if exists (select 1 from pg_roles where rolname = 'payload_cms') then
+              drop owned by payload_cms;
+              drop role payload_cms;
+            end if;
+          end $$;
+          SQL
+
       - name: RLS isolation regression
         run: pnpm test:rls
 

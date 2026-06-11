@@ -1,6 +1,12 @@
 import { writeFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
+// Never retry the founder flow: a retry signs up a SECOND user, who is
+// legitimately non-staff and lands on /a — so retries can only fail, minutes
+// later, with a misleading "expected /cms-setup" error that buries the real
+// first-attempt failure. Fail fast with the true error instead.
+test.describe.configure({ retries: 0 });
+
 import { fetchAuthUserByEmail, fetchProfile } from "./helpers/db";
 import { FOUNDER_META, FOUNDER_STORAGE_STATE } from "./helpers/founder";
 import { signUpAndConfirm } from "./helpers/mailpit";
