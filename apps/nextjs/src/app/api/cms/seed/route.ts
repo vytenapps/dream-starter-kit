@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import config from "@payload-config";
 import { getPayload } from "payload";
 
-import { cmsNotConfiguredMessage, missingCmsEnv } from "~/lib/cms/env-status";
+import { cmsConfigStatus, cmsNotConfiguredMessage } from "~/lib/cms/env-status";
 import { summarizeDbError } from "~/lib/db/bootstrap-core";
 import { seedCmsContent } from "~/payload/seed";
 
@@ -34,10 +34,10 @@ async function authedPayload() {
  * 500 digest. Returns null when the CMS came up fine.
  */
 function cmsUnavailableResponse(): NextResponse | null {
-  const missing = missingCmsEnv();
-  if (missing.length === 0) return null;
+  const status = cmsConfigStatus();
+  if (status.configured) return null;
   return NextResponse.json(
-    { error: cmsNotConfiguredMessage(missing) },
+    { error: cmsNotConfiguredMessage(status.missing) },
     { status: 503 },
   );
 }

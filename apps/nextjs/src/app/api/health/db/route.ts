@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { missingCmsEnv } from "~/lib/cms/env-status";
+import { cmsConfigStatus } from "~/lib/cms/env-status";
 import { getBootstrapStatus } from "~/lib/db/bootstrap-status";
 
 /**
@@ -22,13 +22,11 @@ export const runtime = "nodejs";
 
 export function GET() {
   const status = getBootstrapStatus();
-  // CMS env completeness (var NAMES only, never values): the bootstrap skips
-  // cms provisioning when PAYLOAD_DATABASE_URL is unset, and Payload can't
-  // init without PAYLOAD_SECRET — surface both here so a broken /admin or
-  // seed flow is diagnosable from one URL.
-  const missing = missingCmsEnv();
+  // CMS config state (var NAMES only, never values): explicit env, derived
+  // from the Supabase integration env, or unconfigured — so a broken /admin
+  // or seed flow is diagnosable from one URL.
   return NextResponse.json(
-    { ...status, cms: { configured: missing.length === 0, missing } },
+    { ...status, cms: cmsConfigStatus() },
     { status: status.status === "error" ? 503 : 200 },
   );
 }

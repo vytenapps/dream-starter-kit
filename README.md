@@ -204,8 +204,8 @@ Every variable is validated by a zod schema (`packages/config/env` + each app's
 | `AI_GATEWAY_API_KEY`                                                                    | 🔒      | [Vercel AI Gateway](https://vercel.com/ai-gateway) (auto on Vercel)                                                         |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`                                           | 🔒      | Stripe Dashboard / `stripe listen`                                                                                          |
 | `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY`                                          | 🔒      | Stripe price IDs (`price_…`)                                                                                                |
-| `PAYLOAD_DATABASE_URL`                                                                  | 🔒      | `payload_cms` role connection (`search_path=cms`); local default in `.env.example`                                          |
-| `PAYLOAD_SECRET`                                                                        | 🔒      | you choose (`openssl rand -base64 32`) — Payload admin auth/encryption                                                      |
+| `PAYLOAD_DATABASE_URL`                                                                  | 🔒      | `payload_cms` role connection (`search_path=cms`); local default in `.env.example` — hosted: optional, derived from the service-role key |
+| `PAYLOAD_SECRET`                                                                        | 🔒      | Payload admin auth/encryption (`openssl rand -base64 32`) — hosted: optional, derived from the service-role key             |
 | `S3_ENDPOINT` / `S3_REGION` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` / `S3_BUCKET` | 🔒      | Supabase Storage (S3) for Payload media — the `cms-media` bucket; local defaults in `.env.example`                          |
 | `NEXT_PUBLIC_CMS_URL` / `EXPO_PUBLIC_CMS_URL`                                           | ✅      | Payload REST origin (mobile reads content; web is same-origin)                                                              |
 | `SUPABASE_AUTH_EXTERNAL_GOOGLE_*` / `_APPLE_*`                                          | 🔒      | OAuth provider consoles (local dev only; prod uses the Dashboard)                                                           |
@@ -328,16 +328,14 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
 2. **Add Supabase** — in the new Vercel project open **Storage → Create Database →
    Supabase** (or install from the [Marketplace](https://vercel.com/marketplace/supabase)),
    and create a new project. Vercel writes the Supabase + Postgres env vars into the
-   project automatically. The integration does **not** cover the CMS — also add two
-   server-only vars in Vercel (Settings → Environment Variables) now, so the
-   first-user onboarding (`/cms-setup` → `/admin`) works on first signup:
-   - `PAYLOAD_SECRET` — `openssl rand -base64 32`
-   - `PAYLOAD_DATABASE_URL` — the `payload_cms` connection string with a **real
-     password you choose** (the bootstrap creates the role with it on next boot) —
-     see [Content backend (Payload CMS)](#content-backend-payload-cms).
-
-   Until both are set, `/admin` and the CMS seed answer **503 "CMS not configured"**
-   naming the missing vars (the rest of the app works).
+   project automatically. That's all the CMS needs too: `PAYLOAD_SECRET` and the
+   `payload_cms` connection string are **derived automatically** from the injected
+   `SUPABASE_SERVICE_ROLE_KEY` (setting `PAYLOAD_SECRET` / `PAYLOAD_DATABASE_URL`
+   yourself always overrides — see
+   [Content backend (Payload CMS)](#content-backend-payload-cms), including the
+   service-role-key **rotation** caveat). If neither explicit nor derivable,
+   `/admin` and the CMS seed answer **503 "CMS not configured"** naming what's
+   missing (the rest of the app works).
 
 3. **Apply the schema** — nothing to run. The integration creates an _empty_ database,
    and the app **provisions it itself on first boot**: a runtime bootstrap
@@ -432,15 +430,24 @@ Payload runs inside the deployed web app. Its `cms` schema + login role aren't c
 by `supabase db push` (`CREATE ROLE` isn't diffed) — instead the **runtime bootstrap
 creates them on first boot**, taking the password from `PAYLOAD_DATABASE_URL`:
 
-1. **Env** — in Vercel set the server-only `PAYLOAD_DATABASE_URL`: the `payload_cms`
-   role's connection string with a **real password you choose** (the bootstrap creates
-   the role with it — create-only, it never alters an existing role's password, and it
-   refuses the local dev password in production). Use the **direct/session** Postgres
+1. **Env** — nothing required: when `PAYLOAD_SECRET` / `PAYLOAD_DATABASE_URL` are
+   unset, both are **derived deterministically from `SUPABASE_SERVICE_ROLE_KEY`**
+   (HMAC; see `apps/nextjs/src/lib/cms/derived-credentials.ts`) and the bootstrap
+   creates the `payload_cms` role with the derived password on first boot. Setting
+   them explicitly always wins: `PAYLOAD_SECRET` (`openssl rand -base64 32`) and/or
+   `PAYLOAD_DATABASE_URL` — the `payload_cms` role's connection string with a
+   **real password you choose** (the bootstrap creates the role with it —
+   create-only, it never alters an existing role's password, and it refuses the
+   local dev password in production). Use the **direct/session** Postgres
    connection (port 5432), not the transaction pooler, and keep the
-   `?options=-c%20search_path%3Dcms` suffix (see `.env.example`). Also set
-   `PAYLOAD_SECRET` and the `S3_*` vars (point them at your Supabase Storage S3
-   endpoint; the **public-read `cms-media`** bucket itself ships as a migration). For
-   mobile, set `EXPO_PUBLIC_CMS_URL` to your web origin.
+   `?options=-c%20search_path%3Dcms` suffix (see `.env.example`).
+
+   > **Rotation caveat:** rotating `SUPABASE_SERVICE_ROLE_KEY` changes the derived
+   > values. After a rotation, either set the explicit vars, or update the
+   > `payload_cms` role's password to the newly-derived one (SQL editor). Also set
+   > the `S3_*` vars (point them at your Supabase Storage S3 endpoint; the
+   > **public-read `cms-media`** bucket itself ships as a migration). For mobile,
+   > set `EXPO_PUBLIC_CMS_URL` to your web origin.
 
    > Prefer to provision by hand (or rotate the password later)? Run
    > [`supabase/payload/00_cms_role.sql`](./supabase/payload/00_cms_role.sql) in the

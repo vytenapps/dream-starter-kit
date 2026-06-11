@@ -146,8 +146,11 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL=$API_URL
           EXPO_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
           EXPO_PUBLIC_API_URL=http://localhost:3000
-          PAYLOAD_DATABASE_URL=postgresql://payload_cms:payload_local_dev_only@127.0.0.1:54322/postgres?options=-c%20search_path%3Dcms&sslmode=require
-          PAYLOAD_SECRET=ci-not-a-real-secret-change-me
+          # PAYLOAD_SECRET / PAYLOAD_DATABASE_URL are deliberately ABSENT:
+          # CI exercises the zero-touch path a clone-and-connect Vercel deploy
+          # takes — both are derived from SUPABASE_SERVICE_ROLE_KEY (+ the
+          # admin DB URL) by lib/cms/derived-credentials.ts, and the runtime
+          # bootstrap creates the payload_cms role with the derived password.
           # Throwaway signing secret for the Payload Stripe webhook endpoint so
           # subscription.spec.ts can exercise the mirror with self-signed events
           # (no Stripe account involved; never used against the Stripe API).
@@ -160,12 +163,11 @@ jobs:
           S3_BUCKET=cms-media
           EOF
 
-      # Payload owns a separate `cms` Postgres schema + a least-privilege role.
-      # `schema_paths` provisions it on `db reset`; CI uses `start`, so apply the
-      # bootstrap explicitly (idempotent) as the postgres superuser.
-      - name: Provision Payload CMS schema + role
-        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/payload/00_cms_role.sql
-
+      # NOTE: the Payload `cms` schema + role are deliberately NOT provisioned
+      # here (00_cms_role.sql stays the local-dev path via `db reset`'s
+      # sql_paths). The runtime DB bootstrap creates them on the e2e app's
+      # first boot using credentials DERIVED from SUPABASE_SERVICE_ROLE_KEY —
+      # the same zero-touch path a fresh hosted deploy takes.
       - name: RLS isolation regression
         run: pnpm test:rls
 
