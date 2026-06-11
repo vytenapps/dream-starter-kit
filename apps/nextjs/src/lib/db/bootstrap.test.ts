@@ -1,8 +1,50 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BootstrapClient } from "./bootstrap";
 import type { SqlMigration } from "./migrations";
 import { bootstrapDatabase } from "./bootstrap";
+
+// Capture the config `defaultCreateClient` hands to the REAL pg.Client — the
+// untested gap that let the hosted-Supabase TLS regression ship (every other
+// test injects `createClient`, so the driver config was never exercised).
+// The fake answers the inspection as fully provisioned (fast path).
+const hoisted = vi.hoisted(() => ({
+  pgClientConfigs: [] as unknown[],
+  appliedVersions: ["20260609000001", "20260610000001"],
+}));
+
+vi.mock("pg", () => {
+  class FakePgClient {
+    constructor(config: unknown) {
+      hoisted.pgClientConfigs.push(config);
+    }
+    connect() {
+      return Promise.resolve();
+    }
+    query(sql: string) {
+      if (sql.includes("to_regclass")) {
+        return Promise.resolve({
+          rows: [
+            { ledger_exists: true, role_exists: true, cms_schema_exists: true },
+          ],
+        });
+      }
+      if (sql.includes("select version from supabase_migrations")) {
+        return Promise.resolve({
+          rows: hoisted.appliedVersions.map((version) => ({ version })),
+        });
+      }
+      return Promise.resolve({ rows: [] });
+    }
+    end() {
+      return Promise.resolve();
+    }
+    escapeLiteral(v: string) {
+      return `'${v}'`;
+    }
+  }
+  return { default: { Client: FakePgClient } };
+});
 
 const MIGRATIONS: SqlMigration[] = [
   { version: "20260609000001", name: "initial", sql: "select 'one'" },
@@ -208,6 +250,56 @@ describe("bootstrapDatabase full provisioning", () => {
   });
 });
 
+describe("defaultCreateClient pg config (hosted-Supabase TLS regression)", () => {
+  beforeEach(() => {
+    hoisted.pgClientConfigs.length = 0;
+  });
+
+  // Run WITHOUT `createClient` so the default path constructs the (mocked)
+  // real pg.Client.
+  const runDefault = (supabaseDbUrl: string) =>
+    bootstrapDatabase({
+      envSource: { ...ENV, SUPABASE_DB_URL: supabaseDbUrl },
+      migrations: MIGRATIONS,
+      logger: spyLogger(),
+    });
+
+  it("strips sslmode=require and connects encrypted-unverified (Vercel<->Supabase URL)", async () => {
+    const result = await runDefault(
+      "postgres://postgres.ref:pwd@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require&supa=base-pooler.x",
+    );
+    // up-to-date proves defaultCreateClient really is on the default path —
+    // the run went through the mocked driver's inspection round.
+    expect(result.skipped).toBe("up-to-date");
+    expect(hoisted.pgClientConfigs).toEqual([
+      {
+        connectionString:
+          "postgres://postgres.ref:pwd@aws-0-us-east-1.pooler.supabase.com:5432/postgres?supa=base-pooler.x",
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 10_000,
+      },
+    ]);
+  });
+
+  it("leaves local plaintext URLs untouched, with no ssl override", async () => {
+    await runDefault(ENV.SUPABASE_DB_URL);
+    expect(hoisted.pgClientConfigs).toEqual([
+      {
+        connectionString: ENV.SUPABASE_DB_URL,
+        connectionTimeoutMillis: 10_000,
+      },
+    ]);
+    expect(hoisted.pgClientConfigs[0]).not.toHaveProperty("ssl");
+  });
+
+  it("keeps full verification when the URL opts into verify-full", async () => {
+    await runDefault(
+      "postgresql://postgres:pwd@db.ref.supabase.co:5432/postgres?sslmode=verify-full",
+    );
+    expect(hoisted.pgClientConfigs[0]).toMatchObject({ ssl: true });
+  });
+});
+
 describe("bootstrapDatabase failure handling", () => {
   it("rolls back the failing migration, stops, and still unlocks — without throwing", async () => {
     const logger = spyLogger();
@@ -285,5 +377,32 @@ describe("bootstrapDatabase failure handling", () => {
     });
     expect(result.skipped).toBe("error");
     expect(logger.error).toHaveBeenCalled();
+  });
+
+  it("attaches a sanitized error summary — code kept, connection string redacted", async () => {
+    const tlsError = Object.assign(
+      new Error(
+        "self-signed certificate in certificate chain (connecting to postgresql://postgres:s3cret@db.ref.supabase.co:5432/postgres)",
+      ),
+      { code: "SELF_SIGNED_CERT_IN_CHAIN" },
+    );
+    const result = await bootstrapDatabase({
+      envSource: ENV,
+      migrations: MIGRATIONS,
+      createClient: () => Promise.reject(tlsError),
+      logger: spyLogger(),
+    });
+    expect(result.error?.code).toBe("SELF_SIGNED_CERT_IN_CHAIN");
+    // The summary feeds the PUBLIC /api/health/db endpoint.
+    const serialized = JSON.stringify(result.error);
+    expect(serialized).not.toContain("s3cret");
+    expect(serialized).not.toContain("postgresql://");
+  });
+
+  it("attaches the error summary on a mid-run migration failure too", async () => {
+    const fake = makeFake({}, { failOn: /select 'two'/ });
+    const result = await run(fake);
+    expect(result.skipped).toBe(false);
+    expect(result.error?.message).toContain("forced failure");
   });
 });

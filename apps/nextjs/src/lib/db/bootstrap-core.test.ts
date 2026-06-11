@@ -9,7 +9,9 @@ import {
   parseMigrationFilename,
   parseRoleCredentials,
   pendingMigrations,
+  pgConnectionOptions,
   resolveAdminDbUrl,
+  summarizeDbError,
 } from "./bootstrap-core";
 
 const mig = (version: string, name = `m${version}`): SqlMigration => ({
@@ -65,6 +67,170 @@ describe("resolveAdminDbUrl", () => {
     expect(
       resolveAdminDbUrl({ POSTGRES_URL: "postgresql://pooled" }),
     ).toBeUndefined();
+  });
+});
+
+describe("pgConnectionOptions", () => {
+  // The exact shape the Vercel<->Supabase integration injects as
+  // POSTGRES_URL_NON_POOLING — the URL that broke production with
+  // SELF_SIGNED_CERT_IN_CHAIN when pg treated sslmode=require as verify-full.
+  const VERCEL_URL =
+    "postgres://postgres.ref:pwd@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require&supa=base-pooler.x";
+
+  it("maps the Vercel-injected sslmode=require URL to unverified TLS, stripping the param", () => {
+    expect(pgConnectionOptions(VERCEL_URL)).toEqual({
+      connectionString:
+        "postgres://postgres.ref:pwd@aws-0-us-east-1.pooler.supabase.com:5432/postgres?supa=base-pooler.x",
+      ssl: { rejectUnauthorized: false },
+    });
+  });
+
+  it.each(["allow", "prefer", "require", "no-verify"])(
+    "sslmode=%s → encrypted but unverified (libpq semantics)",
+    (mode) => {
+      const result = pgConnectionOptions(
+        `postgresql://u:p@db.ref.supabase.co:5432/postgres?sslmode=${mode}`,
+      );
+      expect(result.ssl).toEqual({ rejectUnauthorized: false });
+      expect(result.connectionString).toBe(
+        "postgresql://u:p@db.ref.supabase.co:5432/postgres",
+      );
+    },
+  );
+
+  it("sslmode=disable → ssl off, param stripped", () => {
+    expect(
+      pgConnectionOptions("postgresql://u:p@db.example.co/db?sslmode=disable"),
+    ).toEqual({
+      connectionString: "postgresql://u:p@db.example.co/db",
+      ssl: false,
+    });
+  });
+
+  it.each(["verify-ca", "verify-full", "bogus-mode"])(
+    "sslmode=%s → full verification (explicit opt-in / fail closed)",
+    (mode) => {
+      expect(
+        pgConnectionOptions(
+          `postgresql://u:p@db.example.co/db?sslmode=${mode}`,
+        ),
+      ).toEqual({
+        connectionString: "postgresql://u:p@db.example.co/db",
+        ssl: true,
+      });
+    },
+  );
+
+  it("preserves the Payload options param byte-for-byte (no re-encoding)", () => {
+    expect(
+      pgConnectionOptions(
+        "postgresql://payload_cms:pw@db.ref.supabase.co:5432/postgres?options=-c%20search_path%3Dcms&sslmode=require",
+      ),
+    ).toEqual({
+      connectionString:
+        "postgresql://payload_cms:pw@db.ref.supabase.co:5432/postgres?options=-c%20search_path%3Dcms",
+      ssl: { rejectUnauthorized: false },
+    });
+  });
+
+  it("strips sslmode in any query position and drops an emptied query", () => {
+    expect(
+      pgConnectionOptions("postgresql://u:p@h/db?sslmode=require&a=1&b=2")
+        .connectionString,
+    ).toBe("postgresql://u:p@h/db?a=1&b=2");
+    expect(
+      pgConnectionOptions("postgresql://u:p@h/db?a=1&sslmode=require&b=2")
+        .connectionString,
+    ).toBe("postgresql://u:p@h/db?a=1&b=2");
+    expect(
+      pgConnectionOptions("postgresql://u:p@h/db?sslmode=require")
+        .connectionString,
+    ).toBe("postgresql://u:p@h/db");
+  });
+
+  it("does not re-encode credentials (no URL round-trip)", () => {
+    const url =
+      "postgresql://payload_cms:p%40ss%2Fw%C3%B6rd@db.ref.supabase.co:5432/postgres?sslmode=require";
+    expect(pgConnectionOptions(url).connectionString).toBe(
+      "postgresql://payload_cms:p%40ss%2Fw%C3%B6rd@db.ref.supabase.co:5432/postgres",
+    );
+  });
+
+  it.each(["localhost", "127.0.0.1", "[::1]"])(
+    "no sslmode + local host %s → untouched, no ssl override (PGSSLMODE keeps working)",
+    (host) => {
+      const url = `postgresql://postgres:postgres@${host}:54322/postgres`;
+      expect(pgConnectionOptions(url)).toEqual({ connectionString: url });
+    },
+  );
+
+  it("no sslmode + remote host → encrypted-unverified by default", () => {
+    const url = "postgresql://postgres:pw@db.ref.supabase.co:5432/postgres";
+    expect(pgConnectionOptions(url)).toEqual({
+      connectionString: url,
+      ssl: { rejectUnauthorized: false },
+    });
+  });
+
+  it("passes URLs with advanced ssl params through untouched (pg reads the cert files)", () => {
+    for (const url of [
+      "postgresql://u:p@h/db?sslrootcert=/etc/supabase-ca.pem&sslmode=verify-full",
+      "postgresql://u:p@h/db?uselibpqcompat=true&sslmode=require",
+      "postgresql://u:p@h/db?ssl=true",
+      "postgresql://u:p@h/db?sslcert=/c.pem&sslkey=/k.pem",
+    ]) {
+      expect(pgConnectionOptions(url)).toEqual({ connectionString: url });
+    }
+  });
+
+  it("passes unparseable connection strings through untouched, never throwing", () => {
+    for (const value of [
+      "host=x port=5432 dbname=postgres",
+      "/var/run/postgresql",
+      "postgres://a:5432,b:5432/db", // multi-host — not WHATWG-parseable
+    ]) {
+      expect(pgConnectionOptions(value)).toEqual({ connectionString: value });
+    }
+  });
+
+  it("returns an empty config for unset input (PAYLOAD_DATABASE_URL is optional)", () => {
+    expect(pgConnectionOptions(undefined)).toEqual({});
+    expect(pgConnectionOptions("")).toEqual({});
+  });
+});
+
+describe("summarizeDbError", () => {
+  it("extracts the error code and message", () => {
+    const error = Object.assign(new Error("self-signed certificate in chain"), {
+      code: "SELF_SIGNED_CERT_IN_CHAIN",
+    });
+    expect(summarizeDbError(error)).toEqual({
+      code: "SELF_SIGNED_CERT_IN_CHAIN",
+      message: "self-signed certificate in chain",
+    });
+  });
+
+  it("redacts embedded connection strings (the summary is publicly served)", () => {
+    const summary = summarizeDbError(
+      new Error(
+        "connect failed for postgresql://postgres:s3cret@db.ref.supabase.co:5432/postgres after 3 tries",
+      ),
+    );
+    expect(summary.message).not.toContain("s3cret");
+    expect(summary.message).not.toContain("postgresql://");
+    expect(summary.message).toContain("[redacted]");
+  });
+
+  it("truncates long messages and drops non-string codes", () => {
+    const error = Object.assign(new Error("x".repeat(1000)), { code: 42 });
+    const summary = summarizeDbError(error);
+    expect(summary.message.length).toBeLessThanOrEqual(300);
+    expect(summary.code).toBeUndefined();
+  });
+
+  it("handles non-Error values", () => {
+    expect(summarizeDbError("boom")).toEqual({ message: "boom" });
+    expect(summarizeDbError(undefined)).toEqual({ message: "unknown error" });
   });
 });
 

@@ -335,11 +335,17 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
    integration-injected `POSTGRES_URL_NON_POOLING` (or `SUPABASE_DB_URL` if you set one),
    recording them in the same ledger the CLI uses. `supabase link && supabase db push`
    remains a supported manual/CI alternative — either order is safe, and
-   `DB_BOOTSTRAP=off` disables the runtime path entirely. Deploy the edge functions —
+   `DB_BOOTSTRAP=off` disables the runtime path entirely. TLS: hosted connections
+   (`sslmode=require`, what the integration injects) are encrypted but **not
+   CA-verified** — Supabase's cert chain is rooted in its own CA; set
+   `sslmode=verify-full` and supply that CA via `NODE_EXTRA_CA_CERTS` to opt into
+   strict verification. Deploy the edge functions —
    see [Backend (Supabase)](#backend-supabase).
 4. **Redeploy** — in Vercel, **Deployments → ⋯ → Redeploy** so the build picks up the
    injected env vars. The web app should now be live (the first boot runs the DB
-   bootstrap above).
+   bootstrap above) — verify at `https://<your-domain>/api/health/db`, which reports
+   the bootstrap status (`ok`, with the applied migration versions) and a sanitized
+   error if provisioning failed.
 5. **Finish config** — in the Supabase dashboard set **Authentication → URL
    Configuration**. **This is required** — a fresh Supabase project defaults its Site URL
    to `http://localhost:3000` and the integration doesn't change it, so until you do this
