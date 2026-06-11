@@ -93,7 +93,13 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned: the kit's tables get their anon/authenticated grants from
+          # Supabase DEFAULT PRIVILEGES, and CLI v2.106.0 (2026-06-11) ships a
+          # local stack where migrations applied via `supabase start` no longer
+          # receive them (RLS suite fails with 42501 permission denied). Bump
+          # deliberately after verifying `pnpm test:rls` + `pnpm test:e2e`
+          # against the new version locally.
+          version: 2.105.0
 
       - name: Start Supabase (applies migrations + seed)
         run: supabase start
