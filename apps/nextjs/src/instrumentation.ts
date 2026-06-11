@@ -30,6 +30,16 @@ export async function register() {
   // eslint-disable-next-line no-restricted-properties, turbo/no-undeclared-env-vars
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
+  // `next build` runs this hook in its prerender workers too, but both jobs are
+  // runtime concerns: provisioning mutates the database (and preview/CI builds
+  // may have no DB access at all), and on a fresh project the warm-up would
+  // just log Payload's "cannot connect to Postgres" into the build output —
+  // the payload_cms role it connects with is created at first server BOOT, one
+  // step below. NEXT_PHASE is set by Next itself, so it lives outside the zod
+  // env schema (same as NEXT_RUNTIME above).
+  // eslint-disable-next-line no-restricted-properties, turbo/no-undeclared-env-vars
+  if (process.env.NEXT_PHASE === "phase-production-build") return;
+
   // DB bootstrap FIRST: the warm-up below is what triggers Payload's
   // `prodMigrations`, which need the `cms` schema + `payload_cms` role this
   // creates. Handles its own errors — never throws.
