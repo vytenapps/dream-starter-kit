@@ -173,7 +173,11 @@ export function summarizeDbError(error: unknown): {
       ? error.code
       : undefined;
   const raw =
-    error instanceof Error ? error.message : String(error ?? "unknown error");
+    error instanceof Error
+      ? error.message
+      : typeof error === "string" && error
+        ? error
+        : "unknown error";
   const message = raw
     .replace(CONNECTION_STRING_PATTERN, "[redacted]")
     .slice(0, MAX_ERROR_MESSAGE);
