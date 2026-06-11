@@ -1,9 +1,10 @@
 # Extension Framework for the Dream Starter Kit — Design Plan
 
-> **Status: approved design — not yet implemented.** This document is the
-> design deliverable for the extension framework. The refactor sequence in
-> [§8](#8-refactor-of-existing-features-resquash--rename--user-decision) is the
-> build order when implementation begins.
+> **Status: implementation in progress** on `feat/extensions-framework`.
+> This document is the source of truth for the build. Progress is tracked by
+> the phase checklist in
+> [§8](#8-refactor-of-existing-features-resquash--rename--user-decision) —
+> each phase is checked off when it lands as a commit with the full suite green.
 
 ## Context
 
@@ -333,16 +334,18 @@ The deployed app can't run git/pnpm, and composing commits via the GitHub Data A
 
 ### Refactor sequence (each step ends green: `pnpm typecheck && pnpm lint && pnpm test`)
 
-1. **Framework, zero extensions:** `packages/ext-kit`, `tooling/ext`, `extensions/*` in `pnpm-workspace.yaml`, empty generated registries + drift test, catch-all API route (dual cookie/Bearer auth), the `kit-extensions` + `nav-items` Payload collections + boot reconcile + CMS-driven sidebar/`useNavMenu()` (core entries only at this point), payload.config/env/seed/next.config wired to (empty) registries; extract `packages/ui-native` from `apps/expo/src/components`; add the static Tailwind/NativeWind `extensions/*` content globs; add the `expo export` smoke check to CI's integration job — proves the host wiring is inert and the native graph stays clean.
-2. **Resquash migration + table/collection renames** (one commit, with the deploy note).
-3. **`extensions/notifications`** first (it's the shared service others depend on): hooks/screens/push-test route, `notify()` service, HeaderBell gate.
-4. **`extensions/reminders`** (smallest dependent slice — proves `requires` + edge-fn contract).
-5. **`extensions/chat`**: `/api/chat` → `routes["POST /stream"]`, both screen trees, hooks/validators.
-6. **`extensions/dashboard`**: mount overrides (`/a`, expo `index`), widget grid; other extensions gain their `widgets` exports.
-7. **`extensions/billing`** (largest; needs the Payload globals/plugins merge): collections/global/plugin/hooks/seeds move, checkout/portal routes, webhook edge fn, `/pricing` public mount, `usePremium()` service.
-8. **Lifecycle + admin:** CLI add/update/remove/status, lock + snapshot refs, `extension-ops.yml`, admin Extensions view + ops/registry/upload API routes, `extension-uploads` bucket migration.
-9. **Catalog + publishing:** catalog registry repo + admin store tab; `ext eject` the five first-party extensions to their own repos; template extension CI (validates manifest/tag match, then clones the kit at oldest+newest `kitCompat` versions, `ext add ./.`, sync, typecheck, tests, migrations against fresh local Supabase — compat ranges become tested claims).
-10. **Docs:** CLAUDE.md "How to add a modular feature" → extension recipe (reference = `extensions/reminders`); `docs/EXTENSIONS.md` (authoring, lifecycle, services pattern, trust model, founder setup: PAT + `EXT_OPS_TOKEN` + Allow auto-merge); ARCHITECTURE/ERD/CMS docs updated; README deploy checklist.
+> Checked = landed as a commit on `feat/extensions-framework` with the suite green.
+
+- [ ] **Phase 1 — Framework, zero extensions:** `packages/ext-kit`, `tooling/ext`, `extensions/*` in `pnpm-workspace.yaml`, empty generated registries + drift test, catch-all API route (dual cookie/Bearer auth), the `kit-extensions` + `nav-items` Payload collections + boot reconcile + CMS-driven sidebar/`useNavMenu()` (core entries only at this point), payload.config/env/seed/next.config wired to (empty) registries; extract `packages/ui-native` from `apps/expo/src/components`; add the static Tailwind/NativeWind `extensions/*` content globs; add the `expo export` smoke check to CI's integration job — proves the host wiring is inert and the native graph stays clean.
+- [ ] **Phase 2 — Resquash migration + table/collection renames** (one commit, with the deploy note).
+- [ ] **Phase 3 — `extensions/notifications`** first (it's the shared service others depend on): hooks/screens/push-test route, `notify()` service, HeaderBell gate.
+- [ ] **Phase 4 — `extensions/reminders`** (smallest dependent slice — proves `requires` + edge-fn contract).
+- [ ] **Phase 5 — `extensions/chat`**: `/api/chat` → `routes["POST /stream"]`, both screen trees, hooks/validators.
+- [ ] **Phase 6 — `extensions/dashboard`**: mount overrides (`/a`, expo `index`), widget grid; other extensions gain their `widgets` exports.
+- [ ] **Phase 7 — `extensions/billing`** (largest; needs the Payload globals/plugins merge): collections/global/plugin/hooks/seeds move, checkout/portal routes, webhook edge fn, `/pricing` public mount, `usePremium()` service.
+- [ ] **Phase 8 — Lifecycle + admin:** CLI add/update/remove/status, lock + snapshot refs, `extension-ops.yml`, admin Extensions view + ops/registry/upload API routes, `extension-uploads` bucket migration.
+- [ ] **Phase 9 — Catalog + publishing:** catalog registry repo + admin store tab; `ext eject` the five first-party extensions to their own repos; template extension CI (validates manifest/tag match, then clones the kit at oldest+newest `kitCompat` versions, `ext add ./.`, sync, typecheck, tests, migrations against fresh local Supabase — compat ranges become tested claims). *Note: creating the separate catalog/extension repos requires access beyond this repo — the in-repo parts (store tab, eject command, template CI files) are built here; actual external publication is a follow-up.*
+- [ ] **Phase 10 — Docs:** CLAUDE.md "How to add a modular feature" → extension recipe (reference = `extensions/reminders`); `docs/EXTENSIONS.md` (authoring, lifecycle, services pattern, trust model, founder setup: PAT + `EXT_OPS_TOKEN` + Allow auto-merge); ARCHITECTURE/ERD/CMS docs updated; README deploy checklist.
 
 ---
 
