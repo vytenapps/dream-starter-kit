@@ -70,9 +70,11 @@ pnpm test:e2e
 
 This is **not required** for normal local runs — without `sslmode` in `.env`
 the bootstrap connects plaintext and the suite stays green. Plaintext clients
-keep working with TLS enabled (`ssl=on` doesn't force SSL), and the cert +
-config live in the DB docker volume, so `supabase stop && supabase start`
-keeps them paired.
+keep working with TLS enabled (`ssl=on` doesn't force SSL). The cert + config
+live together in the DB docker volume (so a half-applied state can't brick a
+boot), but the supabase entrypoint resets `postgresql.auto.conf` on container
+recreation — just re-run the (idempotent) script after
+`supabase stop && supabase start`.
 
 ## Deliberately not covered here
 
