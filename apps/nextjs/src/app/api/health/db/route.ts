@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { missingCmsEnv } from "~/lib/cms/env-status";
 import { getBootstrapStatus } from "~/lib/db/bootstrap-status";
 
 /**
@@ -7,7 +8,8 @@ import { getBootstrapStatus } from "~/lib/db/bootstrap-status";
  * did this server instance provision/verify the database on boot?
  *
  *   { status: "ok" | "skipped:<reason>" | "error" | "not-run",
- *     appliedVersions, cmsRoleCreated, error? }
+ *     appliedVersions, cmsRoleCreated, error?,
+ *     cms: { configured, missing } }
  *
  * `error` is pre-sanitized (code + redacted message, never the connection
  * string) and `appliedVersions` are the committed migration versions — safe
@@ -20,7 +22,13 @@ export const runtime = "nodejs";
 
 export function GET() {
   const status = getBootstrapStatus();
-  return NextResponse.json(status, {
-    status: status.status === "error" ? 503 : 200,
-  });
+  // CMS env completeness (var NAMES only, never values): the bootstrap skips
+  // cms provisioning when PAYLOAD_DATABASE_URL is unset, and Payload can't
+  // init without PAYLOAD_SECRET — surface both here so a broken /admin or
+  // seed flow is diagnosable from one URL.
+  const missing = missingCmsEnv();
+  return NextResponse.json(
+    { ...status, cms: { configured: missing.length === 0, missing } },
+    { status: status.status === "error" ? 503 : 200 },
+  );
 }

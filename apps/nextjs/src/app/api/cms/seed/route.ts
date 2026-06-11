@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import config from "@payload-config";
 import { getPayload } from "payload";
 
+import { cmsNotConfiguredMessage, missingCmsEnv } from "~/lib/cms/env-status";
+import { summarizeDbError } from "~/lib/db/bootstrap-core";
 import { seedCmsContent } from "~/payload/seed";
 
 /**
@@ -26,8 +28,41 @@ async function authedPayload() {
   return { payload, user };
 }
 
+/**
+ * Misconfiguration answered as structured JSON the /cms-setup screen can
+ * display — Payload's own init throw would otherwise surface as an opaque
+ * 500 digest. Returns null when the CMS came up fine.
+ */
+function cmsUnavailableResponse(): NextResponse | null {
+  const missing = missingCmsEnv();
+  if (missing.length === 0) return null;
+  return NextResponse.json(
+    { error: cmsNotConfiguredMessage(missing) },
+    { status: 503 },
+  );
+}
+
+function cmsInitErrorResponse(error: unknown): NextResponse {
+  console.error("[cms-seed] Payload init failed", error);
+  return NextResponse.json(
+    {
+      error: `CMS unavailable: ${summarizeDbError(error).message}. Check /api/health/db and the server logs.`,
+    },
+    { status: 503 },
+  );
+}
+
 export async function GET() {
-  const { payload, user } = await authedPayload();
+  const unavailable = cmsUnavailableResponse();
+  if (unavailable) return unavailable;
+
+  let authed: Awaited<ReturnType<typeof authedPayload>>;
+  try {
+    authed = await authedPayload();
+  } catch (error) {
+    return cmsInitErrorResponse(error);
+  }
+  const { payload, user } = authed;
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -36,7 +71,16 @@ export async function GET() {
 }
 
 export async function POST() {
-  const { payload, user } = await authedPayload();
+  const unavailable = cmsUnavailableResponse();
+  if (unavailable) return unavailable;
+
+  let authed: Awaited<ReturnType<typeof authedPayload>>;
+  try {
+    authed = await authedPayload();
+  } catch (error) {
+    return cmsInitErrorResponse(error);
+  }
+  const { payload, user } = authed;
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

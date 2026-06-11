@@ -23,7 +23,7 @@ backend are wired in. Clone it, rename a few things, and extend it into a real p
 
 - **Auth** — email/password, magic link, Google & Apple OAuth (Supabase Auth), with
   protected routes on web + native and account deletion.
-- **A real data feature** — `reminders` CRUD on web *and* native from one set of
+- **A real data feature** — `reminders` CRUD on web _and_ native from one set of
   shared react-query hooks, fully protected by Row-Level Security. This is the
   reference pattern you copy for your own per-user tables.
 - **A content CMS** — **Payload CMS v3** manages editorial/marketing content
@@ -52,17 +52,17 @@ If anything here disagrees with those, **they win.**
 
 ## Stack
 
-| Layer | Choice |
-|---|---|
-| Monorepo | Turborepo + pnpm (forked from create-t3-turbo) |
-| Web | Next.js (App Router) · shadcn/ui · Tailwind · Payload admin at `/admin` |
-| Mobile | Expo + Expo Router · react-native-reusables · NativeWind |
-| Backend | Supabase — Postgres + Auth + RLS + Storage + Edge Functions (Deno) |
-| Content / CMS | Payload CMS v3 (web/server only) — own `cms` schema, REST at `/cms-api` |
-| Data layer | `@supabase/supabase-js` typed client + react-query hooks (`packages/api`) |
-| Payments | Stripe (web only) + webhook edge function |
-| AI | Vercel AI SDK v6 via the AI Gateway (Claude default) |
-| Ship | Vercel (web) · EAS (mobile) · Expo Push |
+| Layer         | Choice                                                                    |
+| ------------- | ------------------------------------------------------------------------- |
+| Monorepo      | Turborepo + pnpm (forked from create-t3-turbo)                            |
+| Web           | Next.js (App Router) · shadcn/ui · Tailwind · Payload admin at `/admin`   |
+| Mobile        | Expo + Expo Router · react-native-reusables · NativeWind                  |
+| Backend       | Supabase — Postgres + Auth + RLS + Storage + Edge Functions (Deno)        |
+| Content / CMS | Payload CMS v3 (web/server only) — own `cms` schema, REST at `/cms-api`   |
+| Data layer    | `@supabase/supabase-js` typed client + react-query hooks (`packages/api`) |
+| Payments      | Stripe (web only) + webhook edge function                                 |
+| AI            | Vercel AI SDK v6 via the AI Gateway (Claude default)                      |
+| Ship          | Vercel (web) · EAS (mobile) · Expo Push                                   |
 
 > The package scope is `@acme/*` (inherited from the template) — renameable; see
 > **[Rename the package scope](#rename-the-package-scope)**. Don't rename mid-build.
@@ -76,12 +76,12 @@ If anything here disagrees with those, **they win.**
 
 ## Accounts you'll need
 
-| Service | What it's for | When |
-|---|---|---|
-| **[Supabase](https://supabase.com)** | Postgres, Auth, Storage, Edge Functions | Local dev (CLI) + production |
-| **[Vercel](https://vercel.com)** | Hosts the web app; injects the **AI Gateway** credential | Web deploy + AI |
-| **[Expo / EAS](https://expo.dev)** | Mobile builds, submissions, and push delivery | Mobile builds + push |
-| **[Stripe](https://stripe.com)** | Subscriptions (web only) | Billing |
+| Service                              | What it's for                                            | When                         |
+| ------------------------------------ | -------------------------------------------------------- | ---------------------------- |
+| **[Supabase](https://supabase.com)** | Postgres, Auth, Storage, Edge Functions                  | Local dev (CLI) + production |
+| **[Vercel](https://vercel.com)**     | Hosts the web app; injects the **AI Gateway** credential | Web deploy + AI              |
+| **[Expo / EAS](https://expo.dev)**   | Mobile builds, submissions, and push delivery            | Mobile builds + push         |
+| **[Stripe](https://stripe.com)**     | Subscriptions (web only)                                 | Billing                      |
 
 AI runs through the **Vercel AI Gateway**, so there's no separate AI-provider signup —
 on Vercel an OIDC token is injected automatically; locally set `AI_GATEWAY_API_KEY`.
@@ -124,7 +124,7 @@ pnpm db:reset      # applies migrations + seed.sql (ships EMPTY — the first si
 
 > Use `pnpm db:reset` rather than bare `supabase db reset`: the former also runs
 > `pnpm cms:migrate`, which re-creates Payload's `cms` tables. A plain `supabase db
-> reset` drops them and a *running* `next dev` won't recreate them until restarted.
+reset` drops them and a _running_ `next dev` won't recreate them until restarted.
 
 > Payload connects as the dedicated `payload_cms` role using the local
 > `PAYLOAD_DATABASE_URL` from `.env.example` — make sure you copied the full
@@ -192,24 +192,24 @@ Every variable is validated by a zod schema (`packages/config/env` + each app's
 - The Supabase **service-role key bypasses RLS** and lives **only** server-side
   (edge functions / server routes) — never in web client or mobile code.
 
-| Variable | Public? | Where to get it |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_URL` | ✅ | `supabase start` output / Dashboard → Project Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` | ✅ | same |
-| `SUPABASE_SERVICE_ROLE_KEY` | 🔒 | same (server-only; bypasses RLS) |
-| `SUPABASE_DB_URL` | 🔒 | local default in `.env.example` / hosted pooler URL |
-| `CRON_SECRET` | 🔒 | you choose; guards the `process-reminders` function |
-| `NEXT_PUBLIC_APP_URL` / `EXPO_PUBLIC_API_URL` | ✅ | your web origin (LAN IP in mobile dev). On Vercel the web origin is auto-detected — see `NEXT_PUBLIC_SITE_URL` |
-| `NEXT_PUBLIC_SITE_URL` | ✅ | optional — pin the public web origin to a custom domain; else auto-detected on Vercel / falls back to `NEXT_PUBLIC_APP_URL` |
-| `AI_GATEWAY_API_KEY` | 🔒 | [Vercel AI Gateway](https://vercel.com/ai-gateway) (auto on Vercel) |
-| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | 🔒 | Stripe Dashboard / `stripe listen` |
-| `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY` | 🔒 | Stripe price IDs (`price_…`) |
-| `PAYLOAD_DATABASE_URL` | 🔒 | `payload_cms` role connection (`search_path=cms`); local default in `.env.example` |
-| `PAYLOAD_SECRET` | 🔒 | you choose (`openssl rand -base64 32`) — Payload admin auth/encryption |
-| `S3_ENDPOINT` / `S3_REGION` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` / `S3_BUCKET` | 🔒 | Supabase Storage (S3) for Payload media — the `cms-media` bucket; local defaults in `.env.example` |
-| `NEXT_PUBLIC_CMS_URL` / `EXPO_PUBLIC_CMS_URL` | ✅ | Payload REST origin (mobile reads content; web is same-origin) |
-| `SUPABASE_AUTH_EXTERNAL_GOOGLE_*` / `_APPLE_*` | 🔒 | OAuth provider consoles (local dev only; prod uses the Dashboard) |
-| `EXPO_PUBLIC_EAS_PROJECT_ID` / `EXPO_PUBLIC_AUTH_SCHEME` | ✅ | `eas init` / `app.config.ts` `scheme` |
+| Variable                                                                                | Public? | Where to get it                                                                                                             |
+| --------------------------------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_URL`                                 | ✅      | `supabase start` output / Dashboard → Project Settings → API                                                                |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `EXPO_PUBLIC_SUPABASE_ANON_KEY`                       | ✅      | same                                                                                                                        |
+| `SUPABASE_SERVICE_ROLE_KEY`                                                             | 🔒      | same (server-only; bypasses RLS)                                                                                            |
+| `SUPABASE_DB_URL`                                                                       | 🔒      | local default in `.env.example` / hosted pooler URL                                                                         |
+| `CRON_SECRET`                                                                           | 🔒      | you choose; guards the `process-reminders` function                                                                         |
+| `NEXT_PUBLIC_APP_URL` / `EXPO_PUBLIC_API_URL`                                           | ✅      | your web origin (LAN IP in mobile dev). On Vercel the web origin is auto-detected — see `NEXT_PUBLIC_SITE_URL`              |
+| `NEXT_PUBLIC_SITE_URL`                                                                  | ✅      | optional — pin the public web origin to a custom domain; else auto-detected on Vercel / falls back to `NEXT_PUBLIC_APP_URL` |
+| `AI_GATEWAY_API_KEY`                                                                    | 🔒      | [Vercel AI Gateway](https://vercel.com/ai-gateway) (auto on Vercel)                                                         |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`                                           | 🔒      | Stripe Dashboard / `stripe listen`                                                                                          |
+| `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY`                                          | 🔒      | Stripe price IDs (`price_…`)                                                                                                |
+| `PAYLOAD_DATABASE_URL`                                                                  | 🔒      | `payload_cms` role connection (`search_path=cms`); local default in `.env.example`                                          |
+| `PAYLOAD_SECRET`                                                                        | 🔒      | you choose (`openssl rand -base64 32`) — Payload admin auth/encryption                                                      |
+| `S3_ENDPOINT` / `S3_REGION` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` / `S3_BUCKET` | 🔒      | Supabase Storage (S3) for Payload media — the `cms-media` bucket; local defaults in `.env.example`                          |
+| `NEXT_PUBLIC_CMS_URL` / `EXPO_PUBLIC_CMS_URL`                                           | ✅      | Payload REST origin (mobile reads content; web is same-origin)                                                              |
+| `SUPABASE_AUTH_EXTERNAL_GOOGLE_*` / `_APPLE_*`                                          | 🔒      | OAuth provider consoles (local dev only; prod uses the Dashboard)                                                           |
+| `EXPO_PUBLIC_EAS_PROJECT_ID` / `EXPO_PUBLIC_AUTH_SCHEME`                                | ✅      | `eas init` / `app.config.ts` `scheme`                                                                                       |
 
 The AI model id is **not** an env var — it's centralized in `packages/config`
 (`DEFAULT_AI_MODEL`) and is swappable.
@@ -328,8 +328,18 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
 2. **Add Supabase** — in the new Vercel project open **Storage → Create Database →
    Supabase** (or install from the [Marketplace](https://vercel.com/marketplace/supabase)),
    and create a new project. Vercel writes the Supabase + Postgres env vars into the
-   project automatically.
-3. **Apply the schema** — nothing to run. The integration creates an *empty* database,
+   project automatically. The integration does **not** cover the CMS — also add two
+   server-only vars in Vercel (Settings → Environment Variables) now, so the
+   first-user onboarding (`/cms-setup` → `/admin`) works on first signup:
+   - `PAYLOAD_SECRET` — `openssl rand -base64 32`
+   - `PAYLOAD_DATABASE_URL` — the `payload_cms` connection string with a **real
+     password you choose** (the bootstrap creates the role with it on next boot) —
+     see [Content backend (Payload CMS)](#content-backend-payload-cms).
+
+   Until both are set, `/admin` and the CMS seed answer **503 "CMS not configured"**
+   naming the missing vars (the rest of the app works).
+
+3. **Apply the schema** — nothing to run. The integration creates an _empty_ database,
    and the app **provisions it itself on first boot**: a runtime bootstrap
    (`apps/nextjs/src/lib/db/bootstrap.ts`) applies `supabase/migrations` over the
    integration-injected `POSTGRES_URL_NON_POOLING` (or `SUPABASE_DB_URL` if you set one),
@@ -390,6 +400,7 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
    > still unconfirmed, signing in re-sends a fresh confirmation and lands on
    > `/check-email`, and `/profile` shows a **Verify email** button — signing up again
    > with the same address also re-sends.
+
 6. **Set up the CMS** — add the `PAYLOAD_*` + `S3_*` env in Vercel and redeploy; the
    same first-boot bootstrap creates the `cms` schema + `payload_cms` role (with the
    password you put in `PAYLOAD_DATABASE_URL`) and Payload applies its own committed
@@ -434,6 +445,7 @@ creates them on first boot**, taking the password from `PAYLOAD_DATABASE_URL`:
    > Prefer to provision by hand (or rotate the password later)? Run
    > [`supabase/payload/00_cms_role.sql`](./supabase/payload/00_cms_role.sql) in the
    > Supabase dashboard **SQL editor** — it remains the manual fallback.
+
 2. **Migrate** — nothing to run. Production has dev-push OFF, so Payload's tables come
    from committed migrations (`apps/nextjs/src/payload/migrations`), which Payload applies
    **automatically on first boot** via the adapter's `prodMigrations` — idempotent, tracked
@@ -606,7 +618,7 @@ Use **GitHub Issues** for bugs and feature requests:
    mobile, or backend.
 
 **Security vulnerabilities:** please do **not** open a public issue. Use GitHub's
-**private vulnerability reporting** (the repo's *Security → Report a vulnerability*
+**private vulnerability reporting** (the repo's _Security → Report a vulnerability_
 tab) or email the maintainers, and allow time for a fix before public disclosure.
 
 ## License
