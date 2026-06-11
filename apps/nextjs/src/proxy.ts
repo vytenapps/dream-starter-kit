@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { cmsConfigStatus, cmsNotConfiguredMessage } from "~/lib/cms/env-status";
 import { updateSession } from "~/lib/supabase/middleware";
 
 // Routes that require a session (route groups like (app) don't appear in the URL).
@@ -31,6 +32,18 @@ export async function proxy(request: NextRequest) {
   // above; here we gate /admin so only staff app users reach Payload's (login-less)
   // admin — anonymous users go to sign-in, non-staff back to the app.
   if (pathname.startsWith("/admin") || pathname.startsWith("/cms-api")) {
+    // Without credentials (explicit OR derivable from the Supabase env) the
+    // CMS can't even init — Payload throws "missing secret key" and the
+    // founder gets an opaque 500 digest. Answer with what's missing instead
+    // (names only — safe for anonymous eyes, and exactly what a founder
+    // debugging a fresh deploy needs).
+    const cmsConfig = cmsConfigStatus();
+    if (!cmsConfig.configured) {
+      return new NextResponse(cmsNotConfiguredMessage(cmsConfig.missing), {
+        status: 503,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
     if (pathname.startsWith("/admin")) {
       if (!user) {
         const url = request.nextUrl.clone();

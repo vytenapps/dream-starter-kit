@@ -10,6 +10,7 @@ import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
+import { resolveCmsCredentials } from "./lib/cms/derived-credentials";
 import { pgConnectionOptions } from "./lib/db/bootstrap-core";
 import { isStaff } from "./payload/access";
 import { Audio } from "./payload/collections/Audio";
@@ -49,6 +50,12 @@ import { migrations } from "./payload/migrations";
 import { syncSubscriptionFromStripe } from "./payload/stripe/webhooks";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// PAYLOAD_SECRET / PAYLOAD_DATABASE_URL when set; otherwise derived from the
+// Supabase env the Vercel integration injects, so a clone-and-connect deploy
+// needs no manual CMS setup (see lib/cms/derived-credentials.ts — the runtime
+// DB bootstrap creates the payload_cms role with the same derived password).
+const cmsCredentials = resolveCmsCredentials();
 
 export default buildConfig({
   // Payload's own admin auth (content editors), separate from Supabase Auth.
@@ -143,7 +150,7 @@ export default buildConfig({
   // collections that enable `folders: true`.
   folders: { browseByFolder: true },
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET ?? "",
+  secret: cmsCredentials.secret ?? "",
   // Generated types are published from the @acme/cms package so the Expo app and
   // shared hooks can import them without pulling in Payload's Node runtime.
   typescript: {
@@ -162,7 +169,7 @@ export default buildConfig({
     // → encrypted-unverified, param stripped) — hosted Supabase's self-rooted
     // cert chain fails pg's default verify-full handling otherwise. Local
     // plaintext URLs pass through untouched.
-    pool: { ...pgConnectionOptions(process.env.PAYLOAD_DATABASE_URL) },
+    pool: { ...pgConnectionOptions(cmsCredentials.databaseUrl) },
     // Payload owns its own Postgres schema, isolated from the RLS-governed
     // `public` tables. It connects as the least-privilege `payload_cms` role.
     schemaName: "cms",

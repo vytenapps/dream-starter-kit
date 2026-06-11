@@ -76,6 +76,13 @@ boot), but the supabase entrypoint resets `postgresql.auto.conf` on container
 recreation — just re-run the (idempotent) script after
 `supabase stop && supabase start`.
 
+CI also leaves `PAYLOAD_SECRET` / `PAYLOAD_DATABASE_URL` **unset**: the e2e
+run exercises the zero-touch path a clone-and-connect deploy takes — both are
+derived from `SUPABASE_SERVICE_ROLE_KEY` and the runtime bootstrap creates the
+`payload_cms` role with the derived password on the app's first boot. Locally
+keep them set (the `db reset` path provisions the role with the dev password,
+which wouldn't match a derived one).
+
 ## Deliberately not covered here
 
 - **Stripe → `public.*` webhook delivery** — the edge-function side of the

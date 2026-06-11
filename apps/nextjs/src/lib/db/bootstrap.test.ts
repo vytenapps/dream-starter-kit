@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BootstrapClient } from "./bootstrap";
 import type { SqlMigration } from "./migrations";
+import { derivePayloadPassword } from "../cms/derived-credentials";
 import { bootstrapDatabase } from "./bootstrap";
 
 // Capture the config `defaultCreateClient` hands to the REAL pg.Client — the
@@ -355,6 +356,71 @@ describe("bootstrapDatabase failure handling", () => {
       },
     });
     expect(result.cmsRoleCreated).toBe(true);
+  });
+
+  it("derives the cms credentials from the service-role key when PAYLOAD_DATABASE_URL is unset", async () => {
+    const logger = spyLogger();
+    const fake = makeFake();
+    const seed = "sb_secret_test_service_role_key";
+    const result = await run(fake, {
+      logger,
+      envSource: {
+        SUPABASE_DB_URL: ENV.SUPABASE_DB_URL,
+        SUPABASE_SERVICE_ROLE_KEY: seed,
+        NODE_ENV: "production",
+      },
+    });
+    expect(result.cmsRoleCreated).toBe(true);
+    // The created password must be EXACTLY the derivation payload.config.ts
+    // uses for its pool — that contract is what makes zero-touch work.
+    const expectedPassword = derivePayloadPassword(seed);
+    expect(
+      fake.calls.some((c) =>
+        c.sql.includes(
+          `create role payload_cms with login password '${expectedPassword}'`,
+        ),
+      ),
+    ).toBe(true);
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining("derived from SUPABASE_SERVICE_ROLE_KEY"),
+    );
+  });
+
+  it("still skips cms provisioning when neither PAYLOAD_DATABASE_URL nor the seed exists", async () => {
+    const logger = spyLogger();
+    const fake = makeFake();
+    const result = await run(fake, {
+      logger,
+      envSource: {
+        SUPABASE_DB_URL: ENV.SUPABASE_DB_URL,
+        NODE_ENV: "production",
+      },
+    });
+    expect(result.cmsRoleCreated).toBe(false);
+    expect(
+      fake.calls.some((c) => c.sql.includes("create role payload_cms")),
+    ).toBe(false);
+    // Migrations still applied — only cms provisioning is skipped.
+    expect(result.appliedVersions).toEqual(MIGRATIONS.map((m) => m.version));
+  });
+
+  it("provisions for an explicit pooler-style URL (tenant-suffixed username)", async () => {
+    const fake = makeFake();
+    const result = await run(fake, {
+      envSource: {
+        ...ENV,
+        PAYLOAD_DATABASE_URL:
+          "postgres://payload_cms.abcdefgh:realpass@aws-0-us-east-1.pooler.supabase.com:5432/postgres?options=-c%20search_path%3Dcms",
+      },
+    });
+    expect(result.cmsRoleCreated).toBe(true);
+    expect(
+      fake.calls.some((c) =>
+        c.sql.includes(
+          "create role payload_cms with login password 'realpass'",
+        ),
+      ),
+    ).toBe(true);
   });
 
   it("re-grants but never re-creates (or re-passwords) an existing role", async () => {

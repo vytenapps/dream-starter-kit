@@ -55,6 +55,16 @@ export default function CmsSetupPage() {
         setError(data.error);
         return;
       }
+      // A non-OK response without a structured error (e.g. an unexpected 500
+      // page) must NOT forward to /admin — that's where the founder lands on
+      // an opaque Server Components digest. Surface it here instead.
+      if (!res.ok) {
+        setError(
+          `The server reported an error (HTTP ${res.status}). Check ` +
+            "/api/health/db and the deployment logs, then retry.",
+        );
+        return;
+      }
       goToAdmin();
       return;
     }

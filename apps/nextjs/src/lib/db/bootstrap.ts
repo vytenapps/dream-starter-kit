@@ -11,9 +11,10 @@
  *      (`supabase_migrations.schema_migrations`) — so the bootstrap and a manual
  *      `supabase db push` stay interchangeable, in either order;
  *   2. provisions the `cms` schema + least-privilege `payload_cms` role
- *      (mirroring supabase/payload/00_cms_role.sql, password taken from
- *      PAYLOAD_DATABASE_URL) so the Payload warm-up right after can run its own
- *      `prodMigrations`;
+ *      (mirroring supabase/payload/00_cms_role.sql; password from
+ *      PAYLOAD_DATABASE_URL, or derived from SUPABASE_SERVICE_ROLE_KEY when
+ *      unset — see lib/cms/derived-credentials) so the Payload warm-up right
+ *      after can run its own `prodMigrations`;
  *   3. backfills `public.profiles` for accounts created before the trigger
  *      existed, flagging the earliest signup as the founder.
  *
@@ -24,6 +25,7 @@
  */
 import type { SqlMigration } from "./migrations";
 import { env } from "../../env";
+import { resolveCmsCredentials } from "../cms/derived-credentials";
 import {
   BOOTSTRAP_LOCK_KEY,
   CMS_ROLE,
@@ -141,15 +143,22 @@ async function provisionCms(
   roleExists: boolean,
   log: Pick<Console, "info" | "warn" | "error">,
 ): Promise<boolean> {
-  const payloadUrl = envSource.PAYLOAD_DATABASE_URL;
+  // Explicit PAYLOAD_DATABASE_URL wins; otherwise the credentials are derived
+  // from SUPABASE_SERVICE_ROLE_KEY + the admin URL (zero-touch deploys) — the
+  // SAME derivation payload.config.ts uses for its pool, so the role created
+  // here matches what Payload connects with.
+  const { databaseUrl: payloadUrl, derived } = resolveCmsCredentials(envSource);
   if (!payloadUrl) {
     log.info(
-      "[db-bootstrap] PAYLOAD_DATABASE_URL unset — skipping cms schema/role provisioning",
+      "[db-bootstrap] PAYLOAD_DATABASE_URL unset and not derivable (needs SUPABASE_SERVICE_ROLE_KEY) — skipping cms schema/role provisioning",
     );
     return false;
   }
   const creds = parseRoleCredentials(payloadUrl);
-  if (creds.user !== CMS_ROLE) {
+  // Supavisor pooler URLs address the project via a username suffix
+  // (`payload_cms.<ref>`) — the Postgres ROLE name is the part before the dot.
+  const roleName = creds.user.split(".")[0];
+  if (roleName !== CMS_ROLE) {
     log.info(
       `[db-bootstrap] PAYLOAD_DATABASE_URL connects as "${creds.user}", not "${CMS_ROLE}" — assuming a custom role you manage; skipping`,
     );
@@ -173,7 +182,13 @@ async function provisionCms(
     await client.query(sql);
   }
   if (!roleExists) {
-    log.info(`[db-bootstrap] created the ${CMS_ROLE} role + cms schema`);
+    log.info(
+      `[db-bootstrap] created the ${CMS_ROLE} role + cms schema${
+        derived.databaseUrl
+          ? " (credentials derived from SUPABASE_SERVICE_ROLE_KEY)"
+          : ""
+      }`,
+    );
   }
   return !roleExists;
 }
@@ -196,6 +211,8 @@ async function runBootstrap(deps: BootstrapDeps): Promise<BootstrapResult> {
     POSTGRES_URL_NON_POOLING: env.POSTGRES_URL_NON_POOLING,
     DB_BOOTSTRAP: env.DB_BOOTSTRAP,
     PAYLOAD_DATABASE_URL: env.PAYLOAD_DATABASE_URL,
+    // Seed for the derived CMS credentials (see lib/cms/derived-credentials).
+    SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
     NODE_ENV: env.NODE_ENV,
     // Set by Next itself during `next build` (like NEXT_RUNTIME), so it lives
     // outside the zod env schema.

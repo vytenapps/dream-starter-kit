@@ -93,7 +93,13 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned: the kit's tables get their anon/authenticated grants from
+          # Supabase DEFAULT PRIVILEGES, and CLI v2.106.0 (2026-06-11) ships a
+          # local stack where migrations applied via `supabase start` no longer
+          # receive them (RLS suite fails with 42501 permission denied). Bump
+          # deliberately after verifying `pnpm test:rls` + `pnpm test:e2e`
+          # against the new version locally.
+          version: 2.105.0
 
       - name: Start Supabase (applies migrations + seed)
         run: supabase start
@@ -140,8 +146,11 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL=$API_URL
           EXPO_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
           EXPO_PUBLIC_API_URL=http://localhost:3000
-          PAYLOAD_DATABASE_URL=postgresql://payload_cms:payload_local_dev_only@127.0.0.1:54322/postgres?options=-c%20search_path%3Dcms&sslmode=require
-          PAYLOAD_SECRET=ci-not-a-real-secret-change-me
+          # PAYLOAD_SECRET / PAYLOAD_DATABASE_URL are deliberately ABSENT:
+          # CI exercises the zero-touch path a clone-and-connect Vercel deploy
+          # takes — both are derived from SUPABASE_SERVICE_ROLE_KEY (+ the
+          # admin DB URL) by lib/cms/derived-credentials.ts, and the runtime
+          # bootstrap creates the payload_cms role with the derived password.
           # Throwaway signing secret for the Payload Stripe webhook endpoint so
           # subscription.spec.ts can exercise the mirror with self-signed events
           # (no Stripe account involved; never used against the Stripe API).
@@ -154,11 +163,28 @@ jobs:
           S3_BUCKET=cms-media
           EOF
 
-      # Payload owns a separate `cms` Postgres schema + a least-privilege role.
-      # `schema_paths` provisions it on `db reset`; CI uses `start`, so apply the
-      # bootstrap explicitly (idempotent) as the postgres superuser.
-      - name: Provision Payload CMS schema + role
-        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/payload/00_cms_role.sql
+      # Mirror a FRESH hosted project for the zero-touch CMS path: a first
+      # `supabase start` applies the [db.seed].sql_paths from config.toml,
+      # which includes 00_cms_role.sql — creating the payload_cms role with
+      # the LOCAL DEV password. Hosted projects have neither the role nor the
+      # cms schema, and the e2e run must exercise exactly that: the runtime
+      # DB bootstrap creates both on the app's first boot using credentials
+      # DERIVED from SUPABASE_SERVICE_ROLE_KEY (lib/cms/derived-credentials).
+      # Without this drop, the dev-password role shadows the derived one and
+      # Payload fails auth.
+      - name: Drop seeded CMS role/schema (mirror a fresh hosted project)
+        run: |
+          docker exec -i -e PGPASSWORD=postgres \
+            "$(docker ps --filter name=supabase_db_ --format '{{.Names}}' | head -n1)" \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          drop schema if exists cms cascade;
+          do $$ begin
+            if exists (select 1 from pg_roles where rolname = 'payload_cms') then
+              drop owned by payload_cms;
+              drop role payload_cms;
+            end if;
+          end $$;
+          SQL
 
       - name: RLS isolation regression
         run: pnpm test:rls
