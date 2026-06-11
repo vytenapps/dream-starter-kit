@@ -4,6 +4,7 @@ import config from "@payload-config";
 import { getPayload } from "payload";
 
 import { createAdminClient } from "~/lib/supabase/admin";
+import { withCmsSchemaHeal } from "./ensure-schema";
 
 /**
  * Mirror a Supabase user into the Payload `users` collection so the admin Users
@@ -29,13 +30,18 @@ export async function ensureCmsUser(user: {
     // Trash must stay deleted (restore happens from the admin Trash view), not
     // be resurrected — and re-creating would trip the unique supabaseUserId
     // constraint and get masked by the catch below.
-    const existing = await payload.find({
-      collection: "users",
-      where: { supabaseUserId: { equals: user.id } },
-      limit: 1,
-      depth: 0,
-      trash: true,
-    });
+    // First cms.* query of the post-signup /welcome flow — self-heals a wiped
+    // cms schema (lib/cms/ensure-schema.ts) so the founder's first login lands
+    // on a working /cms-setup instead of a 500.
+    const existing = await withCmsSchemaHeal(payload, () =>
+      payload.find({
+        collection: "users",
+        where: { supabaseUserId: { equals: user.id } },
+        limit: 1,
+        depth: 0,
+        trash: true,
+      }),
+    );
     if (existing.totalDocs === 0) {
       // A staff-flagged profile without a CMS row at mirror time is the
       // FOUNDER (the first signup, auto-flagged is_staff) — provision them as

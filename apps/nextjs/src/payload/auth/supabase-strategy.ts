@@ -1,5 +1,6 @@
 import type { AuthStrategy } from "payload";
 
+import { withCmsSchemaHeal } from "~/lib/cms/ensure-schema";
 import { createClient } from "~/lib/supabase/server";
 
 /**
@@ -50,7 +51,11 @@ export const supabaseStrategy: AuthStrategy = {
     };
 
     // JIT-provision the cms.users row, keyed by the stable Supabase user id.
-    let cmsUser = await findBySupabaseId();
+    // This is the first cms.* query of every /admin and /cms-api request, so it
+    // carries the schema self-heal: if the cms tables are gone (database reset
+    // while the server was up), the committed Payload migrations are applied
+    // and the query retried (lib/cms/ensure-schema.ts).
+    let cmsUser = await withCmsSchemaHeal(payload, findBySupabaseId);
     if (!cmsUser) {
       const name =
         (user.user_metadata.display_name as string | undefined) ??
