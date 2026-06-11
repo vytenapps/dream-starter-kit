@@ -19,6 +19,12 @@ const config = {
 
   /** We already do linting and typechecking as separate tasks in CI */
   typescript: { ignoreBuildErrors: true },
+
+  /**
+   * `pg` (the runtime DB bootstrap's driver, lib/db/bootstrap.ts) must stay a
+   * Node require — bundling trips on its optional native `pg-native` import.
+   */
+  serverExternalPackages: ["pg"],
 };
 
 // `withPayload` mounts the Payload admin (/admin) + REST API. Payload's admin has

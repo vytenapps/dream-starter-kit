@@ -35,6 +35,14 @@ export const env = createEnv({
     // functions receive the service role from Supabase's injected env.
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
     SUPABASE_DB_URL: z.url().optional(),
+    // Session-mode Postgres URL auto-injected by the Vercel<->Supabase
+    // integration. The runtime DB bootstrap (lib/db/bootstrap.ts) uses it as
+    // the fallback when SUPABASE_DB_URL isn't set, so a fresh hosted project
+    // self-provisions on first boot with zero manual env. Never the pooled
+    // POSTGRES_URL — transaction pooling breaks session advisory locks.
+    POSTGRES_URL_NON_POOLING: z.string().min(1).optional(),
+    // Opt-out for the runtime DB bootstrap (e.g. when CI owns migrations).
+    DB_BOOTSTRAP: z.enum(["on", "off"]).optional(),
     AI_GATEWAY_API_KEY: z.string().min(1).optional(),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),

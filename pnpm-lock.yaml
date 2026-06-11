@@ -352,6 +352,9 @@ importers:
       payload:
         specifier: 'catalog:'
         version: 3.85.0(bufferutil@4.0.8)(graphql@16.14.1)(typescript@5.9.3)
+      pg:
+        specifier: 8.20.0
+        version: 8.20.0
       radix-ui:
         specifier: ^1.4.3
         version: 1.4.3(@types/react-dom@19.1.9(@types/react@19.1.12))(@types/react@19.1.12)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
@@ -398,6 +401,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.18.12
+      '@types/pg':
+        specifier: 8.20.0
+        version: 8.20.0
       '@types/react':
         specifier: catalog:react19
         version: 19.1.12
@@ -10024,8 +10030,8 @@ snapshots:
 
   '@babel/helpers@7.28.4':
     dependencies:
-      '@babel/template': 7.27.2
-      '@babel/types': 7.28.5
+      '@babel/template': 7.29.7
+      '@babel/types': 7.29.7
 
   '@babel/helpers@7.29.7':
     dependencies:
@@ -10034,7 +10040,7 @@ snapshots:
 
   '@babel/highlight@7.25.9':
     dependencies:
-      '@babel/helper-validator-identifier': 7.28.5
+      '@babel/helper-validator-identifier': 7.29.7
       chalk: 2.4.2
       js-tokens: 4.0.0
       picocolors: 1.1.1
@@ -10479,9 +10485,9 @@ snapshots:
 
   '@babel/template@7.27.2':
     dependencies:
-      '@babel/code-frame': 7.27.1
-      '@babel/parser': 7.28.5
-      '@babel/types': 7.28.5
+      '@babel/code-frame': 7.29.7
+      '@babel/parser': 7.29.7
+      '@babel/types': 7.29.7
 
   '@babel/template@7.29.7':
     dependencies:

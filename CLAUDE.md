@@ -3,6 +3,8 @@
 Guidance for Claude Code (and humans) extending the **Dream Starter Kit**.
 Read this first, then `docs/ARCHITECTURE.md` and `docs/ERD.md` — those two are the
 **source of truth**. If anything here conflicts with them, they win.
+(`docs/CMS.md` is the per-collection CMS reference — keep it in sync when you
+touch Payload collections.)
 
 ## What this is
 
@@ -42,7 +44,9 @@ clarity beat cleverness.
    AND member-engagement data (profiles, favorites, comments, enrollments, the
    `subscriptions` mirror) live there governed by Payload access control, contained
    via a dedicated least-privilege, server-only `payload_cms` role (no access to
-   `public`/`auth`). Note the CMS API bridge is **staff-only today** — members reach
+   `public`/`auth`; provisioned automatically at server boot in production by
+   `apps/nextjs/src/lib/db/bootstrap.ts`, locally by `00_cms_role.sql`). Note the
+   CMS API bridge is **staff-only today** — members reach
    their CMS-side data through your own server routes until the member-auth
    follow-up ships. Security-critical per-user state that RLS clients consume
    directly (auth, chat, reminders, billing entitlements in `public.subscriptions`)
@@ -79,6 +83,9 @@ pnpm format:fix         # prettier write
 supabase start          # boot local Postgres/Auth/Storage (Docker)
 supabase db reset       # re-apply migrations + seed.sql
 supabase status         # show local URLs + keys
+pnpm db:gen-migrations  # re-inline supabase/migrations into the web bundle for the
+                        #   runtime DB bootstrap — run after adding a migration and
+                        #   commit the JSON (drift fails `pnpm test`)
 
 # Tests
 pnpm test               # vitest (unit/integration) — no backend needed
@@ -201,6 +208,9 @@ create index tasks_user_id_idx on public.tasks (user_id);
 
 Optionally add demo rows in `supabase/seed.sql` (it ships empty — there are no
 seed users; `tooling/rls-tests` provisions its own), then `supabase db reset`.
+Finally run `pnpm db:gen-migrations` and commit the regenerated JSON — it inlines
+the migration into the web bundle so the runtime DB bootstrap applies it on hosted
+deploys (a drift test in `pnpm test` fails if you forget).
 
 **2. Types.** `pnpm db:gen-types` regenerates `packages/api`'s `Database` type.
 Use `Tables<'tasks'>`, `TablesInsert<'tasks'>`, `TablesUpdate<'tasks'>` downstream.

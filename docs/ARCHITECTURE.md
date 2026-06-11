@@ -5,7 +5,8 @@
 > together, as the kit is actually built.
 >
 > **License:** Apache-2.0 — see [`LICENSE`](../LICENSE) and [`NOTICE`](../NOTICE).
-> **Data model:** see [`ERD.md`](./ERD.md). **Conventions & recipes:** [`CLAUDE.md`](../CLAUDE.md).
+> **Data model:** see [`ERD.md`](./ERD.md). **CMS collections & fields:** [`CMS.md`](./CMS.md).
+> **Conventions & recipes:** [`CLAUDE.md`](../CLAUDE.md).
 
 ---
 
@@ -282,8 +283,11 @@ How the two backends stay separate:
   nothing on `public`/`auth`) — **not** the service-role key, and server-only. The
   role + schema are created by `supabase/payload/00_cms_role.sql`, applied
   automatically on `supabase db reset` (wired via `config.toml`
-  `[db.seed].sql_paths`); on hosted Supabase you run it **once** in the SQL
-  editor. Payload's own tables are created and migrated by Payload (`pnpm cms:migrate`).
+  `[db.seed].sql_paths`); on hosted Supabase the **runtime DB bootstrap** (see
+  § Runtime DB bootstrap below) creates them on first boot, with the password taken
+  from `PAYLOAD_DATABASE_URL` (running the SQL file once in the SQL editor remains
+  the manual fallback / rotation path). Payload's own tables are created and
+  migrated by Payload (`pnpm cms:migrate`).
 - **Single sign-on from Supabase Auth.** There is **one** login. Payload doesn't keep
   its own password — a custom auth strategy (`apps/nextjs/src/payload/auth/supabase-strategy.ts`,
   wired on the `users` collection with `disableLocalStrategy: true`) authenticates every
@@ -321,6 +325,39 @@ How the two backends stay separate:
 - **Web:** Vercel (preview deploys, edge, SEO). Fastest setup is the one-click deploy
   plus the Supabase Marketplace integration (it auto-injects the Supabase env) — see
   the README's Deploy section.
+
+#### Runtime DB bootstrap (zero-touch provisioning)
+
+A fresh hosted Supabase project is **empty** — and the kit provisions it itself, so a
+deploy needs no manual `supabase db push` or SQL-editor step. On server boot,
+`instrumentation.ts` runs two strictly-ordered jobs, after which the existing
+post-signup flow takes over:
+
+```
+boot ─ bootstrapDatabase()                 ─ getPayload() warm-up      ─ first signup
+       ├ apply supabase/migrations/*.sql     └ Payload prodMigrations    └ trigger flags founder
+       ├ create cms schema + payload_cms       build the cms.* tables      → /welcome → /cms-setup
+       └ backfill profiles                                                 → seed CMS demo content
+```
+
+`apps/nextjs/src/lib/db/bootstrap.ts` connects over the session-mode admin URL
+(`SUPABASE_DB_URL`, or the integration-injected `POSTGRES_URL_NON_POOLING`) and:
+
+- applies pending `supabase/migrations/*.sql` — bundled into the build as a committed
+  JSON module (`pnpm db:gen-migrations`; drift fails `pnpm test`) — one transaction per
+  file, recorded in the **same ledger the Supabase CLI uses**
+  (`supabase_migrations.schema_migrations`), so the bootstrap and a manual
+  `supabase db push` are interchangeable in either order;
+- creates the `cms` schema + least-privilege `payload_cms` role (mirroring
+  `00_cms_role.sql`; password from `PAYLOAD_DATABASE_URL`, create-only — it never
+  alters an existing role's password and refuses the dev password in production);
+- backfills `public.profiles` for any account created before the trigger existed,
+  flagging the earliest signup as the founder.
+
+It's concurrency-safe (session advisory lock, double-checked inside), idempotent (a
+provisioned DB short-circuits after one cheap inspection), skipped during `next build`
+and when no admin URL is set, and it **never throws** — failures log `[db-bootstrap]`
+and the app degrades to the manual flow. Opt out with `DB_BOOTSTRAP=off`.
 
 ---
 
