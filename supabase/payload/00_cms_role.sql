@@ -7,11 +7,13 @@
 --
 -- Applied LOCALLY by `supabase db reset` (wired via config.toml as the first entry
 -- of [db.seed].sql_paths, so it runs right before seed.sql on every reset). On
--- HOSTED Supabase, run this ONCE in the SQL editor with a real password — role +
--- schema provisioning is intentionally local-only (this dev password must never
--- reach a hosted DB; that is also why it is NOT a migration, which `db push`
--- would replay against production), and `CREATE ROLE` is not captured by
--- `supabase db diff` anyway.
+-- HOSTED Supabase the runtime DB bootstrap (apps/nextjs/src/lib/db/bootstrap.ts)
+-- runs the equivalent statements on first boot, creating the role with the
+-- password from PAYLOAD_DATABASE_URL — running this file once in the SQL editor
+-- (with a real password) remains the manual fallback and the rotation path (the
+-- bootstrap is create-only; it never alters an existing role's password). This is
+-- NOT a migration because it embeds a password (this dev one must never reach a
+-- hosted DB), and `CREATE ROLE` is not captured by `supabase db diff` anyway.
 
 create schema if not exists cms;
 

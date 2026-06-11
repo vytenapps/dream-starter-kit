@@ -1,0 +1,390 @@
+# CMS reference — Payload collections, fields & access
+
+The structure reference for the kit's Payload CMS: every collection and global,
+its purpose, key fields, and access rules. For how the CMS fits the overall
+architecture (schema isolation, SSO bridge, runtime provisioning) see
+[`ARCHITECTURE.md` § 4.10](./ARCHITECTURE.md); for how to **add** a content type
+see the recipe in [`CLAUDE.md`](../CLAUDE.md#how-to-add-a-payload-content-type).
+
+- **Admin UI:** `/admin` · **REST API:** `/cms-api` · **Local API:** `getPayload()`
+  (server-only, used by public RSC pages)
+- **Storage:** all collections live in the dedicated **`cms` Postgres schema**
+  (least-privilege `payload_cms` role); media binaries go to the public-read
+  `cms-media` Supabase Storage bucket via the S3 adapter
+- **Config:** `apps/nextjs/src/payload.config.ts`; collections in
+  `apps/nextjs/src/payload/collections/`, globals in `payload/globals/`
+- **Types:** generated into `packages/cms` (`@acme/cms`) by `pnpm cms:gen-types`;
+  schema changes need a committed migration (`pnpm cms:migrate:create`)
+- **Plugins:** SEO (posts/videos/audio/photos/pages/events/locations/series),
+  Nested Docs (categories, pages, space-groups), Form Builder (forms +
+  form-submissions), Stripe (signature-verified webhook only), S3 storage
+
+## Auth & roles
+
+There is **one** login — Supabase. Payload's local strategy is disabled;
+`payload/auth/supabase-strategy.ts` authenticates every CMS request from the
+caller's Supabase session and JIT-provisions a `cms.users` row (linked by
+`supabaseUserId`).
+
+- `users.roles[]` (WordPress-style): **admin** (everything, incl. Users/roles and
+  Commerce), **editor** (staff: content + moderation), **author** (may enter
+  `/admin`), **member** (app user; no admin access).
+- Every app signup is mirrored in as a `member` (`lib/cms/mirror-user.ts`); only
+  users with `profiles.is_staff = true` pass the SSO bridge — **the CMS API is
+  staff-only today** (member-scoped collections already carry owner-scoped rules
+  for the documented member-auth follow-up).
+- The **first signup** is auto-flagged staff (DB trigger) and JIT-provisioned
+  `admin`. Further staff are invited from `/admin → Users → Create New`
+  (`payload/hooks/invite-user.ts` sends a Supabase invite + flags `is_staff`).
+- Users are **soft-deleted** (`trash: true`); the bridge rejects trashed rows —
+  restore from the admin Trash view.
+
+## Access helpers (`payload/access/index.ts`)
+
+| Helper | Rule |
+| --- | --- |
+| `anyone` | Always allowed (public read) |
+| `isAdmin` | `roles` contains `admin` |
+| `isStaff` | `admin` or `editor` |
+| `canAccessAdmin` | `admin`, `editor`, or `author` may open `/admin` |
+| `isAdminOrSelf` | Admins: all rows; others: only `id == user.id` |
+| `ownsOrStaff(field)` | Staff: all rows; others: rows where `field == user.id` |
+| `publishedOrStaff` | Public: `_status == published`; staff: all (needs drafts) |
+| `approvedOrStaff` | Public: `status == approved`; staff: all (moderated content) |
+| `staffFieldAccess` / `adminFieldAccess` | Field-level: staff-only / admin-only writes |
+
+## Reusable field helpers (`payload/fields/`)
+
+| Helper | Adds |
+| --- | --- |
+| `slugField(from = "title")` | Required unique indexed `slug`, auto-derived but editable |
+| `accessLevelField()` | Sidebar select `accessLevel`: `public` / `members` / `premium` |
+| `commentsEnabledField(default?)` | Sidebar checkbox gating the shared `comments` system |
+| `linkField(name?, opts?)` | Group: `url` + `newTab` (± `label`, `appearance`) |
+| `destinationField(name?)` | Deep-link group: internal doc (pages/posts/videos/audio/series/events/locations) \| app screen \| external URL |
+
+## Shared collection hooks (`payload/hooks/`)
+
+| Hook | Effect |
+| --- | --- |
+| `assignOwner(field)` | Forces the owner field to the requesting user on create (staff/Local API may override) |
+| `requireCommentsEnabled` | Rejects comments whose target has `commentsEnabled: false` |
+| `uniquePolymorphic(...)` | One row per owner + polymorphic target (favorites, open reports) |
+| `incrementReportCount` | Denormalizes `reportCount` onto the reported doc |
+| `invite-user` | On staff-created Users rows: Supabase invite email + `is_staff` flag |
+| `sync-plan-to-stripe` / `sync-coupon-to-stripe` | afterChange → create/update Stripe product, **recreate + archive** immutable prices/coupons; status lands on `syncStatus`/`syncError` |
+| `validate-custom-fields` | Validates `users.customFields` against the `profile-fields` global |
+
+---
+
+## Content group
+
+### `posts` — editorial blog posts
+
+Long-form articles with drafts + scheduled publishing. **Fields:** `title`*,
+`slug`, `excerpt`, `body` (richText), `featuredImage`/`cardImage`/`gallery`
+(media), `author` + `coAuthors` (users), `categories`, `tags`, `relatedPosts`,
+virtual `readingTime`/`authorName`, `accessLevel`, `featured`,
+`commentsEnabled`, `publishedAt`, join `comments`. **Access:** read
+`publishedOrStaff`; write `isStaff`. Drafts (max 25) · trash · folders.
+
+### `videos` — landscape videos & vertical shorts
+
+One collection, discriminated by `orientation` (`landscape`/`vertical`) and
+`sourceType` (`url`/`upload`/`mux`/`youtube`/`vimeo`). **Fields:** `title`*,
+`slug`, `description`, `body`, `aspectRatio`, conditional `url`/`videoFile`,
+`thumbnail` + `verticalThumbnail` + `previewClip`, `duration`, `captions[]`,
+`chapters[]`, `series` + `episodeNumber`/`seasonNumber`, `categories`, `tags`,
+`accessLevel`, `featured`, `commentsEnabled`, `publishedAt`. **Access:** read
+`publishedOrStaff`; write `isStaff`. Drafts · trash · folders.
+
+### `audio` — podcast/audio episodes (upload collection)
+
+The row **is** the audio file (S3); RSS-ready. **Fields:** `title`*, `slug`,
+unique `guid`, `subtitle`, `description`, `body` (show notes), `coverArt`,
+`duration`, `episodeNumber`/`seasonNumber`, `episodeType`
+(`full`/`trailer`/`bonus`), `explicit`, `transcript` + `transcriptFile`,
+`chapters[]`, `soundbites[]`, `series` (podcast shows), `itunesBlock`,
+`categories`, `tags`, `accessLevel`, `featured`, `commentsEnabled`,
+`publishedAt`. **Access:** read `anyone` (no drafts — filter by
+`publishedAt`/`accessLevel`; premium episodes are served via `feed-tokens`);
+write `isStaff`. Upload `audio/*` · trash · folders.
+
+### `photos` — photo content section (upload collection)
+
+The row **is** the image (distinct from general `media`); albums via `series`
+(`kind: album`). **Fields:** `title`*, `slug`, `caption`, `altText`, `credit`,
+`takenAt`, `location`, `album`, `categories`, `tags`, `accessLevel`,
+`featured`, `commentsEnabled`, `publishedAt`. **Access:** read `anyone`; write
+`isStaff`. Upload `image/*` (thumbnail/card/hero sizes, focal point) · trash ·
+folders.
+
+### `series` — series, seasons, playlists, albums, podcast shows, courses
+
+Groups episodic media, discriminated by `kind`
+(`series`/`season`/`playlist`/`album`/`podcast`/`course`). **Fields:** `title`*,
+`slug`, `kind`*, `description`, `coverArt`/`featuredImage`, `parentSeries`,
+`categories`, `tags`, `accessLevel`, `requiredPlans` (premium gating),
+`displayOrder`, `featured`; conditional **`podcast` group** (full channel-level
+RSS metadata: iTunes author/owner/category, artwork, `podcastGuid`, funding,
+`isPrivate` members-only feed, …) and **`course` group** (`instructors`,
+`dripEnabled` + `dripAnchor`, `certificateOnComplete`, `estimatedHours`); joins
+`videoEpisodes`/`audioEpisodes`/`lessons`. **Access:** read `publishedOrStaff`;
+write `isStaff`. Drafts · trash · folders.
+
+### `lessons` — course lessons with drip release
+
+Belong to a `series` of `kind: course`. **Fields:** `title`*, `slug`, `course`*,
+`module`, `order`, `content` (richText), `video`/`audio` refs, `attachments`,
+`duration`, `preview` (free preview bypasses gating), `dripType`
+(`none`/`scheduled`/`relative`) with `releaseAt`/`releaseAfterDays`, `dripMode`
+(`gate_content`/`notify_only`), `notifyPush`/`notifyEmail`, virtual `unlocksAt`.
+**Access:** read `publishedOrStaff`; write `isStaff`. Drafts · trash · folders.
+
+### `locations` — places (venues, stores, offices)
+
+**Fields:** `name`*, `slug`, `shortDescription`, `description`, `address` group
+(street/city/region/postalCode/country), `coordinates` (point), `hours[]`,
+`phone`/`email`/`website`, `priceRange`, `amenities`, `featuredImage`/`gallery`,
+`locationType` (category), `tags`, read-only `ratingAverage` (denormalized from
+approved reviews), `temporarilyClosed`, `featured`, `commentsEnabled`; joins
+`reviews`/`events`. **Access:** read `publishedOrStaff`; write `isStaff`.
+Drafts · trash · folders.
+
+### `events` — scheduled events
+
+Editorial `_status` (drafts) is independent from lifecycle `eventStatus`
+(`scheduled`/`rescheduled`/`cancelled`/`sold_out`). **Fields:** `title`*,
+`slug`, `shortDescription`, `description`, `eventType` (category), `startsAt`*,
+`endsAt`, `allDay`, `timezone`, `recurrence` group, `isVirtual` →
+`location`/`virtualUrl`, `featuredImage`/`gallery`, `isFree` →
+`price`/`currency`, `ticketUrl`, `capacity`, `registrationRequired`,
+`organizer`/`speakers` (users), `featured`, `commentsEnabled`, `publishedAt`.
+**Access:** read `publishedOrStaff`; write `isStaff`. Drafts · trash · folders.
+
+### `categories` — hierarchical taxonomy
+
+Nested Docs plugin maintains `parent`/`breadcrumbs`. **Fields:** `title`*,
+`slug`, `description`, `icon`, `color`, `image`, `featured`, `displayOrder`.
+**Access:** read `anyone`; write `isStaff`.
+
+### `tags` + `tag-groups` — flat tags with optional facets
+
+Content tags + member interests (distinct from the Supabase plan-name
+`public.tags`). **Fields:** `title`*, `slug`, `group` (→ `tag-groups`),
+`description`; tag-groups add `displayOrder`. **Access:** read `anyone`; write
+`isStaff`.
+
+### `media` — general upload store
+
+Referenced everywhere (images/video/audio assets). **Fields:** `alt`*,
+`caption`, `credit`, read-only `blurDataURL` (LQIP generated on upload),
+`tags`. **Access:** read `anyone`; write `isStaff`. Upload `image/*`,
+`video/*`, `audio/*` (thumbnail/card/hero, focal point) · trash · folders.
+
+---
+
+## Community group
+
+### `space-groups` — top-level community sections
+
+Circle-style sections; Nested Docs hierarchy. **Fields:** `name`*, `slug`,
+`description`, `icon`, `accessLevel`, `requiredPlans`, `order`; join `spaces`.
+**Access:** read `anyone` (the app gates by `accessLevel`/`requiredPlans`);
+write `isStaff`. Trash.
+
+### `community-spaces` — spaces/channels
+
+**Fields:** `name`*, `slug`, `spaceGroup`, optional `parentSpace`,
+`description`, `image`, `accessLevel`, `requiredPlans`, `postingPolicy`
+(`members`/`moderators`/`admins`), `moderators`, `order`; join `posts`.
+**Access:** read `anyone`; write `isStaff`. Trash.
+
+### `community-posts` — member-authored wall posts
+
+Distinct from editorial `posts`; no drafts — moderation via plain `status`
+(`published`/`pending`/`hidden`/`flagged`, staff-only writes). **Fields:**
+`author`* (auto-assigned), `space`, optional `title`, `body` (richText),
+`media[]`, `link` (destination), `tags`, `accessLevel`, `commentsEnabled`
+(default true), staff-only `pinned`, read-only
+`likeCount`/`commentCount`/`reportCount`, virtual `authorName`, `publishedAt`;
+joins `comments`/`reports`. **Access:** read published-or-staff; **create any
+authenticated user**; update/delete `ownsOrStaff("author")`. Hook
+`assignOwner("author")`. Trash.
+
+### `comments` — one threaded comment system
+
+Polymorphic `target` → community-posts, posts, videos, audio, photos, events,
+locations; replies via `parent`. **Fields:** `author`* (auto-assigned),
+`target`*, `parent`, `body`*, staff-only `status`
+(`pending`/`approved`/`spam`), read-only `likeCount`/`reportCount`, staff-only
+`isPinned`, `editedAt`; join `replies`. **Access:** read `approvedOrStaff`;
+**create any authenticated user** (gated by the target's `commentsEnabled` via
+`requireCommentsEnabled`); update/delete `ownsOrStaff("author")`. Trash.
+
+### `reports` — moderation queue
+
+One **open** report per reporter+target (`uniquePolymorphic`); filing
+increments the target's `reportCount`. **Fields:** `reporter`* (auto-assigned),
+`target`* (community-posts/comments), `reason`*
+(`spam`/`harassment`/`hate`/`nudity`/`violence`/`misinformation`/`other`),
+`details`, `status` (`open`/`reviewing`/`actioned`/`dismissed`), `resolution`,
+`resolvedBy`/`resolvedAt`. **Access:** create any authenticated user;
+read/update/delete `isStaff`.
+
+---
+
+## People group
+
+### `users` — members & staff (auth collection)
+
+SSO from Supabase (`supabaseStrategy`, local strategy disabled). **Fields:**
+`email`, `name`, `displayName`, read-only unique `supabaseUserId`, admin-only
+`roles[]`*, staff-only `memberStatus`
+(`active`/`invited`/`suspended`/`banned`); **Profile tab** (`username`,
+`firstName`/`lastName`, `pronouns`, `avatar`/`coverImage`, `headline`, `bio`,
+`location`, `website`, `company`/`jobTitle`, `socialLinks`, `interests` (tags),
+`profileVisibility`, `customFields` validated against the `profile-fields`
+global, staff-managed `tags`); **Contact tab** (phone, DOB, timezone, language,
+address); **Preferences tab** (push/SMS/marketing opt-ins,
+`notificationPreferences`, `onboardingCompleted`, `lastActiveAt`); **Billing
+tab** (read-only `stripeCustomerID`); joins
+`subscriptions`/`favorites`/`enrollments`/`devices`. **Access:** admin panel
+`canAccessAdmin`; create `isAdmin` (triggers the invite hook); read/update
+`isAdminOrSelf`; delete `isAdmin`. Trash (soft delete; bridge rejects trashed).
+
+### `device-tokens` — push tokens
+
+**Fields:** `user`* (auto-assigned), unique `token`*, `platform`
+(iOS/Android/Web), `deviceModel`, `appVersion`, `osVersion`, `locale`,
+`pushEnabled`, `lastSeenAt`. **Access:** create any user; the rest
+`ownsOrStaff`.
+
+### `feed-tokens` — private podcast feed tokens
+
+Opaque per-member tokens embedded in private RSS URLs. **Fields:** read-only
+unique `token`* (UUID default), `user`*, `show` (podcast series), `revoked`,
+`lastAccessedAt`. **Access:** create any user; the rest `ownsOrStaff`.
+
+### `favorites` — bookmarks
+
+Polymorphic join: one row per user+target (`uniquePolymorphic`). **Fields:**
+`user`* (auto-assigned), `target`* (posts/videos/audio/photos/locations/events),
+`notes`. **Access:** create any user; the rest `ownsOrStaff`.
+
+### `enrollments` — course enrollment + progress
+
+Anchor for drip/gating; unique `[user, course]`. **Fields:** `user`*, `course`
+(series `kind: course`), `enrolledAt`*, `status`
+(`active`/`completed`/`refunded`/`expired`), `source`
+(`purchase`/`subscription`/`free`/`manual`) → optional `subscription`,
+`progress[]` (lesson, completedAt, percent). **Access:** read `ownsOrStaff`;
+write `isStaff`.
+
+### `reviews` — moderated ratings
+
+For locations/events. **Fields:** `author`* (auto-assigned), `target`*,
+`rating`* (1–5), `title`, `body`, `photos[]`, staff-only `status`
+(`pending`/`approved`/`rejected`), read-only `helpfulCount`, staff-only
+`verifiedVisit` and `response` group. **Access:** read `approvedOrStaff`;
+create any user; update/delete `ownsOrStaff("author")`. Trash.
+
+---
+
+## Commerce group
+
+### `plans` — billing catalog (authored here, synced to Stripe)
+
+**Fields:** `name`*, `active`, unique `slug`, `description`, `pricingType`*
+(`recurring`/`one_time`) → `interval`/`intervalCount`, `unitAmount`*,
+`currency`, `trialDays`, `introOffer` group (enabled, introAmount,
+introInterval, introPeriods — implemented as an auto-applied Stripe coupon),
+`entitlement` (`members`/`premium`), `features[]`, `badge`, `highlighted`,
+`displayOrder`; read-only Stripe sync state (`skipSync`, `stripeProductId`,
+`stripePriceId`, `stripeIntroCouponId`, `syncStatus`, `syncError`,
+`lastSyncedAt`); join `subscriptions`. **Access:** read `anyone`; write
+`isAdmin`. Hook `syncPlanAfterChange` (prices are immutable — changed
+amount/interval recreates + archives).
+
+### `coupons` — discounts & promotion codes
+
+**Fields:** `name`*, `discountType`* (`percent_off`/`amount_off`), `value`*,
+`currency`, `duration`* (`once`/`repeating`/`forever`) →
+`durationCount`/`durationUnit`, `maxRedemptions`, `redeemBy`, `minimumAmount`,
+read-only `timesRedeemed`, `active`, `appliesTo` (plans), customer-facing
+`code`, `isWelcomeOffer` (at most one active); read-only Stripe sync state.
+**Access:** read `anyone`; write `isAdmin`. Hook `syncCouponAfterChange`
+(recreate-on-change, like prices).
+
+### `subscriptions` — read-only Stripe mirror
+
+Written exclusively by the plugin-stripe webhook
+(`POST /cms-api/stripe/webhooks`); keyed by unique `stripeSubscriptionID`.
+**Fields (all read-only):** `user`, `plan`, `coupon`, `status`
+(`trialing`/`active`/`past_due`/`canceled`/`churned`/`paused`), period/trial
+dates, `cancelAtPeriodEnd`, `canceledAt`, `lastPaymentAt`/`lastPaymentAmount`,
+`stripeCustomerID`. **Access:** read `ownsOrStaff`; create/update/delete
+denied. (RLS clients use `public.subscriptions` instead — see `ERD.md`.)
+
+---
+
+## Marketing group
+
+### `pages` — block-composed marketing/legal pages
+
+Launch UI blocks: **hero | items (features) | logos | stats | cta | faq |
+prose**. **Fields:** `title`*, `slug`, `layout` (blocks), `showInNav`,
+`publishedAt`. **Access:** read `publishedOrStaff`; write `isStaff`. Drafts +
+live preview (mobile/tablet/desktop breakpoints) · trash. Nested Docs
+hierarchy.
+
+### `onboarding` — first-run slides
+
+**Fields:** `title`*, `body`, `image`, `animation` (Lottie), `cta` +
+`secondaryCta` (label + destination deep link), `isFinalSlide`, `order`*,
+`backgroundColor`, `active`. **Access:** read `anyone`; write `isStaff`.
+
+### `banners` — in-app promos/announcements
+
+**Fields:** `title`*, `body`, `image`, `icon`, `variant`*
+(`info`/`promo`/`warning`/`announcement`), `link` (with label/appearance),
+`placement`* (`home`/`global`/`content`/`onboarding`), `targetPlatform[]`,
+`audience` (`all`/`guests`/`members`), `startsAt`/`endsAt` window, `priority`,
+`dismissible`, `active`. **Access:** read `anyone`; write `isStaff`.
+
+### `notifications` — staff-authored multi-channel sends
+
+**Fields:** `title`*, `body`, `image` (rich push), `deepLink`, `data` (json),
+`channel[]`* (`push`/`email`/`sms`/`in_app`), `smsBody` (≤160), `audience`*
+(`all`/`segment`/`users`) → `segment`/`targetUsers`, `scheduledAt`, read-only
+`sentAt`/`sentCount`/`openCount`, `status`
+(`draft`/`scheduled`/`sending`/`sent`/`failed`). **Access:** all `isStaff`.
+Trash.
+
+### `forms` + `form-submissions` (plugin)
+
+Form Builder plugin: staff author forms (text/textarea/email/select/checkbox/
+number/message fields); submissions are publicly creatable, staff-read.
+
+---
+
+## Globals
+
+| Global | Purpose | Read | Update |
+| --- | --- | --- | --- |
+| `site-settings` | Site chrome: General (siteName, defaultMeta), Header nav + actions, Footer columns/policies/copyright, Social handles — consumed by the Launch UI navbar/footer | `anyone` | `isStaff` |
+| `pricing-settings` | `/pricing` page: heading/subheading, `billingToggleDefault`, up to 3 `featuredPlans`, optional `freeTier` group, disclaimer | `anyone` | `isStaff` |
+| `theme-settings` | The **front-end** shadcn theme (versioned, drafts→publish): Branding (appName, brandLink, appIcon, light/dark logos), Light/Dark color tokens, Typography (sans/serif/mono, letterSpacing), Other (radius, spacing, shadow). Serialized by `lib/theme/serialize.ts` into `<ThemeStyle />`; branding read by `getBranding()`. The `/admin` chrome uses a separate fixed palette (`lib/theme/admin-theme.ts`) | `publishedOrStaff` | `isStaff` |
+| `profile-fields` | Admin-defined custom member fields (key, label, type, options, required, visibility, editableByMember, order) — drives `users.customFields` validation + profile UI | `anyone` | `isStaff` |
+
+---
+
+## Adding or changing a collection
+
+Follow [`CLAUDE.md` → How to add a Payload content type](../CLAUDE.md#how-to-add-a-payload-content-type):
+copy the closest collection above (e.g. `Posts.ts` for editorial,
+`Favorites.ts` for owner-scoped member data), register it in
+`payload.config.ts`, then `pnpm cms:gen-types`, `pnpm cms:migrate:create`
+(commit the migration — production applies it automatically via
+`prodMigrations`), add a seed step in `payload/seed.ts`, and keep this document
+in sync.

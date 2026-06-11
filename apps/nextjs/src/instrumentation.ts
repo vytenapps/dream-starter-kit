@@ -1,7 +1,16 @@
 /**
  * Server-boot instrumentation (https://nextjs.org/docs/app/guides/instrumentation).
  *
- * Warms the Payload Local API once at startup so the first request never pays
+ * Two jobs, strictly ordered:
+ *
+ * 1. Runtime DB bootstrap (`lib/db/bootstrap.ts`): provisions a fresh hosted
+ *    Supabase database — applies `supabase/migrations/*.sql` and creates the
+ *    `cms` schema + `payload_cms` role — so a one-click deploy needs no manual
+ *    `supabase db push` / SQL-editor step. Idempotent: a provisioned DB
+ *    short-circuits, and it never throws (it logs and degrades to the manual
+ *    flow instead).
+ *
+ * 2. Warms the Payload Local API once at startup so the first request never pays
  * Payload's multi-second init (DB connect + schema load) inside the render.
  * That slow path is more than a perf nit: when `generateMetadata` (which awaits
  * the CMS branding global) is still pending at the moment Next flushes the
@@ -20,6 +29,13 @@ export async function register() {
   // globalEnv; this is the guard Next's instrumentation docs prescribe.
   // eslint-disable-next-line no-restricted-properties, turbo/no-undeclared-env-vars
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
+  // DB bootstrap FIRST: the warm-up below is what triggers Payload's
+  // `prodMigrations`, which need the `cms` schema + `payload_cms` role this
+  // creates. Handles its own errors — never throws.
+  const { bootstrapDatabase } = await import("~/lib/db/bootstrap");
+  await bootstrapDatabase();
+
   try {
     const [{ default: config }, { getPayload }] = await Promise.all([
       import("@payload-config"),

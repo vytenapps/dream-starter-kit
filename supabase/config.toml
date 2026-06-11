@@ -65,7 +65,9 @@ enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 # `payload/00_cms_role.sql` runs first to provision the Payload `cms` schema +
-# least-privilege `payload_cms` role (local-only; on hosted, run it once by hand).
+# least-privilege `payload_cms` role (local path; on hosted, the runtime DB
+# bootstrap — apps/nextjs/src/lib/db/bootstrap.ts — does it on first boot, with
+# the SQL editor as the manual fallback).
 sql_paths = ["./payload/00_cms_role.sql", "./seed.sql"]
 
 [db.network_restrictions]

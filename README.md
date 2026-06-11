@@ -45,6 +45,7 @@ backend are wired in. Clone it, rename a few things, and extend it into a real p
 
 - **[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)** — stack, structure, security model, and dependency policy.
 - **[`docs/ERD.md`](./docs/ERD.md)** — data model + the canonical RLS pattern every table follows.
+- **[`docs/CMS.md`](./docs/CMS.md)** — the Payload CMS reference: every collection, global, field & access rule.
 - **[`CLAUDE.md`](./CLAUDE.md)** — working agreement, the golden security rules, and the "how to add a feature" recipe.
 
 If anything here disagrees with those, **they win.**
@@ -328,16 +329,17 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
    Supabase** (or install from the [Marketplace](https://vercel.com/marketplace/supabase)),
    and create a new project. Vercel writes the Supabase + Postgres env vars into the
    project automatically.
-3. **Apply the schema** — the integration creates an *empty* database, so push the kit's
-   migrations to it from your local clone:
-   ```bash
-   supabase link --project-ref <your-new-project-ref>   # ref is in the Supabase dashboard URL
-   supabase db push                                     # applies supabase/migrations
-   ```
-   (Don't run the seed in production — it's local-dev demo data.) Deploy the edge
-   functions too — see [Backend (Supabase)](#backend-supabase).
+3. **Apply the schema** — nothing to run. The integration creates an *empty* database,
+   and the app **provisions it itself on first boot**: a runtime bootstrap
+   (`apps/nextjs/src/lib/db/bootstrap.ts`) applies `supabase/migrations` over the
+   integration-injected `POSTGRES_URL_NON_POOLING` (or `SUPABASE_DB_URL` if you set one),
+   recording them in the same ledger the CLI uses. `supabase link && supabase db push`
+   remains a supported manual/CI alternative — either order is safe, and
+   `DB_BOOTSTRAP=off` disables the runtime path entirely. Deploy the edge functions —
+   see [Backend (Supabase)](#backend-supabase).
 4. **Redeploy** — in Vercel, **Deployments → ⋯ → Redeploy** so the build picks up the
-   injected env vars. The web app should now be live.
+   injected env vars. The web app should now be live (the first boot runs the DB
+   bootstrap above).
 5. **Finish config** — in the Supabase dashboard set **Authentication → URL
    Configuration**. **This is required** — a fresh Supabase project defaults its Site URL
    to `http://localhost:3000` and the integration doesn't change it, so until you do this
@@ -382,15 +384,23 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
    > still unconfirmed, signing in re-sends a fresh confirmation and lands on
    > `/check-email`, and `/profile` shows a **Verify email** button — signing up again
    > with the same address also re-sends.
-6. **Set up the CMS** — run `supabase/payload/00_cms_role.sql` once in the SQL editor,
-   add the `PAYLOAD_*` + `S3_*` env, create + run Payload migrations, then log into
-   `/admin` — see [Content backend (Payload CMS)](#content-backend-payload-cms).
+6. **Set up the CMS** — add the `PAYLOAD_*` + `S3_*` env in Vercel and redeploy; the
+   same first-boot bootstrap creates the `cms` schema + `payload_cms` role (with the
+   password you put in `PAYLOAD_DATABASE_URL`) and Payload applies its own committed
+   migrations. Then log into `/admin` — see
+   [Content backend (Payload CMS)](#content-backend-payload-cms).
 
 ### Backend (Supabase)
 
+The SQL schema needs **no manual step** — the deployed app applies
+`supabase/migrations` itself on first boot (see Deploy step 3). Pushing by hand still
+works and stays in sync (both write the Supabase CLI's
+`supabase_migrations.schema_migrations` ledger); edge functions and their secrets are
+the part that's still deployed from the CLI:
+
 ```bash
 supabase link --project-ref <your-ref>
-supabase db push                          # apply migrations to the hosted project
+supabase db push                          # optional — the app already did this on boot
 supabase functions deploy stripe-webhook  # + delete-account, process-reminders
 supabase secrets set STRIPE_SECRET_KEY=… STRIPE_WEBHOOK_SECRET=… CRON_SECRET=…
 ```
@@ -401,18 +411,24 @@ with the `CRON_SECRET` in the `Authorization` header.
 
 ### Content backend (Payload CMS)
 
-Payload runs inside the deployed web app, but its `cms` schema + login role aren't
-captured by `supabase db push` (`CREATE ROLE` isn't diffed), so set them up once:
+Payload runs inside the deployed web app. Its `cms` schema + login role aren't captured
+by `supabase db push` (`CREATE ROLE` isn't diffed) — instead the **runtime bootstrap
+creates them on first boot**, taking the password from `PAYLOAD_DATABASE_URL`:
 
-1. **Provision the schema + role** — in the Supabase dashboard **SQL editor**, run
-   [`supabase/payload/00_cms_role.sql`](./supabase/payload/00_cms_role.sql) **once**,
-   editing the role password to a real secret.
-2. **Env** — in Vercel set the server-only `PAYLOAD_DATABASE_URL` (the `payload_cms`
-   role's connection string — use the **direct/session** Postgres connection, not the
-   transaction pooler), `PAYLOAD_SECRET`, and the `S3_*` vars (point them at your
-   Supabase Storage S3 endpoint and the **public-read `cms-media`** bucket). For mobile,
-   set `EXPO_PUBLIC_CMS_URL` to your web origin.
-3. **Migrate** — nothing to run. Production has dev-push OFF, so Payload's tables come
+1. **Env** — in Vercel set the server-only `PAYLOAD_DATABASE_URL`: the `payload_cms`
+   role's connection string with a **real password you choose** (the bootstrap creates
+   the role with it — create-only, it never alters an existing role's password, and it
+   refuses the local dev password in production). Use the **direct/session** Postgres
+   connection (port 5432), not the transaction pooler, and keep the
+   `?options=-c%20search_path%3Dcms` suffix (see `.env.example`). Also set
+   `PAYLOAD_SECRET` and the `S3_*` vars (point them at your Supabase Storage S3
+   endpoint; the **public-read `cms-media`** bucket itself ships as a migration). For
+   mobile, set `EXPO_PUBLIC_CMS_URL` to your web origin.
+
+   > Prefer to provision by hand (or rotate the password later)? Run
+   > [`supabase/payload/00_cms_role.sql`](./supabase/payload/00_cms_role.sql) in the
+   > Supabase dashboard **SQL editor** — it remains the manual fallback.
+2. **Migrate** — nothing to run. Production has dev-push OFF, so Payload's tables come
    from committed migrations (`apps/nextjs/src/payload/migrations`), which Payload applies
    **automatically on first boot** via the adapter's `prodMigrations` — idempotent, tracked
    in the `cms.payload_migrations` ledger. An initial migration ships with the kit, so a
@@ -420,7 +436,7 @@ captured by `supabase db push` (`CREATE ROLE` isn't diffed), so set them up once
    collection, regenerate with `pnpm cms:migrate:create` and **commit** the new file; the
    next deploy applies it. (`pnpm cms:migrate` still works for applying against any DB by
    hand, but isn't needed in the deploy flow.)
-4. **Log in** — sign up through the app first (confirm via the email Supabase sends);
+3. **Log in** — sign up through the app first (confirm via the email Supabase sends);
    the **first** signup is auto-flagged staff. Then open `https://<your-domain>/admin`
    while signed in — the CMS shares your Supabase login (no separate Payload account),
    provisions your CMS user, and triggers the demo-content seed (with a progress bar)
