@@ -98,6 +98,21 @@ jobs:
       - name: Start Supabase (applies migrations + seed)
         run: supabase start
 
+      # Mirror hosted Supabase's TLS posture: hosted Postgres presents a cert
+      # chain rooted in Supabase's own CA, so `sslmode=require` must connect
+      # WITHOUT CA verification (libpq semantics). The local container is
+      # plaintext-only by default — which once let a SELF_SIGNED_CERT_IN_CHAIN
+      # regression in the runtime DB bootstrap ship while CI stayed green. This
+      # enables TLS with a throwaway self-signed cert; the .env below then opts
+      # the app's DB URLs into sslmode=require so `next dev`'s bootstrap and the
+      # Payload pool run the hosted code path end-to-end (founder.setup.ts
+      # asserts /api/health/db). Plaintext clients (psql provisioning, the
+      # stack itself) are unaffected: `ssl=on` does not force SSL. The script
+      # hard-fails if TLS doesn't come up, so the gate can't silently test
+      # plaintext.
+      - name: Enable TLS (self-signed) on local Supabase Postgres
+        run: bash tooling/scripts/enable-supabase-db-tls.sh
+
       # `supabase status -o env` prints the LOCAL stack's well-known demo anon +
       # service_role keys to stdout — throwaway values for an ephemeral CI
       # Postgres, not real secrets. They're written to a private .env consumed by
@@ -109,11 +124,14 @@ jobs:
           source <(supabase status -o env)
           set +a
           : "${DB_URL:=postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
+          # sslmode=require exercises the hosted-TLS path the step above set up
+          # (handle a DB_URL that already carries query params).
+          case "$DB_URL" in *\?*) DB_SEP='&' ;; *) DB_SEP='?' ;; esac
           cat > .env <<EOF
           NEXT_PUBLIC_SUPABASE_URL=$API_URL
           NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
           SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY
-          SUPABASE_DB_URL=$DB_URL
+          SUPABASE_DB_URL=${DB_URL}${DB_SEP}sslmode=require
           NEXT_PUBLIC_APP_URL=http://localhost:3000
           # Dummy key so the AI chat route gets past its "AI not configured" 503
           # guard to the auth check (enforcement.spec.ts asserts unauth → 401).
@@ -122,7 +140,7 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL=$API_URL
           EXPO_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
           EXPO_PUBLIC_API_URL=http://localhost:3000
-          PAYLOAD_DATABASE_URL=postgresql://payload_cms:payload_local_dev_only@127.0.0.1:54322/postgres?options=-c%20search_path%3Dcms
+          PAYLOAD_DATABASE_URL=postgresql://payload_cms:payload_local_dev_only@127.0.0.1:54322/postgres?options=-c%20search_path%3Dcms&sslmode=require
           PAYLOAD_SECRET=ci-not-a-real-secret-change-me
           # Throwaway signing secret for the Payload Stripe webhook endpoint so
           # subscription.spec.ts can exercise the mirror with self-signed events

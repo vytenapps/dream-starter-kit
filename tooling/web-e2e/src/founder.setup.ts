@@ -22,6 +22,37 @@ import { signUpAndConfirm } from "./helpers/mailpit";
  * regression in `/welcome` routing or the `is_staff` flag would send them to
  * `/a` — this test then fails loudly instead of passing silently.
  */
+
+/**
+ * Gate: the runtime DB bootstrap must not have errored on boot. In CI the DB
+ * URLs carry `sslmode=require` against a Postgres serving a self-signed cert
+ * (ci.yml + tooling/scripts/enable-supabase-db-tls.sh), mirroring hosted
+ * Supabase — so this is the hosted-TLS regression gate: a pg cert-verification
+ * failure in the bootstrap (or any other boot-time DB failure) surfaces here
+ * as status "error" instead of a green suite over a silently-empty database.
+ */
+test("db bootstrap reports healthy (hosted-TLS regression gate)", async ({
+  request,
+}) => {
+  const res = await request.get("/api/health/db");
+  const body = (await res.json()) as { status: string; error?: unknown };
+
+  // Fail ONLY on "error" (bootstrap attempted and failed). Benign skips pass
+  // locally: devs may run with DB_BOOTSTRAP=off or without SUPABASE_DB_URL.
+  expect(
+    body.status,
+    `db bootstrap failed: ${JSON.stringify(body.error ?? "(no detail)")}`,
+  ).not.toBe("error");
+
+  // CI always provides SUPABASE_DB_URL (with sslmode=require), so anything but
+  // a clean connected outcome there means the env wiring rotted and the TLS
+  // gate silently evaporated — that must be red too.
+  if (process.env.CI) {
+    expect(body.status).toBe("ok");
+    expect(res.ok()).toBeTruthy();
+  }
+});
+
 test("founder sign-up seeds the CMS before /admin", async ({ page }) => {
   // Well past the default 30s: confirmation email round-trip + CMS seeding +
   // the Payload admin bundle's first compile on a cold dev server.

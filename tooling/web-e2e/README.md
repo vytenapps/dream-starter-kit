@@ -42,13 +42,37 @@ the same DB don't collide. The staff-invite spec also needs
 
 | Spec                    | Flow                                                                                                                                                                                                                                                                                                                                                                                                               |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `founder.setup.ts`      | Setup project (runs first): founder sign-up → confirm via Mailpit link → `/cms-setup` seeds the CMS → `/admin`. Provisions the founder + seeded content the rest of the suite relies on.                                                                                                                                                                                                                           |
+| `founder.setup.ts`      | Setup project (runs first): the runtime DB bootstrap health gate (`/api/health/db` must not report `error`; in CI it must be `ok` — see the TLS section below), then founder sign-up → confirm via Mailpit link → `/cms-setup` seeds the CMS → `/admin`. Provisions the founder + seeded content the rest of the suite relies on.                                                                                  |
 | `smoke.spec.ts`         | Landing renders; a protected route redirects signed-out users to `/sign-in` (with `redirectTo`).                                                                                                                                                                                                                                                                                                                   |
 | `auth.spec.ts`          | Sign up → confirm (emailed link, and the manual 6-digit code path) → dashboard; unconfirmed sign-in re-sends the confirmation; a signed-in user is bounced away from auth pages.                                                                                                                                                                                                                                   |
 | `critical-path.spec.ts` | Sign up → confirm → schedule a reminder (the reference RLS-backed CRUD flow).                                                                                                                                                                                                                                                                                                                                      |
 | `staff-invite.spec.ts`  | Founder invites a user from `/admin` → invite email → `/accept-invite` (fresh browser context) → set password → `/admin`.                                                                                                                                                                                                                                                                                          |
 | `admin-login.spec.ts`   | Signing in as the admin (founder credentials) routes through `/welcome` into `/admin`, with the Payload UI rendered.                                                                                                                                                                                                                                                                                               |
 | `subscription.spec.ts`  | The Payload Stripe webhook mirror (self-signed `customer.subscription.*` events → the read-only CMS `subscriptions` collection; bad signatures rejected), its access control (anonymous denied, staff read-only, REST proxy off), and — when a test-mode `STRIPE_SECRET_KEY` is set — real Stripe Checkout subscription creation as an authenticated user and as a guest with the `4242 4242 4242 4242` test card. |
+
+## Reproducing hosted-Supabase TLS locally (optional)
+
+Hosted Supabase serves Postgres over TLS with a cert chain rooted in
+Supabase's **own CA** — no client trust store verifies it. CI mirrors that
+(`.github/workflows/ci.yml`): it enables TLS on the local DB container with a
+throwaway self-signed cert and appends `sslmode=require` to `SUPABASE_DB_URL`
+and `PAYLOAD_DATABASE_URL`, so `next dev`'s runtime DB bootstrap and Payload's
+pool exercise the exact hosted connection path; `founder.setup.ts` then fails
+the suite if `/api/health/db` doesn't report `ok`. To reproduce locally:
+
+```bash
+supabase start
+bash tooling/scripts/enable-supabase-db-tls.sh   # idempotent; --disable reverts
+# in .env: append ?sslmode=require to SUPABASE_DB_URL
+#          and    &sslmode=require to PAYLOAD_DATABASE_URL
+pnpm test:e2e
+```
+
+This is **not required** for normal local runs — without `sslmode` in `.env`
+the bootstrap connects plaintext and the suite stays green. Plaintext clients
+keep working with TLS enabled (`ssl=on` doesn't force SSL), and the cert +
+config live in the DB docker volume, so `supabase stop && supabase start`
+keeps them paired.
 
 ## Deliberately not covered here
 
