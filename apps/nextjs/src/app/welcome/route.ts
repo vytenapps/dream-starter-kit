@@ -44,11 +44,28 @@ export async function GET() {
   });
   await ensureFreeTag(user.id);
 
-  const { data: profile } = await supabase
+  // maybeSingle: zero rows is NOT an error (a missing profile row just routes
+  // to /a) — but a query failure (e.g. the profiles table doesn't exist
+  // because the runtime DB bootstrap failed) must NOT silently misroute the
+  // founder; surface it instead.
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("is_staff")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
+
+  if (error) {
+    console.error(
+      "[welcome] profiles lookup failed — database likely not provisioned",
+      error,
+    );
+    return new NextResponse(
+      "Database not ready: the profiles table is missing or unreachable.\n" +
+        "Check /api/health/db for the runtime DB bootstrap status, then see " +
+        "the README's Deploy section (apply the schema) and your server logs.",
+      { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } },
+    );
+  }
 
   const dest = profile?.is_staff ? "/cms-setup" : "/a";
   return NextResponse.redirect(`${siteUrl}${dest}`);
