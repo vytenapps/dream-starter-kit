@@ -185,7 +185,11 @@ export default buildConfig({
     // `public` tables. It connects as the least-privilege `payload_cms` role.
     schemaName: "cms",
     // Dev/CI auto-creates the cms tables via dev "push" (so a fresh clone needs
-    // no migration step). In production (NODE_ENV=production) push is OFF; instead
+    // no migration step). Push runs only at Payload INIT — if the database is
+    // wiped while the server is running (`supabase db reset` without
+    // `pnpm db:reset`), the first-login flows self-heal by applying the
+    // committed migrations at request time (lib/cms/ensure-schema.ts).
+    // In production (NODE_ENV=production) push is OFF; instead
     // Payload runs `prodMigrations` automatically on first connect, so a fresh
     // prod database self-provisions the cms schema on the first request — no
     // separate `pnpm cms:migrate` deploy step required (it stays idempotent via
