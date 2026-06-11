@@ -10,6 +10,7 @@ import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
+import { pgConnectionOptions } from "./lib/db/bootstrap-core";
 import { isStaff } from "./payload/access";
 import { Audio } from "./payload/collections/Audio";
 import { Banners } from "./payload/collections/Banners";
@@ -157,7 +158,11 @@ export default buildConfig({
     ),
   },
   db: postgresAdapter({
-    pool: { connectionString: process.env.PAYLOAD_DATABASE_URL },
+    // pgConnectionOptions gives the pool libpq ssl semantics (sslmode=require
+    // → encrypted-unverified, param stripped) — hosted Supabase's self-rooted
+    // cert chain fails pg's default verify-full handling otherwise. Local
+    // plaintext URLs pass through untouched.
+    pool: { ...pgConnectionOptions(process.env.PAYLOAD_DATABASE_URL) },
     // Payload owns its own Postgres schema, isolated from the RLS-governed
     // `public` tables. It connects as the least-privilege `payload_cms` role.
     schemaName: "cms",

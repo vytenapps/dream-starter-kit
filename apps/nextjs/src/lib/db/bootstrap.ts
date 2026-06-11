@@ -33,9 +33,12 @@ import {
   FOUNDER_FLAG_SQL,
   parseRoleCredentials,
   pendingMigrations,
+  pgConnectionOptions,
   PROFILE_BACKFILL_SQL,
   resolveAdminDbUrl,
+  summarizeDbError,
 } from "./bootstrap-core";
+import { recordBootstrapResult } from "./bootstrap-status";
 import { supabaseMigrations } from "./migrations";
 
 /** The slice of `pg.Client` the runner uses — fakeable in unit tests. */
@@ -69,6 +72,9 @@ export interface BootstrapResult {
     | false;
   appliedVersions: string[];
   cmsRoleCreated: boolean;
+  /** Sanitized failure summary (set on connect/migration errors) — safe for
+   * the public /api/health/db endpoint; never contains the connection string. */
+  error?: { code?: string; message: string };
 }
 
 interface DbState {
@@ -84,8 +90,13 @@ async function defaultCreateClient(
   // Dynamic so the driver is only loaded once the gates have passed (and so
   // DB-less boots / the edge pass never touch it).
   const { default: pg } = await import("pg");
+  // pgConnectionOptions strips `sslmode` from the URL and supplies the ssl
+  // option itself (libpq semantics): pg merges the PARSED url over explicit
+  // config, so hosted Supabase's `sslmode=require` would otherwise force full
+  // chain verification against Supabase's self-rooted CA and fail with
+  // SELF_SIGNED_CERT_IN_CHAIN.
   const client = new pg.Client({
-    connectionString,
+    ...pgConnectionOptions(connectionString),
     connectionTimeoutMillis: 10_000,
   });
   await client.connect();
@@ -170,6 +181,15 @@ async function provisionCms(
 export async function bootstrapDatabase(
   deps: BootstrapDeps = {},
 ): Promise<BootstrapResult> {
+  const result = await runBootstrap(deps);
+  // Recorded on globalThis for the public /api/health/db endpoint — the one
+  // place a founder can see WHY a fresh deploy didn't provision (the runner
+  // itself never throws, so a failure is otherwise only visible in server logs).
+  recordBootstrapResult(result);
+  return result;
+}
+
+async function runBootstrap(deps: BootstrapDeps): Promise<BootstrapResult> {
   const log = deps.logger ?? console;
   const envSource = deps.envSource ?? {
     SUPABASE_DB_URL: env.SUPABASE_DB_URL,
@@ -264,7 +284,7 @@ export async function bootstrapDatabase(
             `[db-bootstrap] migration ${migration.version}_${migration.name} failed — stopping; applied migrations stay recorded and the next boot retries the rest`,
             error,
           );
-          return { ...none, appliedVersions };
+          return { ...none, appliedVersions, error: summarizeDbError(error) };
         }
       }
     }
@@ -301,7 +321,7 @@ export async function bootstrapDatabase(
       "[db-bootstrap] failed — continuing boot; the app degrades to the manual `supabase db push` flow",
       error,
     );
-    return { ...none, skipped: "error" };
+    return { ...none, skipped: "error", error: summarizeDbError(error) };
   } finally {
     if (client) {
       if (locked) {

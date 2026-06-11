@@ -1,6 +1,7 @@
 /**
- * Pure helpers for the runtime DB bootstrap (see ./bootstrap.ts). No driver,
- * no I/O — everything here is unit-tested in bootstrap-core.test.ts.
+ * Pure helpers for the runtime DB bootstrap (see ./bootstrap.ts) and the
+ * Payload pool config (payload.config.ts). No driver, no I/O — everything
+ * here is unit-tested in bootstrap-core.test.ts.
  */
 import type { SqlMigration } from "./migrations";
 
@@ -42,6 +43,141 @@ export function resolveAdminDbUrl(
   if (env.SUPABASE_DB_URL) return env.SUPABASE_DB_URL;
   if (env.POSTGRES_URL_NON_POOLING) return env.POSTGRES_URL_NON_POOLING;
   return undefined;
+}
+
+/** pg-compatible ssl setting with libpq-style semantics. */
+export type PgSsl = false | true | { rejectUnauthorized: false };
+
+export interface PgConnectionOptions {
+  connectionString?: string;
+  /** Key omitted = no override; pg's own defaults / PGSSLMODE apply. */
+  ssl?: PgSsl;
+}
+
+/**
+ * `sslmode` params pg-connection-string maps to certificate FILES it reads
+ * from disk (or to native libpq-compat handling). When any of these are
+ * present the URL is passed through untouched — overriding them would break a
+ * working custom-CA setup, and this module must stay pure (no fs).
+ */
+const ADVANCED_SSL_PARAMS = [
+  "ssl",
+  "sslcert",
+  "sslkey",
+  "sslrootcert",
+  "sslpassword",
+  "uselibpqcompat",
+];
+
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
+
+/**
+ * Maps a Postgres connection string to a `pg.Client`/`pg.Pool` config with
+ * libpq SSL semantics. Exists because pg@8 treats `sslmode=require` as
+ * verify-full — and hosted Supabase's cert chain is rooted in Supabase's own
+ * CA, so verification fails with SELF_SIGNED_CERT_IN_CHAIN and a fresh deploy
+ * never provisions. Worse, pg merges `parse(connectionString)` OVER explicit
+ * options (connection-parameters.js), so a computed `ssl` only survives if the
+ * `sslmode` param is also STRIPPED from the URL. Semantics:
+ *
+ *   - `disable` → ssl: false
+ *   - `allow` / `prefer` / `require` / `no-verify` → encrypted, UNVERIFIED
+ *     (libpq's `require`; what hosted Supabase needs)
+ *   - `verify-ca` / `verify-full` (or unknown values — fail closed) → full
+ *     verification; supply Supabase's CA via NODE_EXTRA_CA_CERTS
+ *   - no `sslmode`: local hosts stay untouched (plaintext local stack, and
+ *     PGSSLMODE keeps working); remote hosts default to encrypted-unverified
+ *     (`sslmode=disable` is the opt-out)
+ *
+ * The param is stripped by string surgery, never `URL.toString()` — a
+ * round-trip would re-encode params like `options=-c%20search_path%3Dcms`.
+ * Unparseable inputs (libpq key=value strings, multi-host URLs, socket paths)
+ * and URLs carrying advanced ssl params pass through untouched.
+ */
+export function pgConnectionOptions(
+  connectionString: string | undefined,
+): PgConnectionOptions {
+  if (!connectionString) return {};
+  const passthrough: PgConnectionOptions = { connectionString };
+
+  let parsed: URL;
+  try {
+    parsed = new URL(connectionString);
+  } catch {
+    return passthrough;
+  }
+  if (ADVANCED_SSL_PARAMS.some((p) => parsed.searchParams.has(p))) {
+    return passthrough;
+  }
+
+  const sslmode = parsed.searchParams.get("sslmode");
+  if (sslmode === null) {
+    const hostname = parsed.hostname.replace(/^\[|\]$/g, "");
+    if (LOCAL_HOSTNAMES.has(hostname)) return passthrough;
+    return { connectionString, ssl: { rejectUnauthorized: false } };
+  }
+
+  let ssl: PgSsl;
+  switch (sslmode) {
+    case "disable":
+      ssl = false;
+      break;
+    case "allow":
+    case "prefer":
+    case "require":
+    case "no-verify":
+      ssl = { rejectUnauthorized: false };
+      break;
+    // verify-ca, verify-full, and anything unrecognized: full verification
+    // (fail closed — matches pg's own current handling).
+    default:
+      ssl = true;
+      break;
+  }
+  return {
+    connectionString: stripQueryParam(connectionString, "sslmode"),
+    ssl,
+  };
+}
+
+/** Removes `key=...` pairs from the query string byte-for-byte (no re-encoding). */
+function stripQueryParam(connectionString: string, key: string): string {
+  const queryStart = connectionString.indexOf("?");
+  if (queryStart === -1) return connectionString;
+  const base = connectionString.slice(0, queryStart);
+  const query = connectionString
+    .slice(queryStart + 1)
+    .split("&")
+    .filter((pair) => pair.split("=", 1)[0] !== key)
+    .join("&");
+  return query ? `${base}?${query}` : base;
+}
+
+const CONNECTION_STRING_PATTERN = /postgres(ql)?:\/\/\S+/gi;
+const MAX_ERROR_MESSAGE = 300;
+
+/**
+ * Sanitized error summary for surfaces outside the server log (the public
+ * /api/health/db endpoint): code + message only — no stack, and any embedded
+ * connection string (credentials!) is redacted.
+ */
+export function summarizeDbError(error: unknown): {
+  code?: string;
+  message: string;
+} {
+  const code =
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+      ? error.code
+      : undefined;
+  const raw =
+    error instanceof Error ? error.message : String(error ?? "unknown error");
+  const message = raw
+    .replace(CONNECTION_STRING_PATTERN, "[redacted]")
+    .slice(0, MAX_ERROR_MESSAGE);
+  return code === undefined ? { message } : { code, message };
 }
 
 /**
