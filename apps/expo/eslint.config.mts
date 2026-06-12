@@ -31,6 +31,7 @@ export default defineConfig(
                 "@acme/ext-*/server",
                 "@acme/ext-*/payload",
                 "@acme/ext-*/web",
+                "@acme/ext-*/web-server",
               ],
               message:
                 "Only an extension's client barrel and /native entry are allowed in the native app.",

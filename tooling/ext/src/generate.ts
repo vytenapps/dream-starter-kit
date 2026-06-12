@@ -459,10 +459,11 @@ export function buildStubs(exts: LoadedExtension[]): GeneratedFile[] {
         const base = r.mount ? r.mount.replace(/^\//, "") : `x/${slug}`;
         bases.add(`${group}/${base}`);
         const seg = r.path ? `/${r.path}` : "";
+        const entry = r.rsc ? "web-server" : "web";
         files.push({
           path: `${group}/${base}${seg}/page.tsx`,
           slug,
-          content: `${ESLINT_OFF}${HEADER}export { ${r.component} as default } from "${e.packageName}/web";\n`,
+          content: `${ESLINT_OFF}${HEADER}export { ${r.component} as default } from "${e.packageName}/${entry}";\n`,
         });
       }
       for (const baseDir of [...bases].sort()) {

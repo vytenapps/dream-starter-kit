@@ -28,7 +28,13 @@ export default defineExtension({
   routes: {
     web: [
       { path: "", component: "BillingPage", mount: "/billing" },
-      { path: "", component: "PricingPage", area: "public", mount: "/pricing" },
+      {
+        path: "",
+        component: "PricingPage",
+        area: "public",
+        mount: "/pricing",
+        rsc: true,
+      },
     ],
     native: [{ path: "", component: "PricingScreen" }],
   },

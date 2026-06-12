@@ -37,6 +37,13 @@ const routeEntrySchema = z.object({
    * screen.
    */
   mount: z.string().optional(),
+  /**
+   * Web only: the component is a Server Component living in the extension's
+   * `./web-server` entry (may use the Payload Local API / node modules).
+   * `./web` must stay CLIENT-safe — the client registry imports it for
+   * widgets, so server imports there would leak into client chunks.
+   */
+  rsc: z.boolean().default(false),
 });
 
 export const extensionManifestSchema = z.object({

@@ -8,7 +8,8 @@
     "./native": "./src/native/index.ts",
     "./payload": "./src/payload/index.ts",
     "./server": "./src/server/index.ts",
-    "./web": "./src/web/index.ts"
+    "./web": "./src/web/index.ts",
+    "./web-server": "./src/web-server/index.ts"
   },
   "license": "Apache-2.0",
   "scripts": {

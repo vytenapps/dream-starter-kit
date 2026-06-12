@@ -17,7 +17,7 @@ import {
 } from "@acme/ui/card";
 
 import { settings } from "../payload/settings";
-import { PlanCheckoutButton } from "./plan-checkout-button";
+import { PlanCheckoutButton } from "../web/plan-checkout-button";
 
 export const metadata: Metadata = {
   title: "Pricing",
