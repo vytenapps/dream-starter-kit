@@ -14,6 +14,8 @@ import { ownsOrStaff } from "@acme/ext-kit/payload";
  */
 export const Subscriptions: CollectionConfig = {
   slug: "ext-billing-subscriptions",
+  // Namespaced slug + clean admin label (see Plans.ts).
+  labels: { singular: "Billing Subscription", plural: "Billing Subscriptions" },
   admin: {
     group: "Commerce",
     defaultColumns: ["user", "plan", "status", "currentPeriodEnd"],

@@ -20,6 +20,8 @@ import { syncCouponAfterChange } from "../hooks/sync-coupon-to-stripe";
  */
 export const Coupons: CollectionConfig = {
   slug: "ext-billing-coupons",
+  // Namespaced slug + clean admin label (see Plans.ts).
+  labels: { singular: "Billing Coupon", plural: "Billing Coupons" },
   admin: {
     useAsTitle: "name",
     group: "Commerce",
