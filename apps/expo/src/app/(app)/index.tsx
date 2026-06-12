@@ -1,15 +1,38 @@
+import type { Href } from "expo-router";
 import { View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 
+import type { NavMenuEntry } from "@acme/app";
 import { useSession } from "@acme/api";
+import { useNavMenu } from "@acme/app";
 import { APP_NAME } from "@acme/config/constants";
+import { Button } from "@acme/ui-native/button";
+import { Text } from "@acme/ui-native/text";
 
-import { Button } from "~/components/ui/button";
-import { Text } from "~/components/ui/text";
+/**
+ * Fallback menu while the CMS-driven one (useNavMenu → nav-items collection)
+ * is loading or unreachable — mirrors lib/ext/core-nav.ts on the web side.
+ */
+const FALLBACK_MENU: NavMenuEntry[] = [
+  { key: "core:/content/posts", label: "Posts", href: "/content/posts" },
+  { key: "core:/chat", label: "Chat", href: "/chat" },
+  { key: "core:/reminders", label: "Reminders", href: "/reminders" },
+  {
+    key: "core:/notifications",
+    label: "Notifications",
+    href: "/notifications",
+  },
+  { key: "core:/pricing", label: "Pricing", href: "/pricing" },
+  { key: "core:/profile", label: "Profile", href: "/profile" },
+];
 
 export default function Home() {
   const router = useRouter();
   const { user } = useSession();
+  // CMS-driven menu: installed-and-enabled extensions appear automatically;
+  // staff renames/reordering/toggles from /admin apply on next fetch.
+  const { data: menu } = useNavMenu("native");
+  const items = menu && menu.length > 0 ? menu : FALLBACK_MENU;
 
   return (
     <View className="bg-background flex-1 items-center justify-center gap-4 p-6">
@@ -18,32 +41,14 @@ export default function Home() {
       <Text className="text-muted-foreground text-center">
         Signed in as {user?.email}
       </Text>
-      <Button title="Posts" onPress={() => router.push("/content/posts")} />
-      <Button
-        title="Chat"
-        variant="outline"
-        onPress={() => router.push("/chat")}
-      />
-      <Button
-        title="Reminders"
-        variant="outline"
-        onPress={() => router.push("/reminders")}
-      />
-      <Button
-        title="Notifications"
-        variant="outline"
-        onPress={() => router.push("/notifications")}
-      />
-      <Button
-        title="Pricing"
-        variant="outline"
-        onPress={() => router.push("/pricing")}
-      />
-      <Button
-        title="Profile"
-        variant="outline"
-        onPress={() => router.push("/profile")}
-      />
+      {items.map((item, i) => (
+        <Button
+          key={item.key}
+          title={item.label}
+          variant={i === 0 ? "default" : "outline"}
+          onPress={() => router.push(item.href as Href)}
+        />
+      ))}
     </View>
   );
 }

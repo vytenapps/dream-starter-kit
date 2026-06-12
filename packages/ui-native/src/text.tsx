@@ -1,7 +1,7 @@
 import type { TextProps } from "react-native";
 import { Text as RNText } from "react-native";
 
-import { cn } from "~/lib/cn";
+import { cn } from "./cn";
 
 export function Text({
   className,

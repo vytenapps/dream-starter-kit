@@ -2,9 +2,8 @@ import { Alert, FlatList, View } from "react-native";
 import { Stack } from "expo-router";
 
 import { useCreateReminder, useDeleteReminder, useReminders } from "@acme/app";
-
-import { Button } from "~/components/ui/button";
-import { Text } from "~/components/ui/text";
+import { Button } from "@acme/ui-native/button";
+import { Text } from "@acme/ui-native/text";
 
 const msg = (e: unknown) =>
   e instanceof Error ? e.message : "Something went wrong";

@@ -4,6 +4,7 @@ import { AppSidebar } from "~/components/app-sidebar";
 import { BrandingProvider } from "~/components/branding-provider";
 import { SiteHeader } from "~/components/site-header";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
+import { getWebNavItems } from "~/lib/ext/nav";
 import { getBranding } from "~/lib/payload";
 import { createClient } from "~/lib/supabase/server";
 
@@ -27,7 +28,12 @@ export default async function AppLayout({
 
   if (!user) redirect("/sign-in");
 
-  const branding = await getBranding();
+  const [branding, navItems] = await Promise.all([
+    getBranding(),
+    // CMS-driven menu (nav-items collection) — staff edits in /admin show up
+    // without a redeploy; degrades to the generated defaults if the CMS is down.
+    getWebNavItems(),
+  ]);
 
   return (
     <BrandingProvider value={branding}>
@@ -39,7 +45,7 @@ export default async function AppLayout({
           } as React.CSSProperties
         }
       >
-        <AppSidebar variant="inset" />
+        <AppSidebar variant="inset" navItems={navItems} />
         <SidebarInset>
           <SiteHeader />
           {children}

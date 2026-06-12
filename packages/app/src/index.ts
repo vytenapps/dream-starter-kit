@@ -32,3 +32,5 @@ export {
 } from "./hooks/use-reminders";
 export { useUserTags } from "./hooks/use-tags";
 export type { UserTag } from "./hooks/use-tags";
+export { useNavMenu } from "./hooks/use-nav-menu";
+export type { NavMenuEntry } from "./hooks/use-nav-menu";

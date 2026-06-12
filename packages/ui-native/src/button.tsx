@@ -1,7 +1,7 @@
 import type { PressableProps } from "react-native";
 import { ActivityIndicator, Pressable, Text } from "react-native";
 
-import { cn } from "~/lib/cn";
+import { cn } from "./cn";
 
 type Variant = "default" | "outline" | "destructive" | "ghost";
 

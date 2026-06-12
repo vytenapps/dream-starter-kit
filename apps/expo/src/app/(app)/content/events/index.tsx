@@ -2,8 +2,7 @@ import { FlatList, View } from "react-native";
 import { Stack } from "expo-router";
 
 import { useEvents } from "@acme/app";
-
-import { Text } from "~/components/ui/text";
+import { Text } from "@acme/ui-native/text";
 
 export default function EventsList() {
   const events = useEvents();

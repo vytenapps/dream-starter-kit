@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { Link, useLocalSearchParams } from "expo-router";
 
-import { Text } from "~/components/ui/text";
+import { Text } from "@acme/ui-native/text";
+
 import { supabase } from "~/lib/supabase";
 
 /**

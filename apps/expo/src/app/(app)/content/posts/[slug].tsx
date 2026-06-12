@@ -2,8 +2,7 @@ import { ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 
 import { usePost } from "@acme/app";
-
-import { Text } from "~/components/ui/text";
+import { Text } from "@acme/ui-native/text";
 
 export default function PostDetail() {
   const { slug } = useLocalSearchParams<{ slug: string }>();

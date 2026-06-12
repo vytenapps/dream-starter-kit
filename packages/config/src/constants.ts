@@ -6,6 +6,15 @@
 export const APP_NAME = "Dream";
 
 /**
+ * Kit version — the extension framework's compatibility anchor. Extension
+ * manifests declare a `kitCompat` semver range checked against this at
+ * add/update/sync time. MUST match the root package.json `version` (a unit
+ * test in this package asserts it). Bump the major for breaking changes to
+ * the extension API surface (@acme/ext-kit contracts, registry shapes).
+ */
+export const KIT_VERSION = "1.0.0";
+
+/**
  * Default AI model — a Vercel AI Gateway "provider/model" slug.
  *
  * IMPORTANT: Gateway slugs change frequently. This is the single source of

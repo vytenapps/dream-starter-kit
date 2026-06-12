@@ -3,11 +3,11 @@ import { Alert, FlatList, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 
 import { useSendMessage, useThreadMessages } from "@acme/app";
+import { Button } from "@acme/ui-native/button";
+import { cn } from "@acme/ui-native/cn";
+import { Input } from "@acme/ui-native/input";
+import { Text } from "@acme/ui-native/text";
 
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Text } from "~/components/ui/text";
-import { cn } from "~/lib/cn";
 import { clientEnv } from "~/lib/env";
 
 const msg = (e: unknown) =>

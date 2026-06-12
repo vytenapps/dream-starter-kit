@@ -3,9 +3,9 @@ import { Stack } from "expo-router";
 
 import type { Plan } from "@acme/cms";
 import { usePlans, usePremium } from "@acme/app";
+import { Button } from "@acme/ui-native/button";
+import { Text } from "@acme/ui-native/text";
 
-import { Button } from "~/components/ui/button";
-import { Text } from "~/components/ui/text";
 import { clientEnv } from "~/lib/env";
 
 /** "$9.99" / "$399" — drop decimals on whole-dollar amounts. */

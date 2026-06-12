@@ -1,18 +1,13 @@
 "use client";
 
 import * as React from "react";
-import {
-  IconBell,
-  IconClock,
-  IconCreditCard,
-  IconDashboard,
-  IconInnerShadowTop,
-  IconMessageCircle,
-} from "@tabler/icons-react";
+import { IconInnerShadowTop } from "@tabler/icons-react";
 
 import { useSession } from "@acme/api";
 
+import type { NavMenuItem } from "~/lib/ext/nav-types";
 import { useBranding } from "~/components/branding-provider";
+import { resolveNavIcon } from "~/components/nav-icons";
 import { NavMain } from "~/components/nav-main";
 import { NavUser } from "~/components/nav-user";
 import {
@@ -25,17 +20,20 @@ import {
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
 
-const navMain = [
-  { title: "Dashboard", url: "/a", icon: IconDashboard },
-  { title: "Chat", url: "/chat", icon: IconMessageCircle },
-  { title: "Reminders", url: "/reminders", icon: IconClock },
-  { title: "Notifications", url: "/notifications", icon: IconBell },
-  { title: "Billing", url: "/billing", icon: IconCreditCard },
-];
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  navItems,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & { navItems: NavMenuItem[] }) {
   const { user } = useSession();
   const branding = useBranding();
+  // The menu is CMS-driven (nav-items collection, staff-edited in /admin) and
+  // resolved server-side by the (app) layout; icon names map through the
+  // core + generated icon registry with a default fallback.
+  const navMain = navItems.map((item) => ({
+    title: item.label,
+    url: item.href,
+    icon: resolveNavIcon(item.icon),
+  }));
   const sidebarUser = {
     name:
       (user?.user_metadata?.display_name as string | undefined) ??

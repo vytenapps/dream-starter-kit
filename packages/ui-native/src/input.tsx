@@ -1,7 +1,7 @@
 import type { TextInputProps } from "react-native";
 import { TextInput } from "react-native";
 
-import { cn } from "~/lib/cn";
+import { cn } from "./cn";
 
 export function Input({
   className,

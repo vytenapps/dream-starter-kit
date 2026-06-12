@@ -10,6 +10,12 @@ import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
+import {
+  extCollections,
+  extGlobals,
+  extPayloadMigrations,
+  extPlugins,
+} from "./ext/registry.payload.generated";
 import { resolveCmsCredentials } from "./lib/cms/derived-credentials";
 import { pgConnectionOptions } from "./lib/db/bootstrap-core";
 import { isStaff } from "./payload/access";
@@ -25,9 +31,11 @@ import { Enrollments } from "./payload/collections/Enrollments";
 import { Events } from "./payload/collections/Events";
 import { Favorites } from "./payload/collections/Favorites";
 import { FeedTokens } from "./payload/collections/FeedTokens";
+import { KitExtensions } from "./payload/collections/KitExtensions";
 import { Lessons } from "./payload/collections/Lessons";
 import { Locations } from "./payload/collections/Locations";
 import { Media } from "./payload/collections/Media";
+import { NavItems } from "./payload/collections/NavItems";
 import { Notifications } from "./payload/collections/Notifications";
 import { Onboarding } from "./payload/collections/Onboarding";
 import { Pages } from "./payload/collections/Pages";
@@ -154,8 +162,20 @@ export default buildConfig({
     Onboarding,
     Banners,
     Notifications,
+    // Extensions (framework-owned: install registry + CMS-driven menu)
+    KitExtensions,
+    NavItems,
+    // Installed extensions' collections (generated registry — `pnpm ext sync`)
+    ...extCollections,
   ],
-  globals: [SiteSettings, ThemeSettings, PricingSettings, ProfileFields],
+  globals: [
+    SiteSettings,
+    ThemeSettings,
+    PricingSettings,
+    ProfileFields,
+    // Installed extensions' globals incl. their settings screens (§1.7)
+    ...extGlobals,
+  ],
   // One shared, cross-collection folder tree ("Browse by Folder") for the
   // collections that enable `folders: true`.
   folders: { browseByFolder: true },
@@ -206,7 +226,11 @@ export default buildConfig({
     // the cms.payload_migrations ledger). After changing a collection, regenerate
     // with `pnpm cms:migrate:create` and commit the new file in payload/migrations.
     push: process.env.NODE_ENV !== "production",
-    prodMigrations: migrations,
+    // Core + extension migrations merged by timestamp prefix; Payload's
+    // cms.payload_migrations ledger keys by name, so boot runs stay idempotent.
+    prodMigrations: [...migrations, ...extPayloadMigrations].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    ),
     migrationDir: path.resolve(dirname, "payload/migrations"),
   }),
   sharp,
@@ -291,5 +315,9 @@ export default buildConfig({
         access: { read: isStaff, delete: isStaff },
       },
     }),
+    // Plugins registered by installed extensions (generated registry). A
+    // plugin can mutate the whole Payload config — the widest extension
+    // power; install PRs flag it prominently (EXTENSIONS-PLAN.md §3.2).
+    ...extPlugins,
   ],
 });

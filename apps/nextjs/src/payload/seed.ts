@@ -13,6 +13,7 @@
 import type { Payload } from "payload";
 import { getPayload } from "payload";
 
+import { extSeedSteps } from "../ext/registry.payload.generated";
 import config from "../payload.config";
 
 /** Reports seed progress: `done`/`total` steps complete, with the step label. */
@@ -537,6 +538,22 @@ export async function seedCmsContent(
       },
     },
   ];
+
+  // Framework step: populate the extension registry + CMS-driven menu from
+  // the generated defaults (same reconcile the server runs at every boot).
+  steps.push({
+    label: "Navigation menu",
+    run: async () => {
+      const { reconcileExtensions } = await import("../lib/ext/reconcile-nav");
+      await reconcileExtensions(payload);
+    },
+  });
+
+  // Seed steps contributed by installed extensions (generated registry) —
+  // they ride the same idempotent progress flow as the core steps.
+  for (const extStep of extSeedSteps) {
+    steps.push({ label: extStep.label, run: () => extStep.run(payload) });
+  }
 
   const total = steps.length;
   for (const [i, step] of steps.entries()) {
