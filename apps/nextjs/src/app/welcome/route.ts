@@ -1,20 +1,26 @@
 import { NextResponse } from "next/server";
+import config from "@payload-config";
+import { getPayload } from "payload";
 
 import { ensureCmsUser, ensureFreeTag } from "~/lib/cms/mirror-user";
+import { isCmsSeeded } from "~/lib/cms/seed-status";
 import { getSiteUrl } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/server";
 
 /**
- * Post-signup landing. Routes the FIRST account — the founder, flagged
- * `profiles.is_staff` by the `handle_new_user` trigger — into the CMS setup flow
- * so demo content is seeded behind the shadcn progress bar IMMEDIATELY after the
- * account is created, before they reach `/admin`. Everyone else goes straight to
+ * Post-auth landing — routes by role. Staff land in the CMS: the FIRST staff
+ * login ever (the founder, flagged `profiles.is_staff` by the
+ * `handle_new_user` trigger) goes through the CMS setup flow so demo content
+ * is seeded behind the shadcn progress bar IMMEDIATELY after the account is
+ * created; once the CMS is seeded, staff go STRAIGHT to `/admin` — the
+ * `/cms-setup` progress screen is a one-time founder experience, never shown
+ * on subsequent sign-ins or to later staff accounts. Everyone else goes to
  * `/a`.
  *
- * Reached as a hard navigation right after password sign-up, and as the OAuth
- * callback `next` for the sign-up page. Idempotent: returning/non-staff users
- * fall through to `/a`, and `/cms-setup` itself no-ops once the CMS is
- * already seeded — so a second visit never re-runs the seed.
+ * Reached as a hard navigation right after password sign-up/sign-in, and as
+ * the OAuth callback `next` for the auth pages. Idempotent either way:
+ * `/cms-setup` itself also no-ops (and forwards to `/admin`) if it's ever
+ * reached with the CMS already seeded.
  *
  * Redirects are built from `getSiteUrl()` (not `request.url`): behind Vercel's
  * proxy `request.url` can carry the internal deployment host. Mirrors
@@ -67,6 +73,24 @@ export async function GET() {
     );
   }
 
-  const dest = profile?.is_staff ? "/cms-setup" : "/a";
+  if (!profile?.is_staff) {
+    return NextResponse.redirect(`${siteUrl}/a`);
+  }
+
+  // Staff: only the very first staff login should see the seed screen. If the
+  // CMS is already seeded, skip /cms-setup entirely. If the seeded check fails
+  // (CMS unconfigured, DB unreachable), fall back to /cms-setup — it surfaces
+  // a structured, founder-readable error instead of /admin's opaque digest,
+  // and its seed POST is idempotent so a stale routing can never double-seed.
+  let dest = "/cms-setup";
+  try {
+    const payload = await getPayload({ config });
+    if (await isCmsSeeded(payload)) dest = "/admin";
+  } catch (error) {
+    console.warn(
+      "[welcome] CMS seeded check failed — routing to /cms-setup",
+      error,
+    );
+  }
   return NextResponse.redirect(`${siteUrl}${dest}`);
 }

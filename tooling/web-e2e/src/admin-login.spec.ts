@@ -5,8 +5,9 @@ import { readFounderEmail } from "./helpers/founder";
 /**
  * Admin sign-IN routing: an existing staff/admin user who logs in lands in the
  * CMS admin, not the app dashboard. Sign-in defaults to /welcome, which routes
- * by role — staff → /cms-setup (already seeded by founder.setup.ts, so it
- * forwards straight on) → /admin; everyone else → /a (covered by
+ * by role — staff go STRAIGHT to /admin once the CMS is seeded (it was, by
+ * founder.setup.ts); the /cms-setup seed screen is a one-time founder
+ * experience and must never reappear. Everyone else → /a (covered by
  * auth.spec.ts).
  *
  * Uses the founder credentials persisted by founder.setup.ts (password is the
@@ -18,12 +19,20 @@ test("signing in as the admin lands in /admin", async ({ page }) => {
 
   const email = await readFounderEmail();
 
+  // Regression guard: a returning admin must not be routed through the
+  // "Setting up your CMS" screen again.
+  const visited: string[] = [];
+  page.on("framenavigated", (frame) => {
+    if (frame === page.mainFrame()) visited.push(frame.url());
+  });
+
   await page.goto("/sign-in");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill("password123");
   await page.getByRole("button", { name: "Login" }).click();
 
   await page.waitForURL(/\/admin/, { timeout: 60_000 });
+  expect(visited.filter((url) => url.includes("/cms-setup"))).toEqual([]);
   // Assert the Payload admin actually rendered for this user (not just the
   // URL). Generous timeout: the admin shell's data fetches crawl when the dev
   // server is busy compiling for parallel workers.
