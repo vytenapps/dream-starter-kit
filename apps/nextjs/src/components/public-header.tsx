@@ -2,21 +2,29 @@ import type { NavbarActionProps } from "~/components/launch-ui/sections/navbar";
 import type { NavItem } from "~/components/launch-ui/ui/navigation";
 import Navbar from "~/components/launch-ui/sections/navbar";
 import { getBranding, getSiteSettings } from "~/lib/payload";
+import { SITE_HEADER, SITE_HEADER_ACTIONS } from "~/lib/site-chrome";
 
-/** Nav shown when the CMS is unreachable (e.g. a placeholder-env build). */
-const DEFAULT_NAV: NavItem[] = [
-  { title: "Posts", href: "/posts" },
-  { title: "Events", href: "/events" },
-  { title: "Videos", href: "/videos" },
-  { title: "Photos", href: "/photos" },
-  { title: "Locations", href: "/locations" },
-  { title: "About", href: "/about" },
-];
+// Nav + actions shown before/without the CMS (placeholder-env build, unseeded
+// DB). Derived from the shared site-chrome source so they match what the seed
+// writes into the CMS — the menu is identical before and after seeding.
+const DEFAULT_NAV: NavItem[] = SITE_HEADER.map((item) => ({
+  title: item.label,
+  href: item.url,
+  submenu: item.submenu?.map((sub) => ({
+    title: sub.label,
+    href: sub.url,
+    description: sub.description,
+  })),
+}));
 
-const DEFAULT_ACTIONS: NavbarActionProps[] = [
-  { text: "Sign in", href: "/sign-in", isButton: false },
-  { text: "Get started", href: "/sign-up", isButton: true, variant: "default" },
-];
+const DEFAULT_ACTIONS: NavbarActionProps[] = SITE_HEADER_ACTIONS.map(
+  (action) => ({
+    text: action.label,
+    href: action.url,
+    isButton: action.isButton,
+    variant: action.variant ?? "default",
+  }),
+);
 
 /**
  * Public site header — the Launch UI Navbar, driven by the SiteSettings global

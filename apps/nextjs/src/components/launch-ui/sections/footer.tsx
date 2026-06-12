@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { cn } from "@acme/ui";
 import { ThemeToggle } from "@acme/ui/theme";
 
+import { isExternalUrl } from "~/lib/site-chrome";
 import LaunchUI from "../logos/launch-ui";
 import {
   Footer,
@@ -83,6 +84,9 @@ export default function FooterSection({
                   <a
                     key={`${link.href}-${link.text}`}
                     href={link.href}
+                    {...(isExternalUrl(link.href)
+                      ? { target: "_blank", rel: "noopener noreferrer" }
+                      : {})}
                     className="text-muted-foreground text-sm"
                   >
                     {link.text}
@@ -95,7 +99,13 @@ export default function FooterSection({
             <div>{copyright ?? `© ${new Date().getFullYear()} ${name}`}</div>
             <div className="flex items-center gap-4">
               {policies.map((policy) => (
-                <a key={`${policy.href}-${policy.text}`} href={policy.href}>
+                <a
+                  key={`${policy.href}-${policy.text}`}
+                  href={policy.href}
+                  {...(isExternalUrl(policy.href)
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                >
                   {policy.text}
                 </a>
               ))}

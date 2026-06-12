@@ -16,6 +16,16 @@ export const ItemsBlock: Block = {
       fields: [
         { name: "title", type: "text", required: true },
         { name: "description", type: "textarea", required: true },
+        {
+          name: "tooltip",
+          type: "textarea",
+          admin: {
+            description:
+              "Optional deeper detail, shown in an (i) tooltip next to the " +
+              "card title. Use it for the technical specifics behind the " +
+              "plain-English description.",
+          },
+        },
         iconField(),
       ],
     },

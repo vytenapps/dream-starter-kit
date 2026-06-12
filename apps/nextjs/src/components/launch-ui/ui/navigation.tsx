@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { cn } from "@acme/ui";
 
+import { isExternalUrl } from "~/lib/site-chrome";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -67,7 +68,14 @@ export default function Navigation({ items = [], className }: NavigationProps) {
                 className={navigationMenuTriggerStyle()}
                 asChild
               >
-                <Link href={item.href ?? "#"}>{item.title}</Link>
+                <Link
+                  href={item.href ?? "#"}
+                  {...(isExternalUrl(item.href ?? "")
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                >
+                  {item.title}
+                </Link>
               </NavigationMenuLink>
             )}
           </NavigationMenuItem>
@@ -84,12 +92,16 @@ function ListItem({
   href,
   ...props
 }: React.ComponentProps<typeof Link> & { title: string }) {
+  const external = typeof href === "string" && isExternalUrl(href);
   return (
     <li>
       <NavigationMenuLink asChild>
         <Link
           href={href}
           data-slot="list-item"
+          {...(external
+            ? { target: "_blank", rel: "noopener noreferrer" }
+            : {})}
           className={cn(
             "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground block space-y-1 rounded-md p-3 leading-none no-underline outline-hidden transition-colors select-none",
             className,

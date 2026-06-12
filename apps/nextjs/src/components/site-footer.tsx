@@ -1,29 +1,22 @@
 import type { FooterColumnProps } from "~/components/launch-ui/sections/footer";
 import FooterSection from "~/components/launch-ui/sections/footer";
 import { getBranding, getSiteSettings } from "~/lib/payload";
+import { SITE_FOOTER_COLUMNS, SITE_FOOTER_POLICIES } from "~/lib/site-chrome";
 
-const DEFAULT_COLUMNS: FooterColumnProps[] = [
-  {
-    title: "Content",
-    links: [
-      { text: "Posts", href: "/posts" },
-      { text: "Events", href: "/events" },
-      { text: "Videos", href: "/videos" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { text: "About", href: "/about" },
-      { text: "Contact", href: "/contact" },
-    ],
-  },
-];
+// Columns + policy links shown before/without the CMS. Derived from the shared
+// site-chrome source so they match what the seed writes into the CMS — the
+// footer is identical before and after seeding.
+const DEFAULT_COLUMNS: FooterColumnProps[] = SITE_FOOTER_COLUMNS.map(
+  (column) => ({
+    title: column.title,
+    links: column.links.map((link) => ({ text: link.label, href: link.url })),
+  }),
+);
 
-const DEFAULT_POLICIES = [
-  { text: "Terms", href: "/terms" },
-  { text: "Privacy", href: "/privacy" },
-];
+const DEFAULT_POLICIES = SITE_FOOTER_POLICIES.map((policy) => ({
+  text: policy.label,
+  href: policy.url,
+}));
 
 /**
  * Public site footer — the Launch UI Footer, driven by the SiteSettings global

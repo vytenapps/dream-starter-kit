@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { APP_NAME } from "@acme/config/constants";
 
+import { buttonVariants as launchButtonVariants } from "~/components/launch-ui/ui/button";
 import { PageView } from "~/components/page-view";
 import { SupabaseSetupAlert } from "~/components/supabase-setup-alert";
 import { buttonVariants } from "~/components/ui/button";
@@ -29,8 +30,8 @@ export default async function HomePage() {
             one Supabase backend.
           </p>
           <div className="flex gap-3">
-            <Link href="/posts" className={buttonVariants()}>
-              Read posts
+            <Link href="/sign-up" className={launchButtonVariants()}>
+              Get started
             </Link>
             <Link
               href="/sign-in"

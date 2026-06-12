@@ -154,7 +154,7 @@ export function ThemeToggle() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
           className="[&>svg]:absolute [&>svg]:size-5 [&>svg]:scale-0"
         >

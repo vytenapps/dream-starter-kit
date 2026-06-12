@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "~/components/ui/sheet";
+import { isExternalUrl } from "~/lib/site-chrome";
 import LaunchUI from "../logos/launch-ui";
 import { Button, buttonVariants } from "../ui/button";
 import {
@@ -135,6 +136,9 @@ export default function Navbar({
                     <a
                       key={`${link.href}-${link.text}`}
                       href={link.href}
+                      {...(isExternalUrl(link.href)
+                        ? { target: "_blank", rel: "noopener noreferrer" }
+                        : {})}
                       className="text-muted-foreground hover:text-foreground"
                     >
                       {link.text}

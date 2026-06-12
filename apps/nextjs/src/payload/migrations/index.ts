@@ -3,8 +3,10 @@ import * as migration_20260610_212512_full_registry from './20260610_212512_full
 import * as migration_20260610_221650_globals_extensions from './20260610_221650_globals_extensions';
 import * as migration_20260610_230000_repair_migration_ledger from './20260610_230000_repair_migration_ledger';
 import * as migration_20260611_222956_extensions_framework from './20260611_222956_extensions_framework';
-
-import * as migration_20260612_032502_drop_ext_demo from "./20260612_032502_drop_ext_demo";
+import * as migration_20260612_015425_ext_chat_settings from './20260612_015425_ext_chat_settings';
+import * as migration_20260612_023534_ext_billing from './20260612_023534_ext_billing';
+import * as migration_20260612_032502_drop_ext_demo from './20260612_032502_drop_ext_demo';
+import * as migration_20260612_222154_add_item_tooltip from './20260612_222154_add_item_tooltip';
 
 export const migrations = [
   {
@@ -33,8 +35,23 @@ export const migrations = [
     name: '20260611_222956_extensions_framework',
   },
   {
+    up: migration_20260612_015425_ext_chat_settings.up,
+    down: migration_20260612_015425_ext_chat_settings.down,
+    name: '20260612_015425_ext_chat_settings',
+  },
+  {
+    up: migration_20260612_023534_ext_billing.up,
+    down: migration_20260612_023534_ext_billing.down,
+    name: '20260612_023534_ext_billing',
+  },
+  {
     up: migration_20260612_032502_drop_ext_demo.up,
     down: migration_20260612_032502_drop_ext_demo.down,
-    name: "20260612_032502_drop_ext_demo",
+    name: '20260612_032502_drop_ext_demo',
+  },
+  {
+    up: migration_20260612_222154_add_item_tooltip.up,
+    down: migration_20260612_222154_add_item_tooltip.down,
+    name: '20260612_222154_add_item_tooltip'
   },
 ];

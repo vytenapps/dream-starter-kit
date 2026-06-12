@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { InfoTooltip } from "../ui/info-tooltip";
 import { Item, ItemDescription, ItemIcon, ItemTitle } from "../ui/item";
 import { Section } from "../ui/section";
 
@@ -7,6 +8,8 @@ export interface ItemEntry {
   title: string;
   description: string;
   icon?: ReactNode;
+  /** Optional deeper detail, surfaced via an (i) tooltip beside the title. */
+  tooltip?: string;
 }
 
 export interface ItemsProps {
@@ -32,7 +35,15 @@ export default function Items({
               <Item key={item.title}>
                 <ItemTitle className="flex items-center gap-2">
                   {item.icon && <ItemIcon>{item.icon}</ItemIcon>}
-                  {item.title}
+                  <span className="flex items-center gap-1.5">
+                    {item.title}
+                    {item.tooltip && (
+                      <InfoTooltip
+                        text={item.tooltip}
+                        label={`More detail: ${item.title}`}
+                      />
+                    )}
+                  </span>
                 </ItemTitle>
                 <ItemDescription>{item.description}</ItemDescription>
               </Item>

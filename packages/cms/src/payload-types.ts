@@ -1264,6 +1264,10 @@ export interface ItemsBlock {
         title: string;
         description: string;
         /**
+         * Optional deeper detail, shown in an (i) tooltip next to the card title. Use it for the technical specifics behind the plain-English description.
+         */
+        tooltip?: string | null;
+        /**
          * Optional lucide icon.
          */
         icon?:
@@ -4046,6 +4050,7 @@ export interface ItemsBlockSelect<T extends boolean = true> {
     | {
         title?: T;
         description?: T;
+        tooltip?: T;
         icon?: T;
         id?: T;
       };
