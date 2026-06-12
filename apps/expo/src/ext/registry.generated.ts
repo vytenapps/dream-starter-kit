@@ -4,6 +4,7 @@
 // `pnpm test` via apps/nextjs/src/ext/registry-drift.test.ts.
 import type * as React from "react";
 import "@acme/ext-notifications/native";
+import "@acme/ext-reminders/native";
 
 export interface ExtInstalled {
   slug: string;
@@ -33,6 +34,7 @@ export const extInstalled: ExtInstalled[] = [
 export const extNavDefaults: { native: ExtNavDefault[] } = {
   native: [
     { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/x/notifications", icon: "IconBell", order: 40 },
+    { key: "ext:reminders:0", extension: "reminders", title: "Reminders", href: "/x/reminders", icon: "IconClock", order: 30 },
   ],
 };
 

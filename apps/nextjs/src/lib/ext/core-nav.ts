@@ -43,14 +43,6 @@ export const CORE_NAV_ITEMS: CoreNavItem[] = [
     platforms: ["web", "native"],
   },
   {
-    key: "core:/reminders",
-    label: "Reminders",
-    href: "/reminders",
-    icon: "IconClock",
-    order: 30,
-    platforms: ["web", "native"],
-  },
-  {
     key: "core:/billing",
     label: "Billing",
     href: "/billing",

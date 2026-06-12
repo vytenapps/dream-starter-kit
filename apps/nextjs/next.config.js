@@ -46,6 +46,11 @@ const config = {
         destination: "/x/notifications",
         permanent: true,
       },
+      {
+        source: "/reminders",
+        destination: "/x/reminders",
+        permanent: true,
+      },
     ]),
 
   /**

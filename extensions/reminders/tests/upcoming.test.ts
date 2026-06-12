@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isReminderDue, selectDueReminders } from "./reminders";
+import { isReminderDue, selectDueReminders } from "../src/upcoming";
 
 const now = new Date("2026-06-01T12:00:00Z");
 

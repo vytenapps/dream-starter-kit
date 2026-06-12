@@ -22,7 +22,7 @@ test("sign up → schedule a reminder", async ({ page }) => {
   await expect(page).toHaveURL(/\/a(?:[/?#]|$)/);
 
   // Schedule a reminder.
-  await page.goto("/reminders");
+  await page.goto("/x/reminders");
   // Wait for the client app to hydrate before interacting — otherwise the
   // submit can fire before its handler is attached and silently no-op.
   await page.waitForLoadState("networkidle");

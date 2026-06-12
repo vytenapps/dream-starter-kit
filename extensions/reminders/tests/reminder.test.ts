@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createReminderSchema } from "./reminder";
+import { createReminderSchema } from "../src/validators/reminder";
 
 describe("reminder validators", () => {
   it("accepts a valid reminder", () => {

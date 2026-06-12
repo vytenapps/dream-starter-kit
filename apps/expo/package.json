@@ -20,6 +20,7 @@
     "@acme/cms": "workspace:*",
     "@acme/config": "workspace:*",
     "@acme/ext-notifications": "workspace:*",
+    "@acme/ext-reminders": "workspace:*",
     "@acme/ui-native": "workspace:*",
     "@hookform/resolvers": "catalog:",
     "@legendapp/list": "^2.0.14",

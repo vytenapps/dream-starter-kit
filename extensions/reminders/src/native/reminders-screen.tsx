@@ -1,16 +1,17 @@
 import { Alert, FlatList, View } from "react-native";
 import { Stack } from "expo-router";
 
-import { useCreateReminder, useDeleteReminder, useReminders } from "@acme/app";
 import { Button } from "@acme/ui-native/button";
 import { Text } from "@acme/ui-native/text";
+
+import { useCreateReminder, useDeleteReminder, useReminders } from "../index";
 
 const msg = (e: unknown) =>
   e instanceof Error ? e.message : "Something went wrong";
 
 const HOUR = 60 * 60 * 1000;
 
-export default function Reminders() {
+export function RemindersScreen() {
   const reminders = useReminders();
   const createReminder = useCreateReminder();
   const deleteReminder = useDeleteReminder();

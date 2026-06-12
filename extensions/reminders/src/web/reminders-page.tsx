@@ -3,29 +3,29 @@
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Controller, useForm } from "react-hook-form";
 
-import type { CreateReminderInput } from "@acme/app";
-import {
-  createReminderSchema,
-  REMINDER_CHANNELS,
-  useCreateReminder,
-  useDeleteReminder,
-  useReminders,
-} from "@acme/app";
-import { toast } from "@acme/ui/toast";
-
-import { Button } from "~/components/ui/button";
-import { Card, CardHeader, CardTitle } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
+import { Button } from "@acme/ui/button";
+import { Card, CardHeader, CardTitle } from "@acme/ui/card";
+import { Input } from "@acme/ui/input";
+import { Label } from "@acme/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
+} from "@acme/ui/select";
+import { toast } from "@acme/ui/toast";
 
-export default function RemindersPage() {
+import type { CreateReminderInput } from "../index";
+import {
+  createReminderSchema,
+  REMINDER_CHANNELS,
+  useCreateReminder,
+  useDeleteReminder,
+  useReminders,
+} from "../index";
+
+export function RemindersPage() {
   const reminders = useReminders();
   const createReminder = useCreateReminder();
   const deleteReminder = useDeleteReminder();

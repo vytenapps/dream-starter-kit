@@ -16,7 +16,11 @@ import { Text } from "@acme/ui-native/text";
 const FALLBACK_MENU: NavMenuEntry[] = [
   { key: "core:/content/posts", label: "Posts", href: "/content/posts" },
   { key: "core:/chat", label: "Chat", href: "/chat" },
-  { key: "core:/reminders", label: "Reminders", href: "/reminders" },
+  {
+    key: "ext:reminders:/x/reminders",
+    label: "Reminders",
+    href: "/x/reminders",
+  },
   {
     key: "ext:notifications:/x/notifications",
     label: "Notifications",

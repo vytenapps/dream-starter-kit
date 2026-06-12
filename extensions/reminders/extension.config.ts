@@ -14,6 +14,28 @@ export default defineExtension({
   kitCompat: ">=1.0.0 <2",
   description: "Scheduled reminders with push + in-app delivery.",
   requires: ["notifications"],
+  nav: {
+    web: [
+      {
+        title: "Reminders",
+        href: "/x/reminders",
+        icon: "IconClock",
+        order: 30,
+      },
+    ],
+    native: [
+      {
+        title: "Reminders",
+        href: "/x/reminders",
+        icon: "IconClock",
+        order: 30,
+      },
+    ],
+  },
+  routes: {
+    web: [{ path: "", component: "RemindersPage" }],
+    native: [{ path: "", component: "RemindersScreen" }],
+  },
   database: {
     tables: ["ext_reminders"],
     dml: ["ext_notifications", "ext_notifications_push_tokens"],

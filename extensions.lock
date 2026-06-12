@@ -36,7 +36,11 @@
       "kitCompat": ">=1.0.0 <2",
       "source": "local",
       "installedVia": "preinstalled",
-      "stubs": [],
+      "stubs": [
+        "apps/expo/src/app/(app)/x/reminders/index.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/x/reminders/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/x/reminders/page.tsx"
+      ],
       "edgeFunctions": [
         "reminders-process"
       ]

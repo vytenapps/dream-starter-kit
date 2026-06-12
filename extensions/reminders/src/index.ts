@@ -1,6 +1,11 @@
 /**
- * Client-safe barrel (validators + react-query hooks, shared web + native).
- * The reminders validator + hooks move here from packages/app in phase 4 of
- * the extension refactor (docs/EXTENSIONS-PLAN.md §8).
+ * Client-safe barrel — validator + react-query hooks shared by web + native,
+ * plus the pure upcoming-reminders helper (dashboard widget fodder).
  */
-export {};
+export * from "./validators/reminder";
+export {
+  useCreateReminder,
+  useDeleteReminder,
+  useReminders,
+} from "./hooks/use-reminders";
+export * from "./upcoming";

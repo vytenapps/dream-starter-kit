@@ -24,6 +24,7 @@
     "@acme/config": "workspace:*",
     "@acme/ext-kit": "workspace:*",
     "@acme/ext-notifications": "workspace:*",
+    "@acme/ext-reminders": "workspace:*",
     "@acme/ui": "workspace:*",
     "@hookform/resolvers": "catalog:",
     "@payloadcms/db-postgres": "catalog:",

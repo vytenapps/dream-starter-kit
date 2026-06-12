@@ -3,7 +3,7 @@
 // Recomputed from extensions/*/extension.config.ts; a stale copy fails
 // `pnpm test` via apps/nextjs/src/ext/registry-drift.test.ts.
 import type * as React from "react";
-import { IconBell } from "@tabler/icons-react";
+import { IconBell, IconClock } from "@tabler/icons-react";
 
 export interface ExtInstalled {
   slug: string;
@@ -37,9 +37,11 @@ export const extInstalled: ExtInstalled[] = [
 export const extNavDefaults: { web: ExtNavDefault[]; native: ExtNavDefault[] } = {
   web: [
     { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/x/notifications", icon: "IconBell", order: 40 },
+    { key: "ext:reminders:0", extension: "reminders", title: "Reminders", href: "/x/reminders", icon: "IconClock", order: 30 },
   ],
   native: [
     { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/x/notifications", icon: "IconBell", order: 40 },
+    { key: "ext:reminders:0", extension: "reminders", title: "Reminders", href: "/x/reminders", icon: "IconClock", order: 30 },
   ],
 };
 
@@ -49,6 +51,7 @@ export const extWidgets: { slug: string; Widget: React.ComponentType }[] = [];
 /** Icon names referenced by extension nav defaults → components. */
 export const extIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   IconBell: IconBell,
+  IconClock: IconClock,
 };
 
 export function hasExtension(slug: string): boolean {
