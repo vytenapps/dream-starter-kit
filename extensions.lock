@@ -6,7 +6,13 @@
       "kitCompat": ">=1.0.0 <2",
       "source": "local",
       "installedVia": "preinstalled",
-      "stubs": [],
+      "stubs": [
+        "apps/expo/src/app/(app)/x/billing/index.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/billing/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/billing/page.tsx",
+        "apps/nextjs/src/app/(frontend)/(public)/pricing/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(public)/pricing/page.tsx"
+      ],
       "edgeFunctions": [
         "billing-stripe-webhook"
       ]

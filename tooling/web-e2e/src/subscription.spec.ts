@@ -100,7 +100,7 @@ test.describe("subscriptions webhook mirror", () => {
       .poll(
         async () => {
           const found = await staff.get(
-            `/cms-api/subscriptions?where[stripeSubscriptionID][equals]=${subId}`,
+            `/cms-api/ext-billing-subscriptions?where[stripeSubscriptionID][equals]=${subId}`,
           );
           if (!found.ok()) return 0;
           const json = (await found.json()) as { totalDocs: number };
@@ -111,7 +111,7 @@ test.describe("subscriptions webhook mirror", () => {
       .toBe(1);
 
     const found = await staff.get(
-      `/cms-api/subscriptions?where[stripeSubscriptionID][equals]=${subId}`,
+      `/cms-api/ext-billing-subscriptions?where[stripeSubscriptionID][equals]=${subId}`,
     );
     const json = (await found.json()) as {
       docs: {
@@ -149,10 +149,12 @@ test.describe("subscriptions access control", () => {
   test("anonymous clients can neither read nor write subscriptions", async () => {
     const anon = await request.newContext({ baseURL: BASE_URL });
     // read: ownsOrStaff → anonymous is denied outright.
-    expect((await anon.get("/cms-api/subscriptions")).status()).toBe(403);
+    expect(
+      (await anon.get("/cms-api/ext-billing-subscriptions")).status(),
+    ).toBe(403);
     // create/update/delete are disabled for every client — only the webhook
     // handler writes, via the Local API with overrideAccess.
-    const created = await anon.post("/cms-api/subscriptions", {
+    const created = await anon.post("/cms-api/ext-billing-subscriptions", {
       data: { status: "active", stripeSubscriptionID: "sub_forged" },
     });
     expect(created.status()).toBe(403);
@@ -164,8 +166,10 @@ test.describe("subscriptions access control", () => {
       baseURL: BASE_URL,
       storageState: FOUNDER_STORAGE_STATE,
     });
-    expect((await staff.get("/cms-api/subscriptions")).status()).toBe(200);
-    const created = await staff.post("/cms-api/subscriptions", {
+    expect(
+      (await staff.get("/cms-api/ext-billing-subscriptions")).status(),
+    ).toBe(200);
+    const created = await staff.post("/cms-api/ext-billing-subscriptions", {
       data: { status: "active", stripeSubscriptionID: "sub_forged_staff" },
     });
     expect(created.status()).toBe(403);
@@ -201,7 +205,7 @@ test.describe("stripe checkout (test mode)", () => {
       storageState: FOUNDER_STORAGE_STATE,
     });
     const list = await staff.get(
-      "/cms-api/plans?where[slug][equals]=dream-monthly",
+      "/cms-api/ext-billing-plans?where[slug][equals]=dream-monthly",
     );
     expect(list.ok()).toBeTruthy();
     const { docs } = (await list.json()) as {
@@ -212,14 +216,16 @@ test.describe("stripe checkout (test mode)", () => {
 
     if (!plan.stripePriceId) {
       // A no-op save is enough — the afterChange hook pushes to Stripe.
-      const saved = await staff.patch(`/cms-api/plans/${plan.id}`, {
+      const saved = await staff.patch(`/cms-api/ext-billing-plans/${plan.id}`, {
         data: {},
       });
       expect(saved.ok()).toBeTruthy();
       await expect
         .poll(
           async () => {
-            const res = await staff.get(`/cms-api/plans/${plan.id}`);
+            const res = await staff.get(
+              `/cms-api/ext-billing-plans/${plan.id}`,
+            );
             const doc = (await res.json()) as {
               stripePriceId?: string | null;
               syncStatus?: string;

@@ -27,21 +27,6 @@ export const CORE_NAV_ITEMS: CoreNavItem[] = [
     platforms: ["native"],
   },
   {
-    key: "core:/billing",
-    label: "Billing",
-    href: "/billing",
-    icon: "IconCreditCard",
-    order: 50,
-    platforms: ["web"],
-  },
-  {
-    key: "core:/pricing",
-    label: "Pricing",
-    href: "/pricing",
-    order: 55,
-    platforms: ["native"],
-  },
-  {
     key: "core:/profile",
     label: "Profile",
     href: "/profile",

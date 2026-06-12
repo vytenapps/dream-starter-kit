@@ -27,7 +27,7 @@ const FALLBACK_MENU: NavMenuEntry[] = [
     label: "Notifications",
     href: "/x/notifications",
   },
-  { key: "core:/pricing", label: "Pricing", href: "/pricing" },
+  { key: "ext:billing:/x/billing", label: "Pricing", href: "/x/billing" },
   { key: "core:/profile", label: "Profile", href: "/profile" },
 ];
 

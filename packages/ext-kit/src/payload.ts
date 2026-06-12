@@ -1,11 +1,19 @@
-import type { Access, Field, GlobalConfig, Payload } from "payload";
+import type {
+  Access,
+  Field,
+  FieldAccess,
+  GlobalConfig,
+  Payload,
+} from "payload";
 
 import { settingsGlobalSlug } from "./validate";
 
 /**
- * Payload-side extension helpers: admin settings screens (§1.7) and seed
- * steps. This entry imports `payload` types and is reachable only from the
- * web/server side (extensions' `./payload` entries) — never from clients.
+ * Payload-side extension helpers: admin settings screens (§1.7), seed steps,
+ * and the kit's standard role-based access helpers (mirroring the host's
+ * payload/access for the `roles: string[]` model on `users`) so extension
+ * collections don't reach into host code. This entry imports `payload` types
+ * and is reachable only from the web/server side — never from clients.
  */
 
 const STAFF_ROLES = ["admin", "editor"];
@@ -13,10 +21,40 @@ const STAFF_ROLES = ["admin", "editor"];
 const roles = (req: { user?: unknown }): string[] =>
   (req.user as { roles?: string[] } | null | undefined)?.roles ?? [];
 
-const staffRead: Access = ({ req }) =>
+const userId = (req: { user?: unknown }): string | number | undefined =>
+  (req.user as { id?: string | number } | null | undefined)?.id ?? undefined;
+
+/** Anyone, authenticated or not. */
+export const anyone: Access = () => true;
+
+/** Full administrators only. */
+export const isAdmin: Access = ({ req }) => roles(req).includes("admin");
+
+/** Content staff: admin or editor. */
+export const isStaff: Access = ({ req }) =>
   roles(req).some((r) => STAFF_ROLES.includes(r));
-const adminUpdate: Access = ({ req }) => roles(req).includes("admin");
-const anyoneRead: Access = () => true;
+
+/** Owner-scoped rows: staff see everything; users only rows whose owner is them. */
+export const ownsOrStaff =
+  (ownerField = "user"): Access =>
+  ({ req }) => {
+    if (roles(req).some((r) => STAFF_ROLES.includes(r))) return true;
+    const id = userId(req);
+    if (id !== undefined) return { [ownerField]: { equals: id } };
+    return false;
+  };
+
+/** Field-level lock: only staff may read/update the field. */
+export const staffFieldAccess: FieldAccess = ({ req }) =>
+  roles(req).some((r) => STAFF_ROLES.includes(r));
+
+/** Field-level lock: only admins may update. */
+export const adminFieldAccess: FieldAccess = ({ req }) =>
+  roles(req).includes("admin");
+
+const staffRead: Access = isStaff;
+const adminUpdate: Access = isAdmin;
+const anyoneRead: Access = anyone;
 
 export interface ExtensionSettingsOptions {
   /** The extension's slug — the global becomes `ext-<slug>-settings`. */

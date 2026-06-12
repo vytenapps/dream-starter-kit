@@ -10,7 +10,6 @@ export * from "./auth";
 export * from "./hooks/use-content";
 export { useProfile, useUpdateProfile } from "./hooks/use-profile";
 export { useDeleteAccount } from "./hooks/use-delete-account";
-export { usePremium } from "./hooks/use-premium";
 export { useUserTags } from "./hooks/use-tags";
 export type { UserTag } from "./hooks/use-tags";
 export { useNavMenu } from "./hooks/use-nav-menu";

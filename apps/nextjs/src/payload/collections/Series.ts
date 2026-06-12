@@ -91,7 +91,7 @@ export const Series: CollectionConfig = {
     {
       name: "requiredPlans",
       type: "relationship",
-      relationTo: "plans",
+      relationTo: "ext-billing-plans",
       hasMany: true,
       admin: {
         position: "sidebar",

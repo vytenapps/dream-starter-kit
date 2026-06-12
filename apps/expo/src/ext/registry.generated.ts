@@ -4,6 +4,7 @@
 // `pnpm test` via apps/nextjs/src/ext/registry-drift.test.ts.
 import type * as React from "react";
 import "@acme/ext-dashboard/native";
+import { BillingWidget as widget_billing } from "@acme/ext-billing/native";
 import { ChatWidget as widget_chat } from "@acme/ext-chat/native";
 import { NotificationsWidget as widget_notifications } from "@acme/ext-notifications/native";
 import { RemindersWidget as widget_reminders } from "@acme/ext-reminders/native";
@@ -26,7 +27,7 @@ export interface ExtNavDefault {
 }
 
 export const extInstalled: ExtInstalled[] = [
-  { slug: "billing", name: "Billing", version: "1.0.0", system: false },
+  { slug: "billing", name: "Billing", version: "1.0.0", system: true },
   { slug: "chat", name: "AI Chat", version: "1.0.0", system: false },
   { slug: "dashboard", name: "Dashboard", version: "1.0.0", system: true },
   { slug: "notifications", name: "Notifications", version: "1.0.0", system: false },
@@ -36,6 +37,7 @@ export const extInstalled: ExtInstalled[] = [
 /** Native nav defaults — fallback for useNavMenu() while offline/loading. */
 export const extNavDefaults: { native: ExtNavDefault[] } = {
   native: [
+    { key: "ext:billing:0", extension: "billing", title: "Pricing", href: "/x/billing", order: 55 },
     { key: "ext:chat:0", extension: "chat", title: "Chat", href: "/x/chat", icon: "IconMessageCircle", order: 20 },
     { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/x/notifications", icon: "IconBell", order: 40 },
     { key: "ext:reminders:0", extension: "reminders", title: "Reminders", href: "/x/reminders", icon: "IconClock", order: 30 },
@@ -44,6 +46,7 @@ export const extNavDefaults: { native: ExtNavDefault[] } = {
 
 /** Home-screen widgets declared by installed extensions (native components). */
 export const extWidgets: { slug: string; Widget: React.ComponentType }[] = [
+  { slug: "billing", Widget: widget_billing },
   { slug: "chat", Widget: widget_chat },
   { slug: "notifications", Widget: widget_notifications },
   { slug: "reminders", Widget: widget_reminders },

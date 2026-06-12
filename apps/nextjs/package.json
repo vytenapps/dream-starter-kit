@@ -22,6 +22,7 @@
     "@acme/app": "workspace:*",
     "@acme/cms": "workspace:*",
     "@acme/config": "workspace:*",
+    "@acme/ext-billing": "workspace:*",
     "@acme/ext-chat": "workspace:*",
     "@acme/ext-dashboard": "workspace:*",
     "@acme/ext-kit": "workspace:*",

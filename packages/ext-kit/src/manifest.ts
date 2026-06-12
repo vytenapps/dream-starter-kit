@@ -78,6 +78,12 @@ export const extensionManifestSchema = z.object({
     .object({
       /** `./server` exports `routes: ExtRouteTable`, served at /api/ext/<slug>/…. */
       routes: z.boolean().default(false),
+      /**
+       * `./server` also exports `publicRoutes: ExtPublicRouteTable` — served
+       * WITHOUT requiring a session (still rate-limited + enablement-gated).
+       * Only for genuinely anonymous flows (e.g. guest checkout).
+       */
+      publicRoutes: z.boolean().default(false),
       /** Edge function directory names — must be prefixed `<slug>-`. */
       edgeFunctions: z.array(z.string().min(1)).default([]),
     })

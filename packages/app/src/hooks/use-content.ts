@@ -10,7 +10,6 @@ import type {
   Onboarding,
   Page,
   Photo,
-  Plan,
   Post,
   Video,
 } from "@acme/cms";
@@ -101,21 +100,6 @@ export const useBanners = (placement: Banner["placement"]) =>
     `&where[active][equals]=true&where[placement][equals]=${encodeURIComponent(placement)}&sort=-priority`,
     { published: false },
   );
-
-/**
- * Active billing plans, ordered for display. Plans aren't draft/publish content
- * (gated by `active`), so this doesn't use the published filter. Used by the
- * native pricing screen; checkout itself is web-only (Stripe), so mobile links
- * out to the web pricing page to subscribe.
- */
-export const usePlans = () =>
-  useQuery({
-    queryKey: ["cms", "plans"],
-    queryFn: () =>
-      cmsFetch<Paginated<Plan>>(
-        `plans?where[active][equals]=true&sort=displayOrder&limit=50`,
-      ).then((r) => r.docs),
-  });
 
 /**
  * A page (with its Launch UI block `layout`) by slug, depth 2 so block media

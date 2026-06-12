@@ -7,14 +7,11 @@ import { getPayload } from "payload";
 
 import type {
   Audio as AudioDoc,
-  Coupon,
   Event as EventDoc,
   Location as LocationDoc,
   Page,
   Photo,
-  Plan,
   Post,
-  PricingSetting,
   SiteSetting,
   Video,
 } from "@acme/cms";
@@ -210,51 +207,6 @@ export function getLocation(slug: string): Promise<LocationDoc | null> {
 export async function getSiteSettings(): Promise<SiteSetting> {
   const payload = await client();
   return payload.findGlobal({ slug: "site-settings" });
-}
-
-/** Active plans, ordered for display. Degrades to [] if the CMS is unavailable. */
-export function listActivePlans(): Promise<Plan[]> {
-  return safe(async () => {
-    const payload = await client();
-    const { docs } = await payload.find({
-      collection: "plans",
-      where: { active: { equals: true } },
-      sort: "displayOrder",
-      depth: 0,
-      limit: 100,
-    });
-    return docs;
-  }, []);
-}
-
-/** A single plan by id (for the checkout route). */
-export function getPlan(id: string | number): Promise<Plan | null> {
-  return safe(async () => {
-    const payload = await client();
-    return await payload.findByID({ collection: "plans", id, depth: 0 });
-  }, null);
-}
-
-/** The PricingSettings global (pricing-page curation). Degrades to null. */
-export function getPricingSettings(): Promise<PricingSetting | null> {
-  return safe(async () => {
-    const payload = await client();
-    return await payload.findGlobal({ slug: "pricing-settings", depth: 1 });
-  }, null);
-}
-
-/** The active welcome-offer coupon (used to mint signup promo codes), if any. */
-export function getWelcomeCoupon(): Promise<Coupon | null> {
-  return safe(async () => {
-    const payload = await client();
-    const { docs } = await payload.find({
-      collection: "coupons",
-      where: { isWelcomeOffer: { equals: true } },
-      depth: 0,
-      limit: 1,
-    });
-    return docs[0] ?? null;
-  }, null);
 }
 
 /**

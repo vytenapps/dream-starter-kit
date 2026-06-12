@@ -16,7 +16,11 @@ describe("defineExtension", () => {
     expect(m.requires).toEqual([]);
     expect(m.nav.web).toEqual([]);
     expect(m.routes.native).toEqual([]);
-    expect(m.server).toEqual({ routes: false, edgeFunctions: [] });
+    expect(m.server).toEqual({
+      routes: false,
+      publicRoutes: false,
+      edgeFunctions: [],
+    });
     expect(m.database.tables).toEqual([]);
     expect(m.cms.hasSettings).toBe(false);
     expect(m.env).toEqual({ hasServer: false, hasClient: false });

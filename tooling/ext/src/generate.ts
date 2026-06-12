@@ -169,26 +169,42 @@ export function hasExtension(slug: string): boolean {
 /** apps/nextjs/src/ext/registry.server.generated.ts */
 export function buildNextServerRegistry(exts: LoadedExtension[]): string {
   const serverExts = exts.filter((e) => e.manifest.server.routes);
-  const imports = serverExts.map(
-    (e) =>
-      `import { routes as routes_${ident(e.manifest.slug)} } from "${e.packageName}/server";`,
-  );
-  const entries =
-    serverExts.length === 0
+  const publicExts = exts.filter((e) => e.manifest.server.publicRoutes);
+  const imports: string[] = [];
+  for (const e of exts) {
+    const names = [
+      ...(e.manifest.server.routes
+        ? [`routes as routes_${ident(e.manifest.slug)}`]
+        : []),
+      ...(e.manifest.server.publicRoutes
+        ? [`publicRoutes as publicRoutes_${ident(e.manifest.slug)}`]
+        : []),
+    ];
+    if (names.length > 0) {
+      imports.push(
+        `import { ${names.join(", ")} } from "${e.packageName}/server";`,
+      );
+    }
+  }
+  const table = (rows: LoadedExtension[], prefix: string): string =>
+    rows.length === 0
       ? "{}"
-      : `{\n${serverExts
+      : `{\n${rows
           .map(
             (e) =>
-              `  ${quote(e.manifest.slug)}: routes_${ident(e.manifest.slug)},`,
+              `  ${quote(e.manifest.slug)}: ${prefix}_${ident(e.manifest.slug)},`,
           )
           .join("\n")}\n}`;
 
   return `${ESLINT_OFF}${HEADER}import "server-only";
 
-import type { ExtRouteTable } from "@acme/ext-kit/server";
+import type { ExtPublicRouteTable, ExtRouteTable } from "@acme/ext-kit/server";
 ${imports.length > 0 ? `\n${imports.join("\n")}\n` : ""}
-/** slug → route table, dispatched by /api/ext/[ext]/[[...route]]. */
-export const extServerRoutes: Record<string, ExtRouteTable> = ${entries};
+/** slug → authed route table, dispatched by /api/ext/[ext]/[[...route]]. */
+export const extServerRoutes: Record<string, ExtRouteTable> = ${table(serverExts, "routes")};
+
+/** slug → PUBLIC route table (no session required; still rate-limited). */
+export const extPublicRoutes: Record<string, ExtPublicRouteTable> = ${table(publicExts, "publicRoutes")};
 `;
 }
 

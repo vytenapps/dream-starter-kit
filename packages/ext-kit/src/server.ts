@@ -43,6 +43,32 @@ export type ExtRouteHandler = (
  */
 export type ExtRouteTable = Record<string, ExtRouteHandler>;
 
+/**
+ * Context for PUBLIC extension routes (`publicRoutes` export, manifest
+ * `server.publicRoutes: true`): the dispatcher does NOT require a session —
+ * `user` is null for anonymous callers — but still rate-limits (per user when
+ * signed in, per IP otherwise) and gates on enablement. Reserve these for
+ * flows that genuinely serve anonymous traffic (e.g. billing's guest
+ * checkout); everything else belongs in the authed `routes` table (golden
+ * rule #6). Signature-verified endpoints (Stripe webhooks) still belong in
+ * edge functions or Payload plugin endpoints, not here.
+ */
+export interface ExtPublicRouteContext {
+  /** The caller, when a session exists — null for anonymous requests. */
+  user: User | null;
+  /** Cookie/anon-scoped client — RLS still applies to every query. */
+  supabase: SupabaseClient<Database>;
+  params: Record<string, string>;
+  getPayload: () => Promise<BasePayload>;
+}
+
+export type ExtPublicRouteHandler = (
+  req: Request,
+  ctx: ExtPublicRouteContext,
+) => Response | Promise<Response>;
+
+export type ExtPublicRouteTable = Record<string, ExtPublicRouteHandler>;
+
 export const EXT_HTTP_METHODS = [
   "GET",
   "POST",
