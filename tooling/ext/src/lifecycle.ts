@@ -505,6 +505,12 @@ export async function eject(
 
   const tmp = mkdtempSync(path.join(tmpdir(), "ext-eject-"));
   cpSync(toAbs(repoRoot, `extensions/${slug}`), tmp, { recursive: true });
+  // Drop in the template extension CI (validates tag/version match, then
+  // installs the extension into a fresh kit clone and runs the full gates).
+  const ciTemplate = toAbs(repoRoot, "tooling/ext/templates/extension-ci.yml");
+  if (existsSync(ciTemplate)) {
+    cpSync(ciTemplate, path.join(tmp, ".github/workflows/ci.yml"));
+  }
   const run = (args: string[]) =>
     execFileSync("git", args, { cwd: tmp, stdio: "pipe", encoding: "utf8" });
   run(["init", "-b", "main"]);

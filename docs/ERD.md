@@ -10,6 +10,18 @@ access is enforced at the database.
 > as a **single baseline migration** (`20260609000001_initial.sql`); extend it with
 > **new** migrations only — never edit the shipped baseline.
 
+
+> **Extension refactor (2026-06):** the feature tables documented below now ship
+> as **extensions** (see `docs/EXTENSIONS.md`) and are prefixed accordingly:
+> `reminders` → `ext_reminders`, `notifications` → `ext_notifications`,
+> `push_tokens` → `ext_notifications_push_tokens`, `chat_threads`/`chat_messages`
+> → `ext_chat_*`, and `customers`/`products`/`prices`/`subscriptions` →
+> `ext_billing_*`. Their DDL lives in `extensions/<slug>/supabase/migrations/`
+> (version-pinned and materialized into `supabase/migrations/` by
+> `pnpm ext sync`); the baseline migration now contains CORE tables only
+> (identity, orgs, files, tags). RLS patterns are unchanged. Mentions of the
+> old names below read with the prefix applied.
+
 > **How to use it:** keep the core (identity + billing), delete the parts your idea doesn't need
 > (e.g. drop the org layer for a single-user app, drop chat if there's no AI), and add your own
 > per-user tables following the canonical RLS pattern below (see

@@ -4,7 +4,8 @@ Guidance for Claude Code (and humans) extending the **Dream Starter Kit**.
 Read this first, then `docs/ARCHITECTURE.md` and `docs/ERD.md` — those two are the
 **source of truth**. If anything here conflicts with them, they win.
 (`docs/CMS.md` is the per-collection CMS reference — keep it in sync when you
-touch Payload collections.)
+touch Payload collections; `docs/EXTENSIONS.md` is the extension framework
+reference.)
 
 ## What this is
 
@@ -87,6 +88,11 @@ pnpm db:gen-migrations  # re-inline supabase/migrations into the web bundle for 
                         #   runtime DB bootstrap — run after adding a migration and
                         #   commit the JSON (drift fails `pnpm test`)
 
+# Extensions (see docs/EXTENSIONS.md)
+pnpm ext sync           # regenerate registries/stubs/migrations from extensions/*
+pnpm ext create <slug>  # scaffold a new extension (then: install, db:reset, gen-types)
+pnpm ext add|update|remove|status  # lifecycle (vendored + lock + snapshot refs)
+
 # Tests
 pnpm test               # vitest (unit/integration) — no backend needed
 pnpm test:e2e           # Playwright (web E2E). Needs `supabase start` + `supabase db
@@ -148,127 +154,47 @@ app with the pre-installed Playwright Chromium instead: write a throwaway script
 package resolves), navigate, `page.screenshot(...)`, and **send the screenshots to
 the user** so they can see each step. Clean up throwaway scripts before committing.
 
-## How to add a modular feature
+## How to add a feature: build an extension
 
-Features in this kit are **modular**: each one spans the same predictable set of
-layers, every layer lives in a predictable place, and a feature can be added — or
-deleted — without touching unrelated code. The **`reminders`** feature is the
-working reference for a Supabase RLS feature; copy its shape. (The AI assistant
-and notifications are built this same way.) For **editorial/marketing content**,
-use Payload instead — see [How to add a Payload content type](#how-to-add-a-payload-content-type).
+Features are **extensions** (docs/EXTENSIONS.md is the working reference;
+docs/EXTENSIONS-PLAN.md the design). An extension is a vendored workspace
+package at `extensions/<slug>/` that owns its tables (`ext_<slug>_*`, RLS
+required), validators + hooks (client barrel, shared web + native), screens
+(`./web`, `./native` — RSC pages in `./web-server`), API routes (`./server`,
+served authed + rate-limited at `/api/ext/<slug>/…`), Payload
+collections/settings (`./payload`), edge functions, and tests. The in-repo
+reference is **`extensions/reminders`**; the five first-party features
+(dashboard, notifications, reminders, chat, billing) are all built this way.
 
-### The anatomy of a feature
-
-A feature is a vertical slice through these layers. Build them in this order:
-
-| #   | Layer                       | Lives in                                                 | What goes here                                                            |
-| --- | --------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------- |
-| 1   | **Schema + RLS**            | `supabase/migrations/*.sql`                              | the table(s), RLS policies, FK indexes                                    |
-| 2   | **Seed**                    | `supabase/seed.sql`                                      | optional demo rows (ships **empty**; rls-tests provision their own users) |
-| 3   | **DB types**                | `packages/api` (generated)                               | `pnpm db:gen-types` — never hand-edit                                     |
-| 4   | **Validators**              | `packages/app/src/validators`                            | zod schemas for create/update input                                       |
-| 5   | **Hooks**                   | `packages/app/src/hooks`                                 | react-query hooks over the typed client                                   |
-| 6   | **Web UI**                  | `apps/nextjs/src/app/(frontend)/(app)/…`                 | shadcn + react-hook-form, calls the hooks                                 |
-| 7   | **Native UI**               | `apps/expo/src/app/(app)/…`                              | react-native-reusables, calls the same hooks                              |
-| 8   | **Server (only if needed)** | `apps/nextjs/src/app/api` or `supabase/functions`        | privileged work (Stripe, AI, cron)                                        |
-| 9   | **Tests**                   | `packages/app` + `tooling/rls-tests` + `tooling/web-e2e` | unit + RLS isolation + e2e                                                |
-
-Layers 4–5 are shared by **both** apps — that's the whole point. Keep `apps/*`
-thin: a screen wires a hook to platform UI and nothing more.
-
-### Worked example
-
-The in-repo reference is **`reminders`** (a single owner-scoped table: validator
-`reminder.ts`, hooks `use-reminders.ts`, web + native screens, and an RLS test).
-Read those files to see the real shape. The walkthrough below uses a fresh `tasks`
-table so the pattern is easy to follow — `reminders` is built exactly this way.
-
-**1. Migration (schema + RLS + indexes).** `supabase migration new add_tasks`:
-
-```sql
-create table public.tasks (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles (id) on delete cascade,
-  title text not null,
-  done boolean not null default false,
-  created_at timestamptz not null default now()
-);
-
-alter table public.tasks enable row level security;
-
--- Owner-only: copy this canonical pattern from docs/ERD.md / existing tables.
-create policy "tasks owned by user"
-  on public.tasks for all to authenticated
-  using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()));
-
--- REQUIRED: B-tree index on every FK used in an RLS predicate.
-create index tasks_user_id_idx on public.tasks (user_id);
+```bash
+pnpm ext create <slug>   # working scaffold: table+RLS, hooks, both screens,
+                         #   widget, settings screen, authed ping route, tests
+pnpm ext sync            # after ANY change under extensions/ — regenerates
+                         #   registries/stubs/migrations; drift fails pnpm test
+pnpm ext add|update|remove|status|eject|payload-migrate   # lifecycle (§docs)
 ```
 
-Optionally add demo rows in `supabase/seed.sql` (it ships empty — there are no
-seed users; `tooling/rls-tests` provisions its own), then `supabase db reset`.
-Finally run `pnpm db:gen-migrations` and commit the regenerated JSON — it inlines
-the migration into the web bundle so the runtime DB bootstrap applies it on hosted
-deploys (a drift test in `pnpm test` fails if you forget).
+Rules that keep extensions modular:
 
-**2. Types.** `pnpm db:gen-types` regenerates `packages/api`'s `Database` type.
-Use `Tables<'tasks'>`, `TablesInsert<'tasks'>`, `TablesUpdate<'tasks'>` downstream.
+- **The host consumes extensions only through generated files** — never import
+  `@acme/ext-*` from host code outside the generated registries (the two
+  documented exceptions, the header bells, carry delete-on-removal comments).
+- **Bundle safety:** the client barrel (`.`) and `./native` are the only
+  entries Metro may see; `./web` must stay client-safe (widgets are imported
+  from it); server-only code lives behind `import "server-only"` /
+  `./payload` / `./web-server`. ESLint + the CI `expo export` smoke check
+  enforce this.
+- **Migrations:** local sequence numbers (`001_initial.sql`) inside the
+  extension; `ext sync` pins versions and materializes copies — never edit a
+  synced migration, add a new one. Ship a `drop.sql` for clean removal.
+- **Nav is CMS-driven:** manifest `nav` entries are defaults seeded into the
+  `nav-items` collection; staff own the menu in /admin afterwards.
+- **Cross-extension access** is declared: `requires: [...]` + `database.dml`
+  whitelists; services are plain typed package exports (`notify()`,
+  `usePremium()`).
+- After schema/CMS changes: `pnpm db:reset && pnpm db:gen-types`
+  (+ `pnpm cms:gen-types`), commit the regenerated files.
 
-**3. Validators** (`packages/app`), imported as `zod/v4`:
-
-```ts
-import { z } from "zod/v4";
-
-export const createTaskSchema = z.object({ title: z.string().min(1).max(200) });
-export type CreateTaskInput = z.infer<typeof createTaskSchema>;
-```
-
-**4. Hooks** (`packages/app`) — shared by web + native, using `useSupabase()` from `@acme/api`:
-
-```ts
-export function useTasks() {
-  const supabase = useSupabase();
-  return useQuery({
-    queryKey: ["tasks"],
-    queryFn: async () =>
-      (await supabase.from("tasks").select("*").order("created_at")).data ?? [],
-  });
-}
-// + useCreateTask / useUpdateTask / useDeleteTask (mutations that invalidate ["tasks"])
-```
-
-**5. UI.** Web screen under `apps/nextjs/src/app/(frontend)/(app)/tasks` (shadcn + react-hook-form
-with `standardSchemaResolver(createTaskSchema)`); native screen under
-`apps/expo/src/app/(app)/tasks.tsx` (react-native-reusables). Both call the hooks
-from step 4 — no data logic in the screens. Add the route to the web sidebar /
-native home nav.
-
-**6. Tests (required).**
-
-- Vitest unit test for `createTaskSchema` (and any non-trivial pure logic).
-- Extend `tooling/rls-tests`: assert user B **cannot** read or write user A's tasks.
-- If it's a critical flow, add/extend a Playwright spec in `tooling/web-e2e`.
-
-**7. Verify + commit.** `pnpm typecheck && pnpm lint && pnpm test` green
-(+ `next build` / `expo export` if you touched those), then a scoped commit:
-`feat(tasks): add task list`.
-
-### Keeping features modular (and removable)
-
-- **One feature = one vertical slice.** Don't scatter a feature's logic across
-  unrelated files. A cloner should be able to delete a feature by removing its
-  migration (well, adding a drop migration), its validator/hook files, its two
-  screens, its nav entries, and its tests — and nothing else should break.
-- **Gate optional features behind data, not forks.** Premium is unlocked by
-  reading `subscriptions` (`usePremium()`), not by build flags. Follow that pattern.
-- **Never edit a shipped migration.** Add a new one (rename/drop included).
-- **Touching env or constants?** Update `.env.example` **and** the zod schema in
-  `packages/config`; put shared constants (model id, prices, limits) in `packages/config`.
-
-The kit ships **no** example app-domain table — add your product's own per-user
-tables with the recipe above. For content-type guidance, see the README and
-[How to add a Payload content type](#how-to-add-a-payload-content-type) below.
 
 ## How to add a Payload content type
 
@@ -450,13 +376,16 @@ Serif fonts (Merriweather/Lora) are loaded on `<html>` alongside the sans/mono s
 
 ## Status
 
-The kit is **feature-complete and ready to clone**: auth, billing (plan-driven Stripe
-checkout + the plugin-stripe subscription mirror), the AI assistant, engagement
-(notifications/reminders/push), the **Payload CMS** full registry (content + community
-+ people + commerce + marketing collections, admin at `/admin`, app home at `/a`), and
-the full test/CI suite are all built and green. There is **no** example app-domain
-table — `reminders` is the reference for adding your own. The one documented follow-up
-is opening the CMS API bridge to member sessions (member-scoped collections already
-carry the right access rules). Extend the kit with the modular-feature recipe above,
-keep every checkpoint green (`pnpm typecheck && pnpm lint && pnpm test`), and update
-this file when conventions change.
+The kit is **feature-complete and ready to clone** — and is now an **extension
+host** (docs/EXTENSIONS.md): auth, the CMS registry, theming and the app shell
+are core; dashboard, notifications, reminders, chat and billing ship as
+pre-installed extensions under `extensions/` with the full lifecycle
+(create/add/update/remove, CMS-driven menus, per-extension settings screens,
+the /admin/extensions panel + extension-ops workflow). The test/CI suite is
+green end to end. Known follow-ups: opening the CMS API bridge to member
+sessions; publishing the five first-party extensions to their own repos +
+the official catalog repo (`pnpm ext eject`); per-extension RLS test
+relocation (the central suite still covers all tables). Extend the kit with
+`pnpm ext create`, keep every checkpoint green
+(`pnpm typecheck && pnpm lint && pnpm test`), and update this file when
+conventions change.

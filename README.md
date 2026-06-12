@@ -417,6 +417,11 @@ the part that's still deployed from the CLI:
 supabase link --project-ref <your-ref>
 supabase db push                          # optional — the app already did this on boot
 supabase functions deploy billing-stripe-webhook  # + delete-account, reminders-process
+
+# Extension admin ops (optional — /admin/extensions installs via PRs):
+# 1) create a fine-grained PAT (contents:write, pull-requests:write, actions:read)
+# 2) repo secret EXT_OPS_TOKEN=<pat>; Vercel env GITHUB_OPS_TOKEN=<pat>
+# 3) repo Settings → enable "Allow auto-merge"   (see docs/EXTENSIONS.md)
 supabase secrets set STRIPE_SECRET_KEY=… STRIPE_WEBHOOK_SECRET=… CRON_SECRET=…
 ```
 

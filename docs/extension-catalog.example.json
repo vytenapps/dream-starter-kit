@@ -1,0 +1,14 @@
+{
+  "$comment": "Curated extension catalog (docs/EXTENSIONS-PLAN.md §6). Host this JSON in a registry repo (e.g. dream-extensions-catalog) and point EXT_CATALOG_URL at its raw URL — fork it to curate your own store. The five first-party extensions ship vendored; they appear here once ejected to their own repos.",
+  "extensions": [
+    {
+      "slug": "example",
+      "name": "Example Extension",
+      "description": "What it does, in one line.",
+      "category": "productivity",
+      "repo": "https://github.com/your-org/dream-ext-example",
+      "latest": "1.0.0",
+      "kitCompat": ">=1.0.0 <2"
+    }
+  ]
+}

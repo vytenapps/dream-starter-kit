@@ -1,0 +1,54 @@
+# CI for an ejected Dream Starter Kit extension repo (dropped in by
+# `pnpm ext eject`). Compat ranges are tested claims: the extension is
+# installed into a fresh kit clone and the full gates run against it.
+name: Extension CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Manifest version must match the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          grep -q "version: \"$TAG\"" extension.config.ts || {
+            echo "extension.config.ts version does not match tag $TAG"; exit 1; }
+          grep -q "\"version\": \"$TAG\"" package.json || {
+            echo "package.json version does not match tag $TAG"; exit 1; }
+
+  install-into-kit:
+    runs-on: ubuntu-latest
+    env:
+      # TODO(eject): pin your kit repo + the kitCompat bounds you support.
+      KIT_REPO: vytenapps/dream-starter-kit
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: extension
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.KIT_REPO }}
+          path: kit
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: kit/pnpm-lock.yaml
+      - name: Install the extension into the kit
+        working-directory: kit
+        run: |
+          pnpm install --frozen-lockfile
+          SLUG=$(grep -oP 'slug:\s*"\K[a-z0-9-]+' ../extension/extension.config.ts | head -1)
+          mkdir -p "extensions/$SLUG"
+          rsync -a --exclude .git ../extension/ "extensions/$SLUG/"
+          pnpm ext sync
+          pnpm typecheck
+          pnpm test
