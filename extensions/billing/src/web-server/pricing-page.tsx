@@ -52,35 +52,44 @@ function cadence(plan: Plan): string {
 }
 
 /**
- * The public pricing page (RSC, billing's `/pricing` mount). Plans are
+ * The public pricing page (RSC, billing's `/pricing` mount; the generated stub
+ * marks it force-dynamic so it is never prerendered at build time). Plans are
  * authored in Payload; the page is curated by billing's admin settings screen
  * (featured plans + Free tier). Fetched via the Local API for SEO/perf —
- * extension web entries may use it (EXTENSIONS-PLAN.md §1.2).
+ * extension web-server entries may use it (EXTENSIONS-PLAN.md §1.2). Reads
+ * degrade like every CMS reader in the kit: if Payload can't initialize yet
+ * (fresh deploy before the boot bootstrap provisions it), render the defaults
+ * + an empty plan list instead of failing the request.
  */
 export async function PricingPage() {
-  const payload = await getPayload({ config });
-  const pricing = await getExtensionSettings<PricingSettingsData>(
-    payload,
-    settings,
-  );
-
-  const featured = (pricing.featuredPlans ?? []).filter(
-    (p): p is Plan => typeof p === "object",
-  );
-  const plans: Plan[] =
-    featured.length > 0
-      ? featured
-      : (
-          await payload
-            .find({
-              collection: "ext-billing-plans",
-              where: { active: { equals: true } },
-              sort: "displayOrder",
-              depth: 0,
-              limit: 100,
-            })
-            .catch(() => ({ docs: [] as Plan[] }))
-        ).docs;
+  let pricing: PricingSettingsData = settings.defaults as PricingSettingsData;
+  let plans: Plan[] = [];
+  try {
+    const payload = await getPayload({ config });
+    pricing = await getExtensionSettings<PricingSettingsData>(
+      payload,
+      settings,
+    );
+    const featured = (pricing.featuredPlans ?? []).filter(
+      (p): p is Plan => typeof p === "object",
+    );
+    plans =
+      featured.length > 0
+        ? featured
+        : (
+            await payload
+              .find({
+                collection: "ext-billing-plans",
+                where: { active: { equals: true } },
+                sort: "displayOrder",
+                depth: 0,
+                limit: 100,
+              })
+              .catch(() => ({ docs: [] as Plan[] }))
+          ).docs;
+  } catch {
+    // CMS unreachable — defaults + empty list (matches lib/payload.ts safe()).
+  }
 
   const freeTier = pricing.showFreeTier ? pricing.freeTier : null;
   const freeHref = freeTier?.link?.url ?? "/sign-up";

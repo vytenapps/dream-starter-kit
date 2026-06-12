@@ -3,3 +3,5 @@
 // Recomputed from extensions/*/extension.config.ts; a stale copy fails
 // `pnpm test` via apps/nextjs/src/ext/registry-drift.test.ts.
 export { PricingPage as default } from "@acme/ext-billing/web-server";
+
+export const dynamic = "force-dynamic";

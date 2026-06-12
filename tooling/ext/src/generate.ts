@@ -461,10 +461,16 @@ export function buildStubs(exts: LoadedExtension[]): GeneratedFile[] {
         bases.add(`${group}/${base}`);
         const seg = r.path ? `/${r.path}` : "";
         const entry = r.rsc ? "web-server" : "web";
+        // rsc pages read live data via the Payload Local API — they must never
+        // be prerendered at build time (no DB/secret exists yet on a fresh
+        // deploy; the old core pages were force-dynamic for the same reason).
+        const dynamic = r.rsc
+          ? `\nexport const dynamic = "force-dynamic";\n`
+          : "";
         files.push({
           path: `${group}/${base}${seg}/page.tsx`,
           slug,
-          content: `${ESLINT_OFF}${HEADER}export { ${r.component} as default } from "${e.packageName}/${entry}";\n`,
+          content: `${ESLINT_OFF}${HEADER}export { ${r.component} as default } from "${e.packageName}/${entry}";\n${dynamic}`,
         });
       }
       for (const baseDir of [...bases].sort()) {
