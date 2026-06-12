@@ -29,6 +29,13 @@ export interface LoadedExtension {
   envClientKeys: string[];
   /** Server env keys declared in ./env (`EXT_<SLUG>_*`). */
   envServerKeys: string[];
+  /**
+   * Payload migrations shipped under src/payload/migrations (cms.hasMigrations)
+   * — sync materializes copies into the host migrationDir so the local
+   * `payload migrate` CLI applies them (production applies the same names via
+   * prodMigrations; the cms ledger dedupes).
+   */
+  payloadMigrations: { name: string; content: string }[];
 }
 
 interface EnvModule {
@@ -160,7 +167,28 @@ export async function loadExtensions(
       }
     }
 
-    loaded.push({ manifest, dir, packageName, envClientKeys, envServerKeys });
+    const payloadMigrations: { name: string; content: string }[] = [];
+    if (manifest.cms.hasMigrations) {
+      const migDir = path.join(dir, "src/payload/migrations");
+      if (existsSync(migDir)) {
+        for (const f of readdirSync(migDir).sort()) {
+          if (!/^\d{8}_\d{6}_.+\.ts$/.test(f)) continue;
+          payloadMigrations.push({
+            name: f.replace(/\.ts$/, ""),
+            content: readFileSync(path.join(migDir, f), "utf8"),
+          });
+        }
+      }
+    }
+
+    loaded.push({
+      manifest,
+      dir,
+      packageName,
+      envClientKeys,
+      envServerKeys,
+      payloadMigrations,
+    });
   }
 
   const manifests = loaded.map((l) => l.manifest);

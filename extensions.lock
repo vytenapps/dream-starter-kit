@@ -11,7 +11,8 @@
         "apps/nextjs/src/app/(frontend)/(app)/billing/layout.tsx",
         "apps/nextjs/src/app/(frontend)/(app)/billing/page.tsx",
         "apps/nextjs/src/app/(frontend)/(public)/pricing/layout.tsx",
-        "apps/nextjs/src/app/(frontend)/(public)/pricing/page.tsx"
+        "apps/nextjs/src/app/(frontend)/(public)/pricing/page.tsx",
+        "apps/nextjs/src/payload/migrations/20260612_023534_ext_billing.ts"
       ],
       "edgeFunctions": [
         "billing-stripe-webhook"
@@ -27,7 +28,8 @@
         "apps/expo/src/app/(app)/x/chat/index.tsx",
         "apps/nextjs/src/app/(frontend)/(app)/x/chat/[threadId]/page.tsx",
         "apps/nextjs/src/app/(frontend)/(app)/x/chat/layout.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/chat/page.tsx"
+        "apps/nextjs/src/app/(frontend)/(app)/x/chat/page.tsx",
+        "apps/nextjs/src/payload/migrations/20260612_015425_ext_chat_settings.ts"
       ],
       "edgeFunctions": []
     },

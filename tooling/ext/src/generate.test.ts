@@ -25,6 +25,7 @@ function loaded(
     packageName: `@acme/ext-${m.slug}`,
     envClientKeys,
     envServerKeys: [],
+    payloadMigrations: [],
   };
 }
 

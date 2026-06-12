@@ -508,6 +508,24 @@ export default async function ExtensionLayout({
   return files.sort((a, b) => a.path.localeCompare(b.path));
 }
 
+/**
+ * Copies of extension Payload migrations, materialized into the host
+ * migrationDir so the local `payload migrate` CLI (db:reset) applies them —
+ * otherwise dev push has to reconcile renamed cms tables interactively.
+ * Production applies the same names via prodMigrations; the ledger dedupes.
+ */
+export function buildPayloadMigrationCopies(
+  exts: LoadedExtension[],
+): GeneratedFile[] {
+  return exts.flatMap((e) =>
+    e.payloadMigrations.map((m) => ({
+      path: `apps/nextjs/src/payload/migrations/${m.name}.ts`,
+      slug: e.manifest.slug,
+      content: `// GENERATED copy (\`pnpm ext sync\`) of extensions/${e.manifest.slug}/src/payload/migrations/${m.name}.ts\n// so the local \`payload migrate\` CLI applies it — do not edit.\n${m.content}`,
+    })),
+  );
+}
+
 /** Everything the drift test compares (registries + env + stubs + transpile list). */
 export function buildAllGeneratedFiles(
   exts: LoadedExtension[],
@@ -530,6 +548,7 @@ export function buildAllGeneratedFiles(
     { path: EXT_PATHS.expoRegistry, content: buildExpoRegistry(exts) },
     { path: EXT_PATHS.expoEnv, content: buildExpoEnv(exts) },
     ...buildStubs(exts),
+    ...buildPayloadMigrationCopies(exts),
   ];
 }
 
