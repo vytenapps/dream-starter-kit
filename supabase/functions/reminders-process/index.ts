@@ -1,14 +1,14 @@
-// process-reminders — finds due, pending reminders and fires them: creates an
+// reminders-process — finds due, pending reminders and fires them: creates an
 // in-app notification, sends an Expo push (for channel=push), and marks the
 // reminder sent. Uses the service role.
 //
 // Scheduling (not enabled here — wire it in your project):
-//   1) Deploy: `supabase functions deploy process-reminders`
+//   1) Deploy: `supabase functions deploy reminders-process`
 //   2) Set the function secret:  supabase secrets set CRON_SECRET=<random>
 //   3) Schedule every minute via pg_cron + pg_net (run as a migration):
-//        select cron.schedule('process-reminders', '* * * * *', $$
+//        select cron.schedule('reminders-process', '* * * * *', $$
 //          select net.http_post(
-//            url := 'https://<project-ref>.supabase.co/functions/v1/process-reminders',
+//            url := 'https://<project-ref>.supabase.co/functions/v1/reminders-process',
 //            headers := jsonb_build_object('Authorization', 'Bearer <CRON_SECRET>')
 //          );
 //        $$);
@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
   const nowIso = new Date().toISOString();
 
   const { data: due, error } = await admin
-    .from("reminders")
+    .from("ext_reminders")
     .select("id, user_id, channel")
     .eq("status", "pending")
     .lte("due_at", nowIso);
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
 
   let processed = 0;
   for (const reminder of due ?? []) {
-    await admin.from("notifications").insert({
+    await admin.from("ext_notifications").insert({
       user_id: reminder.user_id,
       type: "reminder",
       title: "Reminder",
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
     if (reminder.channel === "push") {
       const { data: tokens } = await admin
-        .from("push_tokens")
+        .from("ext_notifications_push_tokens")
         .select("token")
         .eq("user_id", reminder.user_id);
       if (tokens && tokens.length > 0) {
@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    await admin.from("reminders").update({ status: "sent" }).eq("id", reminder.id);
+    await admin.from("ext_reminders").update({ status: "sent" }).eq("id", reminder.id);
     processed++;
   }
 

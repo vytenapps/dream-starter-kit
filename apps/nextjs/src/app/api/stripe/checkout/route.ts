@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   let customerId: string | undefined;
   if (user) {
     const { data: existing } = await supabase
-      .from("customers")
+      .from("ext_billing_customers")
       .select("stripe_customer_id")
       .eq("user_id", user.id)
       .maybeSingle();

@@ -198,7 +198,7 @@ Every variable is validated by a zod schema (`packages/config/env` + each app's
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `EXPO_PUBLIC_SUPABASE_ANON_KEY`                       | ✅      | same                                                                                                                        |
 | `SUPABASE_SERVICE_ROLE_KEY`                                                             | 🔒      | same (server-only; bypasses RLS)                                                                                            |
 | `SUPABASE_DB_URL`                                                                       | 🔒      | local default in `.env.example` / hosted pooler URL                                                                         |
-| `CRON_SECRET`                                                                           | 🔒      | you choose; guards the `process-reminders` function                                                                         |
+| `CRON_SECRET`                                                                           | 🔒      | you choose; guards the `reminders-process` function                                                                         |
 | `NEXT_PUBLIC_APP_URL` / `EXPO_PUBLIC_API_URL`                                           | ✅      | your web origin (LAN IP in mobile dev). On Vercel the web origin is auto-detected — see `NEXT_PUBLIC_SITE_URL`              |
 | `NEXT_PUBLIC_SITE_URL`                                                                  | ✅      | optional — pin the public web origin to a custom domain; else auto-detected on Vercel / falls back to `NEXT_PUBLIC_APP_URL` |
 | `AI_GATEWAY_API_KEY`                                                                    | 🔒      | [Vercel AI Gateway](https://vercel.com/ai-gateway) (auto on Vercel)                                                         |
@@ -416,12 +416,12 @@ the part that's still deployed from the CLI:
 ```bash
 supabase link --project-ref <your-ref>
 supabase db push                          # optional — the app already did this on boot
-supabase functions deploy stripe-webhook  # + delete-account, process-reminders
+supabase functions deploy billing-stripe-webhook  # + delete-account, reminders-process
 supabase secrets set STRIPE_SECRET_KEY=… STRIPE_WEBHOOK_SECRET=… CRON_SECRET=…
 ```
 
 Enable OAuth providers and set redirect URLs in the Supabase Dashboard (Auth →
-Providers / URL Configuration). Schedule `process-reminders` (pg_cron / a scheduler)
+Providers / URL Configuration). Schedule `reminders-process` (pg_cron / a scheduler)
 with the `CRON_SECRET` in the `Authorization` header.
 
 ### Content backend (Payload CMS)
@@ -481,7 +481,7 @@ the root directory to `apps/nextjs`, and add the Supabase env vars
 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
 plus any `STRIPE_*` / `AI_GATEWAY_API_KEY` (the AI Gateway credential is injected
 automatically on Vercel). Add a Stripe webhook endpoint pointing at the deployed
-`stripe-webhook` function and copy its signing secret into Supabase secrets.
+`billing-stripe-webhook` function and copy its signing secret into Supabase secrets.
 
 ### Mobile (EAS)
 
@@ -502,7 +502,7 @@ pnpm 10.19.0). Set `EXPO_PUBLIC_*` values as EAS env/secrets.
    USD; to bill in another currency create the prices in that currency (Stripe price
    IDs are immutable, so set the amount/interval correctly the first time). The display
    strings live in `packages/config` (`PLANS`).
-2. Local webhook: `stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook`
+2. Local webhook: `stripe listen --forward-to localhost:54321/functions/v1/billing-stripe-webhook`
    and copy the `whsec_…` into `STRIPE_WEBHOOK_SECRET`.
 3. The webhook is signature-verified and idempotent; it syncs the catalog +
    subscription state into Supabase. Mobile reads `subscriptions` (RLS read-own).

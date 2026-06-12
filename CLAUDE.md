@@ -117,7 +117,7 @@ Cloud-session quirks:
 
 - **`supabase start` must exclude edge-runtime** (`-x edge-runtime`): that container
   sets rlimits the sandboxed nested-container runtime forbids. Edge functions
-  (Stripe webhook, `process-reminders`) don't run in cloud sessions.
+  (Stripe webhook, `reminders-process`) don't run in cloud sessions.
 - **Unset optional env vars must be absent, not `""`** — empty strings fail the zod
   schema's `min(1)` checks. The hook comments them out when generating `.env`.
 - The hook does **not** start the dev server. Use the `web` configuration in
@@ -139,7 +139,7 @@ the **full** test matrix, same commands as local:
   `tooling/web-e2e/README.md`). The founder/first-user flow needs a **fresh DB** —
   run `pnpm db:reset` first if users were created since the hook ran.
 - Out of scope in cloud sessions: anything needing edge functions (Stripe webhook,
-  `process-reminders`) and `expo` device builds.
+  `reminders-process`) and `expo` device builds.
 
 **Visual testing:** the desktop Preview pane is local/SSH-only — in cloud sessions
 it is greyed out and there is no embedded browser. Verify UI changes by driving the

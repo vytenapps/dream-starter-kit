@@ -17,7 +17,7 @@ export function useChatThreads() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("chat_threads")
+        .from("ext_chat_threads")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -35,7 +35,7 @@ export function useCreateThread() {
     mutationFn: async (title?: string) => {
       if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase
-        .from("chat_threads")
+        .from("ext_chat_threads")
         .insert({ user_id: user.id, title: title ?? "New chat" })
         .select()
         .single();
@@ -53,7 +53,7 @@ export function useDeleteThread() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("chat_threads")
+        .from("ext_chat_threads")
         .delete()
         .eq("id", id);
       if (error) throw error;
@@ -71,7 +71,7 @@ export function useThreadMessages(threadId: string) {
     enabled: !!threadId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("chat_messages")
+        .from("ext_chat_messages")
         .select("*")
         .eq("thread_id", threadId)
         .order("created_at", { ascending: true });

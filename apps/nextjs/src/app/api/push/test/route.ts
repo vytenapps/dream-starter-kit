@@ -30,7 +30,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: tokens } = await supabase.from("push_tokens").select("token");
+  const { data: tokens } = await supabase
+    .from("ext_notifications_push_tokens")
+    .select("token");
   if (!tokens || tokens.length === 0) {
     return NextResponse.json(
       { error: "No registered devices (open the app on a dev build first)" },

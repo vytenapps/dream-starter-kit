@@ -1,6 +1,6 @@
 /**
  * Pure reminder scheduling logic — used by the UI and unit-tested. The
- * process-reminders edge function does the equivalent selection in SQL
+ * reminders-process edge function does the equivalent selection in SQL
  * (status = 'pending' and due_at <= now).
  */
 export interface DueReminder {

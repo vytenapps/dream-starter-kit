@@ -57,7 +57,7 @@ export const syncSubscriptionFromStripe: StripeWebhookHandler<
   try {
     const admin = createAdminClient();
     const { data } = await admin
-      .from("customers")
+      .from("ext_billing_customers")
       .select("user_id")
       .eq("stripe_customer_id", customerId)
       .maybeSingle();

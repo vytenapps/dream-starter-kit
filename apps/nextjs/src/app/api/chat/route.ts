@@ -83,14 +83,14 @@ export async function POST(request: Request) {
 
   // Persist the user message (RLS rejects if the thread isn't the caller's).
   const insertUser = await supabase
-    .from("chat_messages")
+    .from("ext_chat_messages")
     .insert({ thread_id: threadId, role: "user", content: text });
   if (insertUser.error) {
     return NextResponse.json({ error: "Thread not found" }, { status: 403 });
   }
 
   const { data: history } = await supabase
-    .from("chat_messages")
+    .from("ext_chat_messages")
     .select("role, content")
     .eq("thread_id", threadId)
     .order("created_at", { ascending: true });
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
       maxOutputTokens: AI_MAX_OUTPUT_TOKENS,
     });
 
-    await supabase.from("chat_messages").insert({
+    await supabase.from("ext_chat_messages").insert({
       thread_id: threadId,
       role: "assistant",
       content: result.text,

@@ -16,7 +16,7 @@ export function useNotifications() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("notifications")
+        .from("ext_notifications")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -37,7 +37,7 @@ export function useMarkNotificationRead() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("notifications")
+        .from("ext_notifications")
         .update({ read_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;

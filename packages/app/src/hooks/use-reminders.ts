@@ -19,7 +19,7 @@ export function useReminders() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("reminders")
+        .from("ext_reminders")
         .select("*")
         .order("due_at", { ascending: true });
       if (error) throw error;
@@ -36,13 +36,13 @@ export function useCreateReminder() {
   return useMutation({
     mutationFn: async (input: CreateReminderInput) => {
       if (!user) throw new Error("Not authenticated");
-      const payload: TablesInsert<"reminders"> = {
+      const payload: TablesInsert<"ext_reminders"> = {
         user_id: user.id,
         due_at: input.dueAt,
         channel: input.channel,
       };
       const { data, error } = await supabase
-        .from("reminders")
+        .from("ext_reminders")
         .insert(payload)
         .select()
         .single();
@@ -59,7 +59,10 @@ export function useDeleteReminder() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("reminders").delete().eq("id", id);
+      const { error } = await supabase
+        .from("ext_reminders")
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: remindersKey }),

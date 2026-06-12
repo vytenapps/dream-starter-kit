@@ -21,7 +21,12 @@ export interface ExtNavDefault {
   order: number;
 }
 
-export const extInstalled: ExtInstalled[] = [];
+export const extInstalled: ExtInstalled[] = [
+  { slug: "billing", name: "Billing", version: "1.0.0", system: false },
+  { slug: "chat", name: "AI Chat", version: "1.0.0", system: false },
+  { slug: "notifications", name: "Notifications", version: "1.0.0", system: false },
+  { slug: "reminders", name: "Reminders", version: "1.0.0", system: false },
+];
 
 /** Native nav defaults — fallback for useNavMenu() while offline/loading. */
 export const extNavDefaults: { native: ExtNavDefault[] } = {

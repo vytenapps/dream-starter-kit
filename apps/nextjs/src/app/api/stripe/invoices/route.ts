@@ -24,7 +24,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data: customer } = await supabase
-    .from("customers")
+    .from("ext_billing_customers")
     .select("stripe_customer_id")
     .eq("user_id", user.id)
     .maybeSingle();

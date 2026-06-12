@@ -44,13 +44,13 @@ function usePlanName(priceId: string | null | undefined) {
     queryFn: async () => {
       if (!priceId) return null;
       const { data: price } = await supabase
-        .from("prices")
+        .from("ext_billing_prices")
         .select("product_id")
         .eq("id", priceId)
         .maybeSingle();
       if (!price?.product_id) return null;
       const { data: product } = await supabase
-        .from("products")
+        .from("ext_billing_products")
         .select("name")
         .eq("id", price.product_id)
         .maybeSingle();

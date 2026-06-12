@@ -439,11 +439,11 @@ deno_version = 2
 
 # Stripe calls this endpoint without a Supabase JWT — verify the Stripe
 # signature inside the function instead.
-[functions.stripe-webhook]
+[functions.billing-stripe-webhook]
 verify_jwt = false
 
 # Invoked by a scheduler (pg_cron) with the service-role key, not a user JWT.
-[functions.process-reminders]
+[functions.reminders-process]
 verify_jwt = false
 
 [analytics]

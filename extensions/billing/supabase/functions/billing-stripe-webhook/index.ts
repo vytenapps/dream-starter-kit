@@ -1,3 +1,16 @@
+import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+import Stripe from "npm:stripe@22";
+
+import {
+  mapPrice,
+  mapProduct,
+  mapSubscription,
+  resolveCheckoutCustomer,
+  subscriptionCustomerId,
+  subscriptionUserIdFromMetadata,
+} from "./mapping.ts";
+
 // Stripe webhook → syncs products / prices / customers / subscriptions into the
 // DB using the SERVICE ROLE (clients never write billing rows). Signature is
 // verified; handlers upsert by primary key so redelivered/out-of-order events
@@ -9,18 +22,7 @@
 // plans tag the user with the plan name (public.user_tags).
 //
 // config.toml sets verify_jwt = false for this function (Stripe has no Supabase
-// JWT). Local: `stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook`.
-import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import Stripe from "npm:stripe@22";
-
-import {
-  mapPrice,
-  mapProduct,
-  mapSubscription,
-  resolveCheckoutCustomer,
-  subscriptionCustomerId,
-  subscriptionUserIdFromMetadata,
-} from "./mapping.ts";
+// JWT). Local: `stripe listen --forward-to localhost:54321/functions/v1/billing-stripe-webhook`.
 
 const stripeSecret = Deno.env.get("STRIPE_SECRET_KEY");
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
@@ -79,13 +81,13 @@ async function ensurePlanTag(
 ): Promise<void> {
   if (!priceId) return;
   const { data: price } = await admin
-    .from("prices")
+    .from("ext_billing_prices")
     .select("product_id")
     .eq("id", priceId)
     .maybeSingle();
   if (!price?.product_id) return;
   const { data: product } = await admin
-    .from("products")
+    .from("ext_billing_products")
     .select("name")
     .eq("id", price.product_id)
     .maybeSingle();
@@ -139,14 +141,14 @@ Deno.serve(async (req) => {
       case "product.created":
       case "product.updated": {
         await admin
-          .from("products")
+          .from("ext_billing_products")
           .upsert(mapProduct(event.data.object as Stripe.Product));
         break;
       }
       case "price.created":
       case "price.updated": {
         await admin
-          .from("prices")
+          .from("ext_billing_prices")
           .upsert(mapPrice(event.data.object as Stripe.Price));
         break;
       }
@@ -168,7 +170,7 @@ Deno.serve(async (req) => {
 
         if (userId && customerId) {
           await admin
-            .from("customers")
+            .from("ext_billing_customers")
             .upsert(
               { user_id: userId, stripe_customer_id: customerId },
               { onConflict: "user_id" },
@@ -184,7 +186,7 @@ Deno.serve(async (req) => {
           );
           const priceId = items.data[0]?.price?.id ?? null;
           if (priceId) {
-            await admin.from("subscriptions").upsert({
+            await admin.from("ext_billing_subscriptions").upsert({
               id: session.id,
               user_id: userId,
               price_id: priceId,
@@ -206,7 +208,9 @@ Deno.serve(async (req) => {
               ? session.subscription
               : session.subscription.id;
           const sub = await stripe.subscriptions.retrieve(subId);
-          await admin.from("subscriptions").upsert(mapSubscription(sub, userId));
+          await admin
+            .from("ext_billing_subscriptions")
+            .upsert(mapSubscription(sub, userId));
           if (sub.status === "active" || sub.status === "trialing") {
             await ensurePlanTag(
               admin,
@@ -224,16 +228,22 @@ Deno.serve(async (req) => {
         let userId = subscriptionUserIdFromMetadata(sub);
         if (!userId) {
           const { data } = await admin
-            .from("customers")
+            .from("ext_billing_customers")
             .select("user_id")
             .eq("stripe_customer_id", subscriptionCustomerId(sub))
             .maybeSingle();
           userId = data?.user_id ?? null;
         }
         if (userId) {
-          await admin.from("subscriptions").upsert(mapSubscription(sub, userId));
+          await admin
+            .from("ext_billing_subscriptions")
+            .upsert(mapSubscription(sub, userId));
           if (sub.status === "active" || sub.status === "trialing") {
-            await ensurePlanTag(admin, userId, sub.items.data[0]?.price.id ?? null);
+            await ensurePlanTag(
+              admin,
+              userId,
+              sub.items.data[0]?.price.id ?? null,
+            );
           }
         }
         break;
@@ -242,7 +252,7 @@ Deno.serve(async (req) => {
         break;
     }
   } catch (err) {
-    console.error("stripe-webhook handler error", err);
+    console.error("billing-stripe-webhook handler error", err);
     return new Response("Handler error", { status: 500 });
   }
 

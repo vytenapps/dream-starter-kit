@@ -20,7 +20,7 @@ export function usePremium() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("subscriptions")
+        .from("ext_billing_subscriptions")
         .select("status, price_id, current_period_end")
         .in("status", ACTIVE_STATUSES)
         .order("current_period_end", { ascending: false })

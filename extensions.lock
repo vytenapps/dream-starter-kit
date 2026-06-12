@@ -1,5 +1,42 @@
 {
   "lockVersion": 1,
-  "extensions": {},
+  "extensions": {
+    "billing": {
+      "version": "1.0.0",
+      "kitCompat": ">=1.0.0 <2",
+      "source": "local",
+      "installedVia": "preinstalled",
+      "stubs": [],
+      "edgeFunctions": [
+        "billing-stripe-webhook"
+      ]
+    },
+    "chat": {
+      "version": "1.0.0",
+      "kitCompat": ">=1.0.0 <2",
+      "source": "local",
+      "installedVia": "preinstalled",
+      "stubs": [],
+      "edgeFunctions": []
+    },
+    "notifications": {
+      "version": "1.0.0",
+      "kitCompat": ">=1.0.0 <2",
+      "source": "local",
+      "installedVia": "preinstalled",
+      "stubs": [],
+      "edgeFunctions": []
+    },
+    "reminders": {
+      "version": "1.0.0",
+      "kitCompat": ">=1.0.0 <2",
+      "source": "local",
+      "installedVia": "preinstalled",
+      "stubs": [],
+      "edgeFunctions": [
+        "reminders-process"
+      ]
+    }
+  },
   "tombstones": {}
 }

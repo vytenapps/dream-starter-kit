@@ -3,7 +3,7 @@
 // Verifies the caller's JWT, then uses the SERVICE ROLE to delete the auth user.
 // The DB ON DELETE CASCADE chain (profiles -> everything owned) removes all of
 // their data. Stripe subscription cancellation is added in Phase 5 (guarded by
-// the presence of a customers row).
+// the presence of an ext_billing_customers row).
 //
 // Local: `supabase functions serve delete-account` (SUPABASE_URL / ANON_KEY /
 // SERVICE_ROLE_KEY are injected automatically). Deploy: `supabase functions
@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
   if (stripeSecret) {
     try {
       const { data: customer } = await admin
-        .from("customers")
+        .from("ext_billing_customers")
         .select("stripe_customer_id")
         .eq("user_id", user.id)
         .maybeSingle();

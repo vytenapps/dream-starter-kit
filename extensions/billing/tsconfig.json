@@ -1,0 +1,9 @@
+{
+  "extends": "@acme/tsconfig/base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "dom", "dom.iterable"],
+    "jsx": "preserve"
+  },
+  "include": ["src", "extension.config.ts"],
+  "exclude": ["node_modules", "supabase"]
+}

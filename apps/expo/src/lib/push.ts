@@ -43,7 +43,7 @@ export async function registerForPushNotifications(
     data: { user },
   } = await supabase.auth.getUser();
   if (user) {
-    await supabase.from("push_tokens").upsert(
+    await supabase.from("ext_notifications_push_tokens").upsert(
       {
         user_id: user.id,
         token,
