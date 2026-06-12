@@ -20,14 +20,6 @@ export interface CoreNavItem {
 
 export const CORE_NAV_ITEMS: CoreNavItem[] = [
   {
-    key: "core:/a",
-    label: "Dashboard",
-    href: "/a",
-    icon: "IconDashboard",
-    order: 10,
-    platforms: ["web"],
-  },
-  {
     key: "core:/content/posts",
     label: "Posts",
     href: "/content/posts",

@@ -31,6 +31,7 @@ export default defineExtension({
       { path: "[threadId]", component: "ChatThreadScreen" },
     ],
   },
+  widgets: { web: "ChatWidget", native: "ChatWidget" },
   server: {
     routes: true,
   },

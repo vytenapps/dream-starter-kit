@@ -40,6 +40,7 @@ export default defineExtension({
     tables: ["ext_reminders"],
     dml: ["ext_notifications", "ext_notifications_push_tokens"],
   },
+  widgets: { web: "RemindersWidget", native: "RemindersWidget" },
   server: {
     edgeFunctions: ["reminders-process"],
   },

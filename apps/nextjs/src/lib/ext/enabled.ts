@@ -44,6 +44,11 @@ export async function isExtensionEnabled(slug: string): Promise<boolean> {
   return !(await disabledExtensions()).has(slug);
 }
 
+/** The runtime-disabled extension slugs (for widget/menu filtering). */
+export async function disabledExtensionSlugs(): Promise<string[]> {
+  return [...(await disabledExtensions())];
+}
+
 /** Test seam: drop the in-memory cache. */
 export function resetEnabledCache(): void {
   cached = null;

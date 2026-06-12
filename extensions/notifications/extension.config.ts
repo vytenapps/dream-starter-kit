@@ -35,6 +35,7 @@ export default defineExtension({
     web: [{ path: "", component: "NotificationsPage" }],
     native: [{ path: "", component: "NotificationsScreen" }],
   },
+  widgets: { web: "NotificationsWidget", native: "NotificationsWidget" },
   server: {
     routes: true,
   },

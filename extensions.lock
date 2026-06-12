@@ -25,6 +25,18 @@
       ],
       "edgeFunctions": []
     },
+    "dashboard": {
+      "version": "1.0.0",
+      "kitCompat": ">=1.0.0 <2",
+      "source": "local",
+      "installedVia": "preinstalled",
+      "stubs": [
+        "apps/expo/src/app/(app)/index.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/page.tsx"
+      ],
+      "edgeFunctions": []
+    },
     "notifications": {
       "version": "1.0.0",
       "kitCompat": ">=1.0.0 <2",

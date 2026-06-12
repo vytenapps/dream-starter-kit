@@ -1,29 +1,31 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { usePremium } from "@acme/app";
-import { toast } from "@acme/ui/toast";
-
-import { Button } from "~/components/ui/button";
+import { useExtWidgets } from "@acme/ext-kit/react";
+import { Button } from "@acme/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "~/components/ui/card";
+} from "@acme/ui/card";
+import { toast } from "@acme/ui/toast";
 
-export function DashboardOverview() {
+function DashboardInner() {
   const premium = usePremium();
+  const widgets = useExtWidgets();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const checkout = searchParams.get("checkout");
 
-  // Surface the Stripe Checkout result and refresh the subscription on success.
+  // Surface the Stripe Checkout result and refresh the subscription on
+  // success. (Moves into the billing extension's widget in phase 7.)
   useEffect(() => {
     if (checkout === "success") {
       toast.success("Subscription active — welcome to Pro!");
@@ -69,6 +71,16 @@ export function DashboardOverview() {
         </Card>
       </div>
 
+      {/* The widget grid: every installed-and-enabled extension's declared
+          widget, provided by the host via @acme/ext-kit/react. */}
+      {widgets.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {widgets.map(({ slug, Widget }) => (
+            <Widget key={slug} />
+          ))}
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Welcome</CardTitle>
@@ -82,14 +94,17 @@ export function DashboardOverview() {
           <Button asChild size="sm" variant="outline">
             <Link href="/posts">Browse posts</Link>
           </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link href="/reminders">Reminders</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link href="/chat">AI chat</Link>
-          </Button>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/** Suspense: the inner component reads ?checkout= via useSearchParams. */
+export function DashboardPage() {
+  return (
+    <Suspense>
+      <DashboardInner />
+    </Suspense>
   );
 }

@@ -7,13 +7,17 @@
       "types": "./dist/index.d.ts",
       "default": "./src/index.ts"
     },
-    "./server": {
-      "types": "./dist/server.d.ts",
-      "default": "./src/server.ts"
-    },
     "./payload": {
       "types": "./dist/payload.d.ts",
       "default": "./src/payload.ts"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./src/react.tsx"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./src/server.ts"
     }
   },
   "license": "Apache-2.0",
@@ -37,11 +41,16 @@
     "@acme/tsconfig": "workspace:*",
     "@supabase/supabase-js": "catalog:",
     "@types/node": "catalog:",
+    "@types/react": "catalog:react19",
     "eslint": "catalog:",
     "payload": "catalog:",
     "prettier": "catalog:",
+    "react": "catalog:react19",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "prettier": "@acme/prettier-config"
+  "prettier": "@acme/prettier-config",
+  "peerDependencies": {
+    "react": "*"
+  }
 }

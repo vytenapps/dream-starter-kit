@@ -3,9 +3,10 @@
 // Recomputed from extensions/*/extension.config.ts; a stale copy fails
 // `pnpm test` via apps/nextjs/src/ext/registry-drift.test.ts.
 import type * as React from "react";
-import "@acme/ext-chat/native";
-import "@acme/ext-notifications/native";
-import "@acme/ext-reminders/native";
+import "@acme/ext-dashboard/native";
+import { ChatWidget as widget_chat } from "@acme/ext-chat/native";
+import { NotificationsWidget as widget_notifications } from "@acme/ext-notifications/native";
+import { RemindersWidget as widget_reminders } from "@acme/ext-reminders/native";
 
 export interface ExtInstalled {
   slug: string;
@@ -27,6 +28,7 @@ export interface ExtNavDefault {
 export const extInstalled: ExtInstalled[] = [
   { slug: "billing", name: "Billing", version: "1.0.0", system: false },
   { slug: "chat", name: "AI Chat", version: "1.0.0", system: false },
+  { slug: "dashboard", name: "Dashboard", version: "1.0.0", system: true },
   { slug: "notifications", name: "Notifications", version: "1.0.0", system: false },
   { slug: "reminders", name: "Reminders", version: "1.0.0", system: false },
 ];
@@ -41,7 +43,11 @@ export const extNavDefaults: { native: ExtNavDefault[] } = {
 };
 
 /** Home-screen widgets declared by installed extensions (native components). */
-export const extWidgets: { slug: string; Widget: React.ComponentType }[] = [];
+export const extWidgets: { slug: string; Widget: React.ComponentType }[] = [
+  { slug: "chat", Widget: widget_chat },
+  { slug: "notifications", Widget: widget_notifications },
+  { slug: "reminders", Widget: widget_reminders },
+];
 
 export function hasExtension(slug: string): boolean {
   return extInstalled.some((e) => e.slug === slug);

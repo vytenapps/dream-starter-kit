@@ -1,7 +1,9 @@
 import { Pressable, Text } from "react-native";
 import { Stack, useRouter } from "expo-router";
 
-import { hasExtension } from "~/ext/registry.generated";
+import { ExtWidgetsProvider } from "@acme/ext-kit/react";
+
+import { extWidgets, hasExtension } from "~/ext/registry.generated";
 
 function HeaderBell() {
   const router = useRouter();
@@ -21,12 +23,16 @@ export default function AppLayout() {
   // extension isn't installed (EXTENSIONS-PLAN.md §2.5).
   const showBell = hasExtension("notifications");
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: "#c03484" },
-        headerTintColor: "#fff",
-        ...(showBell ? { headerRight: () => <HeaderBell /> } : {}),
-      }}
-    />
+    // Home-screen widgets from the generated registry (all installed; the
+    // runtime kit-extensions disable toggle gates native at the menu level).
+    <ExtWidgetsProvider widgets={extWidgets}>
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: "#c03484" },
+          headerTintColor: "#fff",
+          ...(showBell ? { headerRight: () => <HeaderBell /> } : {}),
+        }}
+      />
+    </ExtWidgetsProvider>
   );
 }
