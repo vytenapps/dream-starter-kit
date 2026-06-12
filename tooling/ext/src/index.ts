@@ -11,5 +11,7 @@ export {
   type GeneratedFile,
 } from "./generate";
 export { loadExtensions, type LoadedExtension } from "./manifests";
+export { buildLockModule } from "./generate";
 export { readLock, readPins } from "./lock";
+export type { ExtensionsLock, ExtLockEntry } from "./lock";
 export { EXT_PATHS, findRepoRoot, toAbs } from "./paths";

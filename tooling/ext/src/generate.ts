@@ -1,3 +1,4 @@
+import type { ExtensionsLock } from "./lock";
 import type { LoadedExtension } from "./manifests";
 import { EXT_PATHS } from "./paths";
 
@@ -551,6 +552,18 @@ export function buildAllGeneratedFiles(
     ...buildStubs(exts),
     ...buildPayloadMigrationCopies(exts),
   ];
+}
+
+/**
+ * apps/nextjs/src/ext/lock.generated.ts — the lock, bundled, so the admin
+ * Extensions view can read install state on a read-only serverless filesystem.
+ * "Active" detection works because a deploy that contains a new version also
+ * contains this module.
+ */
+export function buildLockModule(lock: ExtensionsLock): string {
+  return `${ESLINT_OFF}${HEADER}/** The committed extensions.lock, inlined for serverless reads. */
+export const extensionsLock = ${JSON.stringify(lock, null, 2)} as const;
+`;
 }
 
 const ENV_FENCE_START = "# --- extensions (generated) ---";

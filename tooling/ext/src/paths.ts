@@ -32,6 +32,7 @@ export const EXT_PATHS = {
   nextServerRegistry: "apps/nextjs/src/ext/registry.server.generated.ts",
   nextPayloadRegistry: "apps/nextjs/src/ext/registry.payload.generated.ts",
   nextEnv: "apps/nextjs/src/ext/env.generated.ts",
+  nextLockModule: "apps/nextjs/src/ext/lock.generated.ts",
   nextTranspileJson: "apps/nextjs/ext-packages.generated.json",
   expoRegistry: "apps/expo/src/ext/registry.generated.ts",
   expoEnv: "apps/expo/src/ext/env.generated.ts",

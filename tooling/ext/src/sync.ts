@@ -3,6 +3,7 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmdirSync,
   rmSync,
@@ -14,6 +15,7 @@ import {
   applyEnvExampleBlock,
   buildAllGeneratedFiles,
   buildEnvExampleBlock,
+  buildLockModule,
 } from "./generate";
 import { readLock, readPins, writeLock, writePins } from "./lock";
 import { loadExtensions } from "./manifests";
@@ -26,6 +28,10 @@ import { EXT_PATHS, toAbs } from "./paths";
  * under extensions/ and commit the outputs (drift fails `pnpm test`).
  */
 export async function sync(repoRoot: string): Promise<void> {
+  // 0. The apps must depend on every installed extension package (their
+  //    registries/stubs import them) — sync owns those dependency entries.
+  syncAppDependencies(repoRoot);
+
   const exts = await loadExtensions(repoRoot);
   const lock = readLock(repoRoot);
 
@@ -88,7 +94,12 @@ export async function sync(repoRoot: string): Promise<void> {
       edgeFunctions: ext.manifest.server.edgeFunctions,
     };
   }
-  writeLock(repoRoot, { ...lock, extensions: nextExtensions });
+  const nextLock = { ...lock, extensions: nextExtensions };
+  writeLock(repoRoot, nextLock);
+  writeFileSync(
+    toAbs(repoRoot, EXT_PATHS.nextLockModule),
+    buildLockModule(nextLock),
+  );
 
   // 5. Rewrite the fenced extensions block in .env.example.
   const envExampleAbs = toAbs(repoRoot, EXT_PATHS.envExample);
@@ -116,6 +127,58 @@ export async function sync(repoRoot: string): Promise<void> {
   console.log(
     `Next steps: pnpm db:reset && pnpm db:gen-types${cmsTouched ? " && pnpm cms:gen-types" : ""}, then commit the generated files.`,
   );
+}
+
+const KEPT_EXT_PACKAGES = new Set(["@acme/ext-kit", "@acme/ext-tools"]);
+
+/**
+ * Keep apps/nextjs + apps/expo `dependencies` in lockstep with extensions/*:
+ * add @acme/ext-<slug> for every installed extension, drop entries whose
+ * extension is gone, and `pnpm install` when anything changed so manifest
+ * loading (which resolves @acme/ext-kit from each package) works.
+ */
+function syncAppDependencies(repoRoot: string): void {
+  const extDir = toAbs(repoRoot, EXT_PATHS.extensionsDir);
+  const slugs = existsSync(extDir)
+    ? readdirSync(extDir, { withFileTypes: true })
+        .filter((e) => e.isDirectory() && !e.name.startsWith("."))
+        .map((e) => e.name)
+        .sort()
+    : [];
+  const wanted = slugs.map((s) => `@acme/ext-${s}`);
+
+  let changed = false;
+  for (const rel of ["apps/nextjs/package.json", "apps/expo/package.json"]) {
+    const file = toAbs(repoRoot, rel);
+    const pkg = JSON.parse(readFileSync(file, "utf8")) as {
+      dependencies: Record<string, string>;
+    };
+    for (const name of Object.keys(pkg.dependencies)) {
+      if (
+        name.startsWith("@acme/ext-") &&
+        !KEPT_EXT_PACKAGES.has(name) &&
+        !wanted.includes(name)
+      ) {
+        delete pkg.dependencies[name];
+        changed = true;
+      }
+    }
+    for (const name of wanted) {
+      if (!(name in pkg.dependencies)) {
+        pkg.dependencies[name] = "workspace:*";
+        changed = true;
+      }
+    }
+    if (changed) {
+      pkg.dependencies = Object.fromEntries(
+        Object.entries(pkg.dependencies).sort(([a], [b]) => a.localeCompare(b)),
+      );
+      writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
+    }
+  }
+  if (changed) {
+    execSync("pnpm install", { cwd: repoRoot, stdio: "inherit" });
+  }
 }
 
 /** Remove now-empty parent directories left behind by deleted stubs. */

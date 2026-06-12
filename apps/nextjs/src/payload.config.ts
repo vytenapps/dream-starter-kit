@@ -112,6 +112,15 @@ export default buildConfig({
       // default logout can't end the session. Replace it with one that signs out
       // of Supabase and returns to the host root. See payload/components/LogoutButton.tsx.
       logout: { Button: "~/payload/components/LogoutButton#LogoutButton" },
+      // /admin/extensions — install/update/remove extensions (catalog, GitHub
+      // URL, zip upload) by dispatching the extension-ops workflow. See
+      // payload/components/ExtensionsView.tsx (EXTENSIONS-PLAN.md §6).
+      views: {
+        extensions: {
+          Component: "~/payload/components/ExtensionsView#ExtensionsView",
+          path: "/extensions",
+        },
+      },
     },
   },
   // Admin at /admin; REST API moved OFF /api to /cms-api so it never collides

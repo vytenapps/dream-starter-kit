@@ -4,6 +4,8 @@ import * as migration_20260610_221650_globals_extensions from './20260610_221650
 import * as migration_20260610_230000_repair_migration_ledger from './20260610_230000_repair_migration_ledger';
 import * as migration_20260611_222956_extensions_framework from './20260611_222956_extensions_framework';
 
+import * as migration_20260612_032502_drop_ext_demo from "./20260612_032502_drop_ext_demo";
+
 export const migrations = [
   {
     up: migration_20260609_224708_initial.up,
@@ -29,5 +31,10 @@ export const migrations = [
     up: migration_20260611_222956_extensions_framework.up,
     down: migration_20260611_222956_extensions_framework.down,
     name: '20260611_222956_extensions_framework',
+  },
+  {
+    up: migration_20260612_032502_drop_ext_demo.up,
+    down: migration_20260612_032502_drop_ext_demo.down,
+    name: "20260612_032502_drop_ext_demo",
   },
 ];

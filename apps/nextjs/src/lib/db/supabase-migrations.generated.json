@@ -33,5 +33,20 @@
     "version": "20260612011541",
     "name": "ext_reminders_001_initial",
     "sql": "-- Reminders extension · initial schema\n-- ext_reminders: user-owned scheduled nudges. DDL is reattach-friendly\n-- (if not exists / drop-then-create policies) so a reinstall after\n-- `ext remove --keep-data` adopts the surviving table.\n\ncreate table if not exists public.ext_reminders (\n  id uuid primary key default gen_random_uuid(),\n  user_id uuid not null references public.profiles (id) on delete cascade,\n  due_at timestamptz not null,\n  channel text not null default 'push' check (channel in ('push', 'email')),\n  status text not null default 'pending' check (status in ('pending', 'sent', 'canceled')),\n  created_at timestamptz not null default now()\n);\ncreate index if not exists ext_reminders_user_id_idx\n  on public.ext_reminders (user_id);\n-- The scheduler (reminders-process edge function) scans due+pending.\ncreate index if not exists ext_reminders_status_due_at_idx\n  on public.ext_reminders (status, due_at);\n\nalter table public.ext_reminders enable row level security;\n\ndrop policy if exists \"ext_reminders: own\" on public.ext_reminders;\ncreate policy \"ext_reminders: own\"\n  on public.ext_reminders for all to authenticated\n  using (user_id = (select auth.uid()))\n  with check (user_id = (select auth.uid()));\n"
+  },
+  {
+    "version": "20260612100000",
+    "name": "add_extension_uploads_bucket",
+    "sql": "-- Private bucket for admin-uploaded extension zips (docs/EXTENSIONS-PLAN.md\n-- §6). No client policies on purpose: only the server (service role, which\n-- bypasses RLS) writes uploads and mints short-lived signed URLs for the\n-- extension-ops workflow runner.\ninsert into storage.buckets (id, name, public)\nvalues ('extension-uploads', 'extension-uploads', false)\non conflict (id) do nothing;\n"
+  },
+  {
+    "version": "20260612100001",
+    "name": "ext_demo_001_initial",
+    "sql": "-- Demo extension · initial schema (owner-scoped, canonical RLS pattern).\ncreate table if not exists public.ext_demo_items (\n  id uuid primary key default gen_random_uuid(),\n  user_id uuid not null references public.profiles (id) on delete cascade,\n  title text not null,\n  created_at timestamptz not null default now()\n);\ncreate index if not exists ext_demo_items_user_id_idx on public.ext_demo_items (user_id);\n\nalter table public.ext_demo_items enable row level security;\n\ndrop policy if exists \"ext_demo_items: own\" on public.ext_demo_items;\ncreate policy \"ext_demo_items: own\"\n  on public.ext_demo_items for all to authenticated\n  using (user_id = (select auth.uid()))\n  with check (user_id = (select auth.uid()));\n"
+  },
+  {
+    "version": "20260612100002",
+    "name": "drop_ext_demo",
+    "sql": "-- Teardown for the removed \"demo\" extension (pnpm ext remove).\n-- Teardown for `pnpm ext remove demo` (skipped with --keep-data).\ndrop table if exists public.ext_demo_items cascade;\n"
   }
 ]
