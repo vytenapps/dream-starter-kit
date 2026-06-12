@@ -20,6 +20,10 @@ import { syncPlanAfterChange } from "../hooks/sync-plan-to-stripe";
  */
 export const Plans: CollectionConfig = {
   slug: "ext-billing-plans",
+  // Slug stays namespaced (`ext-billing-*`) per the extension framework's
+  // collision guard; `labels` is the supported way to keep the admin UI clean
+  // (nav cards, titles, breadcrumbs read "Billing Plans", not "Ext Billing…").
+  labels: { singular: "Billing Plan", plural: "Billing Plans" },
   admin: {
     useAsTitle: "name",
     group: "Commerce",
