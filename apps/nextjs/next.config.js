@@ -51,6 +51,12 @@ const config = {
         destination: "/x/reminders",
         permanent: true,
       },
+      { source: "/chat", destination: "/x/chat", permanent: true },
+      {
+        source: "/chat/:id",
+        destination: "/x/chat/:id",
+        permanent: true,
+      },
     ]),
 
   /**

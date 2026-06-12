@@ -28,6 +28,6 @@ export const migrations = [
   {
     up: migration_20260611_222956_extensions_framework.up,
     down: migration_20260611_222956_extensions_framework.down,
-    name: '20260611_222956_extensions_framework'
+    name: '20260611_222956_extensions_framework',
   },
 ];

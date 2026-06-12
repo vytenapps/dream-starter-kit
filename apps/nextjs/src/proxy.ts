@@ -8,7 +8,7 @@ import { updateSession } from "~/lib/supabase/middleware";
 // Defense-in-depth: the (app) layout also enforces a server-side session guard.
 // "/x" covers every extension's default mount (/x/<slug>/…); extension mount
 // overrides in the authed area must be listed individually (e.g. "/billing").
-const PROTECTED_PREFIXES = ["/profile", "/chat", "/a", "/billing", "/x"];
+const PROTECTED_PREFIXES = ["/profile", "/a", "/billing", "/x"];
 // Auth pages a signed-in user shouldn't see.
 const AUTH_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password"];
 

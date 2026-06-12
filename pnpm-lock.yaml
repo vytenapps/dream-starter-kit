@@ -147,6 +147,9 @@ importers:
       '@acme/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@acme/ext-chat':
+        specifier: workspace:*
+        version: link:../../extensions/chat
       '@acme/ext-notifications':
         specifier: workspace:*
         version: link:../../extensions/notifications
@@ -289,6 +292,9 @@ importers:
       '@acme/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@acme/ext-chat':
+        specifier: workspace:*
+        version: link:../../extensions/chat
       '@acme/ext-kit':
         specifier: workspace:*
         version: link:../../packages/ext-kit
@@ -363,7 +369,7 @@ importers:
         version: 12.40.0(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
       next:
         specifier: ^16.2.9
-        version: 16.2.9(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4)
+        version: 16.2.9(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
@@ -483,9 +489,39 @@ importers:
 
   extensions/chat:
     dependencies:
+      '@acme/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      '@acme/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@acme/ext-kit':
         specifier: workspace:*
         version: link:../../packages/ext-kit
+      '@acme/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@acme/ui-native':
+        specifier: workspace:*
+        version: link:../../packages/ui-native
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.90.8(react@19.1.4)
+      ai:
+        specifier: 'catalog:'
+        version: 6.0.194(zod@4.1.12)
+      expo-router:
+        specifier: ~6.0.13
+        version: 6.0.13(3c9fc796fa62de733b940ea72aab4b40)
+      next:
+        specifier: ^16.2.9
+        version: 16.2.9(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4)
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.12
     devDependencies:
       '@acme/eslint-config':
         specifier: workspace:*
@@ -496,12 +532,33 @@ importers:
       '@acme/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@payloadcms/db-postgres':
+        specifier: 'catalog:'
+        version: 3.85.0(@opentelemetry/api@1.9.0)(payload@3.85.0(bufferutil@4.0.8)(graphql@16.14.1)(typescript@5.9.3))
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.18.12
+      '@types/react':
+        specifier: catalog:react19
+        version: 19.1.12
       eslint:
         specifier: 'catalog:'
         version: 9.38.0(jiti@2.6.1)
+      payload:
+        specifier: 'catalog:'
+        version: 3.85.0(bufferutil@4.0.8)(graphql@16.14.1)(typescript@5.9.3)
       prettier:
         specifier: 'catalog:'
         version: 3.6.2
+      react:
+        specifier: catalog:react19
+        version: 19.1.4
+      react-native:
+        specifier: ~0.81.5
+        version: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.12)(bufferutil@4.0.8)(react@19.1.4)
+      react-native-css:
+        specifier: 3.0.1
+        version: 3.0.1(@expo/metro-config@54.0.7(bufferutil@4.0.8)(expo@54.0.20))(lightningcss@1.30.2)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.12)(bufferutil@4.0.8)(react@19.1.4))(react@19.1.4)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -12434,7 +12491,7 @@ snapshots:
       graphql-http: 1.22.4(graphql@16.14.1)
       graphql-playground-html: 1.6.30
       http-status: 2.1.0
-      next: 16.2.9(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4)
+      next: 16.2.9(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4)
       path-to-regexp: 6.3.0
       payload: 3.85.0(bufferutil@4.0.8)(graphql@16.14.1)(typescript@5.9.3)
       qs-esm: 8.0.1
@@ -12593,7 +12650,7 @@ snapshots:
       date-fns: 4.1.0
       dequal: 2.0.3
       md5: 2.3.0
-      next: 16.2.9(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4)
+      next: 16.2.9(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4)
       object-to-formdata: 4.5.1
       payload: 3.85.0(bufferutil@4.0.8)(graphql@16.14.1)(typescript@5.9.3)
       qs-esm: 8.0.1
@@ -17282,7 +17339,7 @@ snapshots:
     dependencies:
       '@babel/traverse': 7.28.5
       '@babel/traverse--for-generate-function-map': '@babel/traverse@7.29.7'
-      '@babel/types': 7.28.5
+      '@babel/types': 7.29.7
       flow-enums-runtime: 0.0.6
       invariant: 2.2.4
       metro-symbolicate: 0.83.3
@@ -17745,7 +17802,7 @@ snapshots:
       react: 19.1.4
       react-dom: 19.1.4(react@19.1.4)
 
-  next@16.2.9(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4):
+  next@16.2.9(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.77.4):
     dependencies:
       '@next/env': 16.2.9
       '@swc/helpers': 0.5.15
@@ -17754,7 +17811,7 @@ snapshots:
       postcss: 8.4.31
       react: 19.1.4
       react-dom: 19.1.4(react@19.1.4)
-      styled-jsx: 5.1.6(react@19.1.4)
+      styled-jsx: 5.1.6(@babel/core@7.29.7)(react@19.1.4)
     optionalDependencies:
       '@next/swc-darwin-arm64': 16.2.9
       '@next/swc-darwin-x64': 16.2.9
@@ -19250,10 +19307,12 @@ snapshots:
 
   structured-headers@0.4.1: {}
 
-  styled-jsx@5.1.6(react@19.1.4):
+  styled-jsx@5.1.6(@babel/core@7.29.7)(react@19.1.4):
     dependencies:
       client-only: 0.0.1
       react: 19.1.4
+    optionalDependencies:
+      '@babel/core': 7.29.7
 
   stylis@4.2.0: {}
 

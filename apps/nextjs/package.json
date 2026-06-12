@@ -22,6 +22,7 @@
     "@acme/app": "workspace:*",
     "@acme/cms": "workspace:*",
     "@acme/config": "workspace:*",
+    "@acme/ext-chat": "workspace:*",
     "@acme/ext-kit": "workspace:*",
     "@acme/ext-notifications": "workspace:*",
     "@acme/ext-reminders": "workspace:*",

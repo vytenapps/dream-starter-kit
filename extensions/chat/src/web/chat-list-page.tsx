@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { useChatThreads, useCreateThread, useDeleteThread } from "@acme/app";
+import { Button } from "@acme/ui/button";
+import { Card, CardHeader, CardTitle } from "@acme/ui/card";
 import { toast } from "@acme/ui/toast";
 
-import { Button } from "~/components/ui/button";
-import { Card, CardHeader, CardTitle } from "~/components/ui/card";
+import { useChatThreads, useCreateThread, useDeleteThread } from "../index";
 
-export default function ChatPage() {
+export function ChatListPage() {
   const router = useRouter();
   const threads = useChatThreads();
   const createThread = useCreateThread();
@@ -18,7 +18,7 @@ export default function ChatPage() {
   async function onNew() {
     try {
       const thread = await createThread.mutateAsync(undefined);
-      router.push(`/chat/${thread.id}`);
+      router.push(`/x/chat/${thread.id}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not start chat");
     }
@@ -42,7 +42,7 @@ export default function ChatPage() {
                 <CardHeader className="flex-row items-center justify-between">
                   <CardTitle className="text-base">
                     <Link
-                      href={`/chat/${thread.id}`}
+                      href={`/x/chat/${thread.id}`}
                       className="hover:underline"
                     >
                       {thread.title ?? "Untitled"}

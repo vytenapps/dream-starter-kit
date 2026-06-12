@@ -35,14 +35,6 @@ export const CORE_NAV_ITEMS: CoreNavItem[] = [
     platforms: ["native"],
   },
   {
-    key: "core:/chat",
-    label: "Chat",
-    href: "/chat",
-    icon: "IconMessageCircle",
-    order: 20,
-    platforms: ["web", "native"],
-  },
-  {
     key: "core:/billing",
     label: "Billing",
     href: "/billing",

@@ -3,7 +3,7 @@
 // Recomputed from extensions/*/extension.config.ts; a stale copy fails
 // `pnpm test` via apps/nextjs/src/ext/registry-drift.test.ts.
 import type * as React from "react";
-import { IconBell, IconClock } from "@tabler/icons-react";
+import { IconBell, IconClock, IconMessageCircle } from "@tabler/icons-react";
 
 export interface ExtInstalled {
   slug: string;
@@ -36,10 +36,12 @@ export const extInstalled: ExtInstalled[] = [
  */
 export const extNavDefaults: { web: ExtNavDefault[]; native: ExtNavDefault[] } = {
   web: [
+    { key: "ext:chat:0", extension: "chat", title: "Chat", href: "/x/chat", icon: "IconMessageCircle", order: 20 },
     { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/x/notifications", icon: "IconBell", order: 40 },
     { key: "ext:reminders:0", extension: "reminders", title: "Reminders", href: "/x/reminders", icon: "IconClock", order: 30 },
   ],
   native: [
+    { key: "ext:chat:0", extension: "chat", title: "Chat", href: "/x/chat", icon: "IconMessageCircle", order: 20 },
     { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/x/notifications", icon: "IconBell", order: 40 },
     { key: "ext:reminders:0", extension: "reminders", title: "Reminders", href: "/x/reminders", icon: "IconClock", order: 30 },
   ],
@@ -52,6 +54,7 @@ export const extWidgets: { slug: string; Widget: React.ComponentType }[] = [];
 export const extIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   IconBell: IconBell,
   IconClock: IconClock,
+  IconMessageCircle: IconMessageCircle,
 };
 
 export function hasExtension(slug: string): boolean {

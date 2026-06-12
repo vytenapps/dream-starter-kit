@@ -1,14 +1,15 @@
 import { Alert, FlatList, Pressable, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 
-import { useChatThreads, useCreateThread, useDeleteThread } from "@acme/app";
 import { Button } from "@acme/ui-native/button";
 import { Text } from "@acme/ui-native/text";
+
+import { useChatThreads, useCreateThread, useDeleteThread } from "../index";
 
 const msg = (e: unknown) =>
   e instanceof Error ? e.message : "Something went wrong";
 
-export default function ChatList() {
+export function ChatListScreen() {
   const router = useRouter();
   const threads = useChatThreads();
   const createThread = useCreateThread();
@@ -17,7 +18,7 @@ export default function ChatList() {
   async function onNew() {
     try {
       const thread = await createThread.mutateAsync(undefined);
-      router.push(`/chat/${thread.id}`);
+      router.push(`/x/chat/${thread.id}`);
     } catch (e) {
       Alert.alert("Error", msg(e));
     }
@@ -43,7 +44,7 @@ export default function ChatList() {
           <View className="border-border flex-row items-center justify-between border-b py-3">
             <Pressable
               className="flex-1"
-              onPress={() => router.push(`/chat/${item.id}`)}
+              onPress={() => router.push(`/x/chat/${item.id}`)}
             >
               <Text className="text-base">{item.title ?? "Untitled"}</Text>
             </Pressable>

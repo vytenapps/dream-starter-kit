@@ -16,7 +16,13 @@
       "kitCompat": ">=1.0.0 <2",
       "source": "local",
       "installedVia": "preinstalled",
-      "stubs": [],
+      "stubs": [
+        "apps/expo/src/app/(app)/x/chat/[threadId].tsx",
+        "apps/expo/src/app/(app)/x/chat/index.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/x/chat/[threadId]/page.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/x/chat/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/x/chat/page.tsx"
+      ],
       "edgeFunctions": []
     },
     "notifications": {

@@ -6,6 +6,8 @@ import type { CollectionConfig, Config, GlobalConfig } from "payload";
 
 import type { ExtensionSettings, ExtSeedStep } from "@acme/ext-kit/payload";
 
+import * as payload_chat from "@acme/ext-chat/payload";
+
 export interface ExtPayloadMigration {
   name: string;
   up: (args: any) => Promise<void>;
@@ -14,13 +16,19 @@ export interface ExtPayloadMigration {
 
 export const extCollections: CollectionConfig[] = [];
 
-export const extGlobals: GlobalConfig[] = [];
+export const extGlobals: GlobalConfig[] = [
+  payload_chat.settings.global,
+];
 
 export const extPlugins: NonNullable<Config["plugins"]> = [];
 
-export const extPayloadMigrations: ExtPayloadMigration[] = [];
+export const extPayloadMigrations: ExtPayloadMigration[] = [
+  ...payload_chat.migrations,
+];
 
 export const extSeedSteps: ExtSeedStep[] = [];
 
 /** slug → settings definition (admin settings screens, §1.7). */
-export const extSettings: Record<string, ExtensionSettings> = {};
+export const extSettings: Record<string, ExtensionSettings> = {
+  "chat": payload_chat.settings,
+};

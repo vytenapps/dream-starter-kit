@@ -4,17 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-import { useSendMessage, useThreadMessages } from "@acme/app";
 import { cn } from "@acme/ui";
+import { Button } from "@acme/ui/button";
+import { Input } from "@acme/ui/input";
 import { toast } from "@acme/ui/toast";
 
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
+import { useSendMessage, useThreadMessages } from "../index";
 
-export default function ChatThreadPage() {
-  const { id } = useParams<{ id: string }>();
-  const messages = useThreadMessages(id);
-  const send = useSendMessage(id);
+export function ChatThreadPage() {
+  const { threadId } = useParams<{ threadId: string }>();
+  const messages = useThreadMessages(threadId);
+  const send = useSendMessage(threadId);
   const [input, setInput] = useState("");
 
   async function onSend(e: React.FormEvent) {
@@ -31,7 +31,7 @@ export default function ChatThreadPage() {
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col p-4">
-      <Link href="/chat" className="text-muted-foreground text-sm">
+      <Link href="/x/chat" className="text-muted-foreground text-sm">
         ← Chats
       </Link>
 

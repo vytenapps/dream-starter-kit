@@ -98,7 +98,7 @@ export function useSendMessage(threadId: string, apiBaseUrl = "") {
       } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const res = await fetch(`${apiBaseUrl}/api/chat`, {
+      const res = await fetch(`${apiBaseUrl}/api/ext/chat/stream`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
