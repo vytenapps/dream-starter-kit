@@ -1,0 +1,4 @@
+# Extension framework outputs, regenerated wholesale by `pnpm ext sync` —
+# machine-owned, never hand-edited.
+src/ext/*.generated.ts
+src/app/(app)/x/

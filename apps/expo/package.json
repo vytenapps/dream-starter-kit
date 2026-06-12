@@ -11,13 +11,21 @@
     "ios": "expo run:ios",
     "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path .prettierignore",
     "lint": "eslint --flag unstable_native_nodejs_ts_config",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "smoke:export": "expo export --platform ios --output-dir .cache/expo-export"
   },
   "dependencies": {
     "@acme/api": "workspace:*",
     "@acme/app": "workspace:*",
     "@acme/cms": "workspace:*",
     "@acme/config": "workspace:*",
+    "@acme/ext-billing": "workspace:*",
+    "@acme/ext-chat": "workspace:*",
+    "@acme/ext-dashboard": "workspace:*",
+    "@acme/ext-kit": "workspace:*",
+    "@acme/ext-notifications": "workspace:*",
+    "@acme/ext-reminders": "workspace:*",
+    "@acme/ui-native": "workspace:*",
     "@hookform/resolvers": "catalog:",
     "@legendapp/list": "^2.0.14",
     "@react-native-async-storage/async-storage": "catalog:",

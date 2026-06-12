@@ -4,11 +4,14 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./badge": "./src/badge.tsx",
     "./button": "./src/button.tsx",
+    "./card": "./src/card.tsx",
     "./dropdown-menu": "./src/dropdown-menu.tsx",
     "./field": "./src/field.tsx",
     "./input": "./src/input.tsx",
     "./label": "./src/label.tsx",
+    "./select": "./src/select.tsx",
     "./separator": "./src/separator.tsx",
     "./theme": "./src/theme.tsx",
     "./toast": "./src/toast.tsx"
@@ -24,6 +27,7 @@
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",
     "class-variance-authority": "^0.7.1",
+    "lucide-react": "^1.17.0",
     "radix-ui": "^1.4.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1"

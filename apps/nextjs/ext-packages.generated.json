@@ -1,0 +1,7 @@
+[
+  "@acme/ext-billing",
+  "@acme/ext-chat",
+  "@acme/ext-dashboard",
+  "@acme/ext-notifications",
+  "@acme/ext-reminders"
+]

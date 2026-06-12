@@ -1,0 +1,163 @@
+# Extension operations (docs/EXTENSIONS-PLAN.md §6): the admin panel (and a
+# daily schedule) dispatch this workflow; it runs the SAME `pnpm ext` CLI a
+# developer would, pushes a branch and opens a labeled PR. Everything an
+# extension ships is therefore visible as a reviewable diff and gated by the
+# full CI before it can run — zip installs included, never a direct commit.
+#
+# Auth: a fine-grained PAT in the `EXT_OPS_TOKEN` repo secret (contents:write,
+# pull-requests:write, workflows:read). Pushes by the default GITHUB_TOKEN
+# would not trigger the `pull_request` CI run.
+name: Extension ops
+
+on:
+  workflow_dispatch:
+    inputs:
+      op:
+        description: add | update | remove
+        required: true
+        type: choice
+        options: [add, update, remove]
+      source:
+        description: "add: GitHub url[#vX.Y.Z] or signed zip URL"
+        required: false
+        type: string
+      slug:
+        description: "update/remove: extension slug"
+        required: false
+        type: string
+      version:
+        description: "update: target version (vX.Y.Z; empty = latest)"
+        required: false
+        type: string
+      keep_data:
+        description: "remove: keep tables (skip the drop migration)"
+        required: false
+        default: "false"
+        type: string
+      sha256:
+        description: "zip installs: hash the runner re-verifies"
+        required: false
+        type: string
+  schedule:
+    # Daily update check (EXT_AUTO_UPDATE=off repo variable disables it).
+    - cron: "23 6 * * *"
+
+concurrency:
+  group: extension-ops
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  op:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.EXT_OPS_TOKEN }}
+          fetch-depth: 0
+      - name: Fetch pristine-base refs
+        run: git fetch origin '+refs/ext-base/*:refs/ext-base/*' || true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download zip (verified)
+        if: inputs.op == 'add' && startsWith(inputs.source, 'http') && contains(inputs.source, 'extension-uploads')
+        id: zip
+        run: |
+          curl -sSfL "${{ inputs.source }}" -o /tmp/ext.zip
+          echo "${{ inputs.sha256 }}  /tmp/ext.zip" | sha256sum -c -
+          echo "path=/tmp/ext.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Run the CLI
+        id: cli
+        run: |
+          set -euo pipefail
+          case "${{ inputs.op }}" in
+            add)
+              SRC="${{ steps.zip.outputs.path || inputs.source }}"
+              pnpm ext add "$SRC" | tee /tmp/ext-op.log
+              ;;
+            update)
+              ARGS=()
+              [ -n "${{ inputs.version }}" ] && ARGS+=(--to "${{ inputs.version }}")
+              pnpm ext update "${{ inputs.slug }}" "${ARGS[@]}" | tee /tmp/ext-op.log || echo "conflicts=true" >> "$GITHUB_OUTPUT"
+              ;;
+            remove)
+              ARGS=()
+              [ "${{ inputs.keep_data }}" = "true" ] && ARGS+=(--keep-data)
+              pnpm ext remove "${{ inputs.slug }}" "${ARGS[@]}" | tee /tmp/ext-op.log
+              ;;
+          esac
+          pnpm db:gen-types || true
+          pnpm cms:gen-types || true
+          pnpm typecheck
+
+      - name: Path confinement check
+        run: |
+          # The op may only touch extensions/**, the known sync outputs and
+          # lockfiles — an extension can't smuggle a modified proxy.ts or
+          # workflow into the PR (EXTENSIONS-PLAN.md §7).
+          git add -A
+          BAD=$(git diff --cached --name-only | grep -vE '^(extensions/|extensions\.lock|pnpm-lock\.yaml|\.env\.example|supabase/(migrations|functions)/|apps/nextjs/(ext-packages\.generated\.json|src/(ext/|payload/migrations/|app/\(frontend\)/.*x/|app/\(frontend\)/\(app\)/(a|billing)/|app/\(frontend\)/\(public\)/pricing/))|apps/expo/src/(ext/|app/\(app\)/)|packages/(api|cms)/src/)' || true)
+          if [ -n "$BAD" ]; then
+            echo "Files outside the allowlist were modified:"; echo "$BAD"; exit 1
+          fi
+
+      - name: Push branch + open PR
+        env:
+          GH_TOKEN: ${{ secrets.EXT_OPS_TOKEN }}
+        run: |
+          BRANCH="ext/${{ inputs.op }}-${{ inputs.slug || 'new' }}-${{ github.run_id }}"
+          git config user.name "extension-ops"
+          git config user.email "extension-ops@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git commit -m "chore(ext): ${{ inputs.op }} ${{ inputs.slug || inputs.source }}"
+          git push -u origin "$BRANCH"
+          git push origin 'refs/ext-base/*:refs/ext-base/*' || true
+          LABEL="extension-op"
+          BODY="Automated \`pnpm ext ${{ inputs.op }}\` run. Review the full diff — installed extension code runs server-side with env access (see docs/EXTENSIONS-PLAN.md §7)."
+          if [ "${{ inputs.op }}" = "remove" ]; then
+            BODY="$BODY"$'\n\n'"⚠️ DATA LOSS: this PR includes a drop migration for the extension's tables (unless --keep-data). It never auto-merges."
+          fi
+          if grep -q "registers a Payload plugin\|hasPlugins: true" extensions/*/extension.config.ts 2>/dev/null; then
+            BODY="$BODY"$'\n\n'"Note: an installed extension registers a Payload plugin (the widest extension power)."
+          fi
+          PR_URL=$(gh pr create --title "ext: ${{ inputs.op }} ${{ inputs.slug || inputs.source }}" --body "$BODY" --label "$LABEL" || true)
+          # Auto-merge installs/updates when allowed (never removals).
+          if [ "${{ inputs.op }}" != "remove" ] && [ "${{ vars.EXT_AUTO_MERGE || 'on' }}" = "on" ] && [ -n "$PR_URL" ]; then
+            gh pr merge --squash --auto "$PR_URL" || true
+          fi
+
+  schedule:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.EXT_OPS_TOKEN }}
+          fetch-depth: 0
+      - name: Skip when auto-update is off
+        if: vars.EXT_AUTO_UPDATE == 'off'
+        run: echo "EXT_AUTO_UPDATE=off — skipping" && exit 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Dispatch updates for outdated extensions
+        env:
+          GH_TOKEN: ${{ secrets.EXT_OPS_TOKEN }}
+        run: |
+          pnpm --silent ext status --json > /tmp/status.json || exit 0
+          for slug in $(jq -r '.[] | select(.updateAvailable) | .slug' /tmp/status.json); do
+            gh workflow run extension-ops.yml -f op=update -f slug="$slug"
+          done

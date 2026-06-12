@@ -2,8 +2,7 @@ import { FlatList, Pressable, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 
 import { usePosts } from "@acme/app";
-
-import { Text } from "~/components/ui/text";
+import { Text } from "@acme/ui-native/text";
 
 export default function PostsList() {
   const router = useRouter();

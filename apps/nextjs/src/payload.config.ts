@@ -4,12 +4,17 @@ import { postgresAdapter } from "@payloadcms/db-postgres";
 import { formBuilderPlugin } from "@payloadcms/plugin-form-builder";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { seoPlugin } from "@payloadcms/plugin-seo";
-import { stripePlugin } from "@payloadcms/plugin-stripe";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
+import {
+  extCollections,
+  extGlobals,
+  extPayloadMigrations,
+  extPlugins,
+} from "./ext/registry.payload.generated";
 import { resolveCmsCredentials } from "./lib/cms/derived-credentials";
 import { pgConnectionOptions } from "./lib/db/bootstrap-core";
 import { isStaff } from "./payload/access";
@@ -19,35 +24,32 @@ import { Categories } from "./payload/collections/Categories";
 import { Comments } from "./payload/collections/Comments";
 import { CommunityPosts } from "./payload/collections/CommunityPosts";
 import { CommunitySpaces } from "./payload/collections/CommunitySpaces";
-import { Coupons } from "./payload/collections/Coupons";
 import { DeviceTokens } from "./payload/collections/DeviceTokens";
 import { Enrollments } from "./payload/collections/Enrollments";
 import { Events } from "./payload/collections/Events";
 import { Favorites } from "./payload/collections/Favorites";
 import { FeedTokens } from "./payload/collections/FeedTokens";
+import { KitExtensions } from "./payload/collections/KitExtensions";
 import { Lessons } from "./payload/collections/Lessons";
 import { Locations } from "./payload/collections/Locations";
 import { Media } from "./payload/collections/Media";
+import { NavItems } from "./payload/collections/NavItems";
 import { Notifications } from "./payload/collections/Notifications";
 import { Onboarding } from "./payload/collections/Onboarding";
 import { Pages } from "./payload/collections/Pages";
 import { Photos } from "./payload/collections/Photos";
-import { Plans } from "./payload/collections/Plans";
 import { Posts } from "./payload/collections/Posts";
 import { Reports } from "./payload/collections/Reports";
 import { Reviews } from "./payload/collections/Reviews";
 import { Series } from "./payload/collections/Series";
 import { SpaceGroups } from "./payload/collections/SpaceGroups";
-import { Subscriptions } from "./payload/collections/Subscriptions";
 import { TagGroups, Tags } from "./payload/collections/Tags";
 import { Users } from "./payload/collections/Users";
 import { Videos } from "./payload/collections/Videos";
-import { PricingSettings } from "./payload/globals/PricingSettings";
 import { ProfileFields } from "./payload/globals/ProfileFields";
 import { SiteSettings } from "./payload/globals/SiteSettings";
 import { ThemeSettings } from "./payload/globals/ThemeSettings";
 import { migrations } from "./payload/migrations";
-import { syncSubscriptionFromStripe } from "./payload/stripe/webhooks";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -110,6 +112,15 @@ export default buildConfig({
       // default logout can't end the session. Replace it with one that signs out
       // of Supabase and returns to the host root. See payload/components/LogoutButton.tsx.
       logout: { Button: "~/payload/components/LogoutButton#LogoutButton" },
+      // /admin/extensions — install/update/remove extensions (catalog, GitHub
+      // URL, zip upload) by dispatching the extension-ops workflow. See
+      // payload/components/ExtensionsView.tsx (EXTENSIONS-PLAN.md §6).
+      views: {
+        extensions: {
+          Component: "~/payload/components/ExtensionsView#ExtensionsView",
+          path: "/extensions",
+        },
+      },
     },
   },
   // Admin at /admin; REST API moved OFF /api to /cms-api so it never collides
@@ -145,17 +156,24 @@ export default buildConfig({
     CommunityPosts,
     Comments,
     Reports,
-    // Commerce
-    Plans,
-    Coupons,
-    Subscriptions,
     // Marketing
     Pages,
     Onboarding,
     Banners,
     Notifications,
+    // Extensions (framework-owned: install registry + CMS-driven menu)
+    KitExtensions,
+    NavItems,
+    // Installed extensions' collections (generated registry — `pnpm ext sync`)
+    ...extCollections,
   ],
-  globals: [SiteSettings, ThemeSettings, PricingSettings, ProfileFields],
+  globals: [
+    SiteSettings,
+    ThemeSettings,
+    ProfileFields,
+    // Installed extensions' globals incl. their settings screens (§1.7)
+    ...extGlobals,
+  ],
   // One shared, cross-collection folder tree ("Browse by Folder") for the
   // collections that enable `folders: true`.
   folders: { browseByFolder: true },
@@ -206,7 +224,11 @@ export default buildConfig({
     // the cms.payload_migrations ledger). After changing a collection, regenerate
     // with `pnpm cms:migrate:create` and commit the new file in payload/migrations.
     push: process.env.NODE_ENV !== "production",
-    prodMigrations: migrations,
+    // Core + extension migrations merged by timestamp prefix; Payload's
+    // cms.payload_migrations ledger keys by name, so boot runs stay idempotent.
+    prodMigrations: [...migrations, ...extPayloadMigrations].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    ),
     migrationDir: path.resolve(dirname, "payload/migrations"),
   }),
   sharp,
@@ -249,28 +271,6 @@ export default buildConfig({
     nestedDocsPlugin({
       collections: ["categories", "pages", "space-groups"],
     }),
-    // Stripe: the plugin provides the signed webhook endpoint
-    // (POST /cms-api/stripe/webhooks) that mirrors subscriptions into the CMS
-    // (payload/stripe/webhooks.ts). NO declarative `sync` config on purpose —
-    // it can't express immutable price recreate-and-archive or intro coupons,
-    // so plans/coupons sync via their afterChange hooks instead
-    // (payload/hooks/sync-*-to-stripe.ts). The REST proxy stays off.
-    stripePlugin({
-      // Placeholder when unconfigured: webhook SIGNATURE verification only
-      // needs the endpoint secret, but stripe v22's constructor rejects an
-      // empty key outright. API calls with the placeholder fail loudly (and
-      // the mirror handler catches its optional customer lookup).
-      stripeSecretKey:
-        process.env.STRIPE_SECRET_KEY ?? "sk_test_unconfigured_placeholder",
-      isTestKey: (process.env.STRIPE_SECRET_KEY ?? "").startsWith("sk_test"),
-      stripeWebhooksEndpointSecret: process.env.STRIPE_WEBHOOKS_ENDPOINT_SECRET,
-      rest: false,
-      webhooks: {
-        "customer.subscription.created": syncSubscriptionFromStripe,
-        "customer.subscription.updated": syncSubscriptionFromStripe,
-        "customer.subscription.deleted": syncSubscriptionFromStripe,
-      },
-    }),
     formBuilderPlugin({
       fields: {
         text: true,
@@ -291,5 +291,9 @@ export default buildConfig({
         access: { read: isStaff, delete: isStaff },
       },
     }),
+    // Plugins registered by installed extensions (generated registry). A
+    // plugin can mutate the whole Payload config — the widest extension
+    // power; install PRs flag it prominently (EXTENSIONS-PLAN.md §3.2).
+    ...extPlugins,
   ],
 });

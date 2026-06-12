@@ -189,6 +189,13 @@ jobs:
       - name: RLS isolation regression
         run: pnpm test:rls
 
+      # Bundle-safety backstop for the extension framework (EXTENSIONS-PLAN.md
+      # §1.6): bundling the native app fails if any server-only import (the
+      # `server-only` / payload poison pills) leaks into the Metro graph —
+      # e.g. via a bad import in a third-party extension's client barrel.
+      - name: Expo export smoke check (native graph stays server-free)
+        run: pnpm -F @acme/expo smoke:export
+
       # NOTE: the CMS is intentionally NOT pre-seeded here. Payload's dev push
       # (NODE_ENV!=production) creates the cms tables on boot, and the Playwright
       # `setup` project (founder.setup.ts) seeds demo content by signing up the

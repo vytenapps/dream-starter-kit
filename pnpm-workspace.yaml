@@ -2,6 +2,7 @@ packages:
   - apps/*
   - packages/*
   - tooling/*
+  - extensions/*
 
 catalog:
   '@eslint/js': ^9.38.0

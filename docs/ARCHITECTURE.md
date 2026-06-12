@@ -67,7 +67,9 @@ dream-starter-kit/
 ├─ supabase/
 │  ├─ migrations/            # SQL schema + RLS policies (implements ERD.md) — ships as ONE baseline migration
 │  ├─ payload/               # 00_cms_role.sql — provisions the `cms` schema + payload_cms role
-│  ├─ functions/             # edge functions: stripe-webhook, delete-account, process-reminders
+│  ├─ functions/             # edge functions: billing-stripe-webhook, delete-account, reminders-process
+│  ─ (extensions/<slug>/ vendor their own supabase/ + src/; `pnpm ext sync`
+│     materializes migrations/functions here — see docs/EXTENSIONS.md)
 │  ├─ seed.sql               # ships EMPTY (first signup becomes the founder); add your own demo rows
 │  └─ config.toml            # local stack + auth configuration
 ├─ tooling/                  # eslint, prettier, tailwind, tsconfig, rls-tests, web-e2e, CI setup, scripts
@@ -149,10 +151,10 @@ orgs, billing, engagement, files/storage, chat, CMS staff flag); your features
 extend it with **new** migrations (append-only — never edit a shipped one).
 
 Three edge functions run server-side with the service-role key:
-- **`stripe-webhook`** — verifies Stripe signatures and syncs billing state.
+- **`billing-stripe-webhook`** — verifies Stripe signatures and syncs billing state.
 - **`delete-account`** — verifies the caller, then deletes their auth user
   (the database cascades clean-up) and cancels any live Stripe subscription.
-- **`process-reminders`** — a scheduled job that turns due reminders into
+- **`reminders-process`** — a scheduled job that turns due reminders into
   notifications and push messages.
 
 ### 4.6 Security model (the non-negotiables)
@@ -188,7 +190,7 @@ into the read-only CMS **`subscriptions`** collection. The plugin's Stripe REST
 proxy stays **off** (`rest: false`) and its declarative sync is unused — it can't
 express price immutability or intro coupons, so the hooks own Payload → Stripe.
 
-The `stripe-webhook` **edge function** (signature-verified, idempotent — a
+The `billing-stripe-webhook` **edge function** (signature-verified, idempotent — a
 separate Stripe endpoint with `STRIPE_WEBHOOK_SECRET`) keeps mirroring the
 product/price catalog and subscription status into the RLS-governed `public.*`
 tables for app clients. So: **Payload → Stripe** via hooks; **Stripe → CMS
@@ -223,7 +225,7 @@ tables. The mobile app calls the same route.
 
 In-app notifications and reminders are ordinary RLS-protected tables with shared
 hooks and web + native screens. The native app registers an Expo push token; the
-`process-reminders` edge function (run on a schedule) finds due reminders and
+`reminders-process` edge function (run on a schedule) finds due reminders and
 sends notifications + push. A web notification bell and a native header bell
 surface unread items.
 

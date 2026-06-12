@@ -90,13 +90,15 @@ export interface Config {
     "community-posts": CommunityPost;
     comments: Comment;
     reports: Report;
-    plans: Plan;
-    coupons: Coupon;
-    subscriptions: Subscription;
     pages: Page;
     onboarding: Onboarding;
     banners: Banner;
     notifications: Notification;
+    "kit-extensions": KitExtension;
+    "nav-items": NavItem;
+    "ext-billing-plans": ExtBillingPlan;
+    "ext-billing-coupons": ExtBillingCoupon;
+    "ext-billing-subscriptions": ExtBillingSubscription;
     forms: Form;
     "form-submissions": FormSubmission;
     "payload-kv": PayloadKv;
@@ -108,7 +110,7 @@ export interface Config {
   };
   collectionsJoins: {
     users: {
-      subscriptions: "subscriptions";
+      subscriptions: "ext-billing-subscriptions";
       favorites: "favorites";
       enrollments: "enrollments";
       devices: "device-tokens";
@@ -138,8 +140,8 @@ export interface Config {
     comments: {
       replies: "comments";
     };
-    plans: {
-      subscriptions: "subscriptions";
+    "ext-billing-plans": {
+      subscriptions: "ext-billing-subscriptions";
     };
     "payload-folders": {
       documentsAndFolders:
@@ -181,13 +183,21 @@ export interface Config {
     "community-posts": CommunityPostsSelect<false> | CommunityPostsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
     reports: ReportsSelect<false> | ReportsSelect<true>;
-    plans: PlansSelect<false> | PlansSelect<true>;
-    coupons: CouponsSelect<false> | CouponsSelect<true>;
-    subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     onboarding: OnboardingSelect<false> | OnboardingSelect<true>;
     banners: BannersSelect<false> | BannersSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
+    "kit-extensions": KitExtensionsSelect<false> | KitExtensionsSelect<true>;
+    "nav-items": NavItemsSelect<false> | NavItemsSelect<true>;
+    "ext-billing-plans":
+      | ExtBillingPlansSelect<false>
+      | ExtBillingPlansSelect<true>;
+    "ext-billing-coupons":
+      | ExtBillingCouponsSelect<false>
+      | ExtBillingCouponsSelect<true>;
+    "ext-billing-subscriptions":
+      | ExtBillingSubscriptionsSelect<false>
+      | ExtBillingSubscriptionsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     "form-submissions":
       | FormSubmissionsSelect<false>
@@ -212,16 +222,20 @@ export interface Config {
   globals: {
     "site-settings": SiteSetting;
     "theme-settings": ThemeSetting;
-    "pricing-settings": PricingSetting;
     "profile-fields": ProfileField;
+    "ext-billing-settings": ExtBillingSetting;
+    "ext-chat-settings": ExtChatSetting;
   };
   globalsSelect: {
     "site-settings": SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     "theme-settings": ThemeSettingsSelect<false> | ThemeSettingsSelect<true>;
-    "pricing-settings":
-      | PricingSettingsSelect<false>
-      | PricingSettingsSelect<true>;
     "profile-fields": ProfileFieldsSelect<false> | ProfileFieldsSelect<true>;
+    "ext-billing-settings":
+      | ExtBillingSettingsSelect<false>
+      | ExtBillingSettingsSelect<true>;
+    "ext-chat-settings":
+      | ExtChatSettingsSelect<false>
+      | ExtChatSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -430,7 +444,7 @@ export interface User {
   lastActiveAt?: string | null;
   stripeCustomerID?: string | null;
   subscriptions?: {
-    docs?: (number | Subscription)[];
+    docs?: (number | ExtBillingSubscription)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
@@ -925,7 +939,7 @@ export interface CommunitySpace {
   /**
    * Plans that unlock a premium space.
    */
-  requiredPlans?: (number | Plan)[] | null;
+  requiredPlans?: (number | ExtBillingPlan)[] | null;
   postingPolicy: "members" | "moderators" | "admins";
   moderators?: (number | User)[] | null;
   /**
@@ -961,7 +975,7 @@ export interface SpaceGroup {
   /**
    * Plans that unlock this group.
    */
-  requiredPlans?: (number | Plan)[] | null;
+  requiredPlans?: (number | ExtBillingPlan)[] | null;
   /**
    * Sidebar order within the parent.
    */
@@ -988,9 +1002,9 @@ export interface SpaceGroup {
  * Plans sync to Stripe automatically on save. Stripe prices are immutable, so changing the amount creates a new price and archives the old one.
  *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plans".
+ * via the `definition` "ext-billing-plans".
  */
-export interface Plan {
+export interface ExtBillingPlan {
   id: number;
   name: string;
   active?: boolean | null;
@@ -1060,7 +1074,7 @@ export interface Plan {
   syncError?: string | null;
   lastSyncedAt?: string | null;
   subscriptions?: {
-    docs?: (number | Subscription)[];
+    docs?: (number | ExtBillingSubscription)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
@@ -1071,13 +1085,13 @@ export interface Plan {
  * Read-only mirror written by the Stripe webhook. Manage billing in Stripe; author the catalog under Plans.
  *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "subscriptions".
+ * via the `definition` "ext-billing-subscriptions".
  */
-export interface Subscription {
+export interface ExtBillingSubscription {
   id: number;
   user?: (number | null) | User;
-  plan?: (number | null) | Plan;
-  coupon?: (number | null) | Coupon;
+  plan?: (number | null) | ExtBillingPlan;
+  coupon?: (number | null) | ExtBillingCoupon;
   status:
     | "trialing"
     | "active"
@@ -1105,9 +1119,9 @@ export interface Subscription {
  * Discounts synced to Stripe on save. Changing amount/duration creates a new Stripe coupon (they're immutable) and archives the old one.
  *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "coupons".
+ * via the `definition` "ext-billing-coupons".
  */
-export interface Coupon {
+export interface ExtBillingCoupon {
   id: number;
   name: string;
   discountType: "percent_off" | "amount_off";
@@ -1142,7 +1156,7 @@ export interface Coupon {
   /**
    * Restrict to specific plans (empty = applies to all).
    */
-  appliesTo?: (number | Plan)[] | null;
+  appliesTo?: (number | ExtBillingPlan)[] | null;
   /**
    * Optional customer-facing code (e.g. LAUNCH20). Created as a Stripe promotion code on sync. Leave blank for a code-less coupon.
    */
@@ -1530,7 +1544,7 @@ export interface Series {
   /**
    * Plans that unlock this show/course (premium gating).
    */
-  requiredPlans?: (number | Plan)[] | null;
+  requiredPlans?: (number | ExtBillingPlan)[] | null;
   displayOrder?: number | null;
   featured?: boolean | null;
   podcast?: {
@@ -2289,7 +2303,7 @@ export interface Enrollment {
   /**
    * When access comes from a plan.
    */
-  subscription?: (number | null) | Subscription;
+  subscription?: (number | null) | ExtBillingSubscription;
   progress?:
     | {
         lesson: number | Lesson;
@@ -2583,6 +2597,56 @@ export interface Notification {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
+}
+/**
+ * Installed extensions. Disabling hides an extension's menu items and 404s its pages and API at runtime without uninstalling it.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "kit-extensions".
+ */
+export interface KitExtension {
+  id: number;
+  slug: string;
+  name: string;
+  /**
+   * Mirrored from the bundled extensions.lock at boot.
+   */
+  version: string;
+  /**
+   * Uncheck to hide this extension from menus and block its pages/API. Code stays deployed; re-enable any time.
+   */
+  enabled?: boolean | null;
+  /**
+   * The app shell depends on this extension's mounts (e.g. the home screen) — disabling it will break core navigation.
+   */
+  system?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * The app menu (web sidebar + native home). Drag to reorder; rename, change icons, or toggle items. New extensions add their entries here automatically on install.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nav-items".
+ */
+export interface NavItem {
+  id: number;
+  _order?: string | null;
+  key: string;
+  /**
+   * Empty for core entries.
+   */
+  extension?: (number | null) | KitExtension;
+  label: string;
+  href: string;
+  /**
+   * Icon name from the kit's icon map (e.g. IconMessageCircle). Unknown names fall back to a default icon.
+   */
+  icon?: string | null;
+  platforms?: ("web" | "native")[] | null;
+  enabled?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2985,18 +3049,6 @@ export interface PayloadLockedDocument {
         value: number | Report;
       } | null)
     | ({
-        relationTo: "plans";
-        value: number | Plan;
-      } | null)
-    | ({
-        relationTo: "coupons";
-        value: number | Coupon;
-      } | null)
-    | ({
-        relationTo: "subscriptions";
-        value: number | Subscription;
-      } | null)
-    | ({
         relationTo: "pages";
         value: number | Page;
       } | null)
@@ -3011,6 +3063,26 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: "notifications";
         value: number | Notification;
+      } | null)
+    | ({
+        relationTo: "kit-extensions";
+        value: number | KitExtension;
+      } | null)
+    | ({
+        relationTo: "nav-items";
+        value: number | NavItem;
+      } | null)
+    | ({
+        relationTo: "ext-billing-plans";
+        value: number | ExtBillingPlan;
+      } | null)
+    | ({
+        relationTo: "ext-billing-coupons";
+        value: number | ExtBillingCoupon;
+      } | null)
+    | ({
+        relationTo: "ext-billing-subscriptions";
+        value: number | ExtBillingSubscription;
       } | null)
     | ({
         relationTo: "forms";
@@ -3901,102 +3973,6 @@ export interface ReportsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plans_select".
- */
-export interface PlansSelect<T extends boolean = true> {
-  name?: T;
-  active?: T;
-  slug?: T;
-  description?: T;
-  pricingType?: T;
-  interval?: T;
-  intervalCount?: T;
-  unitAmount?: T;
-  currency?: T;
-  trialDays?: T;
-  introOffer?:
-    | T
-    | {
-        enabled?: T;
-        introAmount?: T;
-        introInterval?: T;
-        introPeriods?: T;
-      };
-  entitlement?: T;
-  features?:
-    | T
-    | {
-        text?: T;
-        included?: T;
-        id?: T;
-      };
-  badge?: T;
-  highlighted?: T;
-  displayOrder?: T;
-  skipSync?: T;
-  stripeProductId?: T;
-  stripePriceId?: T;
-  stripeIntroCouponId?: T;
-  syncStatus?: T;
-  syncError?: T;
-  lastSyncedAt?: T;
-  subscriptions?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "coupons_select".
- */
-export interface CouponsSelect<T extends boolean = true> {
-  name?: T;
-  discountType?: T;
-  value?: T;
-  currency?: T;
-  duration?: T;
-  durationCount?: T;
-  durationUnit?: T;
-  maxRedemptions?: T;
-  redeemBy?: T;
-  minimumAmount?: T;
-  timesRedeemed?: T;
-  active?: T;
-  appliesTo?: T;
-  code?: T;
-  isWelcomeOffer?: T;
-  skipSync?: T;
-  stripeCouponId?: T;
-  stripePromotionCodeId?: T;
-  syncStatus?: T;
-  syncError?: T;
-  lastSyncedAt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "subscriptions_select".
- */
-export interface SubscriptionsSelect<T extends boolean = true> {
-  user?: T;
-  plan?: T;
-  coupon?: T;
-  status?: T;
-  startedAt?: T;
-  trialEndsAt?: T;
-  currentPeriodStart?: T;
-  currentPeriodEnd?: T;
-  cancelAtPeriodEnd?: T;
-  canceledAt?: T;
-  lastPaymentAt?: T;
-  lastPaymentAmount?: T;
-  stripeSubscriptionID?: T;
-  stripeCustomerID?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages_select".
  */
 export interface PagesSelect<T extends boolean = true> {
@@ -4249,6 +4225,131 @@ export interface NotificationsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "kit-extensions_select".
+ */
+export interface KitExtensionsSelect<T extends boolean = true> {
+  slug?: T;
+  name?: T;
+  version?: T;
+  enabled?: T;
+  system?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nav-items_select".
+ */
+export interface NavItemsSelect<T extends boolean = true> {
+  _order?: T;
+  key?: T;
+  extension?: T;
+  label?: T;
+  href?: T;
+  icon?: T;
+  platforms?: T;
+  enabled?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-billing-plans_select".
+ */
+export interface ExtBillingPlansSelect<T extends boolean = true> {
+  name?: T;
+  active?: T;
+  slug?: T;
+  description?: T;
+  pricingType?: T;
+  interval?: T;
+  intervalCount?: T;
+  unitAmount?: T;
+  currency?: T;
+  trialDays?: T;
+  introOffer?:
+    | T
+    | {
+        enabled?: T;
+        introAmount?: T;
+        introInterval?: T;
+        introPeriods?: T;
+      };
+  entitlement?: T;
+  features?:
+    | T
+    | {
+        text?: T;
+        included?: T;
+        id?: T;
+      };
+  badge?: T;
+  highlighted?: T;
+  displayOrder?: T;
+  skipSync?: T;
+  stripeProductId?: T;
+  stripePriceId?: T;
+  stripeIntroCouponId?: T;
+  syncStatus?: T;
+  syncError?: T;
+  lastSyncedAt?: T;
+  subscriptions?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-billing-coupons_select".
+ */
+export interface ExtBillingCouponsSelect<T extends boolean = true> {
+  name?: T;
+  discountType?: T;
+  value?: T;
+  currency?: T;
+  duration?: T;
+  durationCount?: T;
+  durationUnit?: T;
+  maxRedemptions?: T;
+  redeemBy?: T;
+  minimumAmount?: T;
+  timesRedeemed?: T;
+  active?: T;
+  appliesTo?: T;
+  code?: T;
+  isWelcomeOffer?: T;
+  skipSync?: T;
+  stripeCouponId?: T;
+  stripePromotionCodeId?: T;
+  syncStatus?: T;
+  syncError?: T;
+  lastSyncedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-billing-subscriptions_select".
+ */
+export interface ExtBillingSubscriptionsSelect<T extends boolean = true> {
+  user?: T;
+  plan?: T;
+  coupon?: T;
+  status?: T;
+  startedAt?: T;
+  trialEndsAt?: T;
+  currentPeriodStart?: T;
+  currentPeriodEnd?: T;
+  cancelAtPeriodEnd?: T;
+  canceledAt?: T;
+  lastPaymentAt?: T;
+  lastPaymentAmount?: T;
+  stripeSubscriptionID?: T;
+  stripeCustomerID?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -4902,52 +5003,6 @@ export interface ThemeSetting {
   createdAt?: string | null;
 }
 /**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "pricing-settings".
- */
-export interface PricingSetting {
-  id: number;
-  heading?: string | null;
-  showFreeTier?: boolean | null;
-  subheading?: string | null;
-  /**
-   * Which billing cadence the pricing page preselects.
-   */
-  billingToggleDefault?: ("monthly" | "annual") | null;
-  /**
-   * Pick up to three paid plans to feature, in display order. Empty = all active plans by display order.
-   */
-  featuredPlans?: (number | Plan)[] | null;
-  freeTier?: {
-    name?: string | null;
-    description?: string | null;
-    ctaLabel?: string | null;
-    /**
-     * Where the Free tier CTA goes (defaults to /sign-up).
-     */
-    link?: {
-      /**
-       * Internal path (e.g. /pricing) or full external URL (https://example.com).
-       */
-      url?: string | null;
-      newTab?: boolean | null;
-    };
-    features?:
-      | {
-          text: string;
-          included?: boolean | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  /**
-   * Fine print shown under the pricing grid.
-   */
-  disclaimer?: string | null;
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
  * Custom member profile fields stored in users.customFields.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -4985,6 +5040,69 @@ export interface ProfileField {
         id?: string | null;
       }[]
     | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-billing-settings".
+ */
+export interface ExtBillingSetting {
+  id: number;
+  heading?: string | null;
+  showFreeTier?: boolean | null;
+  subheading?: string | null;
+  /**
+   * Which billing cadence the pricing page preselects.
+   */
+  billingToggleDefault?: ("monthly" | "annual") | null;
+  /**
+   * Pick up to three paid plans to feature, in display order. Empty = all active plans by display order.
+   */
+  featuredPlans?: (number | ExtBillingPlan)[] | null;
+  freeTier?: {
+    name?: string | null;
+    description?: string | null;
+    ctaLabel?: string | null;
+    /**
+     * Where the Free tier CTA goes (defaults to /sign-up).
+     */
+    link?: {
+      /**
+       * Internal path (e.g. /pricing) or full external URL (https://example.com).
+       */
+      url?: string | null;
+      newTab?: boolean | null;
+    };
+    features?:
+      | {
+          text: string;
+          included?: boolean | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Fine print shown under the pricing grid.
+   */
+  disclaimer?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-chat-settings".
+ */
+export interface ExtChatSetting {
+  id: number;
+  /**
+   * The assistant's system prompt.
+   */
+  systemPrompt?: string | null;
+  /**
+   * How many prior messages of a thread are sent to the model.
+   */
+  maxHistoryMessages?: number | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -5176,9 +5294,37 @@ export interface ThemeSettingsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "pricing-settings_select".
+ * via the `definition` "profile-fields_select".
  */
-export interface PricingSettingsSelect<T extends boolean = true> {
+export interface ProfileFieldsSelect<T extends boolean = true> {
+  fields?:
+    | T
+    | {
+        key?: T;
+        label?: T;
+        type?: T;
+        options?:
+          | T
+          | {
+              label?: T;
+              value?: T;
+              id?: T;
+            };
+        required?: T;
+        visibility?: T;
+        editableByMember?: T;
+        order?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-billing-settings_select".
+ */
+export interface ExtBillingSettingsSelect<T extends boolean = true> {
   heading?: T;
   showFreeTier?: T;
   subheading?: T;
@@ -5211,28 +5357,11 @@ export interface PricingSettingsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "profile-fields_select".
+ * via the `definition` "ext-chat-settings_select".
  */
-export interface ProfileFieldsSelect<T extends boolean = true> {
-  fields?:
-    | T
-    | {
-        key?: T;
-        label?: T;
-        type?: T;
-        options?:
-          | T
-          | {
-              label?: T;
-              value?: T;
-              id?: T;
-            };
-        required?: T;
-        visibility?: T;
-        editableByMember?: T;
-        order?: T;
-        id?: T;
-      };
+export interface ExtChatSettingsSelect<T extends boolean = true> {
+  systemPrompt?: T;
+  maxHistoryMessages?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -5,21 +5,26 @@ import { signUpAndConfirm } from "./helpers/mailpit";
 /**
  * Enforcement boundaries the happy-path specs don't assert directly:
  *
- * 1. AI routes are authed (golden rule #6) — POST /api/chat with no bearer
- *    token is rejected with 401. (CI sets a dummy AI_GATEWAY_API_KEY so the
- *    route gets past its "is AI configured?" 503 guard to the auth check.)
+ * 1. Extension API routes are authed (golden rule #6) — the dispatcher
+ *    (/api/ext/[ext]/...) rejects anonymous calls with 401 before any
+ *    extension handler runs; chat's stream route is the canonical case.
  * 2. Payload admin is default-deny — a signed-in NON-staff user is bounced from
  *    /admin back into the app. admin-login.spec.ts covers the staff allow-path;
  *    this is the deny-path (proxy.ts redirects non-staff to /a).
  */
 
-test("POST /api/chat without a token is rejected (401)", async ({
+test("POST /api/ext/chat/stream without a token is rejected (401)", async ({
   request,
 }) => {
-  const res = await request.post("/api/chat", {
+  const res = await request.post("/api/ext/chat/stream", {
     data: { threadId: "00000000-0000-0000-0000-000000000000", text: "hi" },
   });
   expect(res.status()).toBe(401);
+});
+
+test("an unknown extension API 404s", async ({ request }) => {
+  const res = await request.post("/api/ext/nope/anything");
+  expect(res.status()).toBe(404);
 });
 
 test("a non-staff user is bounced from /admin to the app", async ({ page }) => {

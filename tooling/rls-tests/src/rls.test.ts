@@ -81,7 +81,7 @@ beforeAll(async () => {
 
   // As A: create owner-scoped rows (exercises the INSERT WITH CHECK policies).
   const thread = await clientA
-    .from("chat_threads")
+    .from("ext_chat_threads")
     .insert({ user_id: aId, title: "A private thread" })
     .select()
     .single();
@@ -90,7 +90,7 @@ beforeAll(async () => {
   threadAId = thread.data.id;
 
   const reminder = await clientA
-    .from("reminders")
+    .from("ext_reminders")
     .insert({
       user_id: aId,
       due_at: new Date(stamp + 86_400_000).toISOString(),
@@ -103,8 +103,10 @@ beforeAll(async () => {
   reminderAId = reminder.data.id;
 
   // As service role: give A an active subscription (webhook-style write).
-  await admin.from("products").upsert({ id: "prod_rls", name: "RLS Test" });
-  await admin.from("prices").upsert({
+  await admin
+    .from("ext_billing_products")
+    .upsert({ id: "prod_rls", name: "RLS Test" });
+  await admin.from("ext_billing_prices").upsert({
     id: "price_rls",
     product_id: "prod_rls",
     active: true,
@@ -113,7 +115,7 @@ beforeAll(async () => {
     type: "recurring",
     interval: "month",
   });
-  await admin.from("subscriptions").upsert({
+  await admin.from("ext_billing_subscriptions").upsert({
     id: `sub_rls_${stamp}`,
     user_id: aId,
     price_id: "price_rls",
@@ -136,7 +138,7 @@ beforeAll(async () => {
   // As A: a message under A's own thread. chat_messages' policy is INDIRECT —
   // it authorizes via ownership of the parent chat_thread, not a user_id column.
   const msg = await clientA
-    .from("chat_messages")
+    .from("ext_chat_messages")
     .insert({ thread_id: threadAId, role: "user", content: "hello" })
     .select()
     .single();
@@ -146,7 +148,7 @@ beforeAll(async () => {
 
   // As A: owner-scoped push token + file metadata rows.
   await clientA
-    .from("push_tokens")
+    .from("ext_notifications_push_tokens")
     .insert({ user_id: aId, token: `ExpoTok-${stamp}`, platform: "ios" });
   await clientA.from("files").insert({
     user_id: aId,
@@ -157,10 +159,10 @@ beforeAll(async () => {
   // As service role: a customer row and a notification for A (these are written
   // by the server/webhook, never by clients — RLS only grants read-own).
   await admin
-    .from("customers")
+    .from("ext_billing_customers")
     .insert({ user_id: aId, stripe_customer_id: `cus_rls_${stamp}` });
   const notif = await admin
-    .from("notifications")
+    .from("ext_notifications")
     .insert({ user_id: aId, type: "reminder", title: "Hi" })
     .select()
     .single();
@@ -179,16 +181,18 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await admin.from("subscriptions").delete().eq("user_id", aId);
-  await admin.from("subscriptions").delete().eq("user_id", bId);
+  await admin.from("ext_billing_subscriptions").delete().eq("user_id", aId);
+  await admin.from("ext_billing_subscriptions").delete().eq("user_id", bId);
   if (orgAId) await admin.from("organizations").delete().eq("id", orgAId); // cascades memberships + invitations
-  await admin.from("customers").delete().eq("user_id", aId);
-  await admin.from("notifications").delete().eq("user_id", aId);
+  await admin.from("ext_billing_customers").delete().eq("user_id", aId);
+  await admin.from("ext_notifications").delete().eq("user_id", aId);
   if (tagId) await admin.from("tags").delete().eq("id", tagId); // cascades user_tags
-  await admin.from("push_tokens").delete().eq("user_id", aId);
+  await admin.from("ext_notifications_push_tokens").delete().eq("user_id", aId);
   await admin.from("files").delete().eq("user_id", aId);
-  if (threadAId) await admin.from("chat_threads").delete().eq("id", threadAId); // cascades chat_messages
-  if (reminderAId) await admin.from("reminders").delete().eq("id", reminderAId);
+  if (threadAId)
+    await admin.from("ext_chat_threads").delete().eq("id", threadAId); // cascades chat_messages
+  if (reminderAId)
+    await admin.from("ext_reminders").delete().eq("id", reminderAId);
   if (aId) await admin.auth.admin.deleteUser(aId);
   if (bId) await admin.auth.admin.deleteUser(bId);
 });
@@ -196,7 +200,7 @@ afterAll(async () => {
 describe("RLS: a user only sees their own rows", () => {
   it("A can read A's own chat thread", async () => {
     const { data, error } = await clientA
-      .from("chat_threads")
+      .from("ext_chat_threads")
       .select("*")
       .eq("id", threadAId);
     expect(error).toBeNull();
@@ -205,7 +209,7 @@ describe("RLS: a user only sees their own rows", () => {
 
   it("B cannot read A's chat thread", async () => {
     const { data, error } = await clientB
-      .from("chat_threads")
+      .from("ext_chat_threads")
       .select("*")
       .eq("id", threadAId);
     expect(error).toBeNull(); // RLS filters silently — not an error, just no rows
@@ -214,7 +218,7 @@ describe("RLS: a user only sees their own rows", () => {
 
   it("B cannot read A's reminder", async () => {
     const { data } = await clientB
-      .from("reminders")
+      .from("ext_reminders")
       .select("*")
       .eq("id", reminderAId);
     expect(data).toHaveLength(0);
@@ -222,7 +226,7 @@ describe("RLS: a user only sees their own rows", () => {
 
   it("B cannot read A's subscription", async () => {
     const { data } = await clientB
-      .from("subscriptions")
+      .from("ext_billing_subscriptions")
       .select("*")
       .eq("user_id", aId);
     expect(data).toHaveLength(0);
@@ -230,7 +234,7 @@ describe("RLS: a user only sees their own rows", () => {
 
   it("A can read A's own subscription", async () => {
     const { data } = await clientA
-      .from("subscriptions")
+      .from("ext_billing_subscriptions")
       .select("*")
       .eq("user_id", aId);
     expect(data?.length ?? 0).toBeGreaterThanOrEqual(1);
@@ -240,18 +244,18 @@ describe("RLS: a user only sees their own rows", () => {
 describe("RLS: a user cannot write into another user's rows", () => {
   it("B cannot insert a chat thread owned by A", async () => {
     const { error } = await clientB
-      .from("chat_threads")
+      .from("ext_chat_threads")
       .insert({ user_id: aId, title: "intrusion" });
     expect(error).not.toBeNull(); // WITH CHECK (user_id = auth.uid()) rejects it
   });
 
   it("B's UPDATE of A's chat thread does not change it", async () => {
     await clientB
-      .from("chat_threads")
+      .from("ext_chat_threads")
       .update({ title: "hacked" })
       .eq("id", threadAId);
     const { data } = await admin
-      .from("chat_threads")
+      .from("ext_chat_threads")
       .select("title")
       .eq("id", threadAId)
       .single();
@@ -259,9 +263,9 @@ describe("RLS: a user cannot write into another user's rows", () => {
   });
 
   it("B's DELETE of A's chat thread affects zero rows", async () => {
-    await clientB.from("chat_threads").delete().eq("id", threadAId);
+    await clientB.from("ext_chat_threads").delete().eq("id", threadAId);
     const { count } = await admin
-      .from("chat_threads")
+      .from("ext_chat_threads")
       .select("*", { count: "exact", head: true })
       .eq("id", threadAId);
     expect(count).toBe(1);
@@ -270,7 +274,9 @@ describe("RLS: a user cannot write into another user's rows", () => {
 
 describe("RLS: public catalog is readable", () => {
   it("B can read the products catalog", async () => {
-    const { data, error } = await clientB.from("products").select("*");
+    const { data, error } = await clientB
+      .from("ext_billing_products")
+      .select("*");
     expect(error).toBeNull();
     expect(Array.isArray(data)).toBe(true);
   });
@@ -372,7 +378,7 @@ describe("RLS: organizations / memberships / invitations (relational)", () => {
 describe("RLS: chat_messages inherit their thread's owner", () => {
   it("A can read A's own message", async () => {
     const { data, error } = await clientA
-      .from("chat_messages")
+      .from("ext_chat_messages")
       .select("*")
       .eq("id", msgAId);
     expect(error).toBeNull();
@@ -381,7 +387,7 @@ describe("RLS: chat_messages inherit their thread's owner", () => {
 
   it("B cannot read a message inside A's thread", async () => {
     const { data } = await clientB
-      .from("chat_messages")
+      .from("ext_chat_messages")
       .select("*")
       .eq("id", msgAId);
     expect(data).toHaveLength(0);
@@ -389,7 +395,7 @@ describe("RLS: chat_messages inherit their thread's owner", () => {
 
   it("B cannot insert a message into A's thread", async () => {
     const { error } = await clientB
-      .from("chat_messages")
+      .from("ext_chat_messages")
       .insert({ thread_id: threadAId, role: "user", content: "intrusion" });
     expect(error).not.toBeNull(); // the EXISTS-on-own-thread check fails for B
   });
@@ -398,7 +404,7 @@ describe("RLS: chat_messages inherit their thread's owner", () => {
 describe("RLS: notifications are private to their owner", () => {
   it("A can read A's notification", async () => {
     const { data } = await clientA
-      .from("notifications")
+      .from("ext_notifications")
       .select("*")
       .eq("id", notifAId);
     expect(data).toHaveLength(1);
@@ -406,12 +412,12 @@ describe("RLS: notifications are private to their owner", () => {
 
   it("A can mark A's own notification read", async () => {
     const { error } = await clientA
-      .from("notifications")
+      .from("ext_notifications")
       .update({ read_at: new Date().toISOString() })
       .eq("id", notifAId);
     expect(error).toBeNull();
     const { data } = await admin
-      .from("notifications")
+      .from("ext_notifications")
       .select("read_at")
       .eq("id", notifAId)
       .single();
@@ -420,17 +426,17 @@ describe("RLS: notifications are private to their owner", () => {
 
   it("B cannot read or modify A's notification", async () => {
     const { data } = await clientB
-      .from("notifications")
+      .from("ext_notifications")
       .select("*")
       .eq("id", notifAId);
     expect(data).toHaveLength(0);
 
     await clientB
-      .from("notifications")
+      .from("ext_notifications")
       .update({ title: "hacked" })
       .eq("id", notifAId);
     const { data: after } = await admin
-      .from("notifications")
+      .from("ext_notifications")
       .select("title")
       .eq("id", notifAId)
       .single();
@@ -441,7 +447,7 @@ describe("RLS: notifications are private to their owner", () => {
 describe("RLS: push_tokens and files are owner-scoped", () => {
   it("B cannot read A's push token", async () => {
     const { data } = await clientB
-      .from("push_tokens")
+      .from("ext_notifications_push_tokens")
       .select("*")
       .eq("user_id", aId);
     expect(data).toHaveLength(0);
@@ -449,7 +455,7 @@ describe("RLS: push_tokens and files are owner-scoped", () => {
 
   it("B cannot register a push token owned by A", async () => {
     const { error } = await clientB
-      .from("push_tokens")
+      .from("ext_notifications_push_tokens")
       .insert({ user_id: aId, token: `evil-${stamp}`, platform: "ios" });
     expect(error).not.toBeNull();
   });
@@ -470,7 +476,7 @@ describe("RLS: push_tokens and files are owner-scoped", () => {
 describe("RLS: customers are read-own (service-role written)", () => {
   it("A can read A's own customer row", async () => {
     const { data } = await clientA
-      .from("customers")
+      .from("ext_billing_customers")
       .select("*")
       .eq("user_id", aId);
     expect(data?.length ?? 0).toBeGreaterThanOrEqual(1);
@@ -478,7 +484,7 @@ describe("RLS: customers are read-own (service-role written)", () => {
 
   it("B cannot read A's customer row", async () => {
     const { data } = await clientB
-      .from("customers")
+      .from("ext_billing_customers")
       .select("*")
       .eq("user_id", aId);
     expect(data).toHaveLength(0);
@@ -530,7 +536,7 @@ describe("premium gating: only active/trialing subscriptions unlock premium", ()
 
   async function premiumRow(client: SupabaseClient<Database>) {
     const { data, error } = await client
-      .from("subscriptions")
+      .from("ext_billing_subscriptions")
       .select("status, price_id, current_period_end")
       .in("status", ACTIVE_STATUSES)
       .order("current_period_end", { ascending: false })
@@ -541,7 +547,7 @@ describe("premium gating: only active/trialing subscriptions unlock premium", ()
   }
 
   it("returns nothing when the user has only canceled/past_due rows", async () => {
-    await admin.from("subscriptions").insert([
+    await admin.from("ext_billing_subscriptions").insert([
       {
         id: `sub_b_canceled_${stamp}`,
         user_id: bId,
@@ -561,7 +567,7 @@ describe("premium gating: only active/trialing subscriptions unlock premium", ()
   });
 
   it("returns the newest active/trialing row once the user has one", async () => {
-    await admin.from("subscriptions").insert([
+    await admin.from("ext_billing_subscriptions").insert([
       {
         id: `sub_b_active_${stamp}`,
         user_id: bId,

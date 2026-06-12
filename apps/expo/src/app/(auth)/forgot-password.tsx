@@ -6,10 +6,10 @@ import { Controller, useForm } from "react-hook-form";
 
 import type { ForgotPasswordInput } from "@acme/app";
 import { forgotPasswordSchema, resetPasswordForEmail } from "@acme/app";
+import { Button } from "@acme/ui-native/button";
+import { Input } from "@acme/ui-native/input";
+import { Text } from "@acme/ui-native/text";
 
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Text } from "~/components/ui/text";
 import { supabase } from "~/lib/supabase";
 
 const msg = (e: unknown) =>

@@ -8,3 +8,10 @@ src/app/(payload)/admin/importMap.js
 # `pnpm cms:migrate:create`. They ship verbatim and are never hand-edited, so we
 # don't hold them to Prettier's style.
 src/payload/migrations/
+
+# Extension framework outputs, regenerated wholesale by `pnpm ext sync` —
+# machine-owned, byte-compared by the registry drift test, never hand-edited.
+src/ext/*.generated.ts
+ext-packages.generated.json
+src/app/(frontend)/(app)/x/
+src/app/(frontend)/(public)/x/

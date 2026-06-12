@@ -56,7 +56,16 @@ export async function register() {
         import("payload"),
         import("~/lib/cms/init-lock"),
       ]);
-    await withCmsInitLock(() => getPayload({ config }));
+    await withCmsInitLock(async () => {
+      const payload = await getPayload({ config });
+      // Reconcile the extension registry + CMS-driven menu from the bundled
+      // generated defaults (lib/ext/reconcile-nav.ts): insert rows for newly
+      // installed extensions, drop removed ones, never touch staff edits.
+      // Inside the init lock so concurrent cold starts don't race creates.
+      const { reconcileExtensions } = await import("~/lib/ext/reconcile-nav");
+      await reconcileExtensions(payload);
+      return payload;
+    });
   } catch {
     // CMS unreachable (e.g. local Postgres not running) — fine: the public
     // pages' fetchers (lib/payload.ts) degrade to built-in defaults on their own.

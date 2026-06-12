@@ -12,10 +12,10 @@ import {
   signInWithOtp,
   signInWithPassword,
 } from "@acme/app";
+import { Button } from "@acme/ui-native/button";
+import { Input } from "@acme/ui-native/input";
+import { Text } from "@acme/ui-native/text";
 
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Text } from "~/components/ui/text";
 import { nativeOAuth } from "~/lib/auth";
 import { supabase } from "~/lib/supabase";
 
