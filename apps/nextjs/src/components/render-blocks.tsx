@@ -116,6 +116,7 @@ function renderBlock(block: LayoutBlock) {
                   return {
                     title: item.title,
                     description: item.description,
+                    tooltip: item.tooltip ?? undefined,
                     icon: Icon ? (
                       <Icon className="size-5 stroke-1" />
                     ) : undefined,
