@@ -47,7 +47,7 @@ export default async function AppLayout({
       >
         <AppSidebar variant="inset" navItems={navItems} />
         <SidebarInset>
-          <SiteHeader />
+          <SiteHeader navItems={navItems} />
           {children}
         </SidebarInset>
       </SidebarProvider>

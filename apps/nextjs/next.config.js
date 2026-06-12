@@ -35,6 +35,20 @@ const config = {
   typescript: { ignoreBuildErrors: true },
 
   /**
+   * Legacy paths from before the extension refactor — features extracted into
+   * extensions now mount under /x/<slug> (EXTENSIONS-PLAN.md §2); old links
+   * and bookmarks keep working.
+   */
+  redirects: () =>
+    Promise.resolve([
+      {
+        source: "/notifications",
+        destination: "/x/notifications",
+        permanent: true,
+      },
+    ]),
+
+  /**
    * `pg` (the runtime DB bootstrap's driver, lib/db/bootstrap.ts) must stay a
    * Node require — bundling trips on its optional native `pg-native` import.
    */

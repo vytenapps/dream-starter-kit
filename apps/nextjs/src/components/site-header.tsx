@@ -2,26 +2,30 @@
 
 import { usePathname } from "next/navigation";
 
+import { NotificationBell } from "@acme/ext-notifications/web";
 import { ThemeToggle } from "@acme/ui/theme";
 
-import { NotificationBell } from "~/components/notification-bell";
+import type { NavMenuItem } from "~/lib/ext/nav-types";
 import { Separator } from "~/components/ui/separator";
 import { SidebarTrigger } from "~/components/ui/sidebar";
+import { hasExtension } from "~/ext/registry.client.generated";
 
-/** Section label shown in the header, keyed by the active route's first segment.
- *  Add an entry here when you add a top-level authenticated page. */
-const SECTION_TITLES: Record<string, string> = {
-  a: "Dashboard",
-  chat: "Chat",
-  reminders: "Reminders",
-  notifications: "Notifications",
+/** Authenticated pages that aren't menu entries (so can't be titled from nav). */
+const FALLBACK_TITLES: Record<string, string> = {
   profile: "Profile",
 };
 
-export function SiteHeader() {
+export function SiteHeader({ navItems }: { navItems: NavMenuItem[] }) {
   const pathname = usePathname();
+  // Title comes from the CMS-driven menu (longest matching href wins), so
+  // staff renames in /admin flow into the header too.
+  const match = navItems
+    .filter(
+      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )
+    .sort((a, b) => b.href.length - a.href.length)[0];
   const segment = pathname.split("/").find(Boolean) ?? "";
-  const title = SECTION_TITLES[segment] ?? "Dashboard";
+  const title = match?.label ?? FALLBACK_TITLES[segment] ?? "Dashboard";
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
@@ -33,7 +37,10 @@ export function SiteHeader() {
         />
         <h1 className="text-base font-medium">{title}</h1>
         <div className="ml-auto flex items-center gap-2">
-          <NotificationBell />
+          {/* The bell is the notifications extension's surface. If you remove
+              that extension (not just disable it), delete this gated block —
+              app-shell chrome is the one host edit `ext remove` can't do. */}
+          {hasExtension("notifications") && <NotificationBell />}
           <ThemeToggle />
         </div>
       </div>

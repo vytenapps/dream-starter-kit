@@ -2,14 +2,17 @@ import { Alert, FlatList, Pressable, View } from "react-native";
 import { Stack } from "expo-router";
 
 import { useSupabase } from "@acme/api";
-import { useMarkNotificationRead, useNotifications } from "@acme/app";
 import { Button } from "@acme/ui-native/button";
 import { Text } from "@acme/ui-native/text";
 
-import { clientEnv } from "~/lib/env";
-import { registerForPushNotifications } from "~/lib/push";
+import { useMarkNotificationRead, useNotifications } from "../index";
+import { registerForPushNotifications } from "./push";
 
-export default function Notifications() {
+// `EXPO_PUBLIC_*` is inlined by Metro at build time — literal reads only.
+declare const process: { env: Record<string, string | undefined> };
+const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "";
+
+export function NotificationsScreen() {
   const supabase = useSupabase();
   const notifications = useNotifications();
   const markRead = useMarkNotificationRead();
@@ -29,7 +32,8 @@ export default function Notifications() {
       data: { session },
     } = await supabase.auth.getSession();
     if (!session) return;
-    const res = await fetch(`${clientEnv.APP_URL}/api/push/test`, {
+    // The extension API dispatcher authenticates the Bearer token + rate-limits.
+    const res = await fetch(`${API_BASE}/api/ext/notifications/push-test`, {
       method: "POST",
       headers: { Authorization: `Bearer ${session.access_token}` },
     });

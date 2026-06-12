@@ -24,7 +24,11 @@
       "kitCompat": ">=1.0.0 <2",
       "source": "local",
       "installedVia": "preinstalled",
-      "stubs": [],
+      "stubs": [
+        "apps/expo/src/app/(app)/x/notifications/index.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/x/notifications/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/x/notifications/page.tsx"
+      ],
       "edgeFunctions": []
     },
     "reminders": {

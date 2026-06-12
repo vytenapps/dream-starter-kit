@@ -21,11 +21,6 @@ export {
   useSendMessage,
 } from "./hooks/use-chat";
 export {
-  useNotifications,
-  useUnreadCount,
-  useMarkNotificationRead,
-} from "./hooks/use-notifications";
-export {
   useReminders,
   useCreateReminder,
   useDeleteReminder,

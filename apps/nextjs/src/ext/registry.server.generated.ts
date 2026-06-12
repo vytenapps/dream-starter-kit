@@ -6,5 +6,9 @@ import "server-only";
 
 import type { ExtRouteTable } from "@acme/ext-kit/server";
 
+import { routes as routes_notifications } from "@acme/ext-notifications/server";
+
 /** slug → route table, dispatched by /api/ext/[ext]/[[...route]]. */
-export const extServerRoutes: Record<string, ExtRouteTable> = {};
+export const extServerRoutes: Record<string, ExtRouteTable> = {
+  "notifications": routes_notifications,
+};

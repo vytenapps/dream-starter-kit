@@ -18,9 +18,9 @@ const FALLBACK_MENU: NavMenuEntry[] = [
   { key: "core:/chat", label: "Chat", href: "/chat" },
   { key: "core:/reminders", label: "Reminders", href: "/reminders" },
   {
-    key: "core:/notifications",
+    key: "ext:notifications:/x/notifications",
     label: "Notifications",
-    href: "/notifications",
+    href: "/x/notifications",
   },
   { key: "core:/pricing", label: "Pricing", href: "/pricing" },
   { key: "core:/profile", label: "Profile", href: "/profile" },

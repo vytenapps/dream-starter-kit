@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./native": "./src/native/index.ts",
+    "./server": "./src/server/index.ts",
+    "./web": "./src/web/index.ts"
   },
   "license": "Apache-2.0",
   "scripts": {
@@ -14,14 +17,32 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@acme/ext-kit": "workspace:*"
+    "@acme/api": "workspace:*",
+    "@acme/ext-kit": "workspace:*",
+    "@acme/ui": "workspace:*",
+    "@acme/ui-native": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
+    "@tabler/icons-react": "^3.44.0",
+    "@tanstack/react-query": "catalog:",
+    "expo-device": "~8.0.10",
+    "expo-notifications": "~0.32.17",
+    "expo-router": "~6.0.13",
+    "server-only": "^0.0.1"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
   },
   "devDependencies": {
     "@acme/eslint-config": "workspace:*",
     "@acme/prettier-config": "workspace:*",
     "@acme/tsconfig": "workspace:*",
+    "@types/react": "catalog:react19",
     "eslint": "catalog:",
     "prettier": "catalog:",
+    "react": "catalog:react19",
+    "react-native": "~0.81.5",
+    "react-native-css": "3.0.1",
     "typescript": "catalog:"
   },
   "prettier": "@acme/prettier-config"

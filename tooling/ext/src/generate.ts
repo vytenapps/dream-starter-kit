@@ -331,6 +331,14 @@ export function buildExpoRegistry(exts: LoadedExtension[]): string {
   const widgetExts = nativeExts.filter((e) => e.manifest.widgets.native);
 
   const imports: string[] = ['import type * as React from "react";'];
+  // Side-effect imports: each native extension's ./native entry loads at app
+  // start (the root _layout imports this registry), so extensions can register
+  // native handlers on boot — e.g. notifications' setNotificationHandler.
+  for (const e of nativeExts) {
+    if (e.manifest.widgets.native) continue; // imported by name below
+    if (e.manifest.routes.native.length === 0) continue; // no native entry
+    imports.push(`import "${e.packageName}/native";`);
+  }
   for (const e of widgetExts) {
     imports.push(
       `import { ${e.manifest.widgets.native} as widget_${ident(e.manifest.slug)} } from "${e.packageName}/native";`,

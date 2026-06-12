@@ -1,12 +1,12 @@
 "use client";
 
-import { useMarkNotificationRead, useNotifications } from "@acme/app";
 import { cn } from "@acme/ui";
+import { Button } from "@acme/ui/button";
+import { Card, CardHeader, CardTitle } from "@acme/ui/card";
 
-import { Button } from "~/components/ui/button";
-import { Card, CardHeader, CardTitle } from "~/components/ui/card";
+import { useMarkNotificationRead, useNotifications } from "../index";
 
-export default function NotificationsPage() {
+export function NotificationsPage() {
   const notifications = useNotifications();
   const markRead = useMarkNotificationRead();
 

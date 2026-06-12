@@ -3,6 +3,7 @@
 // Recomputed from extensions/*/extension.config.ts; a stale copy fails
 // `pnpm test` via apps/nextjs/src/ext/registry-drift.test.ts.
 import type * as React from "react";
+import "@acme/ext-notifications/native";
 
 export interface ExtInstalled {
   slug: string;
@@ -30,7 +31,9 @@ export const extInstalled: ExtInstalled[] = [
 
 /** Native nav defaults — fallback for useNavMenu() while offline/loading. */
 export const extNavDefaults: { native: ExtNavDefault[] } = {
-  native: [],
+  native: [
+    { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/x/notifications", icon: "IconBell", order: 40 },
+  ],
 };
 
 /** Home-screen widgets declared by installed extensions (native components). */

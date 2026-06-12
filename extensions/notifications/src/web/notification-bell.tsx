@@ -1,16 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { IconBell } from "@tabler/icons-react";
 
-import {
-  useMarkNotificationRead,
-  useNotifications,
-  useUnreadCount,
-} from "@acme/app";
-
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { Badge } from "@acme/ui/badge";
+import { Button } from "@acme/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,9 +11,18 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+} from "@acme/ui/dropdown-menu";
 
-/** Header notification bell: unread badge + a dropdown of recent notifications. */
+import {
+  useMarkNotificationRead,
+  useNotifications,
+  useUnreadCount,
+} from "../index";
+
+/**
+ * Header notification bell: unread badge + a dropdown of recent notifications.
+ * Rendered by the host's site header, gated on hasExtension("notifications").
+ */
 export function NotificationBell() {
   const notifications = useNotifications();
   const unread = useUnreadCount();
@@ -78,7 +80,9 @@ export function NotificationBell() {
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/notifications">View all</Link>
+          {/* Plain anchor (not next/link) — keeps the extension free of a
+              next dependency; a full navigation here is fine. */}
+          <a href="/x/notifications">View all</a>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -51,14 +51,6 @@ export const CORE_NAV_ITEMS: CoreNavItem[] = [
     platforms: ["web", "native"],
   },
   {
-    key: "core:/notifications",
-    label: "Notifications",
-    href: "/notifications",
-    icon: "IconBell",
-    order: 40,
-    platforms: ["web", "native"],
-  },
-  {
     key: "core:/billing",
     label: "Billing",
     href: "/billing",

@@ -4,6 +4,9 @@ import * as Notifications from "expo-notifications";
 
 import type { AppSupabaseClient } from "@acme/api";
 
+// `EXPO_PUBLIC_*` is inlined by Metro at build time — literal reads only.
+declare const process: { env: Record<string, string | undefined> };
+
 // Show notifications received while the app is foregrounded.
 Notifications.setNotificationHandler({
   handleNotification: () =>
@@ -16,7 +19,7 @@ Notifications.setNotificationHandler({
 });
 
 /**
- * Register for Expo push notifications and persist the token to `push_tokens`.
+ * Register for Expo push notifications and persist the token to `ext_notifications_push_tokens`.
  *
  * IMPORTANT: remote push requires a DEV BUILD or a standalone build — Expo Go
  * cannot receive remote push on Android as of SDK 53+. On simulators/emulators

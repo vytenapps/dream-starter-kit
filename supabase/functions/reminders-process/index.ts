@@ -66,7 +66,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    await admin.from("ext_reminders").update({ status: "sent" }).eq("id", reminder.id);
+    await admin
+      .from("ext_reminders")
+      .update({ status: "sent" })
+      .eq("id", reminder.id);
     processed++;
   }
 

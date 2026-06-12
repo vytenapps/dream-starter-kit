@@ -3,6 +3,7 @@
 // Recomputed from extensions/*/extension.config.ts; a stale copy fails
 // `pnpm test` via apps/nextjs/src/ext/registry-drift.test.ts.
 import type * as React from "react";
+import { IconBell } from "@tabler/icons-react";
 
 export interface ExtInstalled {
   slug: string;
@@ -34,15 +35,21 @@ export const extInstalled: ExtInstalled[] = [
  * reconcile (lib/ext/reconcile-nav.ts), never rendered directly.
  */
 export const extNavDefaults: { web: ExtNavDefault[]; native: ExtNavDefault[] } = {
-  web: [],
-  native: [],
+  web: [
+    { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/x/notifications", icon: "IconBell", order: 40 },
+  ],
+  native: [
+    { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/x/notifications", icon: "IconBell", order: 40 },
+  ],
 };
 
 /** Dashboard widgets declared by installed extensions (web components). */
 export const extWidgets: { slug: string; Widget: React.ComponentType }[] = [];
 
 /** Icon names referenced by extension nav defaults → components. */
-export const extIcons: Record<string, React.ComponentType<{ className?: string }>> = {};
+export const extIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  IconBell: IconBell,
+};
 
 export function hasExtension(slug: string): boolean {
   return extInstalled.some((e) => e.slug === slug);

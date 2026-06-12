@@ -1,3 +1,16 @@
+import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+import Stripe from "npm:stripe@22";
+
+import {
+  mapPrice,
+  mapProduct,
+  mapSubscription,
+  resolveCheckoutCustomer,
+  subscriptionCustomerId,
+  subscriptionUserIdFromMetadata,
+} from "./mapping.ts";
+
 // Stripe webhook → syncs products / prices / customers / subscriptions into the
 // DB using the SERVICE ROLE (clients never write billing rows). Signature is
 // verified; handlers upsert by primary key so redelivered/out-of-order events
@@ -10,17 +23,6 @@
 //
 // config.toml sets verify_jwt = false for this function (Stripe has no Supabase
 // JWT). Local: `stripe listen --forward-to localhost:54321/functions/v1/billing-stripe-webhook`.
-import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import Stripe from "npm:stripe@22";
-
-import {
-  mapPrice,
-  mapProduct,
-  mapSubscription,
-  resolveCheckoutCustomer,
-  subscriptionCustomerId,
-  subscriptionUserIdFromMetadata,
-} from "./mapping.ts";
 
 const stripeSecret = Deno.env.get("STRIPE_SECRET_KEY");
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
@@ -206,7 +208,9 @@ Deno.serve(async (req) => {
               ? session.subscription
               : session.subscription.id;
           const sub = await stripe.subscriptions.retrieve(subId);
-          await admin.from("ext_billing_subscriptions").upsert(mapSubscription(sub, userId));
+          await admin
+            .from("ext_billing_subscriptions")
+            .upsert(mapSubscription(sub, userId));
           if (sub.status === "active" || sub.status === "trialing") {
             await ensurePlanTag(
               admin,
@@ -231,9 +235,15 @@ Deno.serve(async (req) => {
           userId = data?.user_id ?? null;
         }
         if (userId) {
-          await admin.from("ext_billing_subscriptions").upsert(mapSubscription(sub, userId));
+          await admin
+            .from("ext_billing_subscriptions")
+            .upsert(mapSubscription(sub, userId));
           if (sub.status === "active" || sub.status === "trialing") {
-            await ensurePlanTag(admin, userId, sub.items.data[0]?.price.id ?? null);
+            await ensurePlanTag(
+              admin,
+              userId,
+              sub.items.data[0]?.price.id ?? null,
+            );
           }
         }
         break;

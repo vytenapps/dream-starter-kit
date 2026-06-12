@@ -7,8 +7,9 @@ import { SupabaseProvider, useSession } from "@acme/api";
 import { supabase } from "~/lib/supabase";
 
 import "../styles.css";
-// Side-effect: configures the foreground notification handler at boot.
-import "~/lib/push";
+// Side-effect: installed extensions register their native boot handlers
+// (e.g. notifications' foreground handler) via the generated registry.
+import "~/ext/registry.generated";
 
 /**
  * Redirects between the (auth) and (app) route groups based on session state.
