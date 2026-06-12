@@ -204,10 +204,23 @@ export default buildConfig({
     // instance exhausted it on a fresh deploy's cold-start burst
     // ("EMAXCONNSESSION max clients reached in session mode"). Idle
     // connections are released quickly so frozen instances give slots back.
+    //
+    // A small pool also means starvation must FAIL, not wait: pg's default
+    // acquire wait is infinite, so a wedged pool used to ride out Vercel's
+    // 300s timeout — and the killed invocation left its transaction open,
+    // poisoning the still-warm Fluid instance (and pinning Supavisor slots)
+    // for every later request. connectionTimeoutMillis bounds the acquire
+    // wait; idle_in_transaction_session_timeout has Postgres reap abandoned
+    // transactions (releasing their row locks + pooler slots) within 60s.
+    // Hook authors: always pass `req` to nested Local API calls — a req-less
+    // call inside a transaction checks out a second connection and is exactly
+    // how such a wedge forms (see payload/hooks/validate-custom-fields.ts).
     pool: {
       ...pgConnectionOptions(cmsCredentials.databaseUrl),
       max: 2,
       idleTimeoutMillis: 20_000,
+      connectionTimeoutMillis: 15_000,
+      idle_in_transaction_session_timeout: 60_000,
     },
     // Payload owns its own Postgres schema, isolated from the RLS-governed
     // `public` tables. It connects as the least-privilege `payload_cms` role.

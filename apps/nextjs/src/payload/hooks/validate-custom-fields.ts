@@ -62,8 +62,14 @@ export const validateCustomFields: Validate = async (
   }
   if (event === "onChange") return true;
 
+  // `req` is mandatory here: validate runs inside the update's transaction,
+  // and a req-less Local API call checks out a SECOND pool connection. With
+  // the small serverless pool a concurrent CMS write can hold the other slot
+  // while it waits on this operation's row lock — a circular wait Postgres
+  // can't see (one waiter is in the pool queue), wedging saves until the
+  // 300s Vercel timeout. Passing `req` joins the existing transaction.
   const global = (await req.payload
-    .findGlobal({ slug: "profile-fields", depth: 0 })
+    .findGlobal({ slug: "profile-fields", depth: 0, req })
     .catch(() => null)) as { fields?: ProfileFieldDef[] | null } | null;
   const defs = global?.fields ?? [];
   const byKey = new Map(defs.map((d) => [d.key, d]));

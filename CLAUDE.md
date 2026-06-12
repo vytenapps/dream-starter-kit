@@ -195,7 +195,6 @@ Rules that keep extensions modular:
 - After schema/CMS changes: `pnpm db:reset && pnpm db:gen-types`
   (+ `pnpm cms:gen-types`), commit the regenerated files.
 
-
 ## How to add a Payload content type
 
 For **content and member engagement** (anything that isn't security-critical
@@ -297,7 +296,7 @@ plans (Dream Monthly/Annual/Lifetime) + a welcome coupon are seeded by `seedCmsC
   for RLS clients — unchanged.
 - **Intro offers** ("$1.99 first month, then $39.99") = a coupon auto-applied at checkout
   (`once` for one intro period, `repeating` for several; years × 12 → Stripe
-  `duration_in_months`). **Repeating** coupons take N months *or* N years the same way.
+  `duration_in_months`). **Repeating** coupons take N months _or_ N years the same way.
 - **Checkout is plan-driven** (`/api/stripe/checkout` takes a Payload `planId`) and supports
   **guest checkout**: an anonymous buyer pays first, then the webhook matches their email to an
   existing account or creates one + emails a Supabase invite (`/accept-invite` → `/a`).
@@ -365,6 +364,10 @@ Serif fonts (Merriweather/Lora) are loaded on `<html>` alongside the sans/mono s
 ## Conventions
 
 - **TypeScript everywhere**, `strict`. No `any` without a reason.
+- **Payload hooks/validates: always pass `req`** to nested Local API calls
+  (`req.payload.find({ ..., req })`). A req-less call runs outside the
+  operation's transaction and checks out a second pool connection — with the
+  small serverless pool that can deadlock saves (300s 504s on Vercel).
 - **Commits:** Conventional Commits, one per phase/feature
   (`feat(backend): ...`, `fix(auth): ...`).
 - **Keep it buildable.** typecheck + lint must pass at every checkpoint.
