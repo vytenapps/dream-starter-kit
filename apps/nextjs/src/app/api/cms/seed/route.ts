@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import config from "@payload-config";
 import { getPayload } from "payload";
 
-import { withCmsSchemaHeal } from "~/lib/cms/ensure-schema";
 import { cmsConfigStatus, cmsNotConfiguredMessage } from "~/lib/cms/env-status";
+import { isCmsSeeded } from "~/lib/cms/seed-status";
 import { summarizeDbError } from "~/lib/db/bootstrap-core";
 import { seedCmsContent } from "~/payload/seed";
 
@@ -67,11 +67,8 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  // Self-heals a wiped cms schema before reporting status (ensure-schema.ts).
-  const pages = await withCmsSchemaHeal(payload, () =>
-    payload.find({ collection: "pages", limit: 0 }),
-  );
-  return NextResponse.json({ seeded: pages.totalDocs > 0 });
+  // Self-heals a wiped cms schema before reporting status (seed-status.ts).
+  return NextResponse.json({ seeded: await isCmsSeeded(payload) });
 }
 
 export async function POST() {
@@ -90,11 +87,8 @@ export async function POST() {
   }
 
   // Self-heals a wiped cms schema so the seed never streams into missing
-  // tables (ensure-schema.ts).
-  const existing = await withCmsSchemaHeal(payload, () =>
-    payload.find({ collection: "pages", limit: 0 }),
-  );
-  if (existing.totalDocs > 0) {
+  // tables (seed-status.ts).
+  if (await isCmsSeeded(payload)) {
     return NextResponse.json({ seeded: false, alreadySeeded: true });
   }
 
