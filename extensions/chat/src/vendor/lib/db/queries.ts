@@ -27,7 +27,9 @@ const toChat = (row: ThreadRow): Chat => ({
   id: row.id,
   createdAt: new Date(row.created_at),
   title: row.title ?? "New chat",
-  userId: row.user_id,
+  // user_id is nullable since channel threads can be unlinked; web queries
+  // only ever read the caller's own (non-null) threads.
+  userId: row.user_id ?? "",
   visibility: (row.visibility as Chat["visibility"]) ?? "private",
 });
 

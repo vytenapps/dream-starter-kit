@@ -65,6 +65,7 @@ import { transcribeAudio } from "./transcribe";
 // from their webhooks (the kit's cross-extension "plain typed export" pattern).
 export {
   handleChannelMessage,
+  linkChannelContact,
   type HandleChannelMessageParams,
   type HandleChannelMessageResult,
 } from "./channel";
@@ -746,6 +747,24 @@ export const routes: ExtRouteTable = {
     return Response.json({
       transcriptionEnabled: chatSettings.transcriptionEnabled,
     });
+  },
+
+  // Link a channel identity (e.g. a Slack user id or phone number) to the
+  // signed-in user, so that channel's threads merge into their chat history.
+  "POST /channels/link": async (req, ctx) => {
+    const parsed = z
+      .object({ channel: z.string().min(1), contactKey: z.string().min(1) })
+      .safeParse(await req.json().catch(() => null));
+    if (parsed.success === false) {
+      return json(400, { error: "Invalid request" });
+    }
+    const { linkChannelContact } = await import("./channel");
+    await linkChannelContact(
+      parsed.data.channel,
+      parsed.data.contactKey,
+      ctx.user.id,
+    );
+    return Response.json({ ok: true });
   },
 
   // Voice input: multipart audio → text via the configured transcription model.

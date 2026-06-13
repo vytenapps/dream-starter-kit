@@ -223,39 +223,6 @@ export type Database = {
           },
         ];
       };
-      ext_chat_channel_threads: {
-        Row: {
-          active_skill_slug: string | null;
-          active_skill_turns_remaining: number;
-          channel: string;
-          contact_key: string | null;
-          is_group: boolean;
-          messages: Json;
-          thread_key: string;
-          updated_at: string;
-        };
-        Insert: {
-          active_skill_slug?: string | null;
-          active_skill_turns_remaining?: number;
-          channel: string;
-          contact_key?: string | null;
-          is_group?: boolean;
-          messages?: Json;
-          thread_key: string;
-          updated_at?: string;
-        };
-        Update: {
-          active_skill_slug?: string | null;
-          active_skill_turns_remaining?: number;
-          channel?: string;
-          contact_key?: string | null;
-          is_group?: boolean;
-          messages?: Json;
-          thread_key?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       ext_chat_documents: {
         Row: {
           content: string | null;
@@ -423,34 +390,43 @@ export type Database = {
         Row: {
           active_skill_slug: string | null;
           active_skill_turns_remaining: number;
+          channel: string;
+          channel_thread_key: string | null;
+          contact_key: string | null;
           created_at: string;
           id: string;
           last_context: Json | null;
           title: string | null;
           updated_at: string;
-          user_id: string;
+          user_id: string | null;
           visibility: string;
         };
         Insert: {
           active_skill_slug?: string | null;
           active_skill_turns_remaining?: number;
+          channel?: string;
+          channel_thread_key?: string | null;
+          contact_key?: string | null;
           created_at?: string;
           id?: string;
           last_context?: Json | null;
           title?: string | null;
           updated_at?: string;
-          user_id: string;
+          user_id?: string | null;
           visibility?: string;
         };
         Update: {
           active_skill_slug?: string | null;
           active_skill_turns_remaining?: number;
+          channel?: string;
+          channel_thread_key?: string | null;
+          contact_key?: string | null;
           created_at?: string;
           id?: string;
           last_context?: Json | null;
           title?: string | null;
           updated_at?: string;
-          user_id?: string;
+          user_id?: string | null;
           visibility?: string;
         };
         Relationships: [

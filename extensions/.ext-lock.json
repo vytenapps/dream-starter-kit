@@ -25,6 +25,11 @@
       "sha256": "f3343b5ead9884c8560fa5f8ece836fceda6ab82e19de0c8fda3c9948a5078aa",
       "target": "20260613025042_ext_chat_004_channels.sql"
     },
+    "chat/005_unified_channel_threads.sql": {
+      "version": "20260613033328",
+      "sha256": "7240b5fb595f58d03393530d4ae1a8cbdae0352957de32755a3dc5070aea7a57",
+      "target": "20260613033328_ext_chat_005_unified_channel_threads.sql"
+    },
     "demo/001_initial.sql": {
       "version": "20260612100001",
       "sha256": "3d92502cfbf0b105901f6b6beb517f30f6ace3c7f2d3a304d923a0bd2e2bed7e",

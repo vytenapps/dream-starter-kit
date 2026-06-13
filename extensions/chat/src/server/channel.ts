@@ -1,9 +1,10 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { BasePayload } from "payload";
+import config from "@payload-config";
 import { createClient } from "@supabase/supabase-js";
 import { generateText } from "ai";
+import { getPayload } from "payload";
 
 import type { Database, Json } from "@acme/api";
 import type { ChatChannel } from "@acme/config";
@@ -17,13 +18,18 @@ import { composeSystemPrompt } from "./prompt";
 
 /**
  * Channel framework — the shared brain behind every chat-adapter-* extension
- * (Sendblue, Slack, …). Adapter extensions verify + normalize their webhook,
- * then call `handleChannelMessage`; it dedupes, upserts contact/thread state,
- * runs the channel-aware prompt composer + skill router, generates a reply
- * with the AI Gateway, persists the turn + skill stickiness, and enforces
- * opt-out + a daily outbound quota. Channel state lives in service-path tables
- * (no RLS client touches it), so this uses a service-role client — webhooks
- * have no user session. (golden rule #2 allows service-role in server code.)
+ * (Sendblue, Slack, …). Adapter extensions hand their webhook to the Chat SDK,
+ * whose handlers call `handleChannelMessage`; it dedupes, applies STOP/HELP
+ * compliance + a daily quota, routes the message through the channel-aware
+ * prompt composer + skill router, generates a reply, and persists the turn.
+ *
+ * Crucially, ALL channels persist into the SAME ext_chat_threads /
+ * ext_chat_messages tables that back web + mobile chat — keyed by
+ * (channel, channel_thread_key) and owned by `user_id` once the channel
+ * contact is linked to an app account. So a signed-in user's web/mobile chat
+ * history automatically includes their Slack / Sendblue / etc. conversations.
+ * Webhooks have no user session, so this uses a service-role client (golden
+ * rule #2 allows service-role in server code).
  */
 
 let serviceClient: SupabaseClient<Database> | null = null;
@@ -36,36 +42,30 @@ function getServiceClient(): SupabaseClient<Database> {
   return serviceClient;
 }
 
-interface ChannelThreadMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
 export interface HandleChannelMessageParams {
   channel: ChatChannel;
-  /** Stable per-conversation id from the adapter (e.g. the Chat SDK thread id). */
+  /** Stable per-conversation id from the adapter (the Chat SDK thread id). */
   threadKey: string;
   /** Stable per-sender id (phone number, Slack user id, …). */
   contactKey: string;
   text: string;
-  /** Optional sender id used for the daily outbound quota (e.g. the from-number). */
+  /** Sender id used for the daily outbound quota (e.g. the from-number). */
   quotaKey?: string;
   displayName?: string;
   isGroup?: boolean;
-  getPayload: () => Promise<BasePayload>;
   /** Per-day outbound cap; 0 disables the check. */
   dailyQuota?: number;
 }
 
 export interface HandleChannelMessageResult {
   replyText: string | null;
-  /** Why no reply (dedupe/opt-out/quota) — useful for the adapter's logs. */
   reason?: "duplicate" | "opted-out" | "quota-exceeded" | "stop" | "help";
 }
 
 const STOP_WORDS = new Set(["stop", "unsubscribe", "cancel", "end", "quit"]);
 const HELP_WORDS = new Set(["help", "info"]);
-const MAX_HISTORY = 20;
+
+type ThreadRow = Database["public"]["Tables"]["ext_chat_threads"]["Row"];
 
 export async function handleChannelMessage(
   params: HandleChannelMessageParams,
@@ -141,35 +141,74 @@ export async function handleChannelMessage(
     }
   }
 
-  // 4. Load thread state + history.
-  const { data: thread } = await sb
-    .from("ext_chat_channel_threads")
+  // 4. Resolve the unified thread row (shared with web/mobile history).
+  const { data: existing } = await sb
+    .from("ext_chat_threads")
     .select("*")
     .eq("channel", channel)
-    .eq("thread_key", threadKey)
+    .eq("channel_thread_key", threadKey)
     .maybeSingle();
 
-  const history = (
-    (thread?.messages as { role: string; content: string }[] | null) ?? []
-  )
-    .filter(
-      (m): m is ChannelThreadMessage =>
-        m.role === "user" || m.role === "assistant",
-    )
-    .slice(-MAX_HISTORY);
+  let thread = existing as ThreadRow | null;
+  if (!thread) {
+    const title = `${params.displayName ?? contactKey} · ${channel}`.slice(
+      0,
+      120,
+    );
+    const insert = await sb
+      .from("ext_chat_threads")
+      .insert({
+        user_id: contact?.user_id ?? null,
+        channel,
+        channel_thread_key: threadKey,
+        contact_key: contactKey,
+        title,
+      })
+      .select()
+      .single();
+    if (insert.error) {
+      return { replyText: null };
+    }
+    thread = insert.data;
+  } else if (contact?.user_id && thread.user_id !== contact.user_id) {
+    // Contact got linked since the thread was created — adopt the owner so it
+    // surfaces in that user's web/mobile history.
+    await sb
+      .from("ext_chat_threads")
+      .update({ user_id: contact.user_id })
+      .eq("id", thread.id);
+  }
+  const threadId = thread.id;
 
-  const payload = await params.getPayload();
+  const payload = await getPayload({ config });
   const chatSettings = await getExtensionSettings<ChatSettings>(
     payload,
     settings,
   );
 
-  const priorSkill: ThreadSkillState | null = thread
-    ? {
-        activeSkillSlug: thread.active_skill_slug,
-        activeSkillTurnsRemaining: thread.active_skill_turns_remaining,
-      }
-    : null;
+  // 5. History from the unified messages table.
+  const { data: historyRows } = await sb
+    .from("ext_chat_messages")
+    .select("role, content")
+    .eq("thread_id", threadId)
+    .order("created_at", { ascending: true });
+  const history = (historyRows ?? [])
+    .filter((m) => m.role === "user" || m.role === "assistant")
+    .slice(-chatSettings.maxHistoryMessages)
+    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+
+  // Persist the inbound user turn.
+  await sb.from("ext_chat_messages").insert({
+    thread_id: threadId,
+    role: "user",
+    content: text,
+    parts: [{ type: "text", text }] as unknown as Json,
+  });
+
+  const priorSkill: ThreadSkillState = {
+    activeSkillSlug: thread.active_skill_slug,
+    activeSkillTurnsRemaining: thread.active_skill_turns_remaining,
+  };
 
   const composed = await composeSystemPrompt({
     payload,
@@ -180,7 +219,7 @@ export async function handleChannelMessage(
     thread: priorSkill,
   });
 
-  // 5. Generate (channels are buffered, not streamed).
+  // 6. Generate (channels are buffered, not streamed).
   const result = await generateText({
     model: DEFAULT_AI_MODEL,
     system: composed.system,
@@ -189,34 +228,30 @@ export async function handleChannelMessage(
   });
   const replyText = result.text;
 
-  // 6. Persist turn + skill stickiness.
-  const newHistory: ChannelThreadMessage[] = [
-    ...history,
-    { role: "user" as const, content: text },
-    { role: "assistant" as const, content: replyText },
-  ].slice(-MAX_HISTORY);
+  // 7. Persist the assistant turn + skill stickiness.
+  await sb.from("ext_chat_messages").insert({
+    thread_id: threadId,
+    role: "assistant",
+    content: replyText,
+    parts: [{ type: "text", text: replyText }] as unknown as Json,
+    token_usage: result.usage as unknown as Json,
+  });
 
   const nextSkill = computeStickiness(
     chatSettings,
     priorSkill,
     composed.skillSlug,
   );
-
-  await sb.from("ext_chat_channel_threads").upsert(
-    {
-      channel,
-      thread_key: threadKey,
-      contact_key: contactKey,
-      messages: newHistory as unknown as Json,
+  await sb
+    .from("ext_chat_threads")
+    .update({
       active_skill_slug: nextSkill.slug,
       active_skill_turns_remaining: nextSkill.turns,
-      is_group: params.isGroup ?? false,
       updated_at: new Date().toISOString(),
-    },
-    { onConflict: "channel,thread_key" },
-  );
+    })
+    .eq("id", threadId);
 
-  // 7. Bump the outbound counter.
+  // 8. Bump the outbound counter.
   if (params.dailyQuota && params.dailyQuota > 0 && params.quotaKey) {
     const day = new Date().toISOString().slice(0, 10);
     const { data: counter } = await sb
@@ -234,6 +269,30 @@ export async function handleChannelMessage(
   }
 
   return { replyText };
+}
+
+/**
+ * Link a channel contact to an app user so their channel threads merge into
+ * that user's web/mobile history. Called by the authed POST /channels/link
+ * route; sets the contact owner and backfills existing threads.
+ */
+export async function linkChannelContact(
+  channel: string,
+  contactKey: string,
+  userId: string,
+): Promise<void> {
+  const sb = getServiceClient();
+  await sb
+    .from("ext_chat_channel_contacts")
+    .upsert(
+      { channel, contact_key: contactKey, user_id: userId },
+      { onConflict: "channel,contact_key" },
+    );
+  await sb
+    .from("ext_chat_threads")
+    .update({ user_id: userId })
+    .eq("channel", channel)
+    .eq("contact_key", contactKey);
 }
 
 function computeStickiness(
