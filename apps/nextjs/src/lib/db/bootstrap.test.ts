@@ -64,6 +64,10 @@ interface FakeDb {
   applied: string[];
   roleExists: boolean;
   cmsSchemaExists: boolean;
+  /** `cms.payload_migrations` exists. */
+  cmsLedgerExists: boolean;
+  /** Payload migration names recorded in `cms.payload_migrations`. */
+  cmsApplied: string[];
 }
 
 /** In-memory stand-in for pg.Client, recording every statement. */
@@ -73,6 +77,8 @@ function makeFake(db: Partial<FakeDb> = {}, opts: { failOn?: RegExp } = {}) {
     applied: [],
     roleExists: false,
     cmsSchemaExists: false,
+    cmsLedgerExists: false,
+    cmsApplied: [],
     ...db,
   };
   const calls: { sql: string; params?: unknown[] }[] = [];
@@ -88,10 +94,16 @@ function makeFake(db: Partial<FakeDb> = {}, opts: { failOn?: RegExp } = {}) {
           rows: [
             {
               ledger_exists: state.ledgerExists,
+              cms_ledger_exists: state.cmsLedgerExists,
               role_exists: state.roleExists,
               cms_schema_exists: state.cmsSchemaExists,
             },
           ],
+        });
+      }
+      if (sql.includes("select name from cms.payload_migrations")) {
+        return Promise.resolve({
+          rows: state.cmsApplied.map((name) => ({ name })),
         });
       }
       if (sql.includes("select version from supabase_migrations")) {
@@ -183,6 +195,7 @@ describe("bootstrapDatabase full provisioning", () => {
       skipped: false,
       appliedVersions: MIGRATIONS.map((m) => m.version),
       cmsRoleCreated: true,
+      cmsWarmed: false,
     });
 
     const sqls = fake.calls.map((c) => c.sql);
@@ -248,6 +261,94 @@ describe("bootstrapDatabase full provisioning", () => {
     const result = await run(fake);
     expect(result.appliedVersions).toEqual([]);
     expect(fake.calls.map((c) => c.sql)).not.toContain("select 'one'");
+  });
+});
+
+describe("bootstrapDatabase CMS migrate under the lock", () => {
+  // The fix for the fresh-deploy /welcome 500: Payload's prodMigrations run via
+  // migrateCms INSIDE the advisory lock, never concurrently / at request time.
+  const runWith = (
+    fake: ReturnType<typeof makeFake>,
+    deps: { migrateCms?: () => Promise<void>; cmsMigrationNames?: string[] },
+  ) =>
+    bootstrapDatabase({
+      envSource: ENV,
+      migrations: MIGRATIONS,
+      createClient: () => Promise.resolve(fake.client),
+      logger: spyLogger(),
+      ...deps,
+    });
+
+  it("runs migrateCms while holding the lock on a fresh DB", async () => {
+    const fake = makeFake(); // nothing provisioned yet
+    let sqlsAtCall: string[] = [];
+    const migrateCms = vi.fn(() => {
+      sqlsAtCall = fake.calls.map((c) => c.sql);
+      return Promise.resolve();
+    });
+
+    const result = await runWith(fake, {
+      migrateCms,
+      cmsMigrationNames: ["20260609_initial"],
+    });
+
+    expect(migrateCms).toHaveBeenCalledTimes(1);
+    expect(result.cmsWarmed).toBe(true);
+    // Called after the lock was taken, before it was released.
+    expect(sqlsAtCall.some((s) => s.includes("pg_advisory_lock"))).toBe(true);
+    expect(sqlsAtCall.some((s) => s.includes("pg_advisory_unlock"))).toBe(
+      false,
+    );
+  });
+
+  it("fast-paths (no lock, no migrateCms) once the CMS ledger is complete", async () => {
+    const fake = makeFake({
+      ledgerExists: true,
+      applied: MIGRATIONS.map((m) => m.version),
+      roleExists: true,
+      cmsSchemaExists: true,
+      cmsLedgerExists: true,
+      cmsApplied: ["20260609_initial"],
+    });
+    const migrateCms = vi.fn(() => Promise.resolve());
+
+    const result = await runWith(fake, {
+      migrateCms,
+      cmsMigrationNames: ["20260609_initial"],
+    });
+
+    expect(result.skipped).toBe("up-to-date");
+    expect(result.cmsWarmed).toBe(false);
+    expect(migrateCms).not.toHaveBeenCalled();
+    expect(fake.calls.some((c) => c.sql.includes("pg_advisory_lock"))).toBe(
+      false,
+    );
+  });
+
+  it("takes the lock for a CMS migration added to an already-provisioned DB", async () => {
+    // supabase migrations done + role/schema exist, but a NEW Payload migration
+    // is bundled that the cms ledger doesn't have yet — must not fast-path.
+    const fake = makeFake({
+      ledgerExists: true,
+      applied: MIGRATIONS.map((m) => m.version),
+      roleExists: true,
+      cmsSchemaExists: true,
+      cmsLedgerExists: true,
+      cmsApplied: ["20260609_initial"],
+    });
+    const migrateCms = vi.fn(() => Promise.resolve());
+
+    const result = await runWith(fake, {
+      migrateCms,
+      cmsMigrationNames: ["20260609_initial", "20260613_new_feature"],
+    });
+
+    expect(result.skipped).toBe(false);
+    expect(result.cmsWarmed).toBe(true);
+    expect(migrateCms).toHaveBeenCalledTimes(1);
+    expect(fake.calls.some((c) => c.sql.includes("pg_advisory_lock"))).toBe(
+      true,
+    );
   });
 });
 

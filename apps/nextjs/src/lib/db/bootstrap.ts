@@ -3,7 +3,7 @@
  * on first server boot, so deploying the kit needs NO manual `supabase db push`
  * or SQL-editor steps.
  *
- * Called from instrumentation.ts BEFORE the Payload warm-up. In order:
+ * Called from instrumentation.ts at server boot. In order, under one lock:
  *
  *   1. applies pending `supabase/migrations/*.sql` (bundled by
  *      `pnpm db:gen-migrations`) against the privileged session-mode connection,
@@ -13,15 +13,22 @@
  *   2. provisions the `cms` schema + least-privilege `payload_cms` role
  *      (mirroring supabase/payload/00_cms_role.sql; password from
  *      PAYLOAD_DATABASE_URL, or derived from SUPABASE_SERVICE_ROLE_KEY when
- *      unset — see lib/cms/derived-credentials) so the Payload warm-up right
- *      after can run its own `prodMigrations`;
+ *      unset — see lib/cms/derived-credentials);
  *   3. backfills `public.profiles` for accounts created before the trigger
- *      existed, flagging the earliest signup as the founder.
+ *      existed, flagging the earliest signup as the founder;
+ *   4. runs Payload's `prodMigrations` + extension reconcile via the injected
+ *      `migrateCms` callback — STILL HOLDING THE LOCK, so the CMS migration is
+ *      serialized across cold-starting instances and never runs at request
+ *      time (a failed Payload migration calls `process.exit(1)`, which a
+ *      concurrent run would otherwise trigger and surface as a Vercel
+ *      FUNCTION_INVOCATION_FAILED 500). See BootstrapDeps#migrateCms.
  *
  * Concurrency-safe (session advisory lock + re-check inside it) and idempotent
- * (a provisioned DB short-circuits on one cheap inspection round). It NEVER
- * throws: any failure logs `[db-bootstrap]` loudly and lets the boot continue,
- * degrading to the manual provisioning flow documented in the README.
+ * (a fully-provisioned, fully-migrated DB short-circuits on one cheap
+ * inspection round — no lock, and the caller warms Payload unlocked since no
+ * migration is pending). It NEVER throws: any failure logs `[db-bootstrap]`
+ * loudly and lets the boot continue, degrading to the manual provisioning flow
+ * documented in the README.
  */
 import type { SqlMigration } from "./migrations";
 import { env } from "../../env";
@@ -61,6 +68,28 @@ export interface BootstrapDeps {
   /** Connection factory — defaults to a real `pg.Client`. */
   createClient?: (connectionString: string) => Promise<BootstrapClient>;
   logger?: Pick<Console, "info" | "warn" | "error">;
+  /**
+   * Bundled Payload (`cms`) migration NAMES. Lets the bootstrap detect a
+   * pending CMS migration — on a fresh DB, or after a deploy adds one to an
+   * already-provisioned DB — and run it under the lock via `migrateCms`.
+   * Omitted ⇒ CMS migration state is not tracked (the bootstrap only
+   * provisions the schema/role; Payload migrates itself later, unlocked).
+   */
+  cmsMigrationNames?: string[];
+  /**
+   * Warms Payload — `getPayload()` runs its `prodMigrations` on first connect —
+   * and reconciles the extension registry/menu. Invoked once, INSIDE the
+   * bootstrap's cross-instance advisory lock (on the reliable session
+   * connection), so the first-boot CMS migration is serialized across cold-
+   * starting instances and never runs at request time. That matters because a
+   * failed Payload migration calls `process.exit(1)` (uncatchable): under
+   * concurrent cold starts two instances run the same migration, the loser
+   * hits a duplicate "already exists" and exits, which Vercel surfaces as a
+   * `FUNCTION_INVOCATION_FAILED` 500 on whatever request that lambda was
+   * serving (e.g. `/welcome`). Injected from instrumentation so this module
+   * stays Payload-free.
+   */
+  migrateCms?: () => Promise<void>;
 }
 
 export interface BootstrapResult {
@@ -74,6 +103,10 @@ export interface BootstrapResult {
     | false;
   appliedVersions: string[];
   cmsRoleCreated: boolean;
+  /** Whether `migrateCms` ran here (under the lock). When false on a non-error
+   * result, the caller is responsible for warming Payload itself (unlocked is
+   * safe — the fast path only short-circuits once nothing is pending). */
+  cmsWarmed: boolean;
   /** Sanitized failure summary (set on connect/migration errors) — safe for
    * the public /api/health/db endpoint; never contains the connection string. */
   error?: { code?: string; message: string };
@@ -84,6 +117,9 @@ interface DbState {
   cmsSchemaExists: boolean;
   applied: Set<string>;
   pending: SqlMigration[];
+  /** Bundled Payload migration names not yet in `cms.payload_migrations`.
+   * Empty when `cmsMigrationNames` was not supplied (CMS state untracked). */
+  pendingCms: string[];
 }
 
 async function defaultCreateClient(
@@ -108,10 +144,12 @@ async function defaultCreateClient(
 async function inspectState(
   client: BootstrapClient,
   migrations: SqlMigration[],
+  cmsMigrationNames?: string[],
 ): Promise<DbState> {
   const flags = await client.query(
     `select
        to_regclass('supabase_migrations.schema_migrations') is not null as ledger_exists,
+       to_regclass('cms.payload_migrations') is not null as cms_ledger_exists,
        exists (select 1 from pg_roles where rolname = $1) as role_exists,
        exists (select 1 from information_schema.schemata where schema_name = 'cms') as cms_schema_exists`,
     [CMS_ROLE],
@@ -124,11 +162,27 @@ async function inspectState(
     );
     applied = new Set(versions.rows.map((r) => String(r.version)));
   }
+
+  // Pending Payload migrations: only computed when names are supplied. When the
+  // cms.payload_migrations ledger doesn't exist yet (fresh DB), every bundled
+  // migration is pending; otherwise it's the bundled names not yet recorded.
+  let pendingCms: string[] = [];
+  if (cmsMigrationNames && cmsMigrationNames.length > 0) {
+    if (row.cms_ledger_exists) {
+      const ran = await client.query(`select name from cms.payload_migrations`);
+      const have = new Set(ran.rows.map((r) => String(r.name)));
+      pendingCms = cmsMigrationNames.filter((name) => !have.has(name));
+    } else {
+      pendingCms = [...cmsMigrationNames];
+    }
+  }
+
   return {
     roleExists: Boolean(row.role_exists),
     cmsSchemaExists: Boolean(row.cms_schema_exists),
     applied,
     pending: pendingMigrations(migrations, applied),
+    pendingCms,
   };
 }
 
@@ -225,6 +279,7 @@ async function runBootstrap(deps: BootstrapDeps): Promise<BootstrapResult> {
     skipped: false,
     appliedVersions: [],
     cmsRoleCreated: false,
+    cmsWarmed: false,
   };
 
   if (envSource.DB_BOOTSTRAP === "off") {
@@ -250,12 +305,19 @@ async function runBootstrap(deps: BootstrapDeps): Promise<BootstrapResult> {
     // Hosted role defaults are too short for DDL of this size.
     await client.query(`set statement_timeout = '5min'`);
 
-    // Fast path: a fully-provisioned DB costs one inspection round, no lock.
-    const state = await inspectState(client, migrations);
+    // Fast path: a fully-provisioned, fully-migrated DB costs one inspection
+    // round, no lock. `pendingCms` keeps a deploy that adds a Payload migration
+    // from short-circuiting here — it must take the lock and run it too.
+    const state = await inspectState(
+      client,
+      migrations,
+      deps.cmsMigrationNames,
+    );
     if (
       state.pending.length === 0 &&
       state.roleExists &&
-      state.cmsSchemaExists
+      state.cmsSchemaExists &&
+      state.pendingCms.length === 0
     ) {
       return { ...none, skipped: "up-to-date" };
     }
@@ -266,7 +328,11 @@ async function runBootstrap(deps: BootstrapDeps): Promise<BootstrapResult> {
       BOOTSTRAP_LOCK_KEY,
     ]);
     locked = true;
-    const inLock = await inspectState(client, migrations); // double-check
+    const inLock = await inspectState(
+      client,
+      migrations,
+      deps.cmsMigrationNames,
+    ); // double-check
 
     const bundledVersions = new Set(migrations.map((m) => m.version));
     const remoteAhead = [...inLock.applied].filter(
@@ -333,7 +399,27 @@ async function runBootstrap(deps: BootstrapDeps): Promise<BootstrapResult> {
       log.error("[db-bootstrap] profile backfill failed", error);
     }
 
-    return { skipped: false, appliedVersions, cmsRoleCreated };
+    // Run Payload's migrations (+ extension reconcile) HERE, still holding the
+    // advisory lock, so the first-boot CMS migration is serialized across
+    // instances and never runs at request time. A concurrent cold start blocks
+    // on the lock above, then finds the ledger complete and no-ops — so a
+    // failed migration's process.exit (the FUNCTION_INVOCATION_FAILED 500)
+    // can't happen. Best-effort: a failure here is logged, not thrown, and the
+    // boot continues (request-path getPayload would retry it).
+    let cmsWarmed = false;
+    if (deps.migrateCms) {
+      try {
+        await deps.migrateCms();
+        cmsWarmed = true;
+      } catch (error) {
+        log.error(
+          "[db-bootstrap] CMS migrate/warm-up failed under the init lock — the first request will retry it",
+          error,
+        );
+      }
+    }
+
+    return { skipped: false, appliedVersions, cmsRoleCreated, cmsWarmed };
   } catch (error) {
     log.error(
       "[db-bootstrap] failed — continuing boot; the app degrades to the manual `supabase db push` flow",

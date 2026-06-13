@@ -11,6 +11,7 @@ const result = (over: Partial<BootstrapResult> = {}): BootstrapResult => ({
   skipped: false,
   appliedVersions: [],
   cmsRoleCreated: false,
+  cmsWarmed: false,
   ...over,
 });
 
