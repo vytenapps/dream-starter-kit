@@ -94,3 +94,64 @@ html[data-theme="dark"] {
   --font-body: var(--font-sans);
   --font-mono: var(--font-mono);
 }
+
+/* ── 3. Sidebar logout button — match the nav hamburger/collapse toggle ─────── */
+/*
+ * Our custom Supabase logout (payload/components/LogoutButton.tsx) replaces
+ * Payload's default `nav__log-out` anchor. Give it the same bordered, rounded
+ * box + hover treatment as the nav Hamburger at the top of the sidebar
+ * (@payloadcms/ui elements/Hamburger) and a 1px icon stroke so the style and
+ * icon/stroke match the collapse/expand toggle. These rules are intentionally
+ * unlayered so they win over Payload's `@layer payload-default` defaults.
+ */
+.nav__controls .nav-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--base) * 0.1);
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--theme-text);
+  background-color: var(--theme-bg);
+  box-shadow: 0 0 0 1px var(--theme-elevation-150);
+  transition-property: box-shadow, background-color;
+  transition-duration: 100ms;
+  transition-timing-function: cubic-bezier(0, 0.2, 0.2, 1);
+}
+
+.nav__controls .nav-logout:hover {
+  background-color: var(--theme-elevation-100);
+  box-shadow: 0 0 0 1px var(--theme-elevation-500);
+}
+
+.nav__controls .nav-logout:focus {
+  outline: none;
+}
+
+.nav__controls .nav-logout:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* Icon container + glyph mirror the hamburger's `__open-icon`/`__close-icon`
+ * (var(--base) box) and the menu/chevron icons' 1px non-scaling stroke. */
+.nav__controls .nav-logout__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--base);
+  height: var(--base);
+}
+
+.nav__controls .nav-logout .icon {
+  width: var(--base);
+  height: var(--base);
+}
+
+.nav__controls .nav-logout .icon .stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
