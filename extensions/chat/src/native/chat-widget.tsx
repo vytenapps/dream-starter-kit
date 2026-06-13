@@ -14,7 +14,7 @@ export function ChatWidget() {
   return (
     <Pressable
       className="border-border w-full rounded-md border p-3"
-      onPress={() => router.push("/x/chat")}
+      onPress={() => router.push("/a/chat")}
     >
       <Text className="text-muted-foreground text-xs">AI Chat</Text>
       <Text className="text-base font-medium">

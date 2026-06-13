@@ -29,7 +29,7 @@ describe("defineExtension", () => {
   it("defaults nav order and route area", () => {
     const m = defineExtension({
       ...minimal,
-      nav: { web: [{ title: "Demo", href: "/x/demo" }] },
+      nav: { web: [{ title: "Demo", href: "/a/demo" }] },
       routes: { web: [{ path: "", component: "DemoHome" }] },
     });
     expect(m.nav.web[0]?.order).toBe(100);

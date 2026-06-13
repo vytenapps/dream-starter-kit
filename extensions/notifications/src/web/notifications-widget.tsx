@@ -19,7 +19,7 @@ export function NotificationsWidget() {
           </CardTitle>
         </div>
         <Button asChild size="sm" variant="outline">
-          <a href="/x/notifications">Open</a>
+          <a href="/a/notifications">Open</a>
         </Button>
       </CardHeader>
     </Card>

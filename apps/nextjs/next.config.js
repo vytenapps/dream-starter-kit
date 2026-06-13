@@ -36,27 +36,29 @@ const config = {
 
   /**
    * Legacy paths from before the extension refactor — features extracted into
-   * extensions now mount under /x/<slug> (EXTENSIONS-PLAN.md §2); old links
-   * and bookmarks keep working.
+   * extensions now mount under /a/<slug> (EXTENSIONS-PLAN.md §2); old links
+   * and bookmarks keep working. The /x catch-all covers the previous
+   * default-mount namespace (old bookmarks + stale CMS nav-items rows).
    */
   redirects: () =>
     Promise.resolve([
       {
         source: "/notifications",
-        destination: "/x/notifications",
+        destination: "/a/notifications",
         permanent: true,
       },
       {
         source: "/reminders",
-        destination: "/x/reminders",
+        destination: "/a/reminders",
         permanent: true,
       },
-      { source: "/chat", destination: "/x/chat", permanent: true },
+      { source: "/chat", destination: "/a/chat", permanent: true },
       {
         source: "/chat/:id",
-        destination: "/x/chat/:id",
+        destination: "/a/chat/:id",
         permanent: true,
       },
+      { source: "/x/:path*", destination: "/a/:path*", permanent: true },
     ]),
 
   /**

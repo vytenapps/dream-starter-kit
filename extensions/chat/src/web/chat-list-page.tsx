@@ -18,7 +18,7 @@ export function ChatListPage() {
   async function onNew() {
     try {
       const thread = await createThread.mutateAsync(undefined);
-      router.push(`/x/chat/${thread.id}`);
+      router.push(`/a/chat/${thread.id}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not start chat");
     }
@@ -42,7 +42,7 @@ export function ChatListPage() {
                 <CardHeader className="flex-row items-center justify-between">
                   <CardTitle className="text-base">
                     <Link
-                      href={`/x/chat/${thread.id}`}
+                      href={`/a/chat/${thread.id}`}
                       className="hover:underline"
                     >
                       {thread.title ?? "Untitled"}

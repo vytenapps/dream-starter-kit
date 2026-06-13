@@ -67,7 +67,7 @@ the native graph fails the PR.
 | slug / package | `^[a-z][a-z0-9-]{1,30}$` / `@acme/ext-<slug>` | `chat` |
 | Supabase tables | `ext_<slug_snake>` or `ext_<slug_snake>_*`, RLS required | `ext_chat_threads` |
 | Payload slugs | `ext-<slug>-*` (labels stay clean) | `ext-billing-plans` |
-| Web routes | `/x/<slug>/…` default; validated `mount` overrides | billing mounts `/billing` |
+| Web routes | `/a/<slug>/…` default; validated `mount` overrides | billing mounts `/billing` |
 | Server API | `/api/ext/<slug>/…` | `POST /api/ext/chat/stream` |
 | Edge functions | `<slug>-*` | `reminders-process` |
 | Env vars | `EXT_<SLUG>_*` (client keys get `NEXT_PUBLIC_`/`EXPO_PUBLIC_` added by codegen) | `EXT_CHAT_MAX_TOKENS` |
@@ -83,7 +83,7 @@ declares and never touch `auth.*`/`storage.*`/role/grant DDL.
   `apps/expo/src/ext/*.generated.ts`: nav defaults, widgets, icon map, server
   route tables, Payload collections/globals/plugins/migrations/seeds/settings,
   merged env shapes, the bundled lock;
-- **route stubs**: two-line `page.tsx`/screen files under `/x/<slug>` (or the
+- **route stubs**: two-line `page.tsx`/screen files under `/a/<slug>` (or the
   mount override), plus a per-extension `layout.tsx` that 404s when disabled;
 - **migrations**: extension SQL is version-pinned (`extensions/.ext-lock.json`)
   and copied into `supabase/migrations/`; Payload migrations are copied into

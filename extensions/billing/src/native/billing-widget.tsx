@@ -13,7 +13,7 @@ export function BillingWidget() {
   return (
     <Pressable
       className="border-border w-full rounded-md border p-3"
-      onPress={() => router.push("/x/billing")}
+      onPress={() => router.push("/a/billing")}
     >
       <Text className="text-muted-foreground text-xs">Plan</Text>
       <Text className="text-base font-medium">

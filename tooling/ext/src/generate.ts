@@ -457,7 +457,7 @@ export function buildStubs(exts: LoadedExtension[]): GeneratedFile[] {
           r.area === "public"
             ? EXT_PATHS.nextPublicGroup
             : EXT_PATHS.nextAppGroup;
-        const base = r.mount ? r.mount.replace(/^\//, "") : `x/${slug}`;
+        const base = r.mount ? r.mount.replace(/^\//, "") : `a/${slug}`;
         bases.add(`${group}/${base}`);
         const seg = r.path ? `/${r.path}` : "";
         const entry = r.rsc ? "web-server" : "web";
@@ -503,7 +503,7 @@ export default async function ExtensionLayout({
         const file =
           r.mount === "index"
             ? "index"
-            : `x/${slug}/${r.path === "" ? "index" : r.path}`;
+            : `a/${slug}/${r.path === "" ? "index" : r.path}`;
         files.push({
           path: `${EXT_PATHS.expoAppGroup}/${file}.tsx`,
           slug,

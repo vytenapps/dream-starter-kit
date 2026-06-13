@@ -82,7 +82,7 @@ export function NotificationBell() {
         <DropdownMenuItem asChild>
           {/* Plain anchor (not next/link) — keeps the extension free of a
               next dependency; a full navigation here is fine. */}
-          <a href="/x/notifications">View all</a>
+          <a href="/a/notifications">View all</a>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

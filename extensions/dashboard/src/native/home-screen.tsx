@@ -16,18 +16,18 @@ import { Text } from "@acme/ui-native/text";
  */
 const FALLBACK_MENU: NavMenuEntry[] = [
   { key: "core:/content/posts", label: "Posts", href: "/content/posts" },
-  { key: "ext:chat:/x/chat", label: "Chat", href: "/x/chat" },
+  { key: "ext:chat:/a/chat", label: "Chat", href: "/a/chat" },
   {
-    key: "ext:reminders:/x/reminders",
+    key: "ext:reminders:/a/reminders",
     label: "Reminders",
-    href: "/x/reminders",
+    href: "/a/reminders",
   },
   {
-    key: "ext:notifications:/x/notifications",
+    key: "ext:notifications:/a/notifications",
     label: "Notifications",
-    href: "/x/notifications",
+    href: "/a/notifications",
   },
-  { key: "ext:billing:/x/billing", label: "Pricing", href: "/x/billing" },
+  { key: "ext:billing:/a/billing", label: "Pricing", href: "/a/billing" },
   { key: "core:/profile", label: "Profile", href: "/profile" },
 ];
 

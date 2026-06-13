@@ -7,7 +7,7 @@
       "source": "local",
       "installedVia": "preinstalled",
       "stubs": [
-        "apps/expo/src/app/(app)/x/billing/index.tsx",
+        "apps/expo/src/app/(app)/a/billing/index.tsx",
         "apps/nextjs/src/app/(frontend)/(app)/billing/layout.tsx",
         "apps/nextjs/src/app/(frontend)/(app)/billing/page.tsx",
         "apps/nextjs/src/app/(frontend)/(public)/pricing/layout.tsx",
@@ -24,11 +24,11 @@
       "source": "local",
       "installedVia": "preinstalled",
       "stubs": [
-        "apps/expo/src/app/(app)/x/chat/[threadId].tsx",
-        "apps/expo/src/app/(app)/x/chat/index.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/chat/[threadId]/page.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/chat/layout.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/chat/page.tsx",
+        "apps/expo/src/app/(app)/a/chat/[threadId].tsx",
+        "apps/expo/src/app/(app)/a/chat/index.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/chat/[threadId]/page.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/chat/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/chat/page.tsx",
         "apps/nextjs/src/payload/migrations/20260612_015425_ext_chat_settings.ts"
       ],
       "edgeFunctions": []
@@ -51,9 +51,9 @@
       "source": "local",
       "installedVia": "preinstalled",
       "stubs": [
-        "apps/expo/src/app/(app)/x/notifications/index.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/notifications/layout.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/notifications/page.tsx"
+        "apps/expo/src/app/(app)/a/notifications/index.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/notifications/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/notifications/page.tsx"
       ],
       "edgeFunctions": []
     },
@@ -63,9 +63,9 @@
       "source": "local",
       "installedVia": "preinstalled",
       "stubs": [
-        "apps/expo/src/app/(app)/x/reminders/index.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/reminders/layout.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/reminders/page.tsx"
+        "apps/expo/src/app/(app)/a/reminders/index.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/reminders/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/reminders/page.tsx"
       ],
       "edgeFunctions": [
         "reminders-process"

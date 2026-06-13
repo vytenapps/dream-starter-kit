@@ -42,16 +42,16 @@ export const extInstalled: ExtInstalled[] = [
 export const extNavDefaults: { web: ExtNavDefault[]; native: ExtNavDefault[] } = {
   web: [
     { key: "ext:billing:0", extension: "billing", title: "Billing", href: "/billing", icon: "IconCreditCard", order: 50 },
-    { key: "ext:chat:0", extension: "chat", title: "Chat", href: "/x/chat", icon: "IconMessageCircle", order: 20 },
+    { key: "ext:chat:0", extension: "chat", title: "Chat", href: "/a/chat", icon: "IconMessageCircle", order: 20 },
     { key: "ext:dashboard:0", extension: "dashboard", title: "Dashboard", href: "/a", icon: "IconDashboard", order: 10 },
-    { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/x/notifications", icon: "IconBell", order: 40 },
-    { key: "ext:reminders:0", extension: "reminders", title: "Reminders", href: "/x/reminders", icon: "IconClock", order: 30 },
+    { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/a/notifications", icon: "IconBell", order: 40 },
+    { key: "ext:reminders:0", extension: "reminders", title: "Reminders", href: "/a/reminders", icon: "IconClock", order: 30 },
   ],
   native: [
-    { key: "ext:billing:0", extension: "billing", title: "Pricing", href: "/x/billing", order: 55 },
-    { key: "ext:chat:0", extension: "chat", title: "Chat", href: "/x/chat", icon: "IconMessageCircle", order: 20 },
-    { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/x/notifications", icon: "IconBell", order: 40 },
-    { key: "ext:reminders:0", extension: "reminders", title: "Reminders", href: "/x/reminders", icon: "IconClock", order: 30 },
+    { key: "ext:billing:0", extension: "billing", title: "Pricing", href: "/a/billing", order: 55 },
+    { key: "ext:chat:0", extension: "chat", title: "Chat", href: "/a/chat", icon: "IconMessageCircle", order: 20 },
+    { key: "ext:notifications:0", extension: "notifications", title: "Notifications", href: "/a/notifications", icon: "IconBell", order: 40 },
+    { key: "ext:reminders:0", extension: "reminders", title: "Reminders", href: "/a/reminders", icon: "IconClock", order: 30 },
   ],
 };
 

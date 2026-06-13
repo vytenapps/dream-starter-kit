@@ -15,10 +15,10 @@ export default defineExtension({
   description: "AI assistant with persisted chat threads.",
   nav: {
     web: [
-      { title: "Chat", href: "/x/chat", icon: "IconMessageCircle", order: 20 },
+      { title: "Chat", href: "/a/chat", icon: "IconMessageCircle", order: 20 },
     ],
     native: [
-      { title: "Chat", href: "/x/chat", icon: "IconMessageCircle", order: 20 },
+      { title: "Chat", href: "/a/chat", icon: "IconMessageCircle", order: 20 },
     ],
   },
   routes: {

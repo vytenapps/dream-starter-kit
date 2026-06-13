@@ -9,7 +9,7 @@ function HeaderBell() {
   const router = useRouter();
   return (
     <Pressable
-      onPress={() => router.push("/x/notifications")}
+      onPress={() => router.push("/a/notifications")}
       hitSlop={8}
       accessibilityLabel="Notifications"
     >

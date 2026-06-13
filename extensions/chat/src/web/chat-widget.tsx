@@ -24,7 +24,7 @@ export function ChatWidget() {
           </CardTitle>
         </div>
         <Button asChild size="sm" variant="outline">
-          <a href="/x/chat">Open</a>
+          <a href="/a/chat">Open</a>
         </Button>
       </CardHeader>
     </Card>

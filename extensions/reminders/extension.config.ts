@@ -18,7 +18,7 @@ export default defineExtension({
     web: [
       {
         title: "Reminders",
-        href: "/x/reminders",
+        href: "/a/reminders",
         icon: "IconClock",
         order: 30,
       },
@@ -26,7 +26,7 @@ export default defineExtension({
     native: [
       {
         title: "Reminders",
-        href: "/x/reminders",
+        href: "/a/reminders",
         icon: "IconClock",
         order: 30,
       },

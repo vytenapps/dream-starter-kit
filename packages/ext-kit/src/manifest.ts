@@ -31,7 +31,7 @@ const routeEntrySchema = z.object({
   /** Web layout group for the generated stub: authed shell (default) or public. */
   area: z.enum(["app", "public"]).default("app"),
   /**
-   * Absolute mount override instead of /x/<slug>/<path> (e.g. billing claims
+   * Absolute mount override instead of /a/<slug>/<path> (e.g. billing claims
    * "/billing", dashboard claims "/a"). Validated against the reserved core
    * list and cross-extension collisions. On native, "index" mounts the home
    * screen.

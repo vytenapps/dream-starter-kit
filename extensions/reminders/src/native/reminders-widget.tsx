@@ -15,7 +15,7 @@ export function RemindersWidget() {
   return (
     <Pressable
       className="border-border w-full rounded-md border p-3"
-      onPress={() => router.push("/x/reminders")}
+      onPress={() => router.push("/a/reminders")}
     >
       <Text className="text-muted-foreground text-xs">Reminders</Text>
       <Text className="text-base font-medium">
