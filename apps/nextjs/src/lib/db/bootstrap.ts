@@ -208,6 +208,7 @@ async function runBootstrap(deps: BootstrapDeps): Promise<BootstrapResult> {
   const log = deps.logger ?? console;
   const envSource = deps.envSource ?? {
     SUPABASE_DB_URL: env.SUPABASE_DB_URL,
+    POSTGRES_URL: env.POSTGRES_URL,
     POSTGRES_URL_NON_POOLING: env.POSTGRES_URL_NON_POOLING,
     DB_BOOTSTRAP: env.DB_BOOTSTRAP,
     PAYLOAD_DATABASE_URL: env.PAYLOAD_DATABASE_URL,

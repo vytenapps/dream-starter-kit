@@ -63,10 +63,51 @@ describe("resolveAdminDbUrl", () => {
     ).toBeUndefined();
   });
 
-  it("never considers the pooled POSTGRES_URL", () => {
+  it("derives the IPv4 session pooler from POSTGRES_URL (6543 → 5432)", () => {
+    // The Vercel<->Supabase integration injects POSTGRES_URL as the IPv4
+    // TRANSACTION pooler; the bootstrap needs the SESSION pooler (same host,
+    // port 5432) because POSTGRES_URL_NON_POOLING is IPv6-only on Vercel.
     expect(
-      resolveAdminDbUrl({ POSTGRES_URL: "postgresql://pooled" }),
+      resolveAdminDbUrl({
+        POSTGRES_URL:
+          "postgres://postgres.ref:pw@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require",
+        POSTGRES_URL_NON_POOLING:
+          "postgresql://postgres:pw@db.ref.supabase.co:5432/postgres",
+      }),
+    ).toBe(
+      "postgres://postgres.ref:pw@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require",
+    );
+  });
+
+  it("ignores a POSTGRES_URL that isn't a :6543 Supavisor pooler URL", () => {
+    // Not a pooler host → can't assume session semantics; fall through.
+    expect(
+      resolveAdminDbUrl({
+        POSTGRES_URL:
+          "postgresql://postgres:pw@db.ref.supabase.co:6543/postgres",
+        POSTGRES_URL_NON_POOLING: "postgresql://direct",
+      }),
+    ).toBe("postgresql://direct");
+    // Pooler host but already session-mode (5432) → no rewrite needed, and not
+    // a 6543 transaction URL, so it's left for the NON_POOLING fallback.
+    expect(
+      resolveAdminDbUrl({
+        POSTGRES_URL: "postgresql://pooled",
+      }),
     ).toBeUndefined();
+  });
+
+  it("prefers the session pooler over the direct POSTGRES_URL_NON_POOLING", () => {
+    expect(
+      resolveAdminDbUrl({
+        POSTGRES_URL:
+          "postgres://postgres.ref:pw@aws-1-eu-west-2.pooler.supabase.com:6543/postgres",
+        POSTGRES_URL_NON_POOLING:
+          "postgresql://postgres:pw@db.ref.supabase.co:5432/postgres",
+      }),
+    ).toBe(
+      "postgres://postgres.ref:pw@aws-1-eu-west-2.pooler.supabase.com:5432/postgres",
+    );
   });
 });
 

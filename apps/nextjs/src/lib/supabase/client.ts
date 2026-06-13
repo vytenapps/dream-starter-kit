@@ -2,7 +2,7 @@ import { createBrowserClient } from "@supabase/ssr";
 
 import type { Database } from "@acme/api/types";
 
-import { env } from "~/env";
+import { env, supabaseAnonKey } from "~/env";
 
 /**
  * Browser Supabase client (cookie-based session via @supabase/ssr).
@@ -11,6 +11,6 @@ import { env } from "~/env";
 export function createClient() {
   return createBrowserClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    supabaseAnonKey(),
   );
 }

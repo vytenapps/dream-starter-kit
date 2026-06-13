@@ -6,7 +6,7 @@ import type { Database } from "@acme/api";
 import type { ExtRouteContext } from "@acme/ext-kit/server";
 import { slidingWindow } from "@acme/config";
 
-import { env } from "~/env";
+import { env, supabaseAnonKey } from "~/env";
 import {
   extPublicRoutes,
   extServerRoutes,
@@ -48,7 +48,7 @@ async function authenticate(req: NextRequest) {
   if (authHeader) {
     const supabase = createBearerClient<Database>(
       env.NEXT_PUBLIC_SUPABASE_URL,
-      env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      supabaseAnonKey(),
       {
         global: { headers: { Authorization: authHeader } },
         auth: { persistSession: false, autoRefreshToken: false },
