@@ -63,6 +63,39 @@ describe("validateManifest", () => {
     );
   });
 
+  it("accepts an adapter that contributes a settings tab to a required target", () => {
+    const m = defineExtension({
+      ...base,
+      slug: "chat-adapter-slack",
+      requires: ["chat"],
+      cms: { settingsTabFor: "chat" },
+    });
+    expect(validateManifest(m)).toEqual([]);
+  });
+
+  it("rejects settingsTabFor whose target isn't a required dep", () => {
+    const m = defineExtension({
+      ...base,
+      slug: "chat-adapter-slack",
+      cms: { settingsTabFor: "chat" },
+    });
+    expect(
+      validateManifest(m).some((e) => e.includes("must be listed in requires")),
+    ).toBe(true);
+  });
+
+  it("rejects settingsTabFor combined with hasSettings", () => {
+    const m = defineExtension({
+      ...base,
+      slug: "chat-adapter-slack",
+      requires: ["chat"],
+      cms: { settingsTabFor: "chat", hasSettings: true },
+    });
+    expect(
+      validateManifest(m).some((e) => e.includes("mutually exclusive")),
+    ).toBe(true);
+  });
+
   it("rejects unprefixed edge functions and self-requires", () => {
     const m = defineExtension({
       ...base,

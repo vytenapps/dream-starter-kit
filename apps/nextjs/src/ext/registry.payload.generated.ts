@@ -5,6 +5,7 @@
 import type { CollectionConfig, Config, GlobalConfig } from "payload";
 
 import type { ExtensionSettings, ExtSeedStep } from "@acme/ext-kit/payload";
+import { composeSettingsTabs } from "@acme/ext-kit/payload";
 
 import * as payload_billing from "@acme/ext-billing/payload";
 import * as payload_chat from "@acme/ext-chat/payload";
@@ -18,6 +19,11 @@ export interface ExtPayloadMigration {
   down: (args: any) => Promise<void>;
 }
 
+const chatSettings = composeSettingsTabs(payload_chat.settings, [
+  payload_chat_adapter_sendblue.settings,
+  payload_chat_adapter_slack.settings,
+]);
+
 export const extCollections: CollectionConfig[] = [
   ...payload_billing.collections,
   ...payload_chat.collections,
@@ -26,9 +32,7 @@ export const extCollections: CollectionConfig[] = [
 
 export const extGlobals: GlobalConfig[] = [
   payload_billing.settings.global,
-  payload_chat.settings.global,
-  payload_chat_adapter_sendblue.settings.global,
-  payload_chat_adapter_slack.settings.global,
+  chatSettings.global,
   payload_docs.settings.global,
 ];
 
@@ -53,8 +57,6 @@ export const extSeedSteps: ExtSeedStep[] = [
 /** slug → settings definition (admin settings screens, §1.7). */
 export const extSettings: Record<string, ExtensionSettings> = {
   "billing": payload_billing.settings,
-  "chat": payload_chat.settings,
-  "chat-adapter-sendblue": payload_chat_adapter_sendblue.settings,
-  "chat-adapter-slack": payload_chat_adapter_slack.settings,
+  "chat": chatSettings,
   "docs": payload_docs.settings,
 };

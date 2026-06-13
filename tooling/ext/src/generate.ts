@@ -237,15 +237,38 @@ export function buildNextPayloadRegistry(exts: LoadedExtension[]): string {
       `  ...payload_${ident(e.manifest.slug)}.collections,`,
     ),
   );
+  // Adapters that contribute a settings TAB to another extension's settings
+  // global (cms.settingsTabFor) instead of owning their own — grouped by target.
+  const contributorsByTarget = new Map<string, LoadedExtension[]>();
+  for (const e of cmsExts) {
+    const target = e.manifest.cms.settingsTabFor;
+    if (!target) continue;
+    contributorsByTarget.set(target, [
+      ...(contributorsByTarget.get(target) ?? []),
+      e,
+    ]);
+  }
+  // The settings expression for an extension: its own definition, or — when
+  // adapters target it — a composeSettingsTabs(...) over a generated const.
+  const settingsExpr = (e: LoadedExtension): string =>
+    contributorsByTarget.has(e.manifest.slug)
+      ? `${ident(e.manifest.slug)}Settings`
+      : `payload_${ident(e.manifest.slug)}.settings`;
+  const settingsConsts = [...contributorsByTarget.entries()].map(
+    ([target, contribs]) => {
+      const tabs = contribs
+        .map((c) => `  payload_${ident(c.manifest.slug)}.settings`)
+        .join(",\n");
+      return `const ${ident(target)}Settings = composeSettingsTabs(payload_${ident(target)}.settings, [\n${tabs},\n]);`;
+    },
+  );
+
   const globals = cmsExts.flatMap((e) => [
     ...spread(
       e.manifest.cms.globals.length > 0,
       `  ...payload_${ident(e.manifest.slug)}.globals,`,
     ),
-    ...spread(
-      e.manifest.cms.hasSettings,
-      `  payload_${ident(e.manifest.slug)}.settings.global,`,
-    ),
+    ...spread(e.manifest.cms.hasSettings, `  ${settingsExpr(e)}.global,`),
   ]);
   const plugins = cmsExts.flatMap((e) =>
     spread(
@@ -268,7 +291,7 @@ export function buildNextPayloadRegistry(exts: LoadedExtension[]): string {
   const settings = cmsExts.flatMap((e) =>
     spread(
       e.manifest.cms.hasSettings,
-      `  ${quote(e.manifest.slug)}: payload_${ident(e.manifest.slug)}.settings,`,
+      `  ${quote(e.manifest.slug)}: ${settingsExpr(e)},`,
     ),
   );
 
@@ -277,16 +300,21 @@ export function buildNextPayloadRegistry(exts: LoadedExtension[]): string {
   const obj = (rows: string[]): string =>
     rows.length === 0 ? "{}" : `{\n${rows.join("\n")}\n}`;
 
+  const composeImport =
+    settingsConsts.length > 0
+      ? `import { composeSettingsTabs } from "@acme/ext-kit/payload";\n`
+      : "";
+
   return `${ESLINT_OFF}${HEADER}import type { CollectionConfig, Config, GlobalConfig } from "payload";
 
 import type { ExtensionSettings, ExtSeedStep } from "@acme/ext-kit/payload";
-${imports.length > 0 ? `\n${imports.join("\n")}\n` : ""}
+${composeImport}${imports.length > 0 ? `\n${imports.join("\n")}\n` : ""}
 export interface ExtPayloadMigration {
   name: string;
   up: (args: any) => Promise<void>;
   down: (args: any) => Promise<void>;
 }
-
+${settingsConsts.length > 0 ? `\n${settingsConsts.join("\n")}\n` : ""}
 export const extCollections: CollectionConfig[] = ${arr(collections)};
 
 export const extGlobals: GlobalConfig[] = ${arr(globals)};

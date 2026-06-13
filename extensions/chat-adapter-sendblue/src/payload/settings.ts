@@ -1,10 +1,15 @@
-import { defineExtensionSettings } from "@acme/ext-kit/payload";
+import { defineAdapterSettings } from "@acme/ext-kit/payload";
 
-/** Sendblue adapter settings — toggle + daily outbound quota. Tokens live in
- * env (golden rule #3). */
-export const settings = defineExtensionSettings({
+/**
+ * Sendblue adapter settings — toggle + daily outbound quota, contributed as a
+ * tab to the one "AI Chat Settings" screen (target: chat) rather than a
+ * standalone global. Tokens live in env (golden rule #3).
+ */
+export const settings = defineAdapterSettings({
   slug: "chat-adapter-sendblue",
-  name: "Sendblue Adapter",
+  name: "Sendblue",
+  target: "chat",
+  description: "Answer over iMessage/SMS with the AI chat bot brain.",
   fields: [
     {
       name: "enabled",

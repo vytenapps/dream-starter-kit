@@ -118,6 +118,13 @@ export const extensionManifestSchema = z.object({
       hasSeed: z.boolean().default(false),
       /** `./payload` exports `settings` (an admin settings screen). */
       hasSettings: z.boolean().default(false),
+      /**
+       * `./payload` exports `settings` as an adapter contribution
+       * (`defineAdapterSettings`) merged as a TAB into the named target
+       * extension's settings global instead of owning its own. Mutually
+       * exclusive with `hasSettings`. The target must be a `requires` dep.
+       */
+      settingsTabFor: z.string().min(1).optional(),
     })
     .prefault({}),
   env: z
