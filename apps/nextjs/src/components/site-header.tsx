@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { IconSettings } from "@tabler/icons-react";
 
 import { NotificationBell } from "@acme/ext-notifications/web";
+import { Button } from "@acme/ui/button";
 import { ThemeToggle } from "@acme/ui/theme";
 
 import type { NavMenuItem } from "~/lib/ext/nav-types";
@@ -15,7 +18,13 @@ const FALLBACK_TITLES: Record<string, string> = {
   profile: "Profile",
 };
 
-export function SiteHeader({ navItems }: { navItems: NavMenuItem[] }) {
+export function SiteHeader({
+  navItems,
+  isStaff = false,
+}: {
+  navItems: NavMenuItem[];
+  isStaff?: boolean;
+}) {
   const pathname = usePathname();
   // Title comes from the CMS-driven menu (longest matching href wins), so
   // staff renames in /admin flow into the header too.
@@ -41,6 +50,19 @@ export function SiteHeader({ navItems }: { navItems: NavMenuItem[] }) {
               that extension (not just disable it), delete this gated block —
               app-shell chrome is the one host edit `ext remove` can't do. */}
           {hasExtension("notifications") && <NotificationBell />}
+          {/* Staff/admin shortcut into the Payload CMS admin. */}
+          {isStaff && (
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              aria-label="CMS settings"
+            >
+              <Link href="/admin">
+                <IconSettings className="size-5" />
+              </Link>
+            </Button>
+          )}
           <ThemeToggle />
         </div>
       </div>

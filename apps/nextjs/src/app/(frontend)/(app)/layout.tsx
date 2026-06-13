@@ -30,13 +30,16 @@ export default async function AppLayout({
 
   if (!user) redirect("/sign-in");
 
-  const [branding, navItems, disabledSlugs] = await Promise.all([
+  const [branding, navItems, disabledSlugs, profile] = await Promise.all([
     getBranding(),
     // CMS-driven menu (nav-items collection) — staff edits in /admin show up
     // without a redeploy; degrades to the generated defaults if the CMS is down.
     getWebNavItems(),
     disabledExtensionSlugs(),
+    // Staff/admin flag gates the header's CMS settings shortcut (RLS read-own).
+    supabase.from("profiles").select("is_staff").eq("id", user.id).single(),
   ]);
+  const isStaff = profile.data?.is_staff ?? false;
 
   return (
     <BrandingProvider value={branding}>
@@ -50,7 +53,7 @@ export default async function AppLayout({
       >
         <AppSidebar variant="inset" navItems={navItems} />
         <SidebarInset>
-          <SiteHeader navItems={navItems} />
+          <SiteHeader isStaff={isStaff} navItems={navItems} />
           <AppExtWidgetsProvider disabledSlugs={disabledSlugs}>
             {children}
           </AppExtWidgetsProvider>

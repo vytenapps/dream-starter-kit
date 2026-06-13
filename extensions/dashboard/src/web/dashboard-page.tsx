@@ -17,20 +17,6 @@ function DashboardInner() {
 
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardDescription>Content</CardDescription>
-            <CardTitle className="text-xl">Payload CMS</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/admin">Open the CMS admin</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* The widget grid: every installed-and-enabled extension's declared
           widget, provided by the host via @acme/ext-kit/react. */}
       {widgets.length > 0 && (
