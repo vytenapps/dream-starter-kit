@@ -239,9 +239,26 @@ export default buildConfig({
     push: process.env.NODE_ENV !== "production",
     // Core + extension migrations merged by timestamp prefix; Payload's
     // cms.payload_migrations ledger keys by name, so boot runs stay idempotent.
-    prodMigrations: [...migrations, ...extPayloadMigrations].sort((a, b) =>
-      a.name.localeCompare(b.name),
-    ),
+    //
+    // NOT registered during `next build`. In production mode the adapter runs
+    // `prodMigrations` automatically the first time it connects (db-postgres
+    // `connect.ts`) — but `next build` also runs in production mode and warms
+    // Payload while prerendering pages. If the build's database was ever dev-
+    // pushed (e.g. a local `pnpm dev`/`pnpm cms:seed` ran first, leaving the
+    // `batch: -1` dev marker in `cms.payload_migrations`), that auto-migrate
+    // hits Payload's interactive "you've run in dev mode … run migrations?
+    // (y/N)" prompt. The non-TTY build workers block on it until the 60s
+    // per-page timeout fires, so static generation flakes/fails (it passed on
+    // a freshly-migrated DB with no dev marker, e.g. CI's healthy-stack job —
+    // hence the intermittence). The build never needs migrations run anyway;
+    // gating them to the real server boot removes the prompt path entirely.
+    // `NEXT_PHASE` is propagated to the static-gen worker processes, so the
+    // gate holds there too.
+    prodMigrations: buildPhase
+      ? undefined
+      : [...migrations, ...extPayloadMigrations].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        ),
     migrationDir: path.resolve(dirname, "payload/migrations"),
   }),
   sharp,
