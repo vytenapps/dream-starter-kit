@@ -10,7 +10,6 @@ import {
   IconMoon,
   IconNotification,
   IconSun,
-  IconSunMoon,
   IconUserCircle,
 } from "@tabler/icons-react";
 
@@ -51,7 +50,7 @@ export function NavUser({
   const { isMobile } = useSidebar();
   const router = useRouter();
   const supabase = createClient();
-  const { themeMode, setTheme } = useTheme();
+  const { themeMode, resolvedTheme, setTheme } = useTheme();
 
   const themeOptions: {
     mode: ThemeMode;
@@ -123,7 +122,9 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <IconSunMoon />
+                {/* Reflects the RESOLVED theme (sun/moon) — in System mode it
+                    tracks the live light/dark, not a generic icon. */}
+                {resolvedTheme === "dark" ? <IconMoon /> : <IconSun />}
                 Theme
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
