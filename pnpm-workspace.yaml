@@ -67,6 +67,13 @@ overrides:
   '@types/minimatch': 5.1.2
   lightningcss: 1.30.1
   vite: 7.1.12
+  # Security: force patched transitive deps (critical GitHub advisories).
+  # basic-ftp <5.2.0 path traversal (GHSA-5rq4-664w-9x2c, via @turbo/gen);
+  # handlebars <=4.7.8 RCE/AST injection (GHSA-2w6w-674q-4c4q, via @turbo/gen);
+  # shell-quote <=1.8.3 command injection (GHSA-w7jw-789q-3m8p, via react-native).
+  basic-ftp: '>=5.2.0'
+  handlebars: '>=4.7.9'
+  shell-quote: '>=1.8.4'
 
 publicHoistPattern:
   - '@ianvs/prettier-plugin-sort-imports'
