@@ -1,0 +1,184 @@
+/* KIT ADAPTATION (see VENDOR.md): the editor/animation styles the vendored
+ * components need, extracted from upstream app/globals.css and converted from
+ * Tailwind @apply/@utility directives to plain CSS so the extension stays
+ * self-contained (no Tailwind processing context required). Theme tokens come
+ * from the kit's shadcn variables. Imported by the ChatScreen entry. */
+
+@keyframes ext-chat-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ext-chat-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ext-chat-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.fade-up {
+  animation: ext-chat-fade-up 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.fade-in {
+  animation: ext-chat-fade-in 0.2s ease both;
+}
+
+.shimmer {
+  animation: ext-chat-shimmer 2s linear infinite;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(1 0 0 / 0.04),
+    transparent
+  );
+  background-size: 200% 100%;
+}
+
+/* Document preview skeletons */
+.skeleton * {
+  pointer-events: none !important;
+}
+
+.skeleton *[class^="text-"] {
+  color: transparent;
+  border-radius: 0.375rem;
+  background: color-mix(in oklab, var(--foreground) 20%, transparent);
+  user-select: none;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeleton .skeleton-bg {
+  background: color-mix(in oklab, var(--foreground) 10%, transparent);
+}
+
+.skeleton .skeleton-div {
+  background: color-mix(in oklab, var(--foreground) 20%, transparent);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ProseMirror (text artifact editor) */
+.ProseMirror {
+  outline: none;
+}
+
+.suggestion-highlight {
+  cursor: pointer;
+  border-radius: 0.125rem;
+  background: oklch(0.85 0.1 250 / 0.5);
+  transition: background-color 150ms;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.suggestion-highlight:hover {
+  background: oklch(0.78 0.13 250 / 0.6);
+}
+
+.dark .suggestion-highlight {
+  background: oklch(0.55 0.15 250 / 0.4);
+  color: oklch(0.95 0.03 250);
+}
+
+.dark .suggestion-highlight:hover {
+  background: oklch(0.65 0.15 250 / 0.5);
+}
+
+/* CodeMirror (code artifact editor) */
+.cm-editor {
+  background: transparent !important;
+  outline: none !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  font-family:
+    "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", ui-monospace,
+    monospace !important;
+}
+
+.cm-gutters {
+  background: transparent !important;
+  border-right: 0 !important;
+  outline: none !important;
+}
+
+.cm-gutter.cm-lineNumbers {
+  min-width: 3rem;
+  font-size: 11px !important;
+  color: color-mix(in oklab, var(--muted-foreground) 40%, transparent);
+}
+
+.cm-scroller {
+  overflow: auto !important;
+}
+
+.ͼo.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+.ͼo.cm-selectionBackground,
+.ͼo.cm-content::selection {
+  background: oklch(0.55 0.12 250 / 0.15) !important;
+}
+
+.dark
+  .ͼo.cm-focused
+  > .cm-scroller
+  > .cm-selectionLayer
+  .cm-selectionBackground,
+.dark .ͼo.cm-selectionBackground,
+.dark .ͼo.cm-content::selection {
+  background: oklch(0.55 0.12 250 / 0.2) !important;
+}
+
+.cm-activeLine {
+  background: color-mix(in oklab, var(--muted) 50%, transparent) !important;
+  border-radius: 0.125rem !important;
+}
+
+.cm-activeLineGutter {
+  background: transparent !important;
+}
+
+.cm-activeLineGutter .cm-gutterElement {
+  color: var(--foreground) !important;
+  opacity: 0.7;
+}
+
+.cm-gutter.cm-lineNumbers .cm-gutterElement {
+  padding-right: 12px !important;
+}
+
+.cm-foldGutter {
+  min-width: 0.75rem;
+}
+
+.cm-cursor {
+  border-left-color: oklch(0.55 0.12 250) !important;
+  border-left-width: 2px !important;
+}
+
+.cm-matchingBracket {
+  background: oklch(0.55 0.12 250 / 0.12) !important;
+  outline: 1px solid oklch(0.55 0.12 250 / 0.3);
+  border-radius: 2px;
+}

@@ -36,7 +36,13 @@ export default defineExtension({
     routes: true,
   },
   database: {
-    tables: ["ext_chat_threads", "ext_chat_messages"],
+    tables: [
+      "ext_chat_threads",
+      "ext_chat_messages",
+      "ext_chat_documents",
+      "ext_chat_suggestions",
+      "ext_chat_votes",
+    ],
   },
   cms: {
     hasSettings: true,

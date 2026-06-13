@@ -10,6 +10,11 @@
       "sha256": "5d8de93e3dd24dbcca2955629de0b89a791e6cd44c1944e4fa3cae5d7cae2d65",
       "target": "20260612011539_ext_chat_001_initial.sql"
     },
+    "chat/002_chat_sdk.sql": {
+      "version": "20260613012847",
+      "sha256": "9e5bc437bb64d07dd2c59d8cca03a35ef2569d906727e726f5170633dbad8a7f",
+      "target": "20260613012847_ext_chat_002_chat_sdk.sql"
+    },
     "demo/001_initial.sql": {
       "version": "20260612100001",
       "sha256": "3d92502cfbf0b105901f6b6beb517f30f6ace3c7f2d3a304d923a0bd2e2bed7e",
