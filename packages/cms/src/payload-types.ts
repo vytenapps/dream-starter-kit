@@ -236,8 +236,6 @@ export interface Config {
     "profile-fields": ProfileField;
     "ext-billing-settings": ExtBillingSetting;
     "ext-chat-settings": ExtChatSetting;
-    "ext-chat-adapter-sendblue-settings": ExtChatAdapterSendblueSetting;
-    "ext-chat-adapter-slack-settings": ExtChatAdapterSlackSetting;
     "ext-docs-settings": ExtDocsSetting;
   };
   globalsSelect: {
@@ -250,12 +248,6 @@ export interface Config {
     "ext-chat-settings":
       | ExtChatSettingsSelect<false>
       | ExtChatSettingsSelect<true>;
-    "ext-chat-adapter-sendblue-settings":
-      | ExtChatAdapterSendblueSettingsSelect<false>
-      | ExtChatAdapterSendblueSettingsSelect<true>;
-    "ext-chat-adapter-slack-settings":
-      | ExtChatAdapterSlackSettingsSelect<false>
-      | ExtChatAdapterSlackSettingsSelect<true>;
     "ext-docs-settings":
       | ExtDocsSettingsSelect<false>
       | ExtDocsSettingsSelect<true>;
@@ -5356,36 +5348,22 @@ export interface ExtChatSetting {
    * Max upload size for a voice clip.
    */
   maxAudioMB?: number | null;
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ext-chat-adapter-sendblue-settings".
- */
-export interface ExtChatAdapterSendblueSetting {
-  id: number;
-  /**
-   * Process Sendblue webhooks. Requires SENDBLUE_API_KEY/SECRET/FROM_NUMBER.
-   */
-  enabled?: boolean | null;
-  /**
-   * Max outbound messages per from-number per day (0 = unlimited).
-   */
-  dailyOutboundQuota?: number | null;
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ext-chat-adapter-slack-settings".
- */
-export interface ExtChatAdapterSlackSetting {
-  id: number;
-  /**
-   * Process Slack events. Requires SLACK_BOT_TOKEN + SLACK_SIGNING_SECRET.
-   */
-  enabled?: boolean | null;
+  adapter_chat_adapter_sendblue?: {
+    /**
+     * Process Sendblue webhooks. Requires SENDBLUE_API_KEY/SECRET/FROM_NUMBER.
+     */
+    enabled?: boolean | null;
+    /**
+     * Max outbound messages per from-number per day (0 = unlimited).
+     */
+    dailyOutboundQuota?: number | null;
+  };
+  adapter_chat_adapter_slack?: {
+    /**
+     * Process Slack events. Requires SLACK_BOT_TOKEN + SLACK_SIGNING_SECRET.
+     */
+    enabled?: boolean | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -5688,29 +5666,17 @@ export interface ExtChatSettingsSelect<T extends boolean = true> {
   transcriptionEnabled?: T;
   transcriptionModel?: T;
   maxAudioMB?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ext-chat-adapter-sendblue-settings_select".
- */
-export interface ExtChatAdapterSendblueSettingsSelect<
-  T extends boolean = true,
-> {
-  enabled?: T;
-  dailyOutboundQuota?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ext-chat-adapter-slack-settings_select".
- */
-export interface ExtChatAdapterSlackSettingsSelect<T extends boolean = true> {
-  enabled?: T;
+  adapter_chat_adapter_sendblue?:
+    | T
+    | {
+        enabled?: T;
+        dailyOutboundQuota?: T;
+      };
+  adapter_chat_adapter_slack?:
+    | T
+    | {
+        enabled?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -10,7 +10,7 @@ import type {
   ExtPublicRouteTable,
 } from "@acme/ext-kit/server";
 import { handleChannelMessage } from "@acme/ext-chat/server";
-import { getExtensionSettings } from "@acme/ext-kit/payload";
+import { getAdapterSettings } from "@acme/ext-kit/payload";
 
 import type { SlackAdapterSettings } from "../payload/settings";
 import { settings } from "../payload/settings";
@@ -72,7 +72,7 @@ export const publicRoutes: ExtPublicRouteTable = {
         { status: 503 },
       );
     }
-    const adapterSettings = await getExtensionSettings<SlackAdapterSettings>(
+    const adapterSettings = await getAdapterSettings<SlackAdapterSettings>(
       await ctx.getPayload(),
       settings,
     );

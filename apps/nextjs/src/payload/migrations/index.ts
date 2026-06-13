@@ -9,6 +9,9 @@ import * as migration_20260612_032502_drop_ext_demo from './20260612_032502_drop
 import * as migration_20260612_222154_add_item_tooltip from './20260612_222154_add_item_tooltip';
 import * as migration_20260613_021834_ext_chat_skills_and_settings_tabs from './20260613_021834_ext_chat_skills_and_settings_tabs';
 import * as migration_20260613_023123_ext_docs_initial from './20260613_023123_ext_docs_initial';
+import * as migration_20260613_025126_ext_chat_adapter_slack_initial from './20260613_025126_ext_chat_adapter_slack_initial';
+import * as migration_20260613_025129_ext_chat_adapter_sendblue_initial from './20260613_025129_ext_chat_adapter_sendblue_initial';
+import * as migration_20260613_161650_ai_chat_adapter_settings_tabs from './20260613_161650_ai_chat_adapter_settings_tabs';
 
 export const migrations = [
   {
@@ -65,5 +68,20 @@ export const migrations = [
     up: migration_20260613_023123_ext_docs_initial.up,
     down: migration_20260613_023123_ext_docs_initial.down,
     name: '20260613_023123_ext_docs_initial',
+  },
+  {
+    up: migration_20260613_025126_ext_chat_adapter_slack_initial.up,
+    down: migration_20260613_025126_ext_chat_adapter_slack_initial.down,
+    name: '20260613_025126_ext_chat_adapter_slack_initial',
+  },
+  {
+    up: migration_20260613_025129_ext_chat_adapter_sendblue_initial.up,
+    down: migration_20260613_025129_ext_chat_adapter_sendblue_initial.down,
+    name: '20260613_025129_ext_chat_adapter_sendblue_initial',
+  },
+  {
+    up: migration_20260613_161650_ai_chat_adapter_settings_tabs.up,
+    down: migration_20260613_161650_ai_chat_adapter_settings_tabs.down,
+    name: '20260613_161650_ai_chat_adapter_settings_tabs'
   },
 ];

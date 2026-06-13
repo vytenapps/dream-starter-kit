@@ -17,7 +17,7 @@ export const Skills: CollectionConfig = {
   labels: { singular: "Chat Skill", plural: "Chat Skills" },
   admin: {
     useAsTitle: "name",
-    group: "Extensions",
+    group: "AI Chat",
     defaultColumns: ["name", "category", "priority", "isEnabled"],
     description:
       "Routable assistant personas. When a user's message matches a skill's " +

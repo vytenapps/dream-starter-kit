@@ -10,7 +10,7 @@ import type {
   ExtPublicRouteTable,
 } from "@acme/ext-kit/server";
 import { handleChannelMessage, transcribeAudio } from "@acme/ext-chat/server";
-import { getExtensionSettings } from "@acme/ext-kit/payload";
+import { getAdapterSettings } from "@acme/ext-kit/payload";
 
 import type { SendblueAdapterSettings } from "../payload/settings";
 import { settings } from "../payload/settings";
@@ -95,7 +95,7 @@ export const publicRoutes: ExtPublicRouteTable = {
         { status: 503 },
       );
     }
-    const adapterSettings = await getExtensionSettings<SendblueAdapterSettings>(
+    const adapterSettings = await getAdapterSettings<SendblueAdapterSettings>(
       await ctx.getPayload(),
       settings,
     );

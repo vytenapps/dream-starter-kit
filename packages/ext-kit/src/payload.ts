@@ -79,6 +79,12 @@ export interface ExtensionSettingsOptions {
    * secrets belong in the zod env schema, golden rule #3).
    */
   publicRead?: boolean;
+  /**
+   * Admin nav group for the settings screen. Defaults to "Extensions"; a
+   * feature with several admin entries (e.g. AI Chat: settings + skills +
+   * adapter tabs) can cluster them under its own group.
+   */
+  group?: string;
 }
 
 export interface ExtensionSettings {
@@ -144,7 +150,7 @@ export function defineExtensionSettings(
     global: {
       slug: globalSlug,
       label: `${opts.name} Settings`,
-      admin: { group: "Extensions" },
+      admin: { group: opts.group ?? "Extensions" },
       access: {
         read: opts.publicRead ? anyoneRead : staffRead,
         update: adminUpdate,
@@ -176,6 +182,134 @@ export async function getExtensionSettings<
     return merged as T;
   } catch {
     return settings.defaults as T;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Settings-tab contributions — adapters that plug into a host feature's       */
+/* settings screen instead of owning a separate one (e.g. chat channel         */
+/* adapters → the one "AI Chat Settings" global).                              */
+/* -------------------------------------------------------------------------- */
+
+/** A tab injected into a target settings global (structurally a Payload Tab). */
+interface SettingsTab {
+  label: string;
+  description?: string;
+  fields: Field[];
+}
+
+export interface AdapterSettingsOptions {
+  /** The contributing extension's slug, e.g. "chat-adapter-slack". */
+  slug: string;
+  /** Tab label, e.g. "Slack". */
+  name: string;
+  /** The host extension slug whose settings global hosts this tab, e.g. "chat". */
+  target: string;
+  /** Optional tab blurb. */
+  description?: string;
+  /** The author-controlled fields (stored under a per-adapter group). */
+  fields: Field[];
+}
+
+export interface AdapterSettings {
+  slug: string;
+  /** Host extension slug whose `ext-<target>-settings` global owns the tab. */
+  target: string;
+  /** Group key namespacing this adapter's fields inside the target global. */
+  groupName: string;
+  /** Field defaults (un-nested), applied by `getAdapterSettings`. */
+  defaults: Record<string, unknown>;
+  /** The tab merged into the target settings global by `composeSettingsTabs`. */
+  tab: SettingsTab;
+}
+
+/** `chat-adapter-slack` → `adapter_chat_adapter_slack` (a valid field/group name). */
+export function adapterGroupName(slug: string): string {
+  return `adapter_${slug.replace(/-/g, "_")}`;
+}
+
+/**
+ * Define an adapter's settings as a TAB contributed to another extension's
+ * settings global, rather than a standalone global. The fields live under a
+ * per-adapter `group` so multiple adapters never collide, and the host's
+ * generated payload registry merges the tab in via `composeSettingsTabs`. The
+ * adapter reads its values back with `getAdapterSettings`. Keeps adapters
+ * modular (own extension, own webhook) while presenting one unified screen.
+ */
+export function defineAdapterSettings(
+  opts: AdapterSettingsOptions,
+): AdapterSettings {
+  const groupName = adapterGroupName(opts.slug);
+  return {
+    slug: opts.slug,
+    target: opts.target,
+    groupName,
+    defaults: collectDefaults(opts.fields),
+    tab: {
+      label: opts.name,
+      ...(opts.description ? { description: opts.description } : {}),
+      // One group wraps the adapter's fields so the target global stores them
+      // under `groupName` — no field-name collisions across adapters.
+      fields: [
+        {
+          name: groupName,
+          type: "group",
+          label: opts.name,
+          fields: opts.fields,
+        },
+      ],
+    },
+  };
+}
+
+/**
+ * Merge adapter tabs into a host feature's settings global. Called by the
+ * generated payload registry (`pnpm ext sync`) so the host composes — the
+ * feature extension never imports its sibling adapters. The base settings'
+ * first `tabs` field gains one tab per adapter, and the document defaults gain
+ * each adapter's namespaced group.
+ */
+export function composeSettingsTabs(
+  base: ExtensionSettings,
+  adapters: AdapterSettings[],
+): ExtensionSettings {
+  if (adapters.length === 0) return base;
+  const fields = base.global.fields.map((field) => {
+    if ("type" in field && field.type === "tabs" && Array.isArray(field.tabs)) {
+      return { ...field, tabs: [...field.tabs, ...adapters.map((a) => a.tab)] };
+    }
+    return field;
+  });
+  const defaults = { ...base.defaults };
+  for (const a of adapters) defaults[a.groupName] = a.defaults;
+  return {
+    ...base,
+    defaults,
+    global: { ...base.global, fields },
+  };
+}
+
+/**
+ * Read an adapter's settings server-side, from its tab inside the target
+ * settings global (`ext-<target>-settings`), with defaults applied. Mirrors
+ * `getExtensionSettings` but reads the namespaced group.
+ */
+export async function getAdapterSettings<
+  T extends Record<string, unknown> = Record<string, unknown>,
+>(payload: Payload, adapter: AdapterSettings): Promise<T> {
+  try {
+    const findGlobal = payload.findGlobal.bind(payload) as (args: {
+      slug: string;
+    }) => Promise<Record<string, unknown>>;
+    const doc = await findGlobal({ slug: settingsGlobalSlug(adapter.target) });
+    const group = (doc[adapter.groupName] ?? {}) as Record<string, unknown>;
+    const merged: Record<string, unknown> = { ...adapter.defaults };
+    for (const [key, value] of Object.entries(group)) {
+      if (value !== null && value !== undefined) merged[key] = value;
+    }
+    return merged as T;
+  } catch {
+    return adapter.defaults as T;
   }
 }
 
