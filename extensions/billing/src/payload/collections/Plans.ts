@@ -308,5 +308,18 @@ export const Plans: CollectionConfig = {
       collection: "ext-billing-subscriptions",
       on: "plan",
     },
+    // Coupons restricted to this plan (inverse of Coupons.appliesTo). Coupons
+    // that apply to ALL plans (empty appliesTo) won't appear here — the Coupons
+    // collection stays in the nav for those.
+    {
+      name: "coupons",
+      type: "join",
+      collection: "ext-billing-coupons",
+      on: "appliesTo",
+      admin: {
+        defaultColumns: ["name", "code", "active"],
+        description: "Coupons restricted to this plan.",
+      },
+    },
   ],
 };

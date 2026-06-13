@@ -18,6 +18,10 @@ export const CommunitySpaces: CollectionConfig = {
     useAsTitle: "name",
     group: "Community",
     defaultColumns: ["name", "spaceGroup", "accessLevel", "order"],
+    // Managed inline from the Space Groups page (the `spaces` join there).
+    // `spaceGroup` is required, so every space is reachable from its group;
+    // hide the standalone list to keep one entry point.
+    hidden: true,
   },
   defaultPopulate: { name: true, slug: true, accessLevel: true },
   access: {

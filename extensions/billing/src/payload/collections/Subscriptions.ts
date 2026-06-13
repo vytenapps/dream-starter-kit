@@ -22,6 +22,10 @@ export const Subscriptions: CollectionConfig = {
     description:
       "Read-only mirror written by the Stripe webhook. Manage billing in " +
       "Stripe; author the catalog under Plans.",
+    // Read-only mirror; surfaced inline on each Plan (the `subscriptions` join).
+    // Every row has a plan, so hide the standalone list to keep Plans the
+    // single Commerce entry point. A member's subscriptions also show on Users.
+    hidden: true,
   },
   disableDuplicate: true,
   access: {

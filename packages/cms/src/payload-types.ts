@@ -129,6 +129,9 @@ export interface Config {
       reviews: "reviews";
       events: "events";
     };
+    "tag-groups": {
+      tags: "tags";
+    };
     "space-groups": {
       spaces: "community-spaces";
     };
@@ -144,6 +147,10 @@ export interface Config {
     };
     "ext-billing-plans": {
       subscriptions: "ext-billing-subscriptions";
+      coupons: "ext-billing-coupons";
+    };
+    forms: {
+      submissions: "form-submissions";
     };
     "payload-folders": {
       documentsAndFolders:
@@ -567,6 +574,14 @@ export interface TagGroup {
   slug: string;
   description?: string | null;
   displayOrder?: number | null;
+  /**
+   * Tags that belong to this group.
+   */
+  tags?: {
+    docs?: (number | Tag)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -1091,6 +1106,14 @@ export interface ExtBillingPlan {
   lastSyncedAt?: string | null;
   subscriptions?: {
     docs?: (number | ExtBillingSubscription)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  /**
+   * Coupons restricted to this plan.
+   */
+  coupons?: {
+    docs?: (number | ExtBillingCoupon)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
@@ -2929,6 +2952,14 @@ export interface Form {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Submissions received for this form.
+   */
+  submissions?: {
+    docs?: (number | FormSubmission)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -3968,6 +3999,7 @@ export interface TagGroupsSelect<T extends boolean = true> {
   slug?: T;
   description?: T;
   displayOrder?: T;
+  tags?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -4415,6 +4447,7 @@ export interface ExtBillingPlansSelect<T extends boolean = true> {
   syncError?: T;
   lastSyncedAt?: T;
   subscriptions?: T;
+  coupons?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -4622,6 +4655,7 @@ export interface FormsSelect<T extends boolean = true> {
         message?: T;
         id?: T;
       };
+  submissions?: T;
   updatedAt?: T;
   createdAt?: T;
 }
