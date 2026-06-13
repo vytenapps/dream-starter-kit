@@ -88,6 +88,22 @@ export const clientEnvSchema = z.object({
 
 export type ClientEnv = z.infer<typeof clientEnvSchema>;
 
+/**
+ * Is the Vercel AI Gateway reachable? Two valid auth paths (see
+ * https://vercel.com/docs/ai-gateway/authentication-and-byok): an explicit
+ * `AI_GATEWAY_API_KEY` (set locally or in any host), OR the `VERCEL_OIDC_TOKEN`
+ * that Vercel injects automatically on its own deployments — the AI SDK reads
+ * either. Gate AI routes on this, not on the API key alone, so a Vercel deploy
+ * running purely on Gateway credits (no explicit key) isn't falsely rejected
+ * with a 503. `VERCEL_OIDC_TOKEN` is runtime-injected, so it's read from
+ * `process.env` directly rather than the zod schema.
+ */
+export function isAiGatewayConfigured(
+  source: Record<string, string | undefined> = process.env,
+): boolean {
+  return Boolean(source.AI_GATEWAY_API_KEY ?? source.VERCEL_OIDC_TOKEN);
+}
+
 function formatIssues(error: z.ZodError): string {
   return error.issues
     .map((issue) => `  - ${issue.path.join(".") || "(root)"}: ${issue.message}`)

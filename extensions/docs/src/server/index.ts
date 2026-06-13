@@ -9,7 +9,7 @@ import type {
   ExtRouteContext,
   ExtRouteTable,
 } from "@acme/ext-kit/server";
-import { DEFAULT_AI_MODEL } from "@acme/config";
+import { DEFAULT_AI_MODEL, isAiGatewayConfigured } from "@acme/config";
 
 import type { DocsSettings } from "../payload/settings";
 import { lexicalToPlainText } from "./lexical-text";
@@ -93,7 +93,7 @@ const askBodySchema = z.object({
  * keyword (+ the page in view) and streams a cited answer. */
 export const routes: ExtRouteTable = {
   "POST /ask": async (req, ctx) => {
-    if (!process.env.AI_GATEWAY_API_KEY) {
+    if (!isAiGatewayConfigured()) {
       return json(503, { error: "AI is not configured" });
     }
     const parsed = askBodySchema.safeParse(await req.json().catch(() => null));

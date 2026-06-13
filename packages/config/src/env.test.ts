@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { parseClientEnv, parseServerEnv, serverEnvSchema } from "./env";
+import {
+  isAiGatewayConfigured,
+  parseClientEnv,
+  parseServerEnv,
+  serverEnvSchema,
+} from "./env";
 
 const validServer = {
   SUPABASE_URL: "http://127.0.0.1:54321",
@@ -32,6 +37,20 @@ describe("serverEnvSchema", () => {
     expect(env.STRIPE_SECRET_KEY).toBeUndefined();
     expect(env.AI_GATEWAY_API_KEY).toBeUndefined();
     expect(serverEnvSchema.safeParse(validServer).success).toBe(true);
+  });
+});
+
+describe("isAiGatewayConfigured", () => {
+  it("is false with neither an API key nor a Vercel OIDC token", () => {
+    expect(isAiGatewayConfigured({})).toBe(false);
+  });
+
+  it("is true with an explicit AI_GATEWAY_API_KEY", () => {
+    expect(isAiGatewayConfigured({ AI_GATEWAY_API_KEY: "key" })).toBe(true);
+  });
+
+  it("is true on Vercel via the injected OIDC token (no API key)", () => {
+    expect(isAiGatewayConfigured({ VERCEL_OIDC_TOKEN: "oidc" })).toBe(true);
   });
 });
 
