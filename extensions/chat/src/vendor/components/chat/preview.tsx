@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+
 import { suggestions } from "../../lib/constants";
 import { SparklesIcon } from "./icons";
 
@@ -13,12 +14,12 @@ export function Preview() {
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-tl-2xl bg-background">
-      <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border/20 px-5">
-        <div className="flex size-5 items-center justify-center rounded bg-muted/60 ring-1 ring-border/50">
+    <div className="bg-background flex h-full flex-col overflow-hidden rounded-tl-2xl">
+      <div className="border-border/20 flex h-14 shrink-0 items-center gap-3 border-b px-5">
+        <div className="bg-muted/60 ring-border/50 flex size-5 items-center justify-center rounded ring-1">
           <SparklesIcon size={10} />
         </div>
-        <span className="text-[13px] text-muted-foreground">Chatbot</span>
+        <span className="text-muted-foreground text-[13px]">Chatbot</span>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center gap-8 px-8">
@@ -26,7 +27,7 @@ export function Preview() {
           <h2 className="text-xl font-semibold tracking-tight">
             What can I help with?
           </h2>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1.5 text-sm">
             Ask a question, write code, or explore ideas.
           </p>
         </div>
@@ -34,7 +35,7 @@ export function Preview() {
         <div className="grid w-full max-w-md grid-cols-2 gap-2">
           {suggestions.map((suggestion) => (
             <button
-              className="rounded-xl border border-border/30 bg-card/20 px-3 py-2.5 text-left text-[11px] leading-relaxed text-muted-foreground/70 transition-all duration-200 hover:border-border/60 hover:bg-card/40 hover:text-muted-foreground"
+              className="border-border/30 bg-card/20 text-muted-foreground/70 hover:border-border/60 hover:bg-card/40 hover:text-muted-foreground rounded-xl border px-3 py-2.5 text-left text-[11px] leading-relaxed transition-all duration-200"
               key={suggestion}
               onClick={() => handleAction(suggestion)}
               type="button"
@@ -47,7 +48,7 @@ export function Preview() {
 
       <div className="shrink-0 px-5 pb-5">
         <button
-          className="flex w-full items-center rounded-2xl border border-border/30 bg-card/30 px-4 py-3 text-left text-[13px] text-muted-foreground/40 transition-colors hover:border-border/50 hover:text-muted-foreground/60"
+          className="border-border/30 bg-card/30 text-muted-foreground/40 hover:border-border/50 hover:text-muted-foreground/60 flex w-full items-center rounded-2xl border px-4 py-3 text-left text-[13px] transition-colors"
           onClick={() => handleAction()}
           type="button"
         >

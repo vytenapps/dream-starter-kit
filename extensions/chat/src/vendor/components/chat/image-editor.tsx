@@ -1,4 +1,5 @@
 import { clsx as cn } from "clsx";
+
 import { LoaderIcon } from "./icons";
 
 type ImageEditorProps = {

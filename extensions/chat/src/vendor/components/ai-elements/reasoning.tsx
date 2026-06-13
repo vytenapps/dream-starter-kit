@@ -1,18 +1,6 @@
 "use client";
 
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
-
-import { useControllableState } from "@radix-ui/react-use-controllable-state";
-import {
-  Collapsible,
-  CollapsibleTrigger,
-} from "../ui/collapsible";
-import { cn } from "../../lib/utils";
-import { cjk } from "@streamdown/cjk";
-import { code } from "@streamdown/code";
-import { math } from "@streamdown/math";
-import { mermaid } from "@streamdown/mermaid";
-import { ChevronDownIcon } from "lucide-react";
 import {
   createContext,
   memo,
@@ -23,8 +11,16 @@ import {
   useRef,
   useState,
 } from "react";
+import { useControllableState } from "@radix-ui/react-use-controllable-state";
+import { cjk } from "@streamdown/cjk";
+import { code } from "@streamdown/code";
+import { math } from "@streamdown/math";
+import { mermaid } from "@streamdown/mermaid";
+import { ChevronDownIcon } from "lucide-react";
 import { Streamdown } from "streamdown";
 
+import { cn } from "../../lib/utils";
+import { Collapsible, CollapsibleTrigger } from "../ui/collapsible";
 import { Shimmer } from "./shimmer";
 
 interface ReasoningContextValue {
@@ -125,12 +121,12 @@ export const Reasoning = memo(
       (newOpen: boolean) => {
         setIsOpen(newOpen);
       },
-      [setIsOpen]
+      [setIsOpen],
     );
 
     const contextValue = useMemo(
       () => ({ duration, isOpen, isStreaming, setIsOpen }),
-      [duration, isOpen, isStreaming, setIsOpen]
+      [duration, isOpen, isStreaming, setIsOpen],
     );
 
     return (
@@ -145,7 +141,7 @@ export const Reasoning = memo(
         </Collapsible>
       </ReasoningContext.Provider>
     );
-  }
+  },
 );
 
 export type ReasoningTriggerProps = ComponentProps<
@@ -156,7 +152,11 @@ export type ReasoningTriggerProps = ComponentProps<
 
 const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
   if (isStreaming || duration === 0) {
-    return <Shimmer className="font-medium" duration={1}>Thinking...</Shimmer>;
+    return (
+      <Shimmer className="font-medium" duration={1}>
+        Thinking...
+      </Shimmer>
+    );
   }
   if (duration === undefined) {
     return <p>Thought for a few seconds</p>;
@@ -176,8 +176,8 @@ export const ReasoningTrigger = memo(
     return (
       <CollapsibleTrigger
         className={cn(
-          "flex w-full items-center gap-2 text-muted-foreground text-[13px] leading-[1.65] transition-colors hover:text-foreground",
-          className
+          "text-muted-foreground hover:text-foreground flex w-full items-center gap-2 text-[13px] leading-[1.65] transition-colors",
+          className,
         )}
         {...props}
       >
@@ -187,14 +187,14 @@ export const ReasoningTrigger = memo(
             <ChevronDownIcon
               className={cn(
                 "size-4 transition-transform",
-                isOpen ? "rotate-180" : "rotate-0"
+                isOpen ? "rotate-180" : "rotate-0",
               )}
             />
           </>
         )}
       </CollapsibleTrigger>
     );
-  }
+  },
 );
 
 export type ReasoningContentProps = HTMLAttributes<HTMLDivElement> & {
@@ -218,23 +218,21 @@ export const ReasoningContent = memo(
     return (
       <div
         className={cn(
-          "mt-2 animate-in fade-in-0 duration-200 text-muted-foreground/60 [overflow-anchor:none]",
-          className
+          "animate-in fade-in-0 text-muted-foreground/60 mt-2 duration-200 [overflow-anchor:none]",
+          className,
         )}
         {...props}
       >
         <div
-          className="max-h-[200px] overflow-y-auto rounded-lg border border-border/20 bg-muted/30 px-3 py-2 text-[11px] leading-relaxed"
+          className="border-border/20 bg-muted/30 max-h-[200px] overflow-y-auto rounded-lg border px-3 py-2 text-[11px] leading-relaxed"
           ref={scrollRef}
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          <Streamdown plugins={streamdownPlugins}>
-            {children}
-          </Streamdown>
+          <Streamdown plugins={streamdownPlugins}>{children}</Streamdown>
         </div>
       </div>
     );
-  }
+  },
 );
 
 Reasoning.displayName = "Reasoning";

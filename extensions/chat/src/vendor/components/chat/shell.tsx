@@ -1,7 +1,16 @@
 "use client";
 
-import { CHAT_PATH } from "../../lib/constants";
 import { useEffect, useRef, useState } from "react";
+
+import type { Attachment, ChatMessage } from "../../lib/types";
+import { useActiveChat } from "../../hooks/use-active-chat";
+import {
+  initialArtifactData,
+  useArtifact,
+  useArtifactSelector,
+} from "../../hooks/use-artifact";
+import { CHAT_PATH } from "../../lib/constants";
+import { cn } from "../../lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,14 +21,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../ui/alert-dialog";
-import { useActiveChat } from "../../hooks/use-active-chat";
-import {
-  initialArtifactData,
-  useArtifact,
-  useArtifactSelector,
-} from "../../hooks/use-artifact";
-import type { Attachment, ChatMessage } from "../../lib/types";
-import { cn } from "../../lib/utils";
 import { Artifact } from "./artifact";
 import { ChatHeader } from "./chat-header";
 import { DataStreamHandler } from "./data-stream-handler";
@@ -27,11 +28,7 @@ import { submitEditedMessage } from "./message-editor";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
 
-export function ChatShell({
-  user,
-}: {
-  user?: { id: string } | null;
-}) {
+export function ChatShell({ user }: { user?: { id: string } | null }) {
   const {
     chatId,
     messages,
@@ -54,7 +51,7 @@ export function ChatShell({
   } = useActiveChat();
 
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(
-    null
+    null,
   );
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
@@ -79,8 +76,8 @@ export function ChatShell({
       <div className="flex h-full w-full flex-row overflow-hidden">
         <div
           className={cn(
-            "flex min-w-0 flex-col bg-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-            isArtifactVisible ? "w-[40%]" : "w-full"
+            "bg-sidebar flex min-w-0 flex-col transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            isArtifactVisible ? "w-[40%]" : "w-full",
           )}
         >
           <ChatHeader
@@ -90,7 +87,7 @@ export function ChatShell({
             user={user}
           />
 
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:rounded-tl-[12px] md:border-t md:border-l md:border-border/40">
+          <div className="bg-background md:border-border/40 relative flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-tl-[12px] md:border-t md:border-l">
             <Messages
               addToolApprovalResponse={addToolApprovalResponse}
               chatId={chatId}
@@ -113,7 +110,7 @@ export function ChatShell({
               votes={votes}
             />
 
-            <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
+            <div className="bg-background sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 px-2 pb-3 md:px-4 md:pb-4">
               {!isReadonly && (
                 <MultimodalInput
                   attachments={attachments}
@@ -196,7 +193,7 @@ export function ChatShell({
               onClick={() => {
                 window.open(
                   "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card",
-                  "_blank"
+                  "_blank",
                 );
                 window.location.href = `${CHAT_PATH}`;
               }}

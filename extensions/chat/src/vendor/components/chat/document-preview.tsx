@@ -1,20 +1,15 @@
 "use client";
 
-import { API_BASE } from "../../lib/constants";
+import type { MouseEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import equal from "fast-deep-equal";
-import {
-  type MouseEvent,
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
 import useSWR from "swr";
-import { useArtifact } from "../../hooks/use-artifact";
+
 import type { Document } from "../../lib/db/schema";
-import { cn, fetcher } from "../../lib/utils";
 import type { ArtifactKind, UIArtifact } from "./artifact";
+import { useArtifact } from "../../hooks/use-artifact";
+import { API_BASE } from "../../lib/constants";
+import { cn, fetcher } from "../../lib/utils";
 import { CodeEditor } from "./code-editor";
 import { InlineDocumentSkeleton } from "./document-skeleton";
 import {
@@ -50,12 +45,7 @@ export function DocumentPreview({
 
   const { data: documents, isLoading: isDocumentsFetching } = useSWR<
     Document[]
-  >(
-    result
-      ? `${API_BASE}/document?id=${result.id}`
-      : null,
-    fetcher
-  );
+  >(result ? `${API_BASE}/document?id=${result.id}` : null, fetcher);
 
   const previewDocument = useMemo(() => documents?.[0], [documents]);
   const hitboxRef = useRef<HTMLDivElement>(null);
@@ -85,15 +75,15 @@ export function DocumentPreview({
         {title ? (
           <DocumentHeader isStreaming={true} kind={kind} title={title} />
         ) : (
-          <div className="flex flex-row items-center justify-between gap-2 rounded-t-2xl border border-b-0 border-border/50 px-4 py-3 dark:bg-muted">
+          <div className="border-border/50 dark:bg-muted flex flex-row items-center justify-between gap-2 rounded-t-2xl border border-b-0 px-4 py-3">
             <div className="flex flex-row items-center gap-2.5">
-              <div className="size-3.5 animate-pulse rounded bg-muted-foreground/15" />
-              <div className="h-3.5 w-24 animate-pulse rounded bg-muted-foreground/15" />
+              <div className="bg-muted-foreground/15 size-3.5 animate-pulse rounded" />
+              <div className="bg-muted-foreground/15 h-3.5 w-24 animate-pulse rounded" />
             </div>
             <div className="w-8" />
           </div>
         )}
-        <div className="h-[257px] overflow-hidden rounded-b-2xl border border-t-0 border-border/50 bg-muted p-6">
+        <div className="border-border/50 bg-muted h-[257px] overflow-hidden rounded-b-2xl border border-t-0 p-6">
           <InlineDocumentSkeleton />
         </div>
       </div>
@@ -136,19 +126,19 @@ export function DocumentPreview({
 
 const LoadingSkeleton = ({ artifactKind }: { artifactKind: ArtifactKind }) => (
   <div className="w-full max-w-[450px]">
-    <div className="flex flex-row items-center justify-between gap-2 rounded-t-2xl border border-b-0 border-border/50 px-4 py-3 dark:bg-muted">
+    <div className="border-border/50 dark:bg-muted flex flex-row items-center justify-between gap-2 rounded-t-2xl border border-b-0 px-4 py-3">
       <div className="flex flex-row items-center gap-2.5">
-        <div className="size-3.5 animate-pulse rounded bg-muted-foreground/15" />
-        <div className="h-3.5 w-24 animate-pulse rounded bg-muted-foreground/15" />
+        <div className="bg-muted-foreground/15 size-3.5 animate-pulse rounded" />
+        <div className="bg-muted-foreground/15 h-3.5 w-24 animate-pulse rounded" />
       </div>
       <div className="w-8" />
     </div>
     {artifactKind === "image" ? (
-      <div className="overflow-hidden rounded-b-2xl border border-t-0 border-border/50 bg-muted">
-        <div className="h-[257px] w-full animate-pulse bg-muted-foreground/10" />
+      <div className="border-border/50 bg-muted overflow-hidden rounded-b-2xl border border-t-0">
+        <div className="bg-muted-foreground/10 h-[257px] w-full animate-pulse" />
       </div>
     ) : (
-      <div className="h-[257px] overflow-hidden rounded-b-2xl border border-t-0 border-border/50 bg-muted p-6">
+      <div className="border-border/50 bg-muted h-[257px] overflow-hidden rounded-b-2xl border border-t-0 p-6">
         <InlineDocumentSkeleton />
       </div>
     )}
@@ -163,7 +153,7 @@ const PureHitboxLayer = ({
   hitboxRef: React.RefObject<HTMLDivElement>;
   result?: Partial<DocumentToolOutput>;
   setArtifact: (
-    updaterFn: UIArtifact | ((currentArtifact: UIArtifact) => UIArtifact)
+    updaterFn: UIArtifact | ((currentArtifact: UIArtifact) => UIArtifact),
   ) => void;
 }) => {
   const handleClick = useCallback(
@@ -184,7 +174,7 @@ const PureHitboxLayer = ({
         },
       }));
     },
-    [setArtifact, result]
+    [setArtifact, result],
   );
 
   return (
@@ -196,7 +186,7 @@ const PureHitboxLayer = ({
       role="presentation"
     >
       <div className="flex w-full items-center justify-end p-4">
-        <div className="absolute top-[13px] right-[9px] rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+        <div className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-[13px] right-[9px] rounded-lg p-1.5 transition-colors">
           <FullscreenIcon />
         </div>
       </div>
@@ -220,7 +210,7 @@ const PureDocumentHeader = ({
   kind: ArtifactKind;
   isStreaming: boolean;
 }) => (
-  <div className="flex flex-row items-center justify-between gap-2 rounded-t-2xl border border-b-0 border-border/50 px-4 py-3 dark:bg-muted">
+  <div className="border-border/50 dark:bg-muted flex flex-row items-center justify-between gap-2 rounded-t-2xl border border-b-0 px-4 py-3">
     <div className="flex flex-row items-center gap-2.5">
       <div className="text-muted-foreground">
         {isStreaming ? (
@@ -256,11 +246,11 @@ const DocumentContent = ({ document }: { document: Document }) => {
   const { artifact } = useArtifact();
 
   const containerClassName = cn(
-    "h-[257px] overflow-hidden rounded-b-2xl border border-t-0 border-border/50 dark:bg-muted",
+    "border-border/50 dark:bg-muted h-[257px] overflow-hidden rounded-b-2xl border border-t-0",
     {
       "p-4 sm:px-10 sm:py-10": document.kind === "text",
       "p-0": document.kind === "code",
-    }
+    },
   );
 
   const commonProps = {
@@ -300,9 +290,9 @@ const DocumentContent = ({ document }: { document: Document }) => {
           title={document.title}
         />
       ) : null}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-muted to-transparent dark:from-muted" />
+      <div className="from-muted dark:from-muted pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t to-transparent" />
       {document.kind === "code" && (
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-muted to-transparent dark:from-muted" />
+        <div className="from-muted dark:from-muted pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l to-transparent" />
       )}
     </div>
   );

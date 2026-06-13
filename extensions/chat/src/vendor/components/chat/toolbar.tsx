@@ -1,28 +1,24 @@
 "use client";
+
 import type { UseChatHelpers } from "@ai-sdk/react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { clsx as cx } from "clsx";
-import { motion, useMotionValue, useTransform } from "motion/react";
 import { WrenchIcon, XIcon } from "lucide-react";
+import { motion, useMotionValue, useTransform } from "motion/react";
 import { nanoid } from "nanoid";
-import {
-  type Dispatch,
-  memo,
-  type ReactNode,
-  type SetStateAction,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
 import { useOnClickOutside } from "usehooks-ts";
+
+import type { ChatMessage } from "../../lib/types";
+import type { ArtifactKind } from "./artifact";
+import type { ArtifactToolbarItem } from "./create-artifact";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-import type { ChatMessage } from "../../lib/types";
-import { type ArtifactKind, artifactDefinitions } from "./artifact";
-import type { ArtifactToolbarItem } from "./create-artifact";
+import { artifactDefinitions } from "./artifact";
 import { ArrowUpIcon, StopIcon, SummarizeIcon } from "./icons";
 
 type ToolProps = {
@@ -117,7 +113,7 @@ const Tool = ({
         </motion.div>
       </TooltipTrigger>
       <TooltipContent
-        className="rounded-2xl bg-foreground p-3 px-4 text-background"
+        className="bg-foreground text-background rounded-2xl p-3 px-4"
         side="left"
         sideOffset={16}
       >
@@ -175,7 +171,7 @@ const ReadingLevelSelector = ({
           key={id}
           transition={{ delay: 0.1 }}
         >
-          <div className="size-2 rounded-full bg-muted-foreground/40" />
+          <div className="bg-muted-foreground/40 size-2 rounded-full" />
         </motion.div>
       ))}
 
@@ -184,11 +180,11 @@ const ReadingLevelSelector = ({
           <TooltipTrigger asChild>
             <motion.div
               className={cx(
-                "absolute flex flex-row items-center rounded-full border bg-background p-3",
+                "bg-background absolute flex flex-row items-center rounded-full border p-3",
                 {
                   "bg-primary text-primary-foreground": currentLevel !== 2,
                   "bg-background text-foreground": currentLevel === 2,
-                }
+                },
               )}
               drag="y"
               dragConstraints={{ top: -dragConstraints, bottom: 0 }}
@@ -228,7 +224,7 @@ const ReadingLevelSelector = ({
             </motion.div>
           </TooltipTrigger>
           <TooltipContent
-            className="rounded-2xl bg-foreground p-3 px-4 text-background text-sm"
+            className="bg-foreground text-background rounded-2xl p-3 px-4 text-sm"
             side="left"
             sideOffset={16}
           >
@@ -278,7 +274,7 @@ export const Tools = ({
 
 const createFixErrorTool = (
   consoleOutput: string,
-  documentId?: string
+  documentId?: string,
 ): ArtifactToolbarItem => ({
   icon: <WrenchIcon className="size-4" />,
   description: "Fix error",
@@ -365,7 +361,7 @@ const PureToolbar = ({
   }, [status, setIsToolbarVisible]);
 
   const artifactDefinition = artifactDefinitions.find(
-    (definition) => definition.kind === artifactKind
+    (definition) => definition.kind === artifactKind,
   );
 
   if (!artifactDefinition) {
@@ -387,7 +383,7 @@ const PureToolbar = ({
     <TooltipProvider delayDuration={0}>
       <motion.div
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="fixed right-6 bottom-6 z-50 flex cursor-pointer flex-col items-center rounded-3xl border bg-background py-1 shadow-lg"
+        className="bg-background fixed right-6 bottom-6 z-50 flex cursor-pointer flex-col items-center rounded-3xl border py-1 shadow-lg"
         exit={{ opacity: 0, y: -20, transition: { duration: 0.1 } }}
         initial={{ opacity: 0, y: -20, scale: 1 }}
         onAnimationComplete={() => {
@@ -417,7 +413,7 @@ const PureToolbar = ({
         {onClose && (
           <motion.div
             animate={{ opacity: 1 }}
-            className="p-3 text-muted-foreground transition-colors hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground p-3 transition-colors"
             initial={{ opacity: 0 }}
             onClick={onClose}
           >

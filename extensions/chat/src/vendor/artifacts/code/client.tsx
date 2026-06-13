@@ -1,10 +1,11 @@
 import { toast } from "sonner";
-import { CodeEditor } from "../../components/chat/code-editor";
-import {
-  Console,
-  type ConsoleOutput,
-  type ConsoleOutputContent,
+
+import type {
+  ConsoleOutput,
+  ConsoleOutputContent,
 } from "../../components/chat/console";
+import { CodeEditor } from "../../components/chat/code-editor";
+import { Console } from "../../components/chat/console";
 import { Artifact } from "../../components/chat/create-artifact";
 import {
   CopyIcon,
@@ -169,12 +170,12 @@ export const codeArtifact = new Artifact<"code", Metadata>({
           for (const handler of requiredHandlers) {
             if (OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS]) {
               await currentPyodideInstance.runPythonAsync(
-                OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS]
+                OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS],
               );
 
               if (handler === "matplotlib") {
                 await currentPyodideInstance.runPythonAsync(
-                  "setup_matplotlib_output()"
+                  "setup_matplotlib_output()",
                 );
               }
             }

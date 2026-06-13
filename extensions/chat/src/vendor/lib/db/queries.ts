@@ -11,15 +11,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@acme/api";
 
 import type { ArtifactKind } from "../../components/chat/artifact";
-import { ChatbotError } from "../errors";
 import type { Chat, DBMessage, Document, Suggestion, Vote } from "./schema";
+import { ChatbotError } from "../errors";
 
 export type Db = SupabaseClient<Database>;
 
 type ThreadRow = Database["public"]["Tables"]["ext_chat_threads"]["Row"];
 type MessageRow = Database["public"]["Tables"]["ext_chat_messages"]["Row"];
 type DocumentRow = Database["public"]["Tables"]["ext_chat_documents"]["Row"];
-type SuggestionRow = Database["public"]["Tables"]["ext_chat_suggestions"]["Row"];
+type SuggestionRow =
+  Database["public"]["Tables"]["ext_chat_suggestions"]["Row"];
 type VoteRow = Database["public"]["Tables"]["ext_chat_votes"]["Row"];
 
 const toChat = (row: ThreadRow): Chat => ({

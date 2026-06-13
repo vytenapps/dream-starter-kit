@@ -1,11 +1,12 @@
-import { tool, type UIMessageStreamWriter } from "ai";
-import type { ToolSession as Session } from "../../types";
+import type { UIMessageStreamWriter } from "ai";
+import { tool } from "ai";
 import { z } from "zod";
+
+import type { ChatMessage, ToolSession as Session } from "../../types";
 import {
   artifactKinds,
   documentHandlersByArtifactKind,
 } from "../../artifacts/server";
-import type { ChatMessage } from "../../types";
 import { generateUUID } from "../../utils";
 
 type CreateDocumentProps = {
@@ -27,7 +28,7 @@ export const createDocument = ({
       kind: z
         .enum(artifactKinds)
         .describe(
-          "REQUIRED. 'code' for programming/algorithms, 'text' for essays/writing, 'sheet' for spreadsheets"
+          "REQUIRED. 'code' for programming/algorithms, 'text' for essays/writing, 'sheet' for spreadsheets",
         ),
     }),
     execute: async ({ title, kind }) => {
@@ -59,7 +60,7 @@ export const createDocument = ({
 
       const documentHandler = documentHandlersByArtifactKind.find(
         (documentHandlerByArtifactKind) =>
-          documentHandlerByArtifactKind.kind === kind
+          documentHandlerByArtifactKind.kind === kind,
       );
 
       if (!documentHandler) {

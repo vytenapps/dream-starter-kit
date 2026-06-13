@@ -1,14 +1,15 @@
 "use client";
 
-import { API_BASE } from "../../lib/constants";
-import { isAfter } from "date-fns";
-import { motion } from "motion/react";
-import { ChevronLeftIcon, ChevronRightIcon, DiffIcon } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
+import { isAfter } from "date-fns";
+import { ChevronLeftIcon, ChevronRightIcon, DiffIcon } from "lucide-react";
+import { motion } from "motion/react";
 import { useSWRConfig } from "swr";
-import { useArtifact } from "../../hooks/use-artifact";
+
 import type { Document } from "../../lib/db/schema";
+import { useArtifact } from "../../hooks/use-artifact";
+import { API_BASE } from "../../lib/constants";
 import { cn, getDocumentTimestampByIndex } from "../../lib/utils";
 import { LoaderIcon } from "./icons";
 
@@ -42,7 +43,7 @@ export const VersionFooter = ({
   return (
     <motion.div
       animate={{ opacity: 1 }}
-      className="z-50 flex w-full shrink-0 items-center justify-between gap-3 border-t border-border/50 bg-background px-4 py-3"
+      className="border-border/50 bg-background z-50 flex w-full shrink-0 items-center justify-between gap-3 border-t px-4 py-3"
       exit={{ opacity: 0, transition: { duration: 0 } }}
       initial={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
@@ -50,18 +51,18 @@ export const VersionFooter = ({
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1">
           <button
-            className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground flex size-7 items-center justify-center rounded-md transition-colors disabled:pointer-events-none disabled:opacity-30"
             disabled={isFirst}
             onClick={() => handleVersionChange("prev")}
             type="button"
           >
             <ChevronLeftIcon className="size-4" />
           </button>
-          <span className="min-w-[4rem] text-center text-xs tabular-nums text-muted-foreground">
+          <span className="text-muted-foreground min-w-[4rem] text-center text-xs tabular-nums">
             {currentVersionIndex + 1} of {documents.length}
           </span>
           <button
-            className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground flex size-7 items-center justify-center rounded-md transition-colors disabled:pointer-events-none disabled:opacity-30"
             disabled={isLast}
             onClick={() => handleVersionChange("next")}
             type="button"
@@ -72,8 +73,8 @@ export const VersionFooter = ({
 
         <button
           className={cn(
-            "flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-            mode === "diff" && "bg-muted text-foreground"
+            "text-muted-foreground hover:bg-muted hover:text-foreground flex size-7 items-center justify-center rounded-md transition-colors",
+            mode === "diff" && "bg-muted text-foreground",
           )}
           onClick={() => setMode(mode === "diff" ? "edit" : "diff")}
           title="Show changes"
@@ -85,7 +86,7 @@ export const VersionFooter = ({
 
       <div className="flex flex-row gap-2">
         <button
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-foreground px-3 py-1.5 text-sm font-medium text-background transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+          className="bg-foreground text-background inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
           disabled={isMutating}
           onClick={async () => {
             setIsMutating(true);
@@ -96,11 +97,11 @@ export const VersionFooter = ({
                 await fetch(
                   `${API_BASE}/document?id=${artifact.documentId}&timestamp=${getDocumentTimestampByIndex(
                     documents,
-                    currentVersionIndex
+                    currentVersionIndex,
                   )}`,
                   {
                     method: "DELETE",
-                  }
+                  },
                 ),
                 {
                   optimisticData: documents
@@ -111,14 +112,14 @@ export const VersionFooter = ({
                             new Date(
                               getDocumentTimestampByIndex(
                                 documents,
-                                currentVersionIndex
-                              )
-                            )
-                          )
+                                currentVersionIndex,
+                              ),
+                            ),
+                          ),
                         ),
                       ]
                     : [],
-                }
+                },
               );
             } finally {
               setIsMutating(false);
@@ -134,7 +135,7 @@ export const VersionFooter = ({
           )}
         </button>
         <button
-          className="inline-flex items-center justify-center rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition-all duration-150 hover:bg-muted active:scale-[0.98]"
+          className="border-border hover:bg-muted inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-sm font-medium transition-all duration-150 active:scale-[0.98]"
           onClick={() => {
             setMode("edit");
             handleVersionChange("latest");

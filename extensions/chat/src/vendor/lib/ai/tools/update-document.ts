@@ -1,9 +1,10 @@
-import { tool, type UIMessageStreamWriter } from "ai";
-import type { ToolSession as Session } from "../../types";
+import type { UIMessageStreamWriter } from "ai";
+import { tool } from "ai";
 import { z } from "zod";
+
+import type { ChatMessage, ToolSession as Session } from "../../types";
 import { documentHandlersByArtifactKind } from "../../artifacts/server";
 import { getDocumentById } from "../../db/queries";
-import type { ChatMessage } from "../../types";
 
 type UpdateDocumentProps = {
   session: Session;
@@ -47,7 +48,7 @@ export const updateDocument = ({
 
       const documentHandler = documentHandlersByArtifactKind.find(
         (documentHandlerByArtifactKind) =>
-          documentHandlerByArtifactKind.kind === document.kind
+          documentHandlerByArtifactKind.kind === document.kind,
       );
 
       if (!documentHandler) {

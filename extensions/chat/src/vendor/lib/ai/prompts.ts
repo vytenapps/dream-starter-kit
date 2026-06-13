@@ -93,7 +93,7 @@ Requirements:
 
 export const updateDocumentPrompt = (
   currentContent: string | null,
-  type: ArtifactKind
+  type: ArtifactKind,
 ) => {
   const mediaTypes: Record<string, string> = {
     code: "script",

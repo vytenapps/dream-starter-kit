@@ -34,7 +34,8 @@ export const extensionsLock = {
         "apps/nextjs/src/app/(frontend)/(app)/a/chat/[threadId]/page.tsx",
         "apps/nextjs/src/app/(frontend)/(app)/a/chat/layout.tsx",
         "apps/nextjs/src/app/(frontend)/(app)/a/chat/page.tsx",
-        "apps/nextjs/src/payload/migrations/20260612_015425_ext_chat_settings.ts"
+        "apps/nextjs/src/payload/migrations/20260612_015425_ext_chat_settings.ts",
+        "apps/nextjs/src/payload/migrations/20260613_021834_ext_chat_skills_and_settings_tabs.ts"
       ],
       "edgeFunctions": []
     },

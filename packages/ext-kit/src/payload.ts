@@ -85,6 +85,16 @@ export interface ExtensionSettings {
 function collectDefaults(fields: Field[]): Record<string, unknown> {
   const defaults: Record<string, unknown> = {};
   for (const field of fields) {
+    // `tabs` fields nest their fields under tabs[].fields; unnamed tabs hoist
+    // those to the document root, so their defaults belong at the top level.
+    if ("type" in field && field.type === "tabs" && Array.isArray(field.tabs)) {
+      for (const tab of field.tabs) {
+        if (Array.isArray(tab.fields) && !("name" in tab)) {
+          Object.assign(defaults, collectDefaults(tab.fields));
+        }
+      }
+      continue;
+    }
     if (
       "fields" in field &&
       Array.isArray(field.fields) &&

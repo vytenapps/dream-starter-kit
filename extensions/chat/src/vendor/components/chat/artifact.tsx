@@ -1,33 +1,27 @@
-import { API_BASE } from "../../lib/constants";
 import type { UseChatHelpers } from "@ai-sdk/react";
+import type { Dispatch, SetStateAction } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { formatDistance } from "date-fns";
 import equal from "fast-deep-equal";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  type Dispatch,
-  memo,
-  type SetStateAction,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { useWindowSize } from "usehooks-ts";
+
+import type { Document, Vote } from "../../lib/db/schema";
+import type { Attachment, ChatMessage } from "../../lib/types";
+import type { VisibilityType } from "./visibility-selector";
 import { codeArtifact } from "../../artifacts/code/client";
 import { imageArtifact } from "../../artifacts/image/client";
 import { sheetArtifact } from "../../artifacts/sheet/client";
 import { textArtifact } from "../../artifacts/text/client";
 import { useArtifact } from "../../hooks/use-artifact";
-import type { Document, Vote } from "../../lib/db/schema";
-import type { Attachment, ChatMessage } from "../../lib/types";
+import { API_BASE } from "../../lib/constants";
 import { fetcher } from "../../lib/utils";
 import { ArtifactActions } from "./artifact-actions";
 import { ArtifactCloseButton } from "./artifact-close-button";
 import { LoaderIcon } from "./icons";
 import { Toolbar } from "./toolbar";
 import { VersionFooter } from "./version-footer";
-import type { VisibilityType } from "./visibility-selector";
 
 export const artifactDefinitions = [
   textArtifact,
@@ -97,7 +91,7 @@ function PureArtifact({
     artifact.documentId !== "init" && artifact.status !== "streaming"
       ? `${API_BASE}/document?id=${artifact.documentId}`
       : null,
-    fetcher
+    fetcher,
   );
 
   const [mode, setMode] = useState<"edit" | "diff">("edit");
@@ -174,31 +168,28 @@ function PureArtifact({
             return currentDocuments;
           }
 
-          await fetch(
-            `${API_BASE}/document?id=${artifact.documentId}`,
-            {
-              method: "POST",
-              body: JSON.stringify({
-                title: artifact.title,
-                content: updatedContent,
-                kind: artifact.kind,
-                isManualEdit: true,
-              }),
-            }
-          );
+          await fetch(`${API_BASE}/document?id=${artifact.documentId}`, {
+            method: "POST",
+            body: JSON.stringify({
+              title: artifact.title,
+              content: updatedContent,
+              kind: artifact.kind,
+              isManualEdit: true,
+            }),
+          });
 
           setIsContentDirty(false);
 
           return currentDocuments.map((doc, i) =>
             i === currentDocuments.length - 1
               ? { ...doc, content: updatedContent }
-              : doc
+              : doc,
           );
         },
-        { revalidate: false }
+        { revalidate: false },
       );
     },
-    [artifact, mutate]
+    [artifact, mutate],
   );
 
   const latestContentRef = useRef<string>("");
@@ -223,7 +214,7 @@ function PureArtifact({
         handleContentChange(updatedContent);
       }
     },
-    [handleContentChange]
+    [handleContentChange],
   );
 
   function getDocumentContentById(index: number) {
@@ -270,7 +261,7 @@ function PureArtifact({
   const isMobile = windowWidth ? windowWidth < 768 : false;
 
   const artifactDefinition = artifactDefinitions.find(
-    (definition) => definition.kind === artifact.kind
+    (definition) => definition.kind === artifact.kind,
   );
 
   if (!artifactDefinition) {
@@ -303,42 +294,42 @@ function PureArtifact({
     metadata?.outputs
       ?.filter((o: { status: string }) => o.status === "failed")
       .flatMap((o: { contents: { type: string; value: string }[] }) =>
-        o.contents.filter((c) => c.type === "text").map((c) => c.value)
+        o.contents.filter((c) => c.type === "text").map((c) => c.value),
       )
       .join("\n") || undefined;
 
   const artifactPanel = (
     <>
       {sidebarState !== "collapsed" && (
-        <div className="flex h-[calc(3.5rem+1px)] shrink-0 items-center justify-between border-b border-border/50 px-4">
+        <div className="border-border/50 flex h-[calc(3.5rem+1px)] shrink-0 items-center justify-between border-b px-4">
           <div className="flex items-center gap-3">
             <ArtifactCloseButton />
             <div className="flex flex-col gap-0.5">
-              <div className="text-sm font-semibold leading-tight tracking-tight">
+              <div className="text-sm leading-tight font-semibold tracking-tight">
                 {artifact.title}
               </div>
               <div className="flex items-center gap-2">
                 {isContentDirty ? (
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
                     <div className="size-1.5 animate-pulse rounded-full bg-amber-500" />
                     Saving...
                   </div>
                 ) : document ? (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-muted-foreground text-xs">
                     {`Updated ${formatDistance(new Date(document.createdAt), new Date(), { addSuffix: true })}`}
                   </div>
                 ) : artifact.status === "streaming" ? (
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
                     <div className="animate-spin">
                       <LoaderIcon size={12} />
                     </div>
                     Generating...
                   </div>
                 ) : (
-                  <div className="h-3 w-24 animate-pulse rounded bg-muted-foreground/10" />
+                  <div className="bg-muted-foreground/10 h-3 w-24 animate-pulse rounded" />
                 )}
                 {documents && documents.length > 1 && (
-                  <div className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+                  <div className="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 text-[10px] font-medium tabular-nums">
                     v{currentVersionIndex + 1}/{documents.length}
                   </div>
                 )}
@@ -348,7 +339,7 @@ function PureArtifact({
         </div>
       )}
       <div
-        className="relative flex-1 overflow-y-auto bg-background"
+        className="bg-background relative flex-1 overflow-y-auto"
         data-slot="artifact-content"
         onScroll={() => {
           const el = artifactContentRef.current;
@@ -435,7 +426,7 @@ function PureArtifact({
           width: "100dvw",
           borderRadius: 0,
         }}
-        className="fixed inset-0 z-50 flex h-dvh flex-col overflow-hidden bg-sidebar"
+        className="bg-sidebar fixed inset-0 z-50 flex h-dvh flex-col overflow-hidden"
         data-testid="artifact"
         exit={{ opacity: 0, scale: 0.95 }}
         initial={{
@@ -455,7 +446,7 @@ function PureArtifact({
 
   return (
     <div
-      className="flex h-dvh w-[60%] shrink-0 flex-col overflow-hidden border-l border-border/50 bg-sidebar transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+      className="border-border/50 bg-sidebar flex h-dvh w-[60%] shrink-0 flex-col overflow-hidden border-l transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
       data-testid="artifact"
     >
       {artifactPanel}

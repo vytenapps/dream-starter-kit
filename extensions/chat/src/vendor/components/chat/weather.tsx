@@ -1,8 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { clsx as cx } from "clsx";
 import { format, isWithinInterval } from "date-fns";
-import { useEffect, useState } from "react";
 
 const SunIcon = ({ size = 40 }: { size?: number }) => (
   <svg fill="none" height={size} viewBox="0 0 24 24" width={size}>
@@ -284,10 +284,10 @@ export function Weather({
   weatherAtLocation?: WeatherAtLocation;
 }) {
   const currentHigh = Math.max(
-    ...weatherAtLocation.hourly.temperature_2m.slice(0, 24)
+    ...weatherAtLocation.hourly.temperature_2m.slice(0, 24),
   );
   const currentLow = Math.min(
-    ...weatherAtLocation.hourly.temperature_2m.slice(0, 24)
+    ...weatherAtLocation.hourly.temperature_2m.slice(0, 24),
   );
 
   const isDay = isWithinInterval(new Date(weatherAtLocation.current.time), {
@@ -311,16 +311,16 @@ export function Weather({
   const hoursToShow = isMobile ? 5 : 6;
 
   const currentTimeIndex = weatherAtLocation.hourly.time.findIndex(
-    (time) => new Date(time) >= new Date(weatherAtLocation.current.time)
+    (time) => new Date(time) >= new Date(weatherAtLocation.current.time),
   );
 
   const displayTimes = weatherAtLocation.hourly.time.slice(
     currentTimeIndex,
-    currentTimeIndex + hoursToShow
+    currentTimeIndex + hoursToShow,
   );
   const displayTemperatures = weatherAtLocation.hourly.temperature_2m.slice(
     currentTimeIndex,
-    currentTimeIndex + hoursToShow
+    currentTimeIndex + hoursToShow,
   );
 
   const location =
@@ -337,15 +337,15 @@ export function Weather({
         {
           "bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900":
             !isDay,
-        }
+        },
       )}
     >
       <div className="absolute inset-0 bg-white/10 backdrop-blur-sm" />
 
       <div className="relative z-10">
         <div className="mb-2 flex items-center justify-between">
-          <div className="font-medium text-white/80 text-xs">{location}</div>
-          <div className="text-white/60 text-xs">
+          <div className="text-xs font-medium text-white/80">{location}</div>
+          <div className="text-xs text-white/60">
             {format(new Date(weatherAtLocation.current.time), "MMM d, h:mm a")}
           </div>
         </div>
@@ -360,7 +360,7 @@ export function Weather({
             >
               {isDay ? <SunIcon size={32} /> : <MoonIcon size={32} />}
             </div>
-            <div className="font-light text-3xl text-white">
+            <div className="text-3xl font-light text-white">
               {n(weatherAtLocation.current.temperature_2m)}
               <span className="text-lg text-white/80">
                 {weatherAtLocation.current_units.temperature_2m}
@@ -369,15 +369,15 @@ export function Weather({
           </div>
 
           <div className="text-right">
-            <div className="font-medium text-white/90 text-xs">
+            <div className="text-xs font-medium text-white/90">
               H: {n(currentHigh)}°
             </div>
-            <div className="text-white/70 text-xs">L: {n(currentLow)}°</div>
+            <div className="text-xs text-white/70">L: {n(currentLow)}°</div>
           </div>
         </div>
 
         <div className="rounded-xl bg-white/10 p-3 backdrop-blur-sm">
-          <div className="mb-2 font-medium text-white/80 text-xs">
+          <div className="mb-2 text-xs font-medium text-white/80">
             Hourly Forecast
           </div>
           <div className="flex justify-between gap-1">
@@ -392,11 +392,11 @@ export function Weather({
                     "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-md px-1 py-1.5",
                     {
                       "bg-white/20": isCurrentHour,
-                    }
+                    },
                   )}
                   key={time}
                 >
-                  <div className="font-medium text-white/70 text-xs">
+                  <div className="text-xs font-medium text-white/70">
                     {index === 0 ? "Now" : format(hourTime, "ha")}
                   </div>
 
@@ -409,7 +409,7 @@ export function Weather({
                     <CloudIcon size={16} />
                   </div>
 
-                  <div className="font-medium text-white text-xs">
+                  <div className="text-xs font-medium text-white">
                     {n(displayTemperatures[index] ?? 0)}°
                   </div>
                 </div>
@@ -418,10 +418,13 @@ export function Weather({
           </div>
         </div>
 
-        <div className="mt-2 flex justify-between text-white/60 text-xs">
+        <div className="mt-2 flex justify-between text-xs text-white/60">
           <div>
             Sunrise:{" "}
-            {format(new Date(weatherAtLocation.daily.sunrise[0] ?? 0), "h:mm a")}
+            {format(
+              new Date(weatherAtLocation.daily.sunrise[0] ?? 0),
+              "h:mm a",
+            )}
           </div>
           <div>
             Sunset:{" "}

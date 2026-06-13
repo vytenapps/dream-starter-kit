@@ -45,7 +45,9 @@ export default defineExtension({
     ],
   },
   cms: {
+    collections: ["ext-chat-skills"],
     hasSettings: true,
     hasMigrations: true,
+    hasSeed: true,
   },
 });

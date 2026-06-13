@@ -5,10 +5,12 @@
 // owns the global header, so this is a slim chat-area bar: a mobile history
 // drawer (the lg+ history panel lives in the chat screen) and a new-chat
 // action.
-
-import { HistoryIcon, PlusIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { memo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { HistoryIcon, PlusIcon } from "lucide-react";
+
+import type { VisibilityType } from "./visibility-selector";
+import { CHAT_PATH } from "../../lib/constants";
 import { Button } from "../ui/button";
 import {
   Sheet,
@@ -17,8 +19,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../ui/sheet";
-import { CHAT_PATH } from "../../lib/constants";
-import type { VisibilityType } from "./visibility-selector";
 import { SidebarHistory } from "./sidebar-history";
 
 function PureChatHeader({

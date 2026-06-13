@@ -9,8 +9,8 @@ import { useSession } from "@acme/api";
 import { Button } from "@acme/ui/button";
 
 import { DataStreamProvider } from "../vendor/components/chat/data-stream-provider";
-import { SidebarHistory } from "../vendor/components/chat/sidebar-history";
 import { ChatShell } from "../vendor/components/chat/shell";
+import { SidebarHistory } from "../vendor/components/chat/sidebar-history";
 import { ActiveChatProvider } from "../vendor/hooks/use-active-chat";
 import { CHAT_PATH } from "../vendor/lib/constants";
 

@@ -5,13 +5,16 @@
 // the app sidebar, so this renders as an in-page history panel; the user prop
 // is the minimal { id } shape from the Supabase session. Fetch URLs go
 // through the extension dispatcher (API_BASE) and chat links use CHAT_PATH.
-
+import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { isToday, isYesterday, subMonths, subWeeks } from "date-fns";
 import { motion } from "motion/react";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
 import { toast } from "sonner";
 import useSWRInfinite from "swr/infinite";
+
+import type { Chat } from "../../lib/db/schema";
+import { API_BASE, CHAT_PATH } from "../../lib/constants";
+import { fetcher } from "../../lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,9 +25,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../ui/alert-dialog";
-import { API_BASE, CHAT_PATH } from "../../lib/constants";
-import type { Chat } from "../../lib/db/schema";
-import { fetcher } from "../../lib/utils";
 import { LoaderIcon } from "./icons";
 import { ChatItem } from "./sidebar-history-item";
 
@@ -162,7 +162,7 @@ export function SidebarHistory({
 
   if (!user) {
     return (
-      <div className="flex w-full flex-row items-center justify-center gap-2 px-2 py-4 text-[13px] text-muted-foreground">
+      <div className="text-muted-foreground flex w-full flex-row items-center justify-center gap-2 px-2 py-4 text-[13px]">
         Login to save and revisit previous chats!
       </div>
     );
@@ -179,7 +179,7 @@ export function SidebarHistory({
               key={item}
             >
               <div
-                className="h-3 max-w-(--skeleton-width) flex-1 animate-pulse rounded-md bg-muted-foreground/10"
+                className="bg-muted-foreground/10 h-3 max-w-(--skeleton-width) flex-1 animate-pulse rounded-md"
                 style={
                   {
                     "--skeleton-width": `${item}%`,
@@ -197,7 +197,7 @@ export function SidebarHistory({
     return (
       <div>
         <div className={GROUP_LABEL_CLASS}>History</div>
-        <div className="flex w-full flex-row items-center justify-center gap-2 px-2 py-2 text-[13px] text-muted-foreground">
+        <div className="text-muted-foreground flex w-full flex-row items-center justify-center gap-2 px-2 py-2 text-[13px]">
           Your conversations will appear here once you start chatting!
         </div>
       </div>
@@ -254,7 +254,7 @@ export function SidebarHistory({
         />
 
         {hasReachedEnd ? null : (
-          <div className="mt-1 flex flex-row items-center gap-2 px-4 py-2 text-muted-foreground">
+          <div className="text-muted-foreground mt-1 flex flex-row items-center gap-2 px-4 py-2">
             <div className="animate-spin">
               <LoaderIcon />
             </div>

@@ -17,6 +17,7 @@ export interface ExtPayloadMigration {
 
 export const extCollections: CollectionConfig[] = [
   ...payload_billing.collections,
+  ...payload_chat.collections,
 ];
 
 export const extGlobals: GlobalConfig[] = [
@@ -35,6 +36,7 @@ export const extPayloadMigrations: ExtPayloadMigration[] = [
 
 export const extSeedSteps: ExtSeedStep[] = [
   ...payload_billing.seed,
+  ...payload_chat.seed,
 ];
 
 /** slug → settings definition (admin settings screens, §1.7). */

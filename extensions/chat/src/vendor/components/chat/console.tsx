@@ -1,11 +1,6 @@
-import {
-  type Dispatch,
-  type SetStateAction,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import type { Dispatch, SetStateAction } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import { useArtifactSelector } from "../../hooks/use-artifact";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
@@ -54,7 +49,7 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
         }
       }
     },
-    [isResizing]
+    [isResizing],
   );
 
   useEffect(() => {
@@ -104,19 +99,19 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
 
       <div
         className={cn(
-          "fixed bottom-0 z-40 flex w-full flex-col overflow-x-hidden overflow-y-auto border-t border-border/50 bg-background",
-          { "select-none": isResizing }
+          "border-border/50 bg-background fixed bottom-0 z-40 flex w-full flex-col overflow-x-hidden overflow-y-auto border-t",
+          { "select-none": isResizing },
         )}
         ref={consoleContainerRef}
         style={{ height }}
       >
-        <div className="sticky top-0 z-50 flex h-10 w-full items-center justify-between border-b border-border/50 bg-background px-3">
-          <div className="flex items-center gap-2.5 text-[13px] text-muted-foreground">
+        <div className="border-border/50 bg-background sticky top-0 z-50 flex h-10 w-full items-center justify-between border-b px-3">
+          <div className="text-muted-foreground flex items-center gap-2.5 text-[13px]">
             <TerminalWindowIcon />
             <span>Console</span>
           </div>
           <Button
-            className="size-7 text-muted-foreground/50 hover:text-foreground"
+            className="text-muted-foreground/50 hover:text-foreground size-7"
             onClick={() => setConsoleOutputs([])}
             size="icon-sm"
             variant="ghost"
@@ -128,7 +123,7 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
         <div className="bg-background">
           {[...consoleOutputs].reverse().map((consoleOutput, index) => (
             <div
-              className="flex border-b border-border/30 px-4 py-2.5 font-mono text-[12px] leading-relaxed"
+              className="border-border/30 flex border-b px-4 py-2.5 font-mono text-[12px] leading-relaxed"
               key={consoleOutput.id}
             >
               <div
@@ -144,7 +139,7 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
                 [{consoleOutputs.length - index}]
               </div>
               {["in_progress", "loading_packages"].includes(
-                consoleOutput.status
+                consoleOutput.status,
               ) ? (
                 <div className="flex items-center gap-2">
                   <Spinner className="size-3.5" />
@@ -153,13 +148,13 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
                       ? "Initializing..."
                       : consoleOutput.status === "loading_packages"
                         ? consoleOutput.contents.map((content) =>
-                            content.type === "text" ? content.value : null
+                            content.type === "text" ? content.value : null,
                           )
                         : null}
                   </span>
                 </div>
               ) : (
-                <div className="no-scrollbar flex w-full min-w-0 flex-col gap-2 overflow-x-auto text-foreground">
+                <div className="no-scrollbar text-foreground flex w-full min-w-0 flex-col gap-2 overflow-x-auto">
                   {consoleOutput.contents.map((content) =>
                     content.type === "image" ? (
                       <picture
@@ -173,12 +168,12 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
                       </picture>
                     ) : (
                       <div
-                        className="w-full whitespace-pre-line break-words"
+                        className="w-full break-words whitespace-pre-line"
                         key={`${consoleOutput.id}-txt-${content.value.slice(0, 32)}`}
                       >
                         {content.value}
                       </div>
-                    )
+                    ),
                   )}
                 </div>
               )}

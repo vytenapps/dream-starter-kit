@@ -1,11 +1,12 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
+import { memo } from "react";
 import equal from "fast-deep-equal";
 import { AnimatePresence, motion } from "motion/react";
-import { memo } from "react";
-import { useMessages } from "../../hooks/use-messages";
+
 import type { Vote } from "../../lib/db/schema";
 import type { ChatMessage } from "../../lib/types";
 import type { UIArtifact } from "./artifact";
+import { useMessages } from "../../hooks/use-messages";
 import { PreviewMessage, ThinkingMessage } from "./message";
 
 type ArtifactMessagesProps = {
@@ -70,8 +71,8 @@ function PureArtifactMessages({
         {status === "submitted" &&
           !messages.some((msg) =>
             msg.parts?.some(
-              (part) => "state" in part && part.state === "approval-responded"
-            )
+              (part) => "state" in part && part.state === "approval-responded",
+            ),
           ) && <ThinkingMessage key="thinking" />}
       </AnimatePresence>
 
@@ -87,7 +88,7 @@ function PureArtifactMessages({
 
 function areEqual(
   prevProps: ArtifactMessagesProps,
-  nextProps: ArtifactMessagesProps
+  nextProps: ArtifactMessagesProps,
 ) {
   if (
     prevProps.artifactStatus === "streaming" &&

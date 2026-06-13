@@ -3,10 +3,11 @@
 // kit renders chat history as an in-page panel (the host shell owns the app
 // sidebar) and chats are private-only this phase, so this is a plain row with
 // a delete action.
-import Link from "next/link";
 import { memo } from "react";
-import { CHAT_PATH } from "../../lib/constants";
+import Link from "next/link";
+
 import type { Chat } from "../../lib/db/schema";
+import { CHAT_PATH } from "../../lib/constants";
 import { cn } from "../../lib/utils";
 import {
   DropdownMenu,
@@ -32,7 +33,7 @@ const PureChatItem = ({
       className={cn(
         "group/item relative flex h-8 items-center rounded-md text-[13px] transition-colors",
         isActive
-          ? "bg-accent font-medium text-accent-foreground"
+          ? "bg-accent text-accent-foreground font-medium"
           : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
       )}
     >
@@ -48,10 +49,10 @@ const PureChatItem = ({
         <DropdownMenuTrigger asChild>
           <button
             className={cn(
-              "mr-1 flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+              "text-muted-foreground hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground mr-1 flex size-6 shrink-0 items-center justify-center rounded-md transition-colors",
               isActive
                 ? ""
-                : "opacity-0 focus-visible:opacity-100 group-hover/item:opacity-100 data-[state=open]:opacity-100",
+                : "opacity-0 group-hover/item:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100",
             )}
             type="button"
           >

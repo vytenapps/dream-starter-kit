@@ -1,8 +1,9 @@
-import { tool, type UIMessageStreamWriter } from "ai";
-import type { ToolSession as Session } from "../../types";
+import type { UIMessageStreamWriter } from "ai";
+import { tool } from "ai";
 import { z } from "zod";
+
+import type { ChatMessage, ToolSession as Session } from "../../types";
 import { getDocumentById, saveDocument } from "../../db/queries";
-import type { ChatMessage } from "../../types";
 
 type EditDocumentProps = {
   session: Session;
@@ -18,14 +19,14 @@ export const editDocument = ({ session, dataStream }: EditDocumentProps) =>
       old_string: z
         .string()
         .describe(
-          "Exact string to find. Include 3-5 surrounding lines for uniqueness."
+          "Exact string to find. Include 3-5 surrounding lines for uniqueness.",
         ),
       new_string: z.string().describe("Replacement string"),
       replace_all: z
         .boolean()
         .optional()
         .describe(
-          "Replace all occurrences instead of just the first (default false)"
+          "Replace all occurrences instead of just the first (default false)",
         ),
     }),
     execute: async ({ id, old_string, new_string, replace_all }) => {

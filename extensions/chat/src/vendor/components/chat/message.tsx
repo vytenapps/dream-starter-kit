@@ -1,5 +1,7 @@
 "use client";
+
 import type { UseChatHelpers } from "@ai-sdk/react";
+
 import type { Vote } from "../../lib/db/schema";
 import type { ChatMessage } from "../../lib/types";
 import { cn, sanitizeText } from "../../lib/utils";
@@ -45,7 +47,7 @@ const PurePreviewMessage = ({
   onEdit?: (message: ChatMessage) => void;
 }) => {
   const attachmentsFromMessage = message.parts.filter(
-    (part) => part.type === "file"
+    (part) => part.type === "file",
   );
 
   useDataStream();
@@ -59,7 +61,7 @@ const PurePreviewMessage = ({
       (part.type === "reasoning" &&
         "text" in part &&
         part.text?.trim().length > 0) ||
-      part.type.startsWith("tool-")
+      part.type.startsWith("tool-"),
   );
   const isThinking = isAssistant && isLoading && !hasAnyContent;
 
@@ -92,7 +94,7 @@ const PurePreviewMessage = ({
       }
       return acc;
     },
-    { text: "", isStreaming: false, rendered: false }
+    { text: "", isStreaming: false, rendered: false },
   ) ?? { text: "", isStreaming: false, rendered: false };
 
   const parts = message.parts?.map((part, index) => {
@@ -117,7 +119,7 @@ const PurePreviewMessage = ({
       return (
         <MessageContent
           className={cn("text-[13px] leading-[1.65]", {
-            "w-fit max-w-[min(80%,56ch)] overflow-hidden break-words rounded-2xl rounded-br-lg border border-border/30 bg-gradient-to-br from-secondary to-muted px-3.5 py-2 shadow-[var(--shadow-card)]":
+            "border-border/30 from-secondary to-muted w-fit max-w-[min(80%,56ch)] overflow-hidden rounded-2xl rounded-br-lg border bg-gradient-to-br px-3.5 py-2 break-words shadow-[var(--shadow-card)]":
               message.role === "user",
           })}
           data-testid="message-content"
@@ -152,7 +154,7 @@ const PurePreviewMessage = ({
             <Tool className="w-full" defaultOpen={true}>
               <ToolHeader state="output-denied" type="tool-getWeather" />
               <ToolContent>
-                <div className="px-4 py-3 text-muted-foreground text-sm">
+                <div className="text-muted-foreground px-4 py-3 text-sm">
                   Weather lookup was denied.
                 </div>
               </ToolContent>
@@ -186,7 +188,7 @@ const PurePreviewMessage = ({
               {state === "approval-requested" && approvalId && (
                 <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
                   <button
-                    className="rounded-md px-3 py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
+                    className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-1.5 text-sm transition-colors"
                     onClick={() => {
                       addToolApprovalResponse({
                         id: approvalId,
@@ -199,7 +201,7 @@ const PurePreviewMessage = ({
                     Deny
                   </button>
                   <button
-                    className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-sm transition-colors hover:bg-primary/90"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-3 py-1.5 text-sm transition-colors"
                     onClick={() => {
                       addToolApprovalResponse({
                         id: approvalId,
@@ -333,19 +335,19 @@ const PurePreviewMessage = ({
     <div
       className={cn(
         "group/message w-full",
-        !isAssistant && "animate-[fade-up_0.25s_cubic-bezier(0.22,1,0.36,1)]"
+        !isAssistant && "animate-[fade-up_0.25s_cubic-bezier(0.22,1,0.36,1)]",
       )}
       data-role={message.role}
       data-testid={`message-${message.role}`}
     >
       <div
         className={cn(
-          isUser ? "flex flex-col items-end gap-2" : "flex items-start gap-3"
+          isUser ? "flex flex-col items-end gap-2" : "flex items-start gap-3",
         )}
       >
         {isAssistant && (
           <div className="flex h-[calc(13px*1.65)] shrink-0 items-center">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground ring-1 ring-border/50">
+            <div className="bg-muted/60 text-muted-foreground ring-border/50 flex size-7 items-center justify-center rounded-lg ring-1">
               <SparklesIcon size={13} />
             </div>
           </div>
@@ -371,7 +373,7 @@ export const ThinkingMessage = () => {
     >
       <div className="flex items-start gap-3">
         <div className="flex h-[calc(13px*1.65)] shrink-0 items-center">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground ring-1 ring-border/50">
+          <div className="bg-muted/60 text-muted-foreground ring-border/50 flex size-7 items-center justify-center rounded-lg ring-1">
             <SparklesIcon size={13} />
           </div>
         </div>

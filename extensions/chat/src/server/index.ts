@@ -11,14 +11,21 @@ import {
 import { z } from "zod/v4";
 
 import type { Json } from "@acme/api";
+import type { ChatChannel } from "@acme/config";
 import type { ExtRouteContext, ExtRouteTable } from "@acme/ext-kit/server";
-import { AI_MAX_OUTPUT_TOKENS, DEFAULT_AI_MODEL } from "@acme/config";
+import {
+  AI_MAX_OUTPUT_TOKENS,
+  CHAT_CHANNELS,
+  DEFAULT_AI_MODEL,
+} from "@acme/config";
 import { getExtensionSettings } from "@acme/ext-kit/payload";
 
-import type { ChatMessage } from "../vendor/lib/types";
 import type { ChatSettings } from "../payload/settings";
+import type { ChatMessage } from "../vendor/lib/types";
+import type { ThreadSkillState } from "./routing";
+import { settings } from "../payload/settings";
 import { chatModels } from "../vendor/lib/ai/models";
-import { systemPrompt, titlePrompt } from "../vendor/lib/ai/prompts";
+import { titlePrompt } from "../vendor/lib/ai/prompts";
 import { getLanguageModel, getTitleModel } from "../vendor/lib/ai/providers";
 import { createDocument } from "../vendor/lib/ai/tools/create-document";
 import { editDocument } from "../vendor/lib/ai/tools/edit-document";
@@ -37,8 +44,8 @@ import {
   getSuggestionsByDocumentId,
   getVotesByChatId,
   saveChat,
-  saveMessages,
   saveDocument,
+  saveMessages,
   updateChatLastContextById,
   updateChatTitleById,
   updateDocumentContent,
@@ -46,11 +53,37 @@ import {
   voteMessage,
 } from "../vendor/lib/db/queries";
 import { ChatbotError } from "../vendor/lib/errors";
-import { convertToUIMessages, generateUUID, getTextFromMessage } from "../vendor/lib/utils";
-import { settings } from "../payload/settings";
+import {
+  convertToUIMessages,
+  generateUUID,
+  getTextFromMessage,
+} from "../vendor/lib/utils";
+import { composeSystemPrompt, persistSkillState } from "./prompt";
+import { transcribeAudio } from "./transcribe";
 
 const json = (status: number, body: Record<string, unknown>) =>
   Response.json(body, { status });
+
+const parseChannel = (channel: string | undefined): ChatChannel =>
+  channel && (CHAT_CHANNELS as readonly string[]).includes(channel)
+    ? (channel as ChatChannel)
+    : "web";
+
+async function getThreadSkillState(
+  supabase: ExtRouteContext["supabase"],
+  threadId: string,
+): Promise<ThreadSkillState | null> {
+  const { data } = await supabase
+    .from("ext_chat_threads")
+    .select("active_skill_slug, active_skill_turns_remaining")
+    .eq("id", threadId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    activeSkillSlug: data.active_skill_slug,
+    activeSkillTurnsRemaining: data.active_skill_turns_remaining,
+  };
+}
 
 const requireGateway = () =>
   process.env.AI_GATEWAY_API_KEY
@@ -145,10 +178,19 @@ async function legacyStream(
       content: m.content,
     }));
 
+  const { system } = await composeSystemPrompt({
+    payload: await ctx.getPayload(),
+    supabase: ctx.supabase,
+    settings: chatSettings,
+    channel: "native",
+    userText: text,
+    thread: null,
+  });
+
   try {
     const result = await generateText({
       model: DEFAULT_AI_MODEL,
-      system: chatSettings.systemPrompt,
+      system,
       messages,
       maxOutputTokens: AI_MAX_OUTPUT_TOKENS,
     });
@@ -193,13 +235,14 @@ export const routes: ExtRouteTable = {
     if (parsed.success === false) {
       return new ChatbotError("bad_request:api").toResponse();
     }
-    const { id, message, messages, selectedChatModel } = parsed.data;
+    const { id, message, messages, selectedChatModel, channel } = parsed.data;
 
     const chatModel = getLanguageModel(selectedChatModel ?? DEFAULT_AI_MODEL);
     const session = { user: { id: ctx.user.id }, db: ctx.supabase };
+    const payload = await ctx.getPayload();
 
     const chatSettings = await getExtensionSettings<ChatSettings>(
-      await ctx.getPayload(),
+      payload,
       settings,
     );
 
@@ -281,15 +324,30 @@ export const routes: ExtRouteTable = {
 
     const modelMessages = await convertToModelMessages(uiMessages);
 
+    // Compose the channel-aware system prompt (universal + channel sub-prompts
+    // + routed skill persona + artifacts) and remember the prior skill state
+    // so stickiness can be persisted after the turn.
+    const latestUserText = message
+      ? getTextFromMessage(message as ChatMessage)
+      : "";
+    const priorSkillState: ThreadSkillState | null = chat
+      ? await getThreadSkillState(ctx.supabase, id)
+      : null;
+    const composed = await composeSystemPrompt({
+      payload,
+      supabase: ctx.supabase,
+      settings: chatSettings,
+      channel: parseChannel(channel),
+      userText: latestUserText,
+      thread: priorSkillState,
+    });
+
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: ({ writer: dataStream }) => {
         const result = streamText({
           model: chatModel,
-          system: systemPrompt({
-            basePrompt: chatSettings.systemPrompt,
-            supportsTools: true,
-          }),
+          system: composed.system,
           messages: modelMessages,
           stopWhen: stepCountIs(5),
           maxOutputTokens: AI_MAX_OUTPUT_TOKENS,
@@ -375,6 +433,14 @@ export const routes: ExtRouteTable = {
             })),
           });
         }
+
+        await persistSkillState(
+          ctx.supabase,
+          id,
+          chatSettings,
+          priorSkillState,
+          composed.skillSlug,
+        );
       },
       onError: () => "Oops, an error occurred!",
     });
@@ -659,5 +725,55 @@ export const routes: ExtRouteTable = {
       { capabilities, models: chatModels, defaultModel: DEFAULT_AI_MODEL },
       { headers: { "Cache-Control": "private, max-age=3600" } },
     );
+  },
+
+  // Lightweight client config (does the input show the mic button?).
+  "GET /config": async (_req, ctx) => {
+    const chatSettings = await getExtensionSettings<ChatSettings>(
+      await ctx.getPayload(),
+      settings,
+    );
+    return Response.json({
+      transcriptionEnabled: chatSettings.transcriptionEnabled,
+    });
+  },
+
+  // Voice input: multipart audio → text via the configured transcription model.
+  "POST /transcribe": async (req, ctx) => {
+    if (!process.env.OPENAI_API_KEY) {
+      return json(503, { error: "Transcription is not configured" });
+    }
+    const chatSettings = await getExtensionSettings<ChatSettings>(
+      await ctx.getPayload(),
+      settings,
+    );
+    if (!chatSettings.transcriptionEnabled) {
+      return json(403, { error: "Transcription is disabled" });
+    }
+
+    const formData = (await req.formData().catch(() => null)) as {
+      get(name: string): unknown;
+    } | null;
+    const audio = formData?.get("audio");
+    if (!(audio instanceof Blob)) {
+      return json(400, { error: "No audio uploaded" });
+    }
+    if (audio.size > chatSettings.maxAudioMB * 1024 * 1024) {
+      return json(400, {
+        error: `Audio exceeds ${chatSettings.maxAudioMB}MB`,
+      });
+    }
+
+    try {
+      const text = await transcribeAudio(
+        new Uint8Array(await audio.arrayBuffer()),
+        chatSettings.transcriptionModel,
+      );
+      return Response.json({ text });
+    } catch (e) {
+      return json(500, {
+        error: e instanceof Error ? e.message : "Transcription failed",
+      });
+    }
   },
 };

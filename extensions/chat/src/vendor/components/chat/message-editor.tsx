@@ -2,10 +2,10 @@
 
 // KIT ADAPTATION (see VENDOR.md): upstream called a "use server" action;
 // the kit deletes trailing messages through the extension's authed route.
-
 import type { UseChatHelpers } from "@ai-sdk/react";
-import { API_BASE } from "../../lib/constants";
+
 import type { ChatMessage } from "../../lib/types";
+import { API_BASE } from "../../lib/constants";
 
 export async function submitEditedMessage({
   message,

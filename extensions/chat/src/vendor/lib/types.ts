@@ -1,13 +1,15 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { InferUITool, UIMessage } from "ai";
 import { z } from "zod";
+
+import type { Database } from "@acme/api";
+
 import type { ArtifactKind } from "../components/chat/artifact";
 import type { createDocument } from "./ai/tools/create-document";
 import type { getWeather } from "./ai/tools/get-weather";
 import type { requestSuggestions } from "./ai/tools/request-suggestions";
 import type { updateDocument } from "./ai/tools/update-document";
 import type { Suggestion } from "./db/schema";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@acme/api";
 
 // KIT ADAPTATION (see VENDOR.md): replaces next-auth's Session in the tool
 // layer — carries the caller's id plus their RLS-scoped Supabase client so

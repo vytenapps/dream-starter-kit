@@ -49,7 +49,7 @@ keeping the option to re-snapshot upstream as a clean diff.
   structured `parts` and a plain-text `content` projection (native screens read
   `content`).
 - **Auth:** `next-auth` `Session` → `ToolSession` (`lib/types.ts`): `{ user: { id },
-  db }`. Tool/document-handler DB calls take `session.db`. Authorization is RLS,
+db }`. Tool/document-handler DB calls take `session.db`. Authorization is RLS,
   not app-code ownership checks.
 - **Models:** `lib/ai/models.ts` + `providers.ts` read `@acme/config`
   (`CHAT_MODELS`/`DEFAULT_AI_MODEL`/`ROUTING_AI_MODEL`) — gateway slugs live only

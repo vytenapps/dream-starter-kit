@@ -1,33 +1,32 @@
 "use client";
 
-import { API_BASE, CHAT_PATH } from "../lib/constants";
 import type { UseChatHelpers } from "@ai-sdk/react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
-import { usePathname } from "next/navigation";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import {
   createContext,
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import useSWR, { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
+
+import type { VisibilityType } from "../components/chat/visibility-selector";
+import type { Vote } from "../lib/db/schema";
+import type { ChatMessage } from "../lib/types";
 import { useDataStream } from "../components/chat/data-stream-provider";
 import { getChatHistoryPaginationKey } from "../components/chat/sidebar-history";
 import { toast } from "../components/chat/toast";
-import type { VisibilityType } from "../components/chat/visibility-selector";
-import { useAutoResume } from "./use-auto-resume";
 import { DEFAULT_CHAT_MODEL } from "../lib/ai/models";
-import type { Vote } from "../lib/db/schema";
+import { API_BASE, CHAT_PATH } from "../lib/constants";
 import { ChatbotError } from "../lib/errors";
-import type { ChatMessage } from "../lib/types";
 import { fetcher, fetchWithErrorHandlers, generateUUID } from "../lib/utils";
+import { useAutoResume } from "./use-auto-resume";
 
 type ActiveChatContextValue = {
   chatId: string;
@@ -83,11 +82,9 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
 
   const { data: chatData, isLoading } = useSWR(
-    isNewChat
-      ? null
-      : `${API_BASE}/messages?chatId=${chatId}`,
+    isNewChat ? null : `${API_BASE}/messages?chatId=${chatId}`,
     fetcher,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const initialMessages: ChatMessage[] = isNewChat
@@ -118,7 +115,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
             "state" in part &&
             part.state === "approval-responded" &&
             "approval" in part &&
-            (part.approval as { approved?: boolean })?.approved === true
+            (part.approval as { approved?: boolean })?.approved === true,
         ) ?? false
       );
     },
@@ -135,7 +132,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
               return (
                 state === "approval-responded" || state === "output-denied"
               );
-            })
+            }),
           );
 
         return {
@@ -154,9 +151,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     }),
     onData: (dataPart) => {
       setDataStream((ds) =>
-        ds
-          ? [...ds, dataPart as (typeof ds)[number]]
-          : [],
+        ds ? [...ds, dataPart as (typeof ds)[number]] : [],
       );
     },
     onFinish: () => {
@@ -222,11 +217,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     const query = params.get("query");
     if (query && !hasAppendedQueryRef.current) {
       hasAppendedQueryRef.current = true;
-      window.history.replaceState(
-        {},
-        "",
-        `${CHAT_PATH}/${chatId}`
-      );
+      window.history.replaceState({}, "", `${CHAT_PATH}/${chatId}`);
       sendMessage({
         role: "user" as const,
         parts: [{ type: "text", text: query }],
@@ -248,7 +239,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       ? `${API_BASE}/vote?chatId=${chatId}`
       : null,
     fetcher,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const value = useMemo<ActiveChatContextValue>(
@@ -289,7 +280,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       votes,
       currentModelId,
       showCreditCardAlert,
-    ]
+    ],
   );
 
   return (

@@ -52,6 +52,6 @@ export const migrations = [
   {
     up: migration_20260612_222154_add_item_tooltip.up,
     down: migration_20260612_222154_add_item_tooltip.down,
-    name: '20260612_222154_add_item_tooltip'
+    name: '20260612_222154_add_item_tooltip',
   },
 ];

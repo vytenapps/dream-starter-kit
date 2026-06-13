@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import useSWR from "swr";
+
 import type { UIArtifact } from "../components/chat/artifact";
 
 export const initialArtifactData: UIArtifact = {
@@ -42,7 +43,7 @@ export function useArtifact() {
     null,
     {
       fallbackData: initialArtifactData,
-    }
+    },
   );
 
   const artifact = useMemo(() => {
@@ -64,7 +65,7 @@ export function useArtifact() {
         return updaterFn;
       });
     },
-    [setLocalArtifact]
+    [setLocalArtifact],
   );
 
   const { data: localArtifactMetadata, mutate: setLocalArtifactMetadata } =
@@ -74,7 +75,7 @@ export function useArtifact() {
       null,
       {
         fallbackData: null,
-      }
+      },
     );
 
   return useMemo(
@@ -84,6 +85,6 @@ export function useArtifact() {
       metadata: localArtifactMetadata,
       setMetadata: setLocalArtifactMetadata,
     }),
-    [artifact, setArtifact, localArtifactMetadata, setLocalArtifactMetadata]
+    [artifact, setArtifact, localArtifactMetadata, setLocalArtifactMetadata],
   );
 }

@@ -1,31 +1,31 @@
 "use client";
 
-import { API_BASE, CHAT_PATH } from "../../lib/constants";
 import type { UseChatHelpers } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
+import type { ChangeEvent, Dispatch, SetStateAction } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import equal from "fast-deep-equal";
 import {
   ArrowUpIcon,
   BrainIcon,
   EyeIcon,
   LockIcon,
+  MicIcon,
   WrenchIcon,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import {
-  type ChangeEvent,
-  type Dispatch,
-  memo,
-  type SetStateAction,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
 import { useLocalStorage, useWindowSize } from "usehooks-ts";
+
+import type { ChatModel, ModelCapabilities } from "../../lib/ai/models";
+import type { Attachment, ChatMessage } from "../../lib/types";
+import type { SlashCommand } from "./slash-commands";
+import type { VisibilityType } from "./visibility-selector";
+import { chatModels, DEFAULT_CHAT_MODEL } from "../../lib/ai/models";
+import { API_BASE, CHAT_PATH } from "../../lib/constants";
+import { cn } from "../../lib/utils";
 import {
   ModelSelector,
   ModelSelectorContent,
@@ -38,14 +38,6 @@ import {
   ModelSelectorTrigger,
 } from "../ai-elements/model-selector";
 import {
-  type ChatModel,
-  chatModels,
-  DEFAULT_CHAT_MODEL,
-  type ModelCapabilities,
-} from "../../lib/ai/models";
-import type { Attachment, ChatMessage } from "../../lib/types";
-import { cn } from "../../lib/utils";
-import {
   PromptInput,
   PromptInputFooter,
   PromptInputSubmit,
@@ -55,13 +47,8 @@ import {
 import { Button } from "../ui/button";
 import { PaperclipIcon, StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
-import {
-  type SlashCommand,
-  SlashCommandMenu,
-  slashCommands,
-} from "./slash-commands";
+import { SlashCommandMenu, slashCommands } from "./slash-commands";
 import { SuggestedActions } from "./suggested-actions";
-import type { VisibilityType } from "./visibility-selector";
 
 function setCookie(name: string, value: string) {
   const maxAge = 60 * 60 * 24 * 365;
@@ -125,7 +112,7 @@ function PureMultimodalInput({
 
   const [localStorageInput, setLocalStorageInput] = useLocalStorage(
     "input",
-    ""
+    "",
   );
 
   useEffect(() => {
@@ -168,7 +155,7 @@ function PureMultimodalInput({
         break;
       case "model": {
         const modelBtn = document.querySelector<HTMLButtonElement>(
-          "[data-testid='model-selector']"
+          "[data-testid='model-selector']",
         );
         modelBtn?.click();
         break;
@@ -181,10 +168,7 @@ function PureMultimodalInput({
           action: {
             label: "Delete",
             onClick: () => {
-              fetch(
-                `${API_BASE}/thread?id=${chatId}`,
-                { method: "DELETE" }
-              );
+              fetch(`${API_BASE}/thread?id=${chatId}`, { method: "DELETE" });
               router.push("/");
               toast.success("Chat deleted");
             },
@@ -217,11 +201,7 @@ function PureMultimodalInput({
   const [slashIndex, setSlashIndex] = useState(0);
 
   const submitForm = useCallback(() => {
-    window.history.pushState(
-      {},
-      "",
-      `${CHAT_PATH}/${chatId}`
-    );
+    window.history.pushState({}, "", `${CHAT_PATH}/${chatId}`);
 
     sendMessage({
       role: "user",
@@ -262,13 +242,10 @@ function PureMultimodalInput({
     formData.append("file", file);
 
     try {
-      const response = await fetch(
-        `${API_BASE}/files/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await fetch(`${API_BASE}/files/upload`, {
+        method: "POST",
+        body: formData,
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -297,7 +274,7 @@ function PureMultimodalInput({
         const uploadPromises = files.map((file) => uploadFile(file));
         const uploadedAttachments = await Promise.all(uploadPromises);
         const successfullyUploadedAttachments = uploadedAttachments.filter(
-          (attachment) => attachment !== undefined
+          (attachment) => attachment !== undefined,
         );
 
         setAttachments((currentAttachments) => [
@@ -310,7 +287,7 @@ function PureMultimodalInput({
         setUploadQueue([]);
       }
     },
-    [setAttachments, uploadFile]
+    [setAttachments, uploadFile],
   );
 
   const handlePaste = useCallback(
@@ -321,7 +298,7 @@ function PureMultimodalInput({
       }
 
       const imageItems = Array.from(items).filter((item) =>
-        item.type.startsWith("image/")
+        item.type.startsWith("image/"),
       );
 
       if (imageItems.length === 0) {
@@ -343,7 +320,7 @@ function PureMultimodalInput({
           (attachment) =>
             attachment !== undefined &&
             attachment.url !== undefined &&
-            attachment.contentType !== undefined
+            attachment.contentType !== undefined,
         );
 
         setAttachments((curr) => [
@@ -356,7 +333,7 @@ function PureMultimodalInput({
         setUploadQueue([]);
       }
     },
-    [setAttachments, uploadFile]
+    [setAttachments, uploadFile],
   );
 
   useEffect(() => {
@@ -372,10 +349,10 @@ function PureMultimodalInput({
   return (
     <div className={cn("relative flex w-full flex-col gap-4", className)}>
       {editingMessage && onCancelEdit && (
-        <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2 text-[12px]">
           <span>Editing message</span>
           <button
-            className="rounded px-1.5 py-0.5 text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
+            className="text-muted-foreground/50 hover:bg-muted hover:text-foreground rounded px-1.5 py-0.5 transition-colors"
             onMouseDown={(e) => {
               e.preventDefault();
               onCancelEdit();
@@ -420,7 +397,7 @@ function PureMultimodalInput({
       </div>
 
       <PromptInput
-        className="[&>div]:rounded-2xl [&>div]:border [&>div]:border-border/30 [&>div]:bg-card/70 [&>div]:shadow-[var(--shadow-composer)] [&>div]:transition-shadow [&>div]:duration-300 [&>div]:focus-within:shadow-[var(--shadow-composer-focus)]"
+        className="[&>div]:border-border/30 [&>div]:bg-card/70 [&>div]:rounded-2xl [&>div]:border [&>div]:shadow-[var(--shadow-composer)] [&>div]:transition-shadow [&>div]:duration-300 [&>div]:focus-within:shadow-[var(--shadow-composer-focus)]"
         onSubmit={() => {
           if (input.startsWith("/")) {
             const query = input.slice(1).trim();
@@ -442,7 +419,7 @@ function PureMultimodalInput({
       >
         {(attachments.length > 0 || uploadQueue.length > 0) && (
           <div
-            className="flex w-full self-start flex-row gap-2 overflow-x-auto px-3 pt-3 no-scrollbar"
+            className="no-scrollbar flex w-full flex-row gap-2 self-start overflow-x-auto px-3 pt-3"
             data-testid="attachments-preview"
           >
             {attachments.map((attachment) => (
@@ -451,7 +428,7 @@ function PureMultimodalInput({
                 key={attachment.url}
                 onRemove={() => {
                   setAttachments((currentAttachments) =>
-                    currentAttachments.filter((a) => a.url !== attachment.url)
+                    currentAttachments.filter((a) => a.url !== attachment.url),
                   );
                   if (fileInputRef.current) {
                     fileInputRef.current.value = "";
@@ -474,13 +451,13 @@ function PureMultimodalInput({
           </div>
         )}
         <PromptInputTextarea
-          className="min-h-24 text-[13px] leading-relaxed px-4 pt-3.5 pb-1.5 placeholder:text-muted-foreground/35"
+          className="placeholder:text-muted-foreground/35 min-h-24 px-4 pt-3.5 pb-1.5 text-[13px] leading-relaxed"
           data-testid="multimodal-input"
           onChange={handleInput}
           onKeyDown={(e) => {
             if (slashOpen) {
               const filtered = slashCommands.filter((cmd) =>
-                cmd.name.startsWith(slashQuery.toLowerCase())
+                cmd.name.startsWith(slashQuery.toLowerCase()),
               );
               if (e.key === "ArrowDown") {
                 e.preventDefault();
@@ -523,6 +500,7 @@ function PureMultimodalInput({
               selectedModelId={selectedModelId}
               status={status}
             />
+            <VoiceButton setInput={setInput} status={status} />
             <ModelSelectorCompact
               onModelChange={onModelChange}
               selectedModelId={selectedModelId}
@@ -537,7 +515,7 @@ function PureMultimodalInput({
                 "h-7 w-7 rounded-xl transition-all duration-200",
                 input.trim()
                   ? "bg-foreground text-background hover:opacity-85 active:scale-95"
-                  : "bg-muted text-muted-foreground/25 cursor-not-allowed"
+                  : "bg-muted text-muted-foreground/25 cursor-not-allowed",
               )}
               data-testid="send-button"
               disabled={!input.trim() || uploadQueue.length > 0}
@@ -582,7 +560,7 @@ export const MultimodalInput = memo(
     }
 
     return true;
-  }
+  },
 );
 
 function PureAttachmentsButton({
@@ -597,7 +575,7 @@ function PureAttachmentsButton({
   const { data: modelsResponse } = useSWR(
     `${API_BASE}/models`,
     (url: string) => fetch(url).then((r) => r.json()),
-    { revalidateOnFocus: false, dedupingInterval: 3_600_000 }
+    { revalidateOnFocus: false, dedupingInterval: 3_600_000 },
   );
 
   const caps: Record<string, ModelCapabilities> | undefined =
@@ -607,10 +585,10 @@ function PureAttachmentsButton({
   return (
     <Button
       className={cn(
-        "h-7 w-7 rounded-lg border border-border/40 p-1 transition-colors",
+        "border-border/40 h-7 w-7 rounded-lg border p-1 transition-colors",
         hasVision
           ? "text-foreground hover:border-border hover:text-foreground"
-          : "text-muted-foreground/30 cursor-not-allowed"
+          : "text-muted-foreground/30 cursor-not-allowed",
       )}
       data-testid="attachments-button"
       disabled={status !== "ready" || !hasVision}
@@ -627,6 +605,99 @@ function PureAttachmentsButton({
 
 const AttachmentsButton = memo(PureAttachmentsButton);
 
+// KIT ADDITION (see VENDOR.md): voice input. Records via MediaRecorder, posts
+// the clip to the extension's /transcribe route, and appends the transcript to
+// the composer. Hidden unless transcription is enabled in chat settings.
+function PureVoiceButton({
+  status,
+  setInput,
+}: {
+  status: UseChatHelpers<ChatMessage>["status"];
+  setInput: Dispatch<SetStateAction<string>>;
+}) {
+  const { data: config } = useSWR<{ transcriptionEnabled?: boolean }>(
+    `${API_BASE}/config`,
+    (url: string) => fetch(url).then((r) => r.json()),
+    { revalidateOnFocus: false, dedupingInterval: 3_600_000 },
+  );
+  const [recording, setRecording] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  if (!config?.transcriptionEnabled) return null;
+
+  const stop = () => {
+    recorderRef.current?.stop();
+    setRecording(false);
+  };
+
+  const start = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+      const recorder = new MediaRecorder(mediaStream);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.onstop = async () => {
+        for (const track of mediaStream.getTracks()) track.stop();
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
+        if (blob.size === 0) return;
+        setBusy(true);
+        try {
+          const fd = new FormData();
+          fd.append("audio", blob, "voice.webm");
+          const res = await fetch(`${API_BASE}/transcribe`, {
+            method: "POST",
+            body: fd,
+          });
+          if (res.ok) {
+            const { text } = (await res.json()) as { text: string };
+            if (text) {
+              setInput((prev) => (prev ? `${prev} ${text}` : text));
+            }
+          } else {
+            toast.error("Transcription failed");
+          }
+        } finally {
+          setBusy(false);
+        }
+      };
+      recorder.start();
+      recorderRef.current = recorder;
+      setRecording(true);
+    } catch {
+      toast.error("Microphone access denied");
+    }
+  };
+
+  return (
+    <Button
+      className={cn(
+        "border-border/40 h-7 w-7 rounded-lg border p-1 transition-colors",
+        recording
+          ? "animate-pulse border-red-500 text-red-500"
+          : "text-muted-foreground/60 hover:border-border hover:text-foreground",
+      )}
+      data-testid="voice-button"
+      disabled={busy || status !== "ready"}
+      onClick={(event) => {
+        event.preventDefault();
+        if (recording) stop();
+        else void start();
+      }}
+      variant="ghost"
+    >
+      <MicIcon className="size-3.5" />
+    </Button>
+  );
+}
+
+const VoiceButton = memo(PureVoiceButton);
+
 function PureModelSelectorCompact({
   selectedModelId,
   onModelChange,
@@ -638,7 +709,7 @@ function PureModelSelectorCompact({
   const { data: modelsData } = useSWR(
     `${API_BASE}/models`,
     (url: string) => fetch(url).then((r) => r.json()),
-    { revalidateOnFocus: false, dedupingInterval: 3_600_000 }
+    { revalidateOnFocus: false, dedupingInterval: 3_600_000 },
   );
 
   const capabilities: Record<string, ModelCapabilities> | undefined =
@@ -656,7 +727,7 @@ function PureModelSelectorCompact({
     <ModelSelector onOpenChange={setOpen} open={open}>
       <ModelSelectorTrigger asChild>
         <Button
-          className="h-7 max-w-[200px] justify-between gap-1.5 rounded-lg px-2 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground h-7 max-w-[200px] justify-between gap-1.5 rounded-lg px-2 text-[12px] transition-colors"
           data-testid="model-selector"
           variant="ghost"
         >
@@ -741,8 +812,8 @@ function PureModelSelectorCompact({
                       className={cn(
                         "flex w-full",
                         model.id === selectedModel.id &&
-                          "border-b border-dashed border-foreground/50",
-                        !curated && "opacity-40 cursor-default"
+                          "border-foreground/50 border-b border-dashed",
+                        !curated && "cursor-default opacity-40",
                       )}
                       key={model.id}
                       onSelect={() => {
@@ -755,7 +826,7 @@ function PureModelSelectorCompact({
                         setTimeout(() => {
                           document
                             .querySelector<HTMLTextAreaElement>(
-                              "[data-testid='multimodal-input']"
+                              "[data-testid='multimodal-input']",
                             )
                             ?.focus();
                         }, 50);
@@ -764,7 +835,7 @@ function PureModelSelectorCompact({
                     >
                       <ModelSelectorLogo provider={logoProvider} />
                       <ModelSelectorName>{model.name}</ModelSelectorName>
-                      <div className="ml-auto flex items-center gap-2 text-foreground/70">
+                      <div className="text-foreground/70 ml-auto flex items-center gap-2">
                         {capabilities?.[model.id]?.tools && (
                           <WrenchIcon className="size-3.5" />
                         )}
@@ -775,7 +846,7 @@ function PureModelSelectorCompact({
                           <BrainIcon className="size-3.5" />
                         )}
                         {!curated && (
-                          <LockIcon className="size-3 text-muted-foreground/50" />
+                          <LockIcon className="text-muted-foreground/50 size-3" />
                         )}
                       </div>
                     </ModelSelectorItem>
@@ -801,7 +872,7 @@ function PureStopButton({
 }) {
   return (
     <Button
-      className="h-7 w-7 rounded-xl bg-foreground p-1 text-background transition-all duration-200 hover:opacity-85 active:scale-95 disabled:bg-muted disabled:text-muted-foreground/25 disabled:cursor-not-allowed"
+      className="bg-foreground text-background disabled:bg-muted disabled:text-muted-foreground/25 h-7 w-7 rounded-xl p-1 transition-all duration-200 hover:opacity-85 active:scale-95 disabled:cursor-not-allowed"
       data-testid="stop-button"
       onClick={(event) => {
         event.preventDefault();

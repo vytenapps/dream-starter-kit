@@ -1,19 +1,15 @@
+import type { MarkSpec, Node as ProsemirrorNode } from "prosemirror-model";
+import { useEffect, useRef } from "react";
 import OrderedMap from "orderedmap";
-import {
-  DOMParser,
-  type MarkSpec,
-  type Node as ProsemirrorNode,
-  Schema,
-} from "prosemirror-model";
+import { DOMParser, Schema } from "prosemirror-model";
 import { schema } from "prosemirror-schema-basic";
 import { addListNodes } from "prosemirror-schema-list";
 import { EditorState } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
-import { useEffect, useRef } from "react";
 import { renderToString } from "react-dom/server";
 
+import { diffEditor, DiffType } from "../../lib/editor/diff";
 import { MessageResponse } from "../ai-elements/message";
-import { DiffType, diffEditor } from "../../lib/editor/diff";
 
 const diffSchema = new Schema({
   nodes: addListNodes(schema.spec.nodes, "paragraph block*", "block"),
@@ -60,10 +56,10 @@ export const DiffView = ({ oldContent, newContent }: DiffEditorProps) => {
       const parser = DOMParser.fromSchema(diffSchema);
 
       const oldHtmlContent = renderToString(
-        <MessageResponse>{oldContent}</MessageResponse>
+        <MessageResponse>{oldContent}</MessageResponse>,
       );
       const newHtmlContent = renderToString(
-        <MessageResponse>{newContent}</MessageResponse>
+        <MessageResponse>{newContent}</MessageResponse>,
       );
 
       const oldContainer = document.createElement("div");
@@ -89,7 +85,7 @@ export const DiffView = ({ oldContent, newContent }: DiffEditorProps) => {
 
       requestAnimationFrame(() => {
         const firstDiff = editorRef.current?.querySelector(
-          "[class*='bg-emerald'], [class*='bg-red']"
+          "[class*='bg-emerald'], [class*='bg-red']",
         );
         if (firstDiff) {
           firstDiff.scrollIntoView({ behavior: "smooth", block: "center" });

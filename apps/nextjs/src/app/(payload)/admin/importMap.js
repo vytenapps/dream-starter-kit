@@ -36,6 +36,7 @@ import { BrandIcon as BrandIcon_7f003298658d3b7c758be66cf37cc99a } from '~/paylo
 import { SeedGate as SeedGate_579c462e1297910adc75e16d2ce018f6 } from '~/payload/components/SeedGate'
 import { ThemeStyleProvider as ThemeStyleProvider_1ee7cf46bd3ef3bd11106074673f2adc } from '~/payload/components/ThemeStyleProvider'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
+import { ExtensionsView as ExtensionsView_b1518dc7d2e016e0e497e1814854878e } from '~/payload/components/ExtensionsView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -78,5 +79,6 @@ export const importMap = {
   "~/payload/components/SeedGate#SeedGate": SeedGate_579c462e1297910adc75e16d2ce018f6,
   "~/payload/components/ThemeStyleProvider#ThemeStyleProvider": ThemeStyleProvider_1ee7cf46bd3ef3bd11106074673f2adc,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
+  "~/payload/components/ExtensionsView#ExtensionsView": ExtensionsView_b1518dc7d2e016e0e497e1814854878e,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

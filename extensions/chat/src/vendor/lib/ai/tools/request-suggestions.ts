@@ -1,9 +1,10 @@
-import { Output, streamText, tool, type UIMessageStreamWriter } from "ai";
-import type { ToolSession as Session } from "../../types";
+import type { UIMessageStreamWriter } from "ai";
+import { Output, streamText, tool } from "ai";
 import { z } from "zod";
-import { getDocumentById, saveSuggestions } from "../../db/queries";
+
 import type { Suggestion } from "../../db/schema";
-import type { ChatMessage } from "../../types";
+import type { ChatMessage, ToolSession as Session } from "../../types";
+import { getDocumentById, saveSuggestions } from "../../db/queries";
 import { generateUUID } from "../../utils";
 import { getLanguageModel } from "../providers";
 
@@ -25,7 +26,7 @@ export const requestSuggestions = ({
       documentId: z
         .string()
         .describe(
-          "The UUID of an existing document artifact that was previously created with createDocument"
+          "The UUID of an existing document artifact that was previously created with createDocument",
         ),
     }),
     execute: async ({ documentId }) => {

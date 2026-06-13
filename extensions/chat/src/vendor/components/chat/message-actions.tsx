@@ -1,11 +1,12 @@
-import { API_BASE } from "../../lib/constants";
-import equal from "fast-deep-equal";
 import { memo } from "react";
+import equal from "fast-deep-equal";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { useCopyToClipboard } from "usehooks-ts";
+
 import type { Vote } from "../../lib/db/schema";
 import type { ChatMessage } from "../../lib/types";
+import { API_BASE } from "../../lib/constants";
 import {
   MessageAction as Action,
   MessageActions as Actions,
@@ -54,7 +55,7 @@ export function PureMessageActions({
         <div className="flex items-center gap-0.5">
           {onEdit && (
             <Action
-              className="size-7 text-muted-foreground/50 hover:text-foreground"
+              className="text-muted-foreground/50 hover:text-foreground size-7"
               data-testid="message-edit-button"
               onClick={onEdit}
               tooltip="Edit"
@@ -63,7 +64,7 @@ export function PureMessageActions({
             </Action>
           )}
           <Action
-            className="size-7 text-muted-foreground/50 hover:text-foreground"
+            className="text-muted-foreground/50 hover:text-foreground size-7"
             onClick={handleCopy}
             tooltip="Copy"
           >
@@ -89,17 +90,14 @@ export function PureMessageActions({
         data-testid="message-upvote"
         disabled={vote?.isUpvoted}
         onClick={() => {
-          const upvote = fetch(
-            `${API_BASE}/vote`,
-            {
-              method: "PATCH",
-              body: JSON.stringify({
-                chatId,
-                messageId: message.id,
-                type: "up",
-              }),
-            }
-          );
+          const upvote = fetch(`${API_BASE}/vote`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              chatId,
+              messageId: message.id,
+              type: "up",
+            }),
+          });
 
           toast.promise(upvote, {
             loading: "Upvoting Response...",
@@ -112,7 +110,7 @@ export function PureMessageActions({
                   }
 
                   const votesWithoutCurrent = currentVotes.filter(
-                    (currentVote) => currentVote.messageId !== message.id
+                    (currentVote) => currentVote.messageId !== message.id,
                   );
 
                   return [
@@ -124,7 +122,7 @@ export function PureMessageActions({
                     },
                   ];
                 },
-                { revalidate: false }
+                { revalidate: false },
               );
 
               return "Upvoted Response!";
@@ -142,17 +140,14 @@ export function PureMessageActions({
         data-testid="message-downvote"
         disabled={vote && !vote.isUpvoted}
         onClick={() => {
-          const downvote = fetch(
-            `${API_BASE}/vote`,
-            {
-              method: "PATCH",
-              body: JSON.stringify({
-                chatId,
-                messageId: message.id,
-                type: "down",
-              }),
-            }
-          );
+          const downvote = fetch(`${API_BASE}/vote`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              chatId,
+              messageId: message.id,
+              type: "down",
+            }),
+          });
 
           toast.promise(downvote, {
             loading: "Downvoting Response...",
@@ -165,7 +160,7 @@ export function PureMessageActions({
                   }
 
                   const votesWithoutCurrent = currentVotes.filter(
-                    (currentVote) => currentVote.messageId !== message.id
+                    (currentVote) => currentVote.messageId !== message.id,
                   );
 
                   return [
@@ -177,7 +172,7 @@ export function PureMessageActions({
                     },
                   ];
                 },
-                { revalidate: false }
+                { revalidate: false },
               );
 
               return "Downvoted Response!";
@@ -204,5 +199,5 @@ export const MessageActions = memo(
     }
 
     return true;
-  }
+  },
 );

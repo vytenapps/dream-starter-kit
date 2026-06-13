@@ -1,6 +1,7 @@
 import type { Node } from "prosemirror-model";
 import { Plugin, PluginKey } from "prosemirror-state";
 import { DecorationSet } from "prosemirror-view";
+
 import type { Suggestion } from "../db/schema";
 
 export interface UISuggestion extends Suggestion {
@@ -38,7 +39,7 @@ function findPositionsInDoc(doc: Node, searchText: string): Position | null {
 
 export function projectWithPositions(
   doc: Node,
-  suggestions: Suggestion[]
+  suggestions: Suggestion[],
 ): UISuggestion[] {
   return suggestions.map((suggestion) => {
     const positions = findPositionsInDoc(doc, suggestion.originalText);

@@ -1,12 +1,13 @@
 "use client";
 
 import type { UseChatHelpers } from "@ai-sdk/react";
-import { motion } from "motion/react";
 import { memo } from "react";
-import { CHAT_PATH, suggestions } from "../../lib/constants";
+import { motion } from "motion/react";
+
 import type { ChatMessage } from "../../lib/types";
-import { Suggestion } from "../ai-elements/suggestion";
 import type { VisibilityType } from "./visibility-selector";
+import { CHAT_PATH, suggestions } from "../../lib/constants";
+import { Suggestion } from "../ai-elements/suggestion";
 
 type SuggestedActionsProps = {
   chatId: string;
@@ -41,13 +42,9 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
           }}
         >
           <Suggestion
-            className="h-auto w-full whitespace-nowrap rounded-xl border border-border/50 bg-card/30 px-4 py-3 text-left text-[12px] leading-relaxed text-muted-foreground transition-all duration-200 sm:whitespace-normal sm:p-4 sm:text-[13px] hover:-translate-y-0.5 hover:bg-card/60 hover:text-foreground hover:shadow-[var(--shadow-card)]"
+            className="border-border/50 bg-card/30 text-muted-foreground hover:bg-card/60 hover:text-foreground h-auto w-full rounded-xl border px-4 py-3 text-left text-[12px] leading-relaxed whitespace-nowrap transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)] sm:p-4 sm:text-[13px] sm:whitespace-normal"
             onClick={(suggestion) => {
-              window.history.pushState(
-                {},
-                "",
-                `${CHAT_PATH}/${chatId}`
-              );
+              window.history.pushState({}, "", `${CHAT_PATH}/${chatId}`);
               sendMessage({
                 role: "user",
                 parts: [{ type: "text", text: suggestion }],
@@ -74,5 +71,5 @@ export const SuggestedActions = memo(
     }
 
     return true;
-  }
+  },
 );

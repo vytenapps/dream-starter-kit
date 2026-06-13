@@ -24,6 +24,12 @@ export const serverEnvSchema = z.object({
 
   // --- AI (Vercel AI Gateway) — optional until Phase 6 is configured ---
   AI_GATEWAY_API_KEY: z.string().min(1).optional(),
+  /**
+   * OpenAI key for voice transcription (the chat extension's /transcribe
+   * route). The AI Gateway doesn't proxy /audio/transcriptions, so Whisper is
+   * called directly. Optional — voice input is off until this is set.
+   */
+  OPENAI_API_KEY: z.string().min(1).optional(),
 
   // --- Stripe — optional until Phase 5 is configured ---
   STRIPE_SECRET_KEY: z.string().min(1).optional(),

@@ -15,6 +15,11 @@
       "sha256": "9e5bc437bb64d07dd2c59d8cca03a35ef2569d906727e726f5170633dbad8a7f",
       "target": "20260613012847_ext_chat_002_chat_sdk.sql"
     },
+    "chat/003_bot_brain.sql": {
+      "version": "20260613021557",
+      "sha256": "940e137c30f20a83bf407344baf2bea9b49b37f9015a2ff18e86bf79879bd7d0",
+      "target": "20260613021557_ext_chat_003_bot_brain.sql"
+    },
     "demo/001_initial.sql": {
       "version": "20260612100001",
       "sha256": "3d92502cfbf0b105901f6b6beb517f30f6ace3c7f2d3a304d923a0bd2e2bed7e",
