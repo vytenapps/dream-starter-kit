@@ -2,14 +2,21 @@
 
 import { useRouter } from "next/navigation";
 import {
+  IconCheck,
   IconCreditCard,
+  IconDeviceDesktop,
   IconDotsVertical,
   IconLogout,
+  IconMoon,
   IconNotification,
+  IconSun,
+  IconSunMoon,
   IconUserCircle,
 } from "@tabler/icons-react";
 
+import type { ThemeMode } from "@acme/ui/theme";
 import { signOut } from "@acme/app";
+import { useTheme } from "@acme/ui/theme";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
@@ -19,6 +26,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import {
@@ -41,6 +51,17 @@ export function NavUser({
   const { isMobile } = useSidebar();
   const router = useRouter();
   const supabase = createClient();
+  const { themeMode, setTheme } = useTheme();
+
+  const themeOptions: {
+    mode: ThemeMode;
+    label: string;
+    Icon: typeof IconSun;
+  }[] = [
+    { mode: "light", label: "Light", Icon: IconSun },
+    { mode: "dark", label: "Dark", Icon: IconMoon },
+    { mode: "auto", label: "System", Icon: IconDeviceDesktop },
+  ];
 
   return (
     <SidebarMenu>
@@ -99,6 +120,22 @@ export function NavUser({
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <IconSunMoon />
+                Theme
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {themeOptions.map(({ mode, label, Icon }) => (
+                  <DropdownMenuItem key={mode} onClick={() => setTheme(mode)}>
+                    <Icon />
+                    {label}
+                    {themeMode === mode && <IconCheck className="ml-auto" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() =>

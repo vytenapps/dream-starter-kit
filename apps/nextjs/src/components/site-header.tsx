@@ -6,7 +6,6 @@ import { IconSettings } from "@tabler/icons-react";
 
 import { NotificationBell } from "@acme/ext-notifications/web";
 import { Button } from "@acme/ui/button";
-import { ThemeToggle } from "@acme/ui/theme";
 
 import type { NavMenuItem } from "~/lib/ext/nav-types";
 import { Separator } from "~/components/ui/separator";
@@ -63,7 +62,7 @@ export function SiteHeader({
               </Link>
             </Button>
           )}
-          <ThemeToggle />
+          {/* Theme switch lives in the sidebar user menu (see nav-user.tsx). */}
         </div>
       </div>
     </header>
