@@ -188,6 +188,74 @@ export type Database = {
           },
         ];
       };
+      ext_chat_channel_contacts: {
+        Row: {
+          channel: string;
+          contact_key: string;
+          created_at: string;
+          display_name: string | null;
+          opted_out: boolean;
+          user_id: string | null;
+        };
+        Insert: {
+          channel: string;
+          contact_key: string;
+          created_at?: string;
+          display_name?: string | null;
+          opted_out?: boolean;
+          user_id?: string | null;
+        };
+        Update: {
+          channel?: string;
+          contact_key?: string;
+          created_at?: string;
+          display_name?: string | null;
+          opted_out?: boolean;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ext_chat_channel_contacts_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ext_chat_channel_threads: {
+        Row: {
+          active_skill_slug: string | null;
+          active_skill_turns_remaining: number;
+          channel: string;
+          contact_key: string | null;
+          is_group: boolean;
+          messages: Json;
+          thread_key: string;
+          updated_at: string;
+        };
+        Insert: {
+          active_skill_slug?: string | null;
+          active_skill_turns_remaining?: number;
+          channel: string;
+          contact_key?: string | null;
+          is_group?: boolean;
+          messages?: Json;
+          thread_key: string;
+          updated_at?: string;
+        };
+        Update: {
+          active_skill_slug?: string | null;
+          active_skill_turns_remaining?: number;
+          channel?: string;
+          contact_key?: string | null;
+          is_group?: boolean;
+          messages?: Json;
+          thread_key?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       ext_chat_documents: {
         Row: {
           content: string | null;
@@ -263,6 +331,42 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      ext_chat_outbound_counters: {
+        Row: {
+          count: number;
+          day: string;
+          sender: string;
+        };
+        Insert: {
+          count?: number;
+          day: string;
+          sender: string;
+        };
+        Update: {
+          count?: number;
+          day?: string;
+          sender?: string;
+        };
+        Relationships: [];
+      };
+      ext_chat_processed_inbound: {
+        Row: {
+          channel: string;
+          message_handle: string;
+          received_at: string;
+        };
+        Insert: {
+          channel: string;
+          message_handle: string;
+          received_at?: string;
+        };
+        Update: {
+          channel?: string;
+          message_handle?: string;
+          received_at?: string;
+        };
+        Relationships: [];
       };
       ext_chat_suggestions: {
         Row: {

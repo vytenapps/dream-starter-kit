@@ -61,6 +61,16 @@ import {
 import { composeSystemPrompt, persistSkillState } from "./prompt";
 import { transcribeAudio } from "./transcribe";
 
+// Channel framework — the typed service that chat-adapter-* extensions call
+// from their webhooks (the kit's cross-extension "plain typed export" pattern).
+export {
+  handleChannelMessage,
+  type HandleChannelMessageParams,
+  type HandleChannelMessageResult,
+} from "./channel";
+// Reused by channel adapters for voice-memo transcription.
+export { transcribeAudio } from "./transcribe";
+
 const json = (status: number, body: Record<string, unknown>) =>
   Response.json(body, { status });
 

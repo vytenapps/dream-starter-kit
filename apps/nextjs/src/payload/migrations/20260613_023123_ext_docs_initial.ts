@@ -1,6 +1,6 @@
 // GENERATED copy (`pnpm ext sync`) of extensions/docs/src/payload/migrations/20260613_023123_ext_docs_initial.ts
 // so the local `payload migrate` CLI applies it — do not edit.
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateDownArgs, MigrateUpArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -87,10 +87,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "_ext_docs_settings_v_created_at_idx" ON "cms"."_ext_docs_settings_v" USING btree ("created_at");
   CREATE INDEX "_ext_docs_settings_v_updated_at_idx" ON "cms"."_ext_docs_settings_v" USING btree ("updated_at");
   ALTER TABLE "cms"."payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_ext_docs_pages_fk" FOREIGN KEY ("ext_docs_pages_id") REFERENCES "cms"."ext_docs_pages"("id") ON DELETE cascade ON UPDATE no action;
-  CREATE INDEX "payload_locked_documents_rels_ext_docs_pages_id_idx" ON "cms"."payload_locked_documents_rels" USING btree ("ext_docs_pages_id");`)
+  CREATE INDEX "payload_locked_documents_rels_ext_docs_pages_id_idx" ON "cms"."payload_locked_documents_rels" USING btree ("ext_docs_pages_id");`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "cms"."ext_docs_pages" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "cms"."_ext_docs_pages_v" DISABLE ROW LEVEL SECURITY;
@@ -107,5 +111,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "cms"."enum_ext_docs_pages_source";
   DROP TYPE "cms"."enum_ext_docs_pages_status";
   DROP TYPE "cms"."enum__ext_docs_pages_v_version_source";
-  DROP TYPE "cms"."enum__ext_docs_pages_v_version_status";`)
+  DROP TYPE "cms"."enum__ext_docs_pages_v_version_status";`);
 }

@@ -1,0 +1,45 @@
+{
+  "display_information": {
+    "name": "Dream Assistant",
+    "description": "AI assistant powered by your app's docs + skills."
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "Dream Assistant",
+      "always_online": true
+    }
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "app_mentions:read",
+        "chat:write",
+        "channels:history",
+        "channels:read",
+        "groups:history",
+        "groups:read",
+        "im:history",
+        "im:read",
+        "mpim:history",
+        "mpim:read",
+        "reactions:read",
+        "reactions:write",
+        "users:read"
+      ]
+    }
+  },
+  "settings": {
+    "event_subscriptions": {
+      "request_url": "https://YOUR_HOST/api/ext/chat-adapter-slack/webhook",
+      "bot_events": [
+        "app_mention",
+        "message.channels",
+        "message.groups",
+        "message.im",
+        "message.mpim"
+      ]
+    },
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": false
+  }
+}

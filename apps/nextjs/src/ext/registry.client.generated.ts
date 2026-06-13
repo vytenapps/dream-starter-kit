@@ -30,6 +30,8 @@ export interface ExtNavDefault {
 export const extInstalled: ExtInstalled[] = [
   { slug: "billing", name: "Billing", version: "1.0.0", system: true },
   { slug: "chat", name: "AI Chat", version: "1.0.0", system: false },
+  { slug: "chat-adapter-sendblue", name: "Sendblue Adapter", version: "1.0.0", system: false },
+  { slug: "chat-adapter-slack", name: "Slack Adapter", version: "1.0.0", system: false },
   { slug: "dashboard", name: "Dashboard", version: "1.0.0", system: true },
   { slug: "docs", name: "Docs", version: "1.0.0", system: true },
   { slug: "notifications", name: "Notifications", version: "1.0.0", system: false },

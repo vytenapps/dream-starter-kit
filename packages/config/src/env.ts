@@ -31,6 +31,19 @@ export const serverEnvSchema = z.object({
    */
   OPENAI_API_KEY: z.string().min(1).optional(),
 
+  // --- Chat channel adapters (optional; each adapter is off until set) ---
+  // Slack (ext-chat-adapter-slack) — Events API webhook + chat.postMessage.
+  SLACK_BOT_TOKEN: z.string().min(1).optional(),
+  SLACK_SIGNING_SECRET: z.string().min(1).optional(),
+  // Sendblue (ext-chat-adapter-sendblue) — iMessage/SMS in + out.
+  SENDBLUE_API_KEY: z.string().min(1).optional(),
+  SENDBLUE_API_SECRET: z.string().min(1).optional(),
+  SENDBLUE_FROM_NUMBER: z.string().min(1).optional(),
+  SENDBLUE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  SENDBLUE_STATUS_CALLBACK_URL: z.string().url().optional(),
+  // Optional GitHub token to raise rate limits for the ext-docs GitHub sync.
+  GITHUB_TOKEN: z.string().min(1).optional(),
+
   // --- Stripe — optional until Phase 5 is configured ---
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),

@@ -1,6 +1,8 @@
 [
   "@acme/ext-billing",
   "@acme/ext-chat",
+  "@acme/ext-chat-adapter-sendblue",
+  "@acme/ext-chat-adapter-slack",
   "@acme/ext-dashboard",
   "@acme/ext-docs",
   "@acme/ext-notifications",

@@ -42,6 +42,10 @@ export default defineExtension({
       "ext_chat_documents",
       "ext_chat_suggestions",
       "ext_chat_votes",
+      "ext_chat_channel_contacts",
+      "ext_chat_channel_threads",
+      "ext_chat_processed_inbound",
+      "ext_chat_outbound_counters",
     ],
   },
   cms: {

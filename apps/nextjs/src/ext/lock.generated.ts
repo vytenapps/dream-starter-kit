@@ -39,6 +39,26 @@ export const extensionsLock = {
       ],
       "edgeFunctions": []
     },
+    "chat-adapter-sendblue": {
+      "version": "1.0.0",
+      "kitCompat": ">=1.0.0 <2",
+      "source": "local",
+      "installedVia": "preinstalled",
+      "stubs": [
+        "apps/nextjs/src/payload/migrations/20260613_025129_ext_chat_adapter_sendblue_initial.ts"
+      ],
+      "edgeFunctions": []
+    },
+    "chat-adapter-slack": {
+      "version": "1.0.0",
+      "kitCompat": ">=1.0.0 <2",
+      "source": "local",
+      "installedVia": "preinstalled",
+      "stubs": [
+        "apps/nextjs/src/payload/migrations/20260613_025126_ext_chat_adapter_slack_initial.ts"
+      ],
+      "edgeFunctions": []
+    },
     "dashboard": {
       "version": "1.0.0",
       "kitCompat": ">=1.0.0 <2",
