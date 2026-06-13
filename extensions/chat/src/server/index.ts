@@ -17,6 +17,7 @@ import {
   AI_MAX_OUTPUT_TOKENS,
   CHAT_CHANNELS,
   DEFAULT_AI_MODEL,
+  isAiGatewayConfigured,
 } from "@acme/config";
 import { getExtensionSettings } from "@acme/ext-kit/payload";
 
@@ -97,9 +98,7 @@ async function getThreadSkillState(
 }
 
 const requireGateway = () =>
-  process.env.AI_GATEWAY_API_KEY
-    ? null
-    : json(503, { error: "AI is not configured" });
+  isAiGatewayConfigured() ? null : json(503, { error: "AI is not configured" });
 
 /** Upstream vercel/ai-chatbot request body (see VENDOR.md). `channel` feeds
  * the prompt composer; `selectedVisibilityType` is accepted but ignored
