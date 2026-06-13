@@ -24,7 +24,7 @@ export function DocsShell({
 }) {
   return (
     <div className="mx-auto w-full max-w-7xl px-4">
-      <DocsTopBar />
+      <DocsTopBar activeSlug={activeSlug} nav={nav} />
       <div className="flex gap-8">
         <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-56 shrink-0 overflow-y-auto py-8 md:block">
           <nav className="flex flex-col gap-6">

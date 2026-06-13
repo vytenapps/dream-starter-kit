@@ -39,7 +39,7 @@ export async function DocsDetailPage({
   return (
     <DocsShell activeSlug={slug} nav={nav}>
       <article className="mx-auto max-w-3xl">
-        <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             {page.category ? (
               <div className="text-muted-foreground mb-1 text-sm">
