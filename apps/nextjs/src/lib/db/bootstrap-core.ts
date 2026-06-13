@@ -31,16 +31,66 @@ export function parseMigrationFilename(
 }
 
 /**
- * Privileged connection the bootstrap uses. `SUPABASE_DB_URL` (explicit) wins
- * over `POSTGRES_URL_NON_POOLING` (auto-injected by the Vercel<->Supabase
- * integration). Both must be session-mode — the pooled `POSTGRES_URL` is never
- * considered because transaction pooling breaks session advisory locks.
+ * Supabase's DIRECT connection (`POSTGRES_URL_NON_POOLING`,
+ * `db.<ref>.supabase.co:5432`) is a poor fit for a fresh Vercel deploy: its
+ * endpoint isn't reachable in the first minutes after a brand-new project is
+ * created (provisioning + DNS settling), and it's IPv6-only without the paid
+ * IPv4 add-on. Either way the connect can hang until the timeout fires — the
+ * bootstrap then aborts before creating the `payload_cms` role and every Payload
+ * page 500s until a later cold-start boot finally gets through.
+ *
+ * The Supavisor SESSION-mode pooler (`<region>.pooler.supabase.com:5432`) is
+ * IPv4 on every tier AND keeps session semantics — the session advisory lock the
+ * bootstrap takes AND the prepared statements Payload's pg pool uses — unlike the
+ * TRANSACTION pooler the integration injects as `POSTGRES_URL` (same host, port
+ * 6543), which breaks both. So derive the session pooler from `POSTGRES_URL` by
+ * swapping its port 6543 → 5432 (same host, same `postgres.<ref>` tenant user).
+ *
+ * Returns undefined for anything that isn't a recognizable `:6543` Supavisor
+ * pooler URL, so a non-pooler `POSTGRES_URL` is ignored rather than mis-used for
+ * a session lock. String surgery (never `URL.toString()`) keeps query params
+ * (`?sslmode=require&supa=...`) byte-exact.
+ */
+export function sessionPoolerUrl(
+  postgresUrl: string | undefined,
+): string | undefined {
+  if (!postgresUrl) return undefined;
+  let parsed: URL;
+  try {
+    parsed = new URL(postgresUrl);
+  } catch {
+    return undefined;
+  }
+  if (
+    !parsed.hostname.endsWith(".pooler.supabase.com") ||
+    parsed.port !== "6543"
+  ) {
+    return undefined;
+  }
+  return postgresUrl.replace(
+    `${parsed.hostname}:6543`,
+    `${parsed.hostname}:5432`,
+  );
+}
+
+/**
+ * Privileged, SESSION-mode connection the bootstrap uses (its `pg_advisory_lock`
+ * needs a session that outlives the transaction). Precedence:
+ *   1. `SUPABASE_DB_URL` — explicit override (the local-dev default; a founder
+ *      may also pin a custom/direct URL, e.g. with the IPv4 add-on);
+ *   2. the IPv4 session pooler derived from `POSTGRES_URL` — the zero-touch
+ *      default for the Vercel<->Supabase integration, reachable where the
+ *      IPv6-only direct URL is not (see `sessionPoolerUrl`);
+ *   3. `POSTGRES_URL_NON_POOLING` — the direct connection, last resort (works
+ *      locally and on projects that can route to it).
  */
 export function resolveAdminDbUrl(
   env: Record<string, string | undefined>,
 ): string | undefined {
   // Treat empty strings as absent — a `VAR=""` line must not be "configured".
   if (env.SUPABASE_DB_URL) return env.SUPABASE_DB_URL;
+  const sessionPooler = sessionPoolerUrl(env.POSTGRES_URL);
+  if (sessionPooler) return sessionPooler;
   if (env.POSTGRES_URL_NON_POOLING) return env.POSTGRES_URL_NON_POOLING;
   return undefined;
 }

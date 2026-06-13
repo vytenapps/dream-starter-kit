@@ -46,8 +46,8 @@ export function cmsNotConfiguredMessage(missing: string[]): string {
   return (
     `CMS not configured on this deployment: set ${missing.join(" and ")} ` +
     "in your hosting env — or connect the Vercel<->Supabase integration " +
-    "(SUPABASE_SERVICE_ROLE_KEY + POSTGRES_URL_NON_POOLING) and the kit " +
-    "derives them automatically — then redeploy. See the README's " +
+    "(SUPABASE_SERVICE_ROLE_KEY + POSTGRES_URL / POSTGRES_URL_NON_POOLING) and " +
+    "the kit derives them automatically — then redeploy. See the README's " +
     '"Content backend (Payload CMS)" section; deployment status is at ' +
     "/api/health/db."
   );

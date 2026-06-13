@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 
 import type { Database } from "@acme/api/types";
 
-import { env } from "~/env";
+import { env, supabaseAnonKey } from "~/env";
 
 /**
  * Refreshes the Supabase auth session on every request (rotates the cookie) and
@@ -16,7 +16,7 @@ export async function updateSession(request: NextRequest) {
 
   const supabase = createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    supabaseAnonKey(),
     {
       cookies: {
         getAll() {

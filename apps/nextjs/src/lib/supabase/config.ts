@@ -1,4 +1,4 @@
-import { env, SUPABASE_ANON_KEY_PLACEHOLDER } from "~/env";
+import { env, SUPABASE_ANON_KEY_PLACEHOLDER, supabaseAnonKey } from "~/env";
 
 /**
  * True once the app has real Supabase credentials. A one-click Vercel deploy
@@ -9,10 +9,12 @@ import { env, SUPABASE_ANON_KEY_PLACEHOLDER } from "~/env";
  *
  * Keyed off the anon-key sentinel because it's never a valid key — the URL
  * placeholder (`http://127.0.0.1:54321`) is also the real local-dev URL, so it
- * can't distinguish "unconfigured" from "local dev".
+ * can't distinguish "unconfigured" from "local dev". `supabaseAnonKey()` also
+ * accepts the integration's NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, so a deploy
+ * connected with the new key name reads as configured.
  */
 export function isSupabaseConfigured(): boolean {
-  return env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== SUPABASE_ANON_KEY_PLACEHOLDER;
+  return supabaseAnonKey() !== SUPABASE_ANON_KEY_PLACEHOLDER;
 }
 
 /**
@@ -44,7 +46,7 @@ export function authErrorMessage(
   fallback = "Something went wrong. Please try again.",
 ): string {
   if (!isSupabaseConfigured()) {
-    return "This app isn’t connected to a Supabase project yet. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (Vercel’s Supabase integration sets both), then redeploy.";
+    return "This app isn’t connected to a Supabase project yet. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY — Vercel’s Supabase integration sets these), then redeploy.";
   }
   const message = error instanceof Error ? error.message : "";
   if (

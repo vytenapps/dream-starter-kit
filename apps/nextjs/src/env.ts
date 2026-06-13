@@ -41,11 +41,14 @@ export const env = createEnv({
     // functions receive the service role from Supabase's injected env.
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
     SUPABASE_DB_URL: z.url().optional(),
-    // Session-mode Postgres URL auto-injected by the Vercel<->Supabase
-    // integration. The runtime DB bootstrap (lib/db/bootstrap.ts) uses it as
-    // the fallback when SUPABASE_DB_URL isn't set, so a fresh hosted project
-    // self-provisions on first boot with zero manual env. Never the pooled
-    // POSTGRES_URL — transaction pooling breaks session advisory locks.
+    // Postgres URLs auto-injected by the Vercel<->Supabase integration. The
+    // runtime DB bootstrap (lib/db/bootstrap.ts → resolveAdminDbUrl) uses them
+    // when SUPABASE_DB_URL isn't set, so a fresh hosted project self-provisions
+    // on first boot with zero manual env. It prefers the IPv4 SESSION pooler it
+    // derives from POSTGRES_URL (the transaction pooler, port 6543 → 5432) over
+    // POSTGRES_URL_NON_POOLING: the latter is Supabase's DIRECT connection,
+    // which is IPv6-only without the IPv4 add-on and so unreachable from Vercel.
+    POSTGRES_URL: z.string().min(1).optional(),
     POSTGRES_URL_NON_POOLING: z.string().min(1).optional(),
     // Opt-out for the runtime DB bootstrap (e.g. when CI owns migrations).
     DB_BOOTSTRAP: z.enum(["on", "off"]).optional(),
@@ -96,6 +99,12 @@ export const env = createEnv({
       .string()
       .min(1)
       .default(SUPABASE_ANON_KEY_PLACEHOLDER),
+    // Supabase's new API-key system renamed the browser key "anon" →
+    // "publishable", and the Vercel<->Supabase integration now injects it under
+    // this name. Optional fallback for NEXT_PUBLIC_SUPABASE_ANON_KEY (resolved
+    // by `supabaseAnonKey()` below) — supabase-js accepts either. So a fresh
+    // clone-and-connect deploy gets a working browser client with no manual env.
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
     // Local/dev default origin. On Vercel this is superseded by the auto-injected
     // production URL below (see ~/lib/site-url for the resolution order), so a
     // default deploy targets the real domain without any manual env.
@@ -122,6 +131,8 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
@@ -142,3 +153,21 @@ export const env = createEnv({
   // `next.config.js` (which imports this file) but no real env is available.
   skipValidation: process.env.npm_lifecycle_event === "lint",
 });
+
+/**
+ * The browser/anon Supabase key, resolving the new API-key naming. The
+ * Vercel<->Supabase integration now injects it as
+ * NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ("anon" → "publishable" in Supabase's new
+ * key system); local dev and older setups use NEXT_PUBLIC_SUPABASE_ANON_KEY.
+ * supabase-js accepts either. Returns the build placeholder only when neither is
+ * set (a bare one-click deploy), which `isSupabaseConfigured()` detects.
+ */
+export function supabaseAnonKey(): string {
+  if (env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== SUPABASE_ANON_KEY_PLACEHOLDER) {
+    return env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  }
+  return (
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+}

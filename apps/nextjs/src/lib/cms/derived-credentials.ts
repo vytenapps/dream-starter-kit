@@ -98,6 +98,7 @@ export interface CmsCredentialSource {
   PAYLOAD_DATABASE_URL?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
   SUPABASE_DB_URL?: string;
+  POSTGRES_URL?: string;
   POSTGRES_URL_NON_POOLING?: string;
 }
 
@@ -128,6 +129,7 @@ export function resolveCmsCredentials(
   if (!databaseUrl && seed) {
     const adminUrl = resolveAdminDbUrl({
       SUPABASE_DB_URL: source.SUPABASE_DB_URL,
+      POSTGRES_URL: source.POSTGRES_URL,
       POSTGRES_URL_NON_POOLING: source.POSTGRES_URL_NON_POOLING,
     });
     if (adminUrl) {
