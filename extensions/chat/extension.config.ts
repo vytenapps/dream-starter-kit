@@ -15,10 +15,10 @@ export default defineExtension({
   description: "AI assistant with persisted chat threads.",
   nav: {
     web: [
-      { title: "Chat", href: "/x/chat", icon: "IconMessageCircle", order: 20 },
+      { title: "Chat", href: "/a/chat", icon: "IconMessageCircle", order: 20 },
     ],
     native: [
-      { title: "Chat", href: "/x/chat", icon: "IconMessageCircle", order: 20 },
+      { title: "Chat", href: "/a/chat", icon: "IconMessageCircle", order: 20 },
     ],
   },
   routes: {
@@ -36,10 +36,24 @@ export default defineExtension({
     routes: true,
   },
   database: {
-    tables: ["ext_chat_threads", "ext_chat_messages"],
+    tables: [
+      "ext_chat_threads",
+      "ext_chat_messages",
+      "ext_chat_documents",
+      "ext_chat_suggestions",
+      "ext_chat_votes",
+      "ext_chat_channel_contacts",
+      // Created in 004, dropped in 005 (threads unified into ext_chat_threads);
+      // still declared so the migration DDL passes the table-ownership lint.
+      "ext_chat_channel_threads",
+      "ext_chat_processed_inbound",
+      "ext_chat_outbound_counters",
+    ],
   },
   cms: {
+    collections: ["ext-chat-skills"],
     hasSettings: true,
     hasMigrations: true,
+    hasSeed: true,
   },
 });

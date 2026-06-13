@@ -1,4 +1,5 @@
 import * as migration_20260612_015425_ext_chat_settings from "./20260612_015425_ext_chat_settings";
+import * as migration_20260613_021834_ext_chat_skills_and_settings_tabs from "./20260613_021834_ext_chat_skills_and_settings_tabs";
 
 /**
  * Payload (cms-schema) migrations shipped by this extension — merged into the
@@ -13,5 +14,10 @@ export const migrations = [
     up: migration_20260612_015425_ext_chat_settings.up,
     down: migration_20260612_015425_ext_chat_settings.down,
     name: "20260612_015425_ext_chat_settings",
+  },
+  {
+    up: migration_20260613_021834_ext_chat_skills_and_settings_tabs.up,
+    down: migration_20260613_021834_ext_chat_skills_and_settings_tabs.down,
+    name: "20260613_021834_ext_chat_skills_and_settings_tabs",
   },
 ];

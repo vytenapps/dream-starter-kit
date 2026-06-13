@@ -33,6 +33,69 @@ export const AI_MODEL_FALLBACKS = [
 /** Cost guardrail: max tokens a single AI response may generate (Phase 6). */
 export const AI_MAX_OUTPUT_TOKENS = 2048;
 
+/**
+ * Curated chat-model catalog for the /a/chat model selector (gateway slugs —
+ * golden rule #5: model ids live ONLY here). The chat extension serves this
+ * via GET /api/ext/chat/models; the default is DEFAULT_AI_MODEL.
+ */
+export const CHAT_MODELS = [
+  {
+    id: "anthropic/claude-sonnet-4.5",
+    name: "Claude Sonnet 4.5",
+    provider: "anthropic",
+    description: "Fast, capable default with tool use",
+  },
+  {
+    id: "anthropic/claude-opus-4.1",
+    name: "Claude Opus 4.1",
+    provider: "anthropic",
+    description: "Most capable model for complex work",
+  },
+  {
+    id: "anthropic/claude-haiku-4.5",
+    name: "Claude Haiku 4.5",
+    provider: "anthropic",
+    description: "Fastest and most economical",
+  },
+] as const;
+
+/**
+ * Small/fast model for auxiliary AI work: skill routing fallback
+ * classification and chat title generation.
+ */
+export const ROUTING_AI_MODEL = "anthropic/claude-haiku-4.5";
+
+/**
+ * Default transcription model ("provider/model"). Only OpenAI is wired up —
+ * the AI Gateway doesn't proxy /audio/transcriptions, so transcription calls
+ * OpenAI directly with OPENAI_API_KEY.
+ */
+export const DEFAULT_TRANSCRIPTION_MODEL = "openai/whisper-1";
+
+/**
+ * Chat channels the assistant can speak through. "web"/"native" are the
+ * in-app surfaces; the rest map to Chat SDK adapters (chat-sdk.dev/adapters)
+ * wired up as ext-chat-adapter-<channel> extensions. Channel-scoped
+ * sub-prompts in the chat settings target these slugs.
+ */
+export const CHAT_CHANNELS = [
+  "web",
+  "native",
+  "slack",
+  "sms-sendblue",
+  "telegram",
+  "whatsapp",
+  "discord",
+  "teams",
+  "google-chat",
+  "messenger",
+  "email",
+  "twilio-sms",
+  "github",
+  "linear",
+] as const;
+export type ChatChannel = (typeof CHAT_CHANNELS)[number];
+
 /** Default Supabase Storage bucket for user uploads (see docs/ERD.md `files`). */
 export const DEFAULT_STORAGE_BUCKET = "user-files";
 

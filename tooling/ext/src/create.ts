@@ -33,8 +33,8 @@ export default defineExtension({
   kitCompat: ">=1.0.0 <2",
   description: "TODO: describe ${title}.",
   nav: {
-    web: [{ title: "${title}", href: "/x/${slug}", order: 100 }],
-    native: [{ title: "${title}", href: "/x/${slug}", order: 100 }],
+    web: [{ title: "${title}", href: "/a/${slug}", order: 100 }],
+    native: [{ title: "${title}", href: "/a/${slug}", order: 100 }],
   },
   routes: {
     web: [{ path: "", component: "${pascal}Page" }],

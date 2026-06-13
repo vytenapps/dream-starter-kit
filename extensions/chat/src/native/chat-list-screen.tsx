@@ -18,7 +18,7 @@ export function ChatListScreen() {
   async function onNew() {
     try {
       const thread = await createThread.mutateAsync(undefined);
-      router.push(`/x/chat/${thread.id}`);
+      router.push(`/a/chat/${thread.id}`);
     } catch (e) {
       Alert.alert("Error", msg(e));
     }
@@ -44,7 +44,7 @@ export function ChatListScreen() {
           <View className="border-border flex-row items-center justify-between border-b py-3">
             <Pressable
               className="flex-1"
-              onPress={() => router.push(`/x/chat/${item.id}`)}
+              onPress={() => router.push(`/a/chat/${item.id}`)}
             >
               <Text className="text-base">{item.title ?? "Untitled"}</Text>
             </Pressable>

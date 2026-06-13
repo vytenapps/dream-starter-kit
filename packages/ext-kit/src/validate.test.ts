@@ -91,12 +91,32 @@ describe("validateManifest", () => {
     );
   });
 
+  it("rejects mounts inside the /a default namespace but allows bare /a", () => {
+    const inside = defineExtension({
+      ...base,
+      slug: "demo",
+      routes: { web: [{ path: "", component: "C", mount: "/a/tools" }] },
+    });
+    expect(
+      validateManifest(inside).some((e) =>
+        e.includes("default-mount namespace"),
+      ),
+    ).toBe(true);
+
+    const home = defineExtension({
+      ...base,
+      slug: "dashboard",
+      routes: { web: [{ path: "", component: "C", mount: "/a" }] },
+    });
+    expect(validateManifest(home)).toEqual([]);
+  });
+
   it("rejects native surface on a web-only extension", () => {
     const m = defineExtension({
       ...base,
       slug: "demo",
       platforms: { web: true, native: false },
-      nav: { native: [{ title: "Demo", href: "/x/demo" }] },
+      nav: { native: [{ title: "Demo", href: "/a/demo" }] },
     });
     expect(
       validateManifest(m).some((e) => e.includes("platforms.native is false")),

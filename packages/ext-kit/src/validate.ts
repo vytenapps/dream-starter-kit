@@ -38,14 +38,15 @@ export function envPrefixes(slug: string): string[] {
 }
 
 /**
- * Core route prefixes a `mount` override may never claim. "/x" is the
- * extension default-mount namespace itself; the rest are host-owned.
+ * Core route prefixes a `mount` override may never claim — all host-owned.
+ * The extension default-mount namespace is /a/<slug>: overrides may not claim
+ * inside it (checked separately), but the bare "/a" mount itself IS claimable
+ * (the dashboard claims it as the app home).
  */
 export const RESERVED_MOUNTS = [
   "/admin",
   "/cms-api",
   "/api",
-  "/x",
   "/sign-in",
   "/sign-up",
   "/forgot-password",
@@ -144,6 +145,14 @@ export function validateManifest(m: ExtensionManifest): string[] {
     if (claimed) {
       errors.push(
         `[${m.slug}] web mount "${r.mount}" collides with reserved core route "${claimed}"`,
+      );
+    }
+    // "/a" exactly is claimable (the dashboard home), but "/a/<seg>" is the
+    // default-mount namespace (/a/<slug>) — overrides inside it would collide
+    // with generated mounts.
+    if (r.mount.startsWith("/a/")) {
+      errors.push(
+        `[${m.slug}] web mount "${r.mount}" is inside the extension default-mount namespace /a/<slug> — drop the mount override or claim a path outside /a/`,
       );
     }
   }

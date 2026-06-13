@@ -24,6 +24,25 @@ export const serverEnvSchema = z.object({
 
   // --- AI (Vercel AI Gateway) — optional until Phase 6 is configured ---
   AI_GATEWAY_API_KEY: z.string().min(1).optional(),
+  /**
+   * OpenAI key for voice transcription (the chat extension's /transcribe
+   * route). The AI Gateway doesn't proxy /audio/transcriptions, so Whisper is
+   * called directly. Optional — voice input is off until this is set.
+   */
+  OPENAI_API_KEY: z.string().min(1).optional(),
+
+  // --- Chat channel adapters (optional; each adapter is off until set) ---
+  // Slack (ext-chat-adapter-slack) — Events API webhook + chat.postMessage.
+  SLACK_BOT_TOKEN: z.string().min(1).optional(),
+  SLACK_SIGNING_SECRET: z.string().min(1).optional(),
+  // Sendblue (ext-chat-adapter-sendblue) — iMessage/SMS in + out.
+  SENDBLUE_API_KEY: z.string().min(1).optional(),
+  SENDBLUE_API_SECRET: z.string().min(1).optional(),
+  SENDBLUE_FROM_NUMBER: z.string().min(1).optional(),
+  SENDBLUE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  SENDBLUE_STATUS_CALLBACK_URL: z.string().url().optional(),
+  // Optional GitHub token to raise rate limits for the ext-docs GitHub sync.
+  GITHUB_TOKEN: z.string().min(1).optional(),
 
   // --- Stripe — optional until Phase 5 is configured ---
   STRIPE_SECRET_KEY: z.string().min(1).optional(),

@@ -25,7 +25,7 @@ export function RemindersWidget() {
           </CardTitle>
         </div>
         <Button asChild size="sm" variant="outline">
-          <a href="/x/reminders">Open</a>
+          <a href="/a/reminders">Open</a>
         </Button>
       </CardHeader>
     </Card>

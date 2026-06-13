@@ -188,27 +188,103 @@ export type Database = {
           },
         ];
       };
+      ext_chat_channel_contacts: {
+        Row: {
+          channel: string;
+          contact_key: string;
+          created_at: string;
+          display_name: string | null;
+          opted_out: boolean;
+          user_id: string | null;
+        };
+        Insert: {
+          channel: string;
+          contact_key: string;
+          created_at?: string;
+          display_name?: string | null;
+          opted_out?: boolean;
+          user_id?: string | null;
+        };
+        Update: {
+          channel?: string;
+          contact_key?: string;
+          created_at?: string;
+          display_name?: string | null;
+          opted_out?: boolean;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ext_chat_channel_contacts_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ext_chat_documents: {
+        Row: {
+          content: string | null;
+          created_at: string;
+          id: string;
+          kind: string;
+          title: string;
+          user_id: string;
+        };
+        Insert: {
+          content?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          title: string;
+          user_id: string;
+        };
+        Update: {
+          content?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          title?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ext_chat_documents_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ext_chat_messages: {
         Row: {
+          attachments: Json;
           content: string;
           created_at: string;
           id: string;
+          parts: Json | null;
           role: string;
           thread_id: string;
           token_usage: Json | null;
         };
         Insert: {
+          attachments?: Json;
           content?: string;
           created_at?: string;
           id?: string;
+          parts?: Json | null;
           role: string;
           thread_id: string;
           token_usage?: Json | null;
         };
         Update: {
+          attachments?: Json;
           content?: string;
           created_at?: string;
           id?: string;
+          parts?: Json | null;
           role?: string;
           thread_id?: string;
           token_usage?: Json | null;
@@ -223,24 +299,135 @@ export type Database = {
           },
         ];
       };
-      ext_chat_threads: {
+      ext_chat_outbound_counters: {
+        Row: {
+          count: number;
+          day: string;
+          sender: string;
+        };
+        Insert: {
+          count?: number;
+          day: string;
+          sender: string;
+        };
+        Update: {
+          count?: number;
+          day?: string;
+          sender?: string;
+        };
+        Relationships: [];
+      };
+      ext_chat_processed_inbound: {
+        Row: {
+          channel: string;
+          message_handle: string;
+          received_at: string;
+        };
+        Insert: {
+          channel: string;
+          message_handle: string;
+          received_at?: string;
+        };
+        Update: {
+          channel?: string;
+          message_handle?: string;
+          received_at?: string;
+        };
+        Relationships: [];
+      };
+      ext_chat_suggestions: {
         Row: {
           created_at: string;
+          description: string | null;
+          document_created_at: string;
+          document_id: string;
           id: string;
-          title: string | null;
+          is_resolved: boolean;
+          original_text: string;
+          suggested_text: string;
           user_id: string;
         };
         Insert: {
           created_at?: string;
+          description?: string | null;
+          document_created_at: string;
+          document_id: string;
           id?: string;
-          title?: string | null;
+          is_resolved?: boolean;
+          original_text: string;
+          suggested_text: string;
           user_id: string;
         };
         Update: {
           created_at?: string;
+          description?: string | null;
+          document_created_at?: string;
+          document_id?: string;
           id?: string;
-          title?: string | null;
+          is_resolved?: boolean;
+          original_text?: string;
+          suggested_text?: string;
           user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ext_chat_suggestions_document_id_document_created_at_fkey";
+            columns: ["document_id", "document_created_at"];
+            isOneToOne: false;
+            referencedRelation: "ext_chat_documents";
+            referencedColumns: ["id", "created_at"];
+          },
+          {
+            foreignKeyName: "ext_chat_suggestions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ext_chat_threads: {
+        Row: {
+          active_skill_slug: string | null;
+          active_skill_turns_remaining: number;
+          channel: string;
+          channel_thread_key: string | null;
+          contact_key: string | null;
+          created_at: string;
+          id: string;
+          last_context: Json | null;
+          title: string | null;
+          updated_at: string;
+          user_id: string | null;
+          visibility: string;
+        };
+        Insert: {
+          active_skill_slug?: string | null;
+          active_skill_turns_remaining?: number;
+          channel?: string;
+          channel_thread_key?: string | null;
+          contact_key?: string | null;
+          created_at?: string;
+          id?: string;
+          last_context?: Json | null;
+          title?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+          visibility?: string;
+        };
+        Update: {
+          active_skill_slug?: string | null;
+          active_skill_turns_remaining?: number;
+          channel?: string;
+          channel_thread_key?: string | null;
+          contact_key?: string | null;
+          created_at?: string;
+          id?: string;
+          last_context?: Json | null;
+          title?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+          visibility?: string;
         };
         Relationships: [
           {
@@ -248,6 +435,39 @@ export type Database = {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ext_chat_votes: {
+        Row: {
+          is_upvoted: boolean;
+          message_id: string;
+          thread_id: string;
+        };
+        Insert: {
+          is_upvoted: boolean;
+          message_id: string;
+          thread_id: string;
+        };
+        Update: {
+          is_upvoted?: boolean;
+          message_id?: string;
+          thread_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ext_chat_votes_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "ext_chat_messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ext_chat_votes_thread_id_fkey";
+            columns: ["thread_id"];
+            isOneToOne: false;
+            referencedRelation: "ext_chat_threads";
             referencedColumns: ["id"];
           },
         ];

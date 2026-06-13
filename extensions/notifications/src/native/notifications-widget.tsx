@@ -13,7 +13,7 @@ export function NotificationsWidget() {
   return (
     <Pressable
       className="border-border w-full rounded-md border p-3"
-      onPress={() => router.push("/x/notifications")}
+      onPress={() => router.push("/a/notifications")}
     >
       <Text className="text-muted-foreground text-xs">Notifications</Text>
       <Text className="text-base font-medium">

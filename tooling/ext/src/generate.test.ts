@@ -36,7 +36,7 @@ const chat = loaded({
   kitCompat: ">=1.0.0 <2",
   nav: {
     web: [
-      { title: "Chat", href: "/x/chat", icon: "IconMessageCircle", order: 20 },
+      { title: "Chat", href: "/a/chat", icon: "IconMessageCircle", order: 20 },
     ],
   },
   routes: {
@@ -104,15 +104,15 @@ describe("buildStubs", () => {
   it("generates default-mount stubs with an enabled-gating layout", () => {
     const paths = buildStubs([chat]).map((f) => f.path);
     expect(paths).toContain(
-      "apps/nextjs/src/app/(frontend)/(app)/x/chat/page.tsx",
+      "apps/nextjs/src/app/(frontend)/(app)/a/chat/page.tsx",
     );
     expect(paths).toContain(
-      "apps/nextjs/src/app/(frontend)/(app)/x/chat/[threadId]/page.tsx",
+      "apps/nextjs/src/app/(frontend)/(app)/a/chat/[threadId]/page.tsx",
     );
     expect(paths).toContain(
-      "apps/nextjs/src/app/(frontend)/(app)/x/chat/layout.tsx",
+      "apps/nextjs/src/app/(frontend)/(app)/a/chat/layout.tsx",
     );
-    expect(paths).toContain("apps/expo/src/app/(app)/x/chat/index.tsx");
+    expect(paths).toContain("apps/expo/src/app/(app)/a/chat/index.tsx");
   });
 
   it("generates mount-override stubs in the right layout groups", () => {

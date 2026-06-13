@@ -17,7 +17,7 @@ export default defineExtension({
     web: [
       {
         title: "Notifications",
-        href: "/x/notifications",
+        href: "/a/notifications",
         icon: "IconBell",
         order: 40,
       },
@@ -25,7 +25,7 @@ export default defineExtension({
     native: [
       {
         title: "Notifications",
-        href: "/x/notifications",
+        href: "/a/notifications",
         icon: "IconBell",
         order: 40,
       },

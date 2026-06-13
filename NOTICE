@@ -46,6 +46,29 @@ MIT License text (applies to the create-t3-turbo-derived portions):
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 ================================================================================
+1b. Vendored UI — vercel/ai-chatbot (Apache-2.0)
+================================================================================
+
+The chat extension (extensions/chat/src/vendor/**) vendors the vercel/ai-chatbot
+"Chat SDK" template — the streaming chat UI, AI Elements, and the artifacts
+suite (text/code/sheet editors + document tooling). Apache-2.0 permits this
+redistribution and modification within this Apache-2.0 work.
+
+    vercel/ai-chatbot
+    https://github.com/vercel/ai-chatbot
+    Copyright (c) Vercel, Inc.
+    Licensed under the Apache License, Version 2.0.
+
+    Vendored from upstream commit:
+    2becdb4a56e7683ae08aef927cec1c6c52dfad5e  (2026-06-12)
+
+One-time snapshot, not a tracked upstream. Local adaptations (Supabase instead
+of Drizzle/Neon, the kit's Supabase auth instead of next-auth, the AI Gateway
+model catalog from @acme/config, Supabase Storage instead of Vercel Blob, no
+redis/resumable-stream) are documented in extensions/chat/VENDOR.md, which also
+records the mechanical rewrite rules so a future re-snapshot stays a clean diff.
+
+================================================================================
 2. Apache-2.0 dependencies
 ================================================================================
 

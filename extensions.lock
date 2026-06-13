@@ -7,7 +7,7 @@
       "source": "local",
       "installedVia": "preinstalled",
       "stubs": [
-        "apps/expo/src/app/(app)/x/billing/index.tsx",
+        "apps/expo/src/app/(app)/a/billing/index.tsx",
         "apps/nextjs/src/app/(frontend)/(app)/billing/layout.tsx",
         "apps/nextjs/src/app/(frontend)/(app)/billing/page.tsx",
         "apps/nextjs/src/app/(frontend)/(public)/pricing/layout.tsx",
@@ -24,12 +24,33 @@
       "source": "local",
       "installedVia": "preinstalled",
       "stubs": [
-        "apps/expo/src/app/(app)/x/chat/[threadId].tsx",
-        "apps/expo/src/app/(app)/x/chat/index.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/chat/[threadId]/page.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/chat/layout.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/chat/page.tsx",
-        "apps/nextjs/src/payload/migrations/20260612_015425_ext_chat_settings.ts"
+        "apps/expo/src/app/(app)/a/chat/[threadId].tsx",
+        "apps/expo/src/app/(app)/a/chat/index.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/chat/[threadId]/page.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/chat/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/chat/page.tsx",
+        "apps/nextjs/src/payload/migrations/20260612_015425_ext_chat_settings.ts",
+        "apps/nextjs/src/payload/migrations/20260613_021834_ext_chat_skills_and_settings_tabs.ts"
+      ],
+      "edgeFunctions": []
+    },
+    "chat-adapter-sendblue": {
+      "version": "1.0.0",
+      "kitCompat": ">=1.0.0 <2",
+      "source": "local",
+      "installedVia": "preinstalled",
+      "stubs": [
+        "apps/nextjs/src/payload/migrations/20260613_025129_ext_chat_adapter_sendblue_initial.ts"
+      ],
+      "edgeFunctions": []
+    },
+    "chat-adapter-slack": {
+      "version": "1.0.0",
+      "kitCompat": ">=1.0.0 <2",
+      "source": "local",
+      "installedVia": "preinstalled",
+      "stubs": [
+        "apps/nextjs/src/payload/migrations/20260613_025126_ext_chat_adapter_slack_initial.ts"
       ],
       "edgeFunctions": []
     },
@@ -45,15 +66,28 @@
       ],
       "edgeFunctions": []
     },
+    "docs": {
+      "version": "1.0.0",
+      "kitCompat": ">=1.0.0 <2",
+      "source": "local",
+      "installedVia": "preinstalled",
+      "stubs": [
+        "apps/nextjs/src/app/(frontend)/(public)/docs/[slug]/page.tsx",
+        "apps/nextjs/src/app/(frontend)/(public)/docs/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(public)/docs/page.tsx",
+        "apps/nextjs/src/payload/migrations/20260613_023123_ext_docs_initial.ts"
+      ],
+      "edgeFunctions": []
+    },
     "notifications": {
       "version": "1.0.0",
       "kitCompat": ">=1.0.0 <2",
       "source": "local",
       "installedVia": "preinstalled",
       "stubs": [
-        "apps/expo/src/app/(app)/x/notifications/index.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/notifications/layout.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/notifications/page.tsx"
+        "apps/expo/src/app/(app)/a/notifications/index.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/notifications/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/notifications/page.tsx"
       ],
       "edgeFunctions": []
     },
@@ -63,9 +97,9 @@
       "source": "local",
       "installedVia": "preinstalled",
       "stubs": [
-        "apps/expo/src/app/(app)/x/reminders/index.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/reminders/layout.tsx",
-        "apps/nextjs/src/app/(frontend)/(app)/x/reminders/page.tsx"
+        "apps/expo/src/app/(app)/a/reminders/index.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/reminders/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(app)/a/reminders/page.tsx"
       ],
       "edgeFunctions": [
         "reminders-process"

@@ -6,9 +6,10 @@ import { updateSession } from "~/lib/supabase/middleware";
 
 // Routes that require a session (route groups like (app) don't appear in the URL).
 // Defense-in-depth: the (app) layout also enforces a server-side session guard.
-// "/x" covers every extension's default mount (/x/<slug>/…); extension mount
-// overrides in the authed area must be listed individually (e.g. "/billing").
-const PROTECTED_PREFIXES = ["/profile", "/a", "/billing", "/x"];
+// "/a" covers the app home AND every extension's default mount (/a/<slug>/…);
+// extension mount overrides in the authed area must be listed individually
+// (e.g. "/billing").
+const PROTECTED_PREFIXES = ["/profile", "/a", "/billing"];
 // Auth pages a signed-in user shouldn't see.
 const AUTH_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password"];
 

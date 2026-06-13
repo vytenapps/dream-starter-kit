@@ -7,6 +7,8 @@ import * as migration_20260612_015425_ext_chat_settings from './20260612_015425_
 import * as migration_20260612_023534_ext_billing from './20260612_023534_ext_billing';
 import * as migration_20260612_032502_drop_ext_demo from './20260612_032502_drop_ext_demo';
 import * as migration_20260612_222154_add_item_tooltip from './20260612_222154_add_item_tooltip';
+import * as migration_20260613_021834_ext_chat_skills_and_settings_tabs from './20260613_021834_ext_chat_skills_and_settings_tabs';
+import * as migration_20260613_023123_ext_docs_initial from './20260613_023123_ext_docs_initial';
 
 export const migrations = [
   {
@@ -52,6 +54,16 @@ export const migrations = [
   {
     up: migration_20260612_222154_add_item_tooltip.up,
     down: migration_20260612_222154_add_item_tooltip.down,
-    name: '20260612_222154_add_item_tooltip'
+    name: '20260612_222154_add_item_tooltip',
+  },
+  {
+    up: migration_20260613_021834_ext_chat_skills_and_settings_tabs.up,
+    down: migration_20260613_021834_ext_chat_skills_and_settings_tabs.down,
+    name: '20260613_021834_ext_chat_skills_and_settings_tabs',
+  },
+  {
+    up: migration_20260613_023123_ext_docs_initial.up,
+    down: migration_20260613_023123_ext_docs_initial.down,
+    name: '20260613_023123_ext_docs_initial',
   },
 ];

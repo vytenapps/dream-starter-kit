@@ -1,0 +1,186 @@
+import type { Dispatch, SetStateAction } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { useArtifactSelector } from "../../hooks/use-artifact";
+import { cn } from "../../lib/utils";
+import { Button } from "../ui/button";
+import { Spinner } from "../ui/spinner";
+import { CrossSmallIcon, TerminalWindowIcon } from "./icons";
+
+export type ConsoleOutputContent = {
+  type: "text" | "image";
+  value: string;
+};
+
+export type ConsoleOutput = {
+  id: string;
+  status: "in_progress" | "loading_packages" | "completed" | "failed";
+  contents: ConsoleOutputContent[];
+};
+
+type ConsoleProps = {
+  consoleOutputs: ConsoleOutput[];
+  setConsoleOutputs: Dispatch<SetStateAction<ConsoleOutput[]>>;
+};
+
+export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
+  const [height, setHeight] = useState<number>(300);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
+
+  const minHeight = 100;
+  const maxHeight = 800;
+
+  const startResizing = useCallback(() => {
+    setIsResizing(true);
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = useCallback(
+    (e: MouseEvent) => {
+      if (isResizing) {
+        const newHeight = window.innerHeight - e.clientY;
+        if (newHeight >= minHeight && newHeight <= maxHeight) {
+          setHeight(newHeight);
+        }
+      }
+    },
+    [isResizing],
+  );
+
+  useEffect(() => {
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
+
+  const consoleContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (consoleOutputs.length > 0) {
+      consoleContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [consoleOutputs.length]);
+
+  useEffect(() => {
+    if (!isArtifactVisible) {
+      setConsoleOutputs([]);
+    }
+  }, [isArtifactVisible, setConsoleOutputs]);
+
+  return consoleOutputs.length > 0 ? (
+    <>
+      <div
+        aria-label="Resize console"
+        aria-orientation="horizontal"
+        aria-valuemax={maxHeight}
+        aria-valuemin={minHeight}
+        aria-valuenow={height}
+        className="fixed z-50 h-2 w-full cursor-ns-resize"
+        onKeyDown={(e) => {
+          if (e.key === "ArrowUp") {
+            setHeight((prev) => Math.min(prev + 10, maxHeight));
+          } else if (e.key === "ArrowDown") {
+            setHeight((prev) => Math.max(prev - 10, minHeight));
+          }
+        }}
+        onMouseDown={startResizing}
+        role="slider"
+        style={{ bottom: height - 4 }}
+        tabIndex={0}
+      />
+
+      <div
+        className={cn(
+          "border-border/50 bg-background fixed bottom-0 z-40 flex w-full flex-col overflow-x-hidden overflow-y-auto border-t",
+          { "select-none": isResizing },
+        )}
+        ref={consoleContainerRef}
+        style={{ height }}
+      >
+        <div className="border-border/50 bg-background sticky top-0 z-50 flex h-10 w-full items-center justify-between border-b px-3">
+          <div className="text-muted-foreground flex items-center gap-2.5 text-[13px]">
+            <TerminalWindowIcon />
+            <span>Console</span>
+          </div>
+          <Button
+            className="text-muted-foreground/50 hover:text-foreground size-7"
+            onClick={() => setConsoleOutputs([])}
+            size="icon-sm"
+            variant="ghost"
+          >
+            <CrossSmallIcon />
+          </Button>
+        </div>
+
+        <div className="bg-background">
+          {[...consoleOutputs].reverse().map((consoleOutput, index) => (
+            <div
+              className="border-border/30 flex border-b px-4 py-2.5 font-mono text-[12px] leading-relaxed"
+              key={consoleOutput.id}
+            >
+              <div
+                className={cn("w-10 shrink-0 tabular-nums", {
+                  "text-muted-foreground": [
+                    "in_progress",
+                    "loading_packages",
+                  ].includes(consoleOutput.status),
+                  "text-emerald-500": consoleOutput.status === "completed",
+                  "text-red-400": consoleOutput.status === "failed",
+                })}
+              >
+                [{consoleOutputs.length - index}]
+              </div>
+              {["in_progress", "loading_packages"].includes(
+                consoleOutput.status,
+              ) ? (
+                <div className="flex items-center gap-2">
+                  <Spinner className="size-3.5" />
+                  <span className="text-muted-foreground">
+                    {consoleOutput.status === "in_progress"
+                      ? "Initializing..."
+                      : consoleOutput.status === "loading_packages"
+                        ? consoleOutput.contents.map((content) =>
+                            content.type === "text" ? content.value : null,
+                          )
+                        : null}
+                  </span>
+                </div>
+              ) : (
+                <div className="no-scrollbar text-foreground flex w-full min-w-0 flex-col gap-2 overflow-x-auto">
+                  {consoleOutput.contents.map((content) =>
+                    content.type === "image" ? (
+                      <picture
+                        key={`${consoleOutput.id}-img-${content.value.slice(0, 32)}`}
+                      >
+                        <img
+                          alt="output"
+                          className="max-w-full rounded-md"
+                          src={content.value}
+                        />
+                      </picture>
+                    ) : (
+                      <div
+                        className="w-full break-words whitespace-pre-line"
+                        key={`${consoleOutput.id}-txt-${content.value.slice(0, 32)}`}
+                      >
+                        {content.value}
+                      </div>
+                    ),
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  ) : null;
+}

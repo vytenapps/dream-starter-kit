@@ -10,6 +10,26 @@
       "sha256": "5d8de93e3dd24dbcca2955629de0b89a791e6cd44c1944e4fa3cae5d7cae2d65",
       "target": "20260612011539_ext_chat_001_initial.sql"
     },
+    "chat/002_chat_sdk.sql": {
+      "version": "20260613012847",
+      "sha256": "9e5bc437bb64d07dd2c59d8cca03a35ef2569d906727e726f5170633dbad8a7f",
+      "target": "20260613012847_ext_chat_002_chat_sdk.sql"
+    },
+    "chat/003_bot_brain.sql": {
+      "version": "20260613021557",
+      "sha256": "940e137c30f20a83bf407344baf2bea9b49b37f9015a2ff18e86bf79879bd7d0",
+      "target": "20260613021557_ext_chat_003_bot_brain.sql"
+    },
+    "chat/004_channels.sql": {
+      "version": "20260613025042",
+      "sha256": "f3343b5ead9884c8560fa5f8ece836fceda6ab82e19de0c8fda3c9948a5078aa",
+      "target": "20260613025042_ext_chat_004_channels.sql"
+    },
+    "chat/005_unified_channel_threads.sql": {
+      "version": "20260613033328",
+      "sha256": "7240b5fb595f58d03393530d4ae1a8cbdae0352957de32755a3dc5070aea7a57",
+      "target": "20260613033328_ext_chat_005_unified_channel_threads.sql"
+    },
     "demo/001_initial.sql": {
       "version": "20260612100001",
       "sha256": "3d92502cfbf0b105901f6b6beb517f30f6ace3c7f2d3a304d923a0bd2e2bed7e",

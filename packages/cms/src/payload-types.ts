@@ -99,6 +99,8 @@ export interface Config {
     "ext-billing-plans": ExtBillingPlan;
     "ext-billing-coupons": ExtBillingCoupon;
     "ext-billing-subscriptions": ExtBillingSubscription;
+    "ext-chat-skills": ExtChatSkill;
+    "ext-docs-pages": ExtDocsPage;
     forms: Form;
     "form-submissions": FormSubmission;
     "payload-kv": PayloadKv;
@@ -198,6 +200,8 @@ export interface Config {
     "ext-billing-subscriptions":
       | ExtBillingSubscriptionsSelect<false>
       | ExtBillingSubscriptionsSelect<true>;
+    "ext-chat-skills": ExtChatSkillsSelect<false> | ExtChatSkillsSelect<true>;
+    "ext-docs-pages": ExtDocsPagesSelect<false> | ExtDocsPagesSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     "form-submissions":
       | FormSubmissionsSelect<false>
@@ -225,6 +229,9 @@ export interface Config {
     "profile-fields": ProfileField;
     "ext-billing-settings": ExtBillingSetting;
     "ext-chat-settings": ExtChatSetting;
+    "ext-chat-adapter-sendblue-settings": ExtChatAdapterSendblueSetting;
+    "ext-chat-adapter-slack-settings": ExtChatAdapterSlackSetting;
+    "ext-docs-settings": ExtDocsSetting;
   };
   globalsSelect: {
     "site-settings": SiteSettingsSelect<false> | SiteSettingsSelect<true>;
@@ -236,6 +243,15 @@ export interface Config {
     "ext-chat-settings":
       | ExtChatSettingsSelect<false>
       | ExtChatSettingsSelect<true>;
+    "ext-chat-adapter-sendblue-settings":
+      | ExtChatAdapterSendblueSettingsSelect<false>
+      | ExtChatAdapterSendblueSettingsSelect<true>;
+    "ext-chat-adapter-slack-settings":
+      | ExtChatAdapterSlackSettingsSelect<false>
+      | ExtChatAdapterSlackSettingsSelect<true>;
+    "ext-docs-settings":
+      | ExtDocsSettingsSelect<false>
+      | ExtDocsSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -2653,6 +2669,95 @@ export interface NavItem {
   createdAt: string;
 }
 /**
+ * Routable assistant personas. When a user's message matches a skill's triggers (or the LLM fallback picks it), its persona prompt is layered onto the universal prompt for that turn.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-chat-skills".
+ */
+export interface ExtChatSkill {
+  id: number;
+  name: string;
+  isEnabled?: boolean | null;
+  slug: string;
+  /**
+   * One line on when this skill applies — also shown to the LLM fallback classifier when keyword routing is inconclusive.
+   */
+  description?: string | null;
+  /**
+   * Optional grouping for the admin list.
+   */
+  category?: string | null;
+  /**
+   * Tie-breaker when scores are equal — lower wins.
+   */
+  priority?: number | null;
+  /**
+   * Layered onto the universal prompt when this skill is selected.
+   */
+  personaPrompt: string;
+  /**
+   * Keyword/synonym tokens or regex patterns that route to this skill.
+   */
+  triggers?:
+    | {
+        pattern: string;
+        patternType: "keyword" | "synonym" | "regex";
+        weight?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-docs-pages".
+ */
+export interface ExtDocsPage {
+  id: number;
+  title: string;
+  slug: string;
+  /**
+   * Short summary — used in search + meta.
+   */
+  excerpt?: string | null;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ("ltr" | "rtl") | null;
+      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Sidebar grouping (e.g. 'Getting Started').
+   */
+  category?: string | null;
+  /**
+   * Sort order within category.
+   */
+  order?: number | null;
+  source?: ("manual" | "github") | null;
+  /**
+   * Repo-relative file path.
+   */
+  sourcePath?: string | null;
+  /**
+   * Blob SHA (idempotent sync).
+   */
+  sourceSha?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ("draft" | "published") | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "forms".
  */
@@ -3087,6 +3192,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: "ext-billing-subscriptions";
         value: number | ExtBillingSubscription;
+      } | null)
+    | ({
+        relationTo: "ext-chat-skills";
+        value: number | ExtChatSkill;
+      } | null)
+    | ({
+        relationTo: "ext-docs-pages";
+        value: number | ExtDocsPage;
       } | null)
     | ({
         relationTo: "forms";
@@ -4358,6 +4471,47 @@ export interface ExtBillingSubscriptionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-chat-skills_select".
+ */
+export interface ExtChatSkillsSelect<T extends boolean = true> {
+  name?: T;
+  isEnabled?: T;
+  slug?: T;
+  description?: T;
+  category?: T;
+  priority?: T;
+  personaPrompt?: T;
+  triggers?:
+    | T
+    | {
+        pattern?: T;
+        patternType?: T;
+        weight?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-docs-pages_select".
+ */
+export interface ExtDocsPagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  excerpt?: T;
+  body?: T;
+  category?: T;
+  order?: T;
+  source?: T;
+  sourcePath?: T;
+  sourceSha?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "forms_select".
  */
 export interface FormsSelect<T extends boolean = true> {
@@ -5101,13 +5255,130 @@ export interface ExtBillingSetting {
 export interface ExtChatSetting {
   id: number;
   /**
-   * The assistant's system prompt.
-   */
-  systemPrompt?: string | null;
-  /**
    * How many prior messages of a thread are sent to the model.
    */
   maxHistoryMessages?: number | null;
+  /**
+   * Applied to every conversation across every channel.
+   */
+  universalPrompt?: string | null;
+  /**
+   * Appended to the universal prompt only on the selected channels. Leave channels empty to apply everywhere.
+   */
+  channelPrompts?:
+    | {
+        label?: string | null;
+        channels?:
+          | (
+              | "web"
+              | "native"
+              | "slack"
+              | "sms-sendblue"
+              | "telegram"
+              | "whatsapp"
+              | "discord"
+              | "teams"
+              | "google-chat"
+              | "messenger"
+              | "email"
+              | "twilio-sms"
+              | "github"
+              | "linear"
+            )[]
+          | null;
+        prompt: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * When on, each message is routed to a matching skill persona (manage them under Extensions → Chat Skills).
+   */
+  skillsFeatureEnabled?: boolean | null;
+  /**
+   * Minimum keyword score to route to a skill before the LLM fallback is considered.
+   */
+  keywordThreshold?: number | null;
+  /**
+   * When keyword routing is inconclusive, ask a small model to classify among the top candidates.
+   */
+  useLlmFallback?: boolean | null;
+  llmFallbackModel?:
+    | (
+        | "anthropic/claude-sonnet-4.5"
+        | "anthropic/claude-opus-4.1"
+        | "anthropic/claude-haiku-4.5"
+      )
+    | null;
+  /**
+   * Turns an active skill stays selected before re-routing.
+   */
+  stickinessTurns?: number | null;
+  transcriptionEnabled?: boolean | null;
+  /**
+   * A "provider/model" id. Only openai/* is wired up (needs OPENAI_API_KEY).
+   */
+  transcriptionModel?: string | null;
+  /**
+   * Max upload size for a voice clip.
+   */
+  maxAudioMB?: number | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-chat-adapter-sendblue-settings".
+ */
+export interface ExtChatAdapterSendblueSetting {
+  id: number;
+  /**
+   * Process Sendblue webhooks. Requires SENDBLUE_API_KEY/SECRET/FROM_NUMBER.
+   */
+  enabled?: boolean | null;
+  /**
+   * Max outbound messages per from-number per day (0 = unlimited).
+   */
+  dailyOutboundQuota?: number | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-chat-adapter-slack-settings".
+ */
+export interface ExtChatAdapterSlackSetting {
+  id: number;
+  /**
+   * Process Slack events. Requires SLACK_BOT_TOKEN + SLACK_SIGNING_SECRET.
+   */
+  enabled?: boolean | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-docs-settings".
+ */
+export interface ExtDocsSetting {
+  id: number;
+  /**
+   * Public repo as owner/name (e.g. vercel/next.js).
+   */
+  githubRepo?: string | null;
+  githubBranch?: string | null;
+  /**
+   * Folder within the repo to sync (*.md/*.mdx).
+   */
+  githubPath?: string | null;
+  /**
+   * Save with this checked to pull the latest docs from GitHub.
+   */
+  syncNow?: boolean | null;
+  /**
+   * Result of the last sync.
+   */
+  syncStatus?: string | null;
+  syncError?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -5365,8 +5636,62 @@ export interface ExtBillingSettingsSelect<T extends boolean = true> {
  * via the `definition` "ext-chat-settings_select".
  */
 export interface ExtChatSettingsSelect<T extends boolean = true> {
-  systemPrompt?: T;
   maxHistoryMessages?: T;
+  universalPrompt?: T;
+  channelPrompts?:
+    | T
+    | {
+        label?: T;
+        channels?: T;
+        prompt?: T;
+        id?: T;
+      };
+  skillsFeatureEnabled?: T;
+  keywordThreshold?: T;
+  useLlmFallback?: T;
+  llmFallbackModel?: T;
+  stickinessTurns?: T;
+  transcriptionEnabled?: T;
+  transcriptionModel?: T;
+  maxAudioMB?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-chat-adapter-sendblue-settings_select".
+ */
+export interface ExtChatAdapterSendblueSettingsSelect<
+  T extends boolean = true,
+> {
+  enabled?: T;
+  dailyOutboundQuota?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-chat-adapter-slack-settings_select".
+ */
+export interface ExtChatAdapterSlackSettingsSelect<T extends boolean = true> {
+  enabled?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-docs-settings_select".
+ */
+export interface ExtDocsSettingsSelect<T extends boolean = true> {
+  githubRepo?: T;
+  githubBranch?: T;
+  githubPath?: T;
+  syncNow?: T;
+  syncStatus?: T;
+  syncError?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

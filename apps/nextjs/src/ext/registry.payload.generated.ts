@@ -8,6 +8,9 @@ import type { ExtensionSettings, ExtSeedStep } from "@acme/ext-kit/payload";
 
 import * as payload_billing from "@acme/ext-billing/payload";
 import * as payload_chat from "@acme/ext-chat/payload";
+import * as payload_chat_adapter_sendblue from "@acme/ext-chat-adapter-sendblue/payload";
+import * as payload_chat_adapter_slack from "@acme/ext-chat-adapter-slack/payload";
+import * as payload_docs from "@acme/ext-docs/payload";
 
 export interface ExtPayloadMigration {
   name: string;
@@ -17,11 +20,16 @@ export interface ExtPayloadMigration {
 
 export const extCollections: CollectionConfig[] = [
   ...payload_billing.collections,
+  ...payload_chat.collections,
+  ...payload_docs.collections,
 ];
 
 export const extGlobals: GlobalConfig[] = [
   payload_billing.settings.global,
   payload_chat.settings.global,
+  payload_chat_adapter_sendblue.settings.global,
+  payload_chat_adapter_slack.settings.global,
+  payload_docs.settings.global,
 ];
 
 export const extPlugins: NonNullable<Config["plugins"]> = [
@@ -31,14 +39,22 @@ export const extPlugins: NonNullable<Config["plugins"]> = [
 export const extPayloadMigrations: ExtPayloadMigration[] = [
   ...payload_billing.migrations,
   ...payload_chat.migrations,
+  ...payload_chat_adapter_sendblue.migrations,
+  ...payload_chat_adapter_slack.migrations,
+  ...payload_docs.migrations,
 ];
 
 export const extSeedSteps: ExtSeedStep[] = [
   ...payload_billing.seed,
+  ...payload_chat.seed,
+  ...payload_docs.seed,
 ];
 
 /** slug → settings definition (admin settings screens, §1.7). */
 export const extSettings: Record<string, ExtensionSettings> = {
   "billing": payload_billing.settings,
   "chat": payload_chat.settings,
+  "chat-adapter-sendblue": payload_chat_adapter_sendblue.settings,
+  "chat-adapter-slack": payload_chat_adapter_slack.settings,
+  "docs": payload_docs.settings,
 };
