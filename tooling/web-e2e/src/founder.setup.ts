@@ -41,7 +41,11 @@ test("db bootstrap reports healthy (hosted-TLS regression gate)", async ({
   request,
 }) => {
   const res = await request.get("/api/health/db");
-  const body = (await res.json()) as { status: string; error?: unknown };
+  const body = (await res.json()) as {
+    status: string;
+    cmsWarmed?: boolean;
+    error?: unknown;
+  };
 
   // Fail ONLY on "error" (bootstrap attempted and failed). Benign skips pass
   // locally: devs may run with DB_BOOTSTRAP=off or without SUPABASE_DB_URL.
@@ -56,6 +60,20 @@ test("db bootstrap reports healthy (hosted-TLS regression gate)", async ({
   if (process.env.CI) {
     expect(body.status).toBe("ok");
     expect(res.ok()).toBeTruthy();
+
+    // First-deploy /welcome-500 regression gate. CI drops the cms schema/role
+    // before boot (mirroring a fresh hosted project), so the bootstrap MUST run
+    // Payload's migrate/warm-up under its advisory lock at boot — that's what
+    // keeps the founder's `/welcome` redirect from initializing (and migrating)
+    // Payload at request time, where a failed prodMigration's process.exit
+    // surfaces as a Vercel FUNCTION_INVOCATION_FAILED 500. If a change defers
+    // CMS init back to the request path, `cmsWarmed` is false here → red.
+    expect(
+      body.cmsWarmed,
+      "bootstrap did not warm/migrate the CMS at boot — Payload init would " +
+        "fall to the request path (the /welcome 500 regression). See " +
+        "lib/db/bootstrap.ts#migrateCms.",
+    ).toBe(true);
   }
 });
 
@@ -70,6 +88,19 @@ test("founder sign-up seeds the CMS before /admin", async ({ page }) => {
 
   // The founder (first user) must be routed into the seed flow — NOT /a.
   await page.waitForURL(/\/cms-setup/, { timeout: 15_000 });
+
+  // Explicit /welcome contract: it is a redirect, never a 5xx. The reported
+  // first-deploy bug was `/welcome` returning a 500 (FUNCTION_INVOCATION_FAILED)
+  // when its request-path getPayload() raced the CMS migration. Asserting the
+  // raw status here (cookies shared from the signed-in context) turns any future
+  // /welcome crash into THIS clear failure instead of a misleading "/cms-setup
+  // never reached" timeout above.
+  const welcome = await page.request.get("/welcome", { maxRedirects: 0 });
+  expect(
+    welcome.status(),
+    `/welcome must redirect (3xx), never 5xx — got ${welcome.status()}`,
+  ).toBeLessThan(400);
+  expect(welcome.status()).toBeGreaterThanOrEqual(300);
 
   // The shadcn progress screen, then hand-off to /admin once seeding completes.
   // Seeding + the Payload admin bundle can be slow on a cold CI runner.
