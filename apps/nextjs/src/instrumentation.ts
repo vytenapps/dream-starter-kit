@@ -1,14 +1,18 @@
 /**
  * Server-boot instrumentation (https://nextjs.org/docs/app/guides/instrumentation).
  *
- * Two jobs, strictly ordered:
+ * Two jobs:
  *
  * 1. Runtime DB bootstrap (`lib/db/bootstrap.ts`): provisions a fresh hosted
  *    Supabase database — applies `supabase/migrations/*.sql` and creates the
  *    `cms` schema + `payload_cms` role — so a one-click deploy needs no manual
  *    `supabase db push` / SQL-editor step. Idempotent: a provisioned DB
  *    short-circuits, and it never throws (it logs and degrades to the manual
- *    flow instead).
+ *    flow instead). We hand it the CMS warm-up (job 2) as `migrateCms` so
+ *    Payload's first-boot `prodMigrations` run INSIDE the bootstrap's
+ *    cross-instance advisory lock — serialized across cold-starting instances
+ *    and never at request time (a failed migration's `process.exit(1)` would
+ *    otherwise crash whatever request triggered it into a 500).
  *
  * 2. Warms the Payload Local API once at startup so the first request never pays
  * Payload's multi-second init (DB connect + schema load) inside the render.
@@ -40,34 +44,59 @@ export async function register() {
   // eslint-disable-next-line no-restricted-properties, turbo/no-undeclared-env-vars
   if (process.env.NEXT_PHASE === "phase-production-build") return;
 
-  // DB bootstrap FIRST: the warm-up below is what triggers Payload's
-  // `prodMigrations`, which need the `cms` schema + `payload_cms` role this
-  // creates. Handles its own errors — never throws.
-  const { bootstrapDatabase } = await import("~/lib/db/bootstrap");
-  await bootstrapDatabase();
+  // The CMS warm-up: initialize Payload (its `getPayload()` runs the
+  // `prodMigrations` on first connect) and reconcile the extension registry +
+  // CMS-driven menu from the bundled generated defaults (lib/ext/reconcile-nav)
+  // — insert rows for newly installed extensions, drop removed ones, never
+  // touch staff edits.
+  const warmCms = async () => {
+    const [{ default: config }, { getPayload }] = await Promise.all([
+      import("@payload-config"),
+      import("payload"),
+    ]);
+    const payload = await getPayload({ config });
+    const { reconcileExtensions } = await import("~/lib/ext/reconcile-nav");
+    await reconcileExtensions(payload);
+  };
 
-  try {
-    // The init lock serializes the warm-up ACROSS instances: on serverless,
-    // concurrent cold boots otherwise race `createExtensions` + the
-    // `prodMigrations` ledger (see lib/cms/init-lock.ts).
-    const [{ default: config }, { getPayload }, { withCmsInitLock }] =
-      await Promise.all([
-        import("@payload-config"),
-        import("payload"),
-        import("~/lib/cms/init-lock"),
+  // Bundled Payload migration names — so the bootstrap can spot a pending CMS
+  // migration (fresh DB, or a deploy that added one) and run `warmCms` under
+  // its advisory lock. Resolved best-effort; missing names just disable that
+  // detection (the bootstrap still provisions and warms).
+  const cmsMigrationNames = await (async () => {
+    try {
+      const [{ migrations }, { extPayloadMigrations }] = await Promise.all([
+        import("./payload/migrations"),
+        import("./ext/registry.payload.generated"),
       ]);
-    await withCmsInitLock(async () => {
-      const payload = await getPayload({ config });
-      // Reconcile the extension registry + CMS-driven menu from the bundled
-      // generated defaults (lib/ext/reconcile-nav.ts): insert rows for newly
-      // installed extensions, drop removed ones, never touch staff edits.
-      // Inside the init lock so concurrent cold starts don't race creates.
-      const { reconcileExtensions } = await import("~/lib/ext/reconcile-nav");
-      await reconcileExtensions(payload);
-      return payload;
-    });
-  } catch {
-    // CMS unreachable (e.g. local Postgres not running) — fine: the public
-    // pages' fetchers (lib/payload.ts) degrade to built-in defaults on their own.
+      return [...migrations, ...extPayloadMigrations].map((m) => m.name);
+    } catch {
+      return undefined;
+    }
+  })();
+
+  // DB bootstrap runs the CMS migration UNDER its cross-instance advisory lock
+  // (via `migrateCms`), so the first-boot `prodMigrations` is serialized across
+  // cold-starting instances and never races at request time — where a failed
+  // migration's `process.exit(1)` surfaces as a Vercel FUNCTION_INVOCATION_FAILED
+  // 500 (e.g. the `/welcome` redirect on a fresh deploy). Handles its own
+  // errors — never throws.
+  const { bootstrapDatabase } = await import("~/lib/db/bootstrap");
+  const result = await bootstrapDatabase({
+    migrateCms: warmCms,
+    cmsMigrationNames,
+  });
+
+  // Fast path: a fully-provisioned, fully-migrated DB skips the lock and the
+  // warm-up. Warm Payload now (unlocked is safe — no migration is pending, so
+  // concurrent runs just read the ledger) so the first request doesn't pay
+  // Payload's multi-second init.
+  if (!result.cmsWarmed) {
+    try {
+      await warmCms();
+    } catch {
+      // CMS unreachable (e.g. local Postgres not running) — fine: the public
+      // pages' fetchers (lib/payload.ts) degrade to built-in defaults on their own.
+    }
   }
 }

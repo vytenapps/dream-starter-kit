@@ -22,6 +22,11 @@ export interface BootstrapStatus {
     | "not-run";
   appliedVersions: string[];
   cmsRoleCreated: boolean;
+  /** Whether the bootstrap ran the CMS migrate/warm-up under its lock at boot
+   * (vs. deferring Payload init to the request path). On a fresh project this
+   * MUST be true — the e2e health gate asserts it, guarding the first-deploy
+   * /welcome 500 regression (request-path prodMigrations racing → process.exit). */
+  cmsWarmed: boolean;
   error?: { code?: string; message: string };
 }
 
@@ -36,6 +41,7 @@ export function toBootstrapStatus(result: BootstrapResult): BootstrapStatus {
   const base = {
     appliedVersions: result.appliedVersions,
     cmsRoleCreated: result.cmsRoleCreated,
+    cmsWarmed: result.cmsWarmed,
   };
   // A mid-run migration failure returns `skipped: false` WITH an error — that
   // is an error state, not a success with fewer migrations.
@@ -67,6 +73,7 @@ export function getBootstrapStatus(): BootstrapStatus {
       status: "not-run",
       appliedVersions: [],
       cmsRoleCreated: false,
+      cmsWarmed: false,
     }
   );
 }

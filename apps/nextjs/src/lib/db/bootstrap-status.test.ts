@@ -11,6 +11,7 @@ const result = (over: Partial<BootstrapResult> = {}): BootstrapResult => ({
   skipped: false,
   appliedVersions: [],
   cmsRoleCreated: false,
+  cmsWarmed: false,
   ...over,
 });
 
@@ -22,6 +23,7 @@ describe("getBootstrapStatus before any run", () => {
       status: "not-run",
       appliedVersions: [],
       cmsRoleCreated: false,
+      cmsWarmed: false,
     });
   });
 });
@@ -36,9 +38,17 @@ describe("toBootstrapStatus", () => {
       status: "ok",
       appliedVersions: ["20260609000001"],
       cmsRoleCreated: true,
+      cmsWarmed: false,
     });
     expect(toBootstrapStatus(result({ skipped: "up-to-date" })).status).toBe(
       "ok",
+    );
+  });
+
+  it("carries cmsWarmed through (the e2e fresh-project /welcome-500 gate)", () => {
+    expect(toBootstrapStatus(result({ cmsWarmed: true })).cmsWarmed).toBe(true);
+    expect(toBootstrapStatus(result({ cmsWarmed: false })).cmsWarmed).toBe(
+      false,
     );
   });
 
@@ -97,6 +107,7 @@ describe("recordBootstrapResult / getBootstrapStatus", () => {
       status: "ok",
       appliedVersions: ["20260609000001"],
       cmsRoleCreated: true,
+      cmsWarmed: false,
     });
   });
 });
