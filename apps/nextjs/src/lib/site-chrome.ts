@@ -110,6 +110,7 @@ export const SITE_FOOTER_COLUMNS: ChromeFooterColumn[] = [
     links: [
       { label: "10,000+ app ideas", url: "https://meetdream.com/" },
       { label: "Future.dev", url: "https://future.dev/" },
+      { label: "Docs", url: "/docs" },
       { label: "Posts", url: "/posts" },
       { label: "Events", url: "/events" },
       { label: "Videos", url: "/videos" },

@@ -1,6 +1,6 @@
 // GENERATED copy (`pnpm ext sync`) of extensions/chat/src/payload/migrations/20260613_021834_ext_chat_skills_and_settings_tabs.ts
 // so the local `payload migrate` CLI applies it — do not edit.
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateDownArgs, MigrateUpArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -102,10 +102,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "cms"."payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_ext_chat_skills_fk" FOREIGN KEY ("ext_chat_skills_id") REFERENCES "cms"."ext_chat_skills"("id") ON DELETE cascade ON UPDATE no action;
   CREATE INDEX "payload_locked_documents_rels_ext_chat_skills_id_idx" ON "cms"."payload_locked_documents_rels" USING btree ("ext_chat_skills_id");
   ALTER TABLE "cms"."ext_chat_settings" DROP COLUMN "system_prompt";
-  ALTER TABLE "cms"."_ext_chat_settings_v" DROP COLUMN "version_system_prompt";`)
+  ALTER TABLE "cms"."_ext_chat_settings_v" DROP COLUMN "version_system_prompt";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "cms"."ext_chat_skills_triggers" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "cms"."ext_chat_skills" DISABLE ROW LEVEL SECURITY;
@@ -147,5 +151,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "cms"."enum_ext_chat_settings_channel_prompts_channels";
   DROP TYPE "cms"."enum_ext_chat_settings_llm_fallback_model";
   DROP TYPE "cms"."enum__ext_chat_settings_v_version_channel_prompts_channels";
-  DROP TYPE "cms"."enum__ext_chat_settings_v_version_llm_fallback_model";`)
+  DROP TYPE "cms"."enum__ext_chat_settings_v_version_llm_fallback_model";`);
 }

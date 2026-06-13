@@ -34,6 +34,16 @@ export const isAdmin: Access = ({ req }) => roles(req).includes("admin");
 export const isStaff: Access = ({ req }) =>
   roles(req).some((r) => STAFF_ROLES.includes(r));
 
+/**
+ * Editorial content: staff see drafts + published; everyone else (incl.
+ * anonymous) sees only published rows. Mirrors the host's `publishedOrStaff`
+ * so content-bearing extensions (e.g. ext-docs) can gate public read.
+ */
+export const publishedOrStaff: Access = ({ req }) => {
+  if (roles(req).some((r) => STAFF_ROLES.includes(r))) return true;
+  return { _status: { equals: "published" } };
+};
+
 /** Owner-scoped rows: staff see everything; users only rows whose owner is them. */
 export const ownsOrStaff =
   (ownerField = "user"): Access =>

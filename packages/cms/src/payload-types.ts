@@ -100,6 +100,7 @@ export interface Config {
     "ext-billing-coupons": ExtBillingCoupon;
     "ext-billing-subscriptions": ExtBillingSubscription;
     "ext-chat-skills": ExtChatSkill;
+    "ext-docs-pages": ExtDocsPage;
     forms: Form;
     "form-submissions": FormSubmission;
     "payload-kv": PayloadKv;
@@ -200,6 +201,7 @@ export interface Config {
       | ExtBillingSubscriptionsSelect<false>
       | ExtBillingSubscriptionsSelect<true>;
     "ext-chat-skills": ExtChatSkillsSelect<false> | ExtChatSkillsSelect<true>;
+    "ext-docs-pages": ExtDocsPagesSelect<false> | ExtDocsPagesSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     "form-submissions":
       | FormSubmissionsSelect<false>
@@ -227,6 +229,7 @@ export interface Config {
     "profile-fields": ProfileField;
     "ext-billing-settings": ExtBillingSetting;
     "ext-chat-settings": ExtChatSetting;
+    "ext-docs-settings": ExtDocsSetting;
   };
   globalsSelect: {
     "site-settings": SiteSettingsSelect<false> | SiteSettingsSelect<true>;
@@ -238,6 +241,9 @@ export interface Config {
     "ext-chat-settings":
       | ExtChatSettingsSelect<false>
       | ExtChatSettingsSelect<true>;
+    "ext-docs-settings":
+      | ExtDocsSettingsSelect<false>
+      | ExtDocsSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -2697,6 +2703,54 @@ export interface ExtChatSkill {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-docs-pages".
+ */
+export interface ExtDocsPage {
+  id: number;
+  title: string;
+  slug: string;
+  /**
+   * Short summary — used in search + meta.
+   */
+  excerpt?: string | null;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ("ltr" | "rtl") | null;
+      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Sidebar grouping (e.g. 'Getting Started').
+   */
+  category?: string | null;
+  /**
+   * Sort order within category.
+   */
+  order?: number | null;
+  source?: ("manual" | "github") | null;
+  /**
+   * Repo-relative file path.
+   */
+  sourcePath?: string | null;
+  /**
+   * Blob SHA (idempotent sync).
+   */
+  sourceSha?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ("draft" | "published") | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "forms".
  */
 export interface Form {
@@ -3134,6 +3188,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: "ext-chat-skills";
         value: number | ExtChatSkill;
+      } | null)
+    | ({
+        relationTo: "ext-docs-pages";
+        value: number | ExtDocsPage;
       } | null)
     | ({
         relationTo: "forms";
@@ -4428,6 +4486,24 @@ export interface ExtChatSkillsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-docs-pages_select".
+ */
+export interface ExtDocsPagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  excerpt?: T;
+  body?: T;
+  category?: T;
+  order?: T;
+  source?: T;
+  sourcePath?: T;
+  sourceSha?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "forms_select".
  */
 export interface FormsSelect<T extends boolean = true> {
@@ -5243,6 +5319,33 @@ export interface ExtChatSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-docs-settings".
+ */
+export interface ExtDocsSetting {
+  id: number;
+  /**
+   * Public repo as owner/name (e.g. vercel/next.js).
+   */
+  githubRepo?: string | null;
+  githubBranch?: string | null;
+  /**
+   * Folder within the repo to sync (*.md/*.mdx).
+   */
+  githubPath?: string | null;
+  /**
+   * Save with this checked to pull the latest docs from GitHub.
+   */
+  syncNow?: boolean | null;
+  /**
+   * Result of the last sync.
+   */
+  syncStatus?: string | null;
+  syncError?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -5513,6 +5616,21 @@ export interface ExtChatSettingsSelect<T extends boolean = true> {
   transcriptionEnabled?: T;
   transcriptionModel?: T;
   maxAudioMB?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ext-docs-settings_select".
+ */
+export interface ExtDocsSettingsSelect<T extends boolean = true> {
+  githubRepo?: T;
+  githubBranch?: T;
+  githubPath?: T;
+  syncNow?: T;
+  syncStatus?: T;
+  syncError?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

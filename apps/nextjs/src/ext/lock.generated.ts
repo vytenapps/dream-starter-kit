@@ -51,6 +51,19 @@ export const extensionsLock = {
       ],
       "edgeFunctions": []
     },
+    "docs": {
+      "version": "1.0.0",
+      "kitCompat": ">=1.0.0 <2",
+      "source": "local",
+      "installedVia": "preinstalled",
+      "stubs": [
+        "apps/nextjs/src/app/(frontend)/(public)/docs/[slug]/page.tsx",
+        "apps/nextjs/src/app/(frontend)/(public)/docs/layout.tsx",
+        "apps/nextjs/src/app/(frontend)/(public)/docs/page.tsx",
+        "apps/nextjs/src/payload/migrations/20260613_023123_ext_docs_initial.ts"
+      ],
+      "edgeFunctions": []
+    },
     "notifications": {
       "version": "1.0.0",
       "kitCompat": ">=1.0.0 <2",

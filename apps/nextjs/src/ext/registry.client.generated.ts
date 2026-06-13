@@ -31,6 +31,7 @@ export const extInstalled: ExtInstalled[] = [
   { slug: "billing", name: "Billing", version: "1.0.0", system: true },
   { slug: "chat", name: "AI Chat", version: "1.0.0", system: false },
   { slug: "dashboard", name: "Dashboard", version: "1.0.0", system: true },
+  { slug: "docs", name: "Docs", version: "1.0.0", system: true },
   { slug: "notifications", name: "Notifications", version: "1.0.0", system: false },
   { slug: "reminders", name: "Reminders", version: "1.0.0", system: false },
 ];

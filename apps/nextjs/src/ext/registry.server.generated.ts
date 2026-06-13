@@ -8,16 +8,19 @@ import type { ExtPublicRouteTable, ExtRouteTable } from "@acme/ext-kit/server";
 
 import { routes as routes_billing, publicRoutes as publicRoutes_billing } from "@acme/ext-billing/server";
 import { routes as routes_chat } from "@acme/ext-chat/server";
+import { routes as routes_docs, publicRoutes as publicRoutes_docs } from "@acme/ext-docs/server";
 import { routes as routes_notifications } from "@acme/ext-notifications/server";
 
 /** slug → authed route table, dispatched by /api/ext/[ext]/[[...route]]. */
 export const extServerRoutes: Record<string, ExtRouteTable> = {
   "billing": routes_billing,
   "chat": routes_chat,
+  "docs": routes_docs,
   "notifications": routes_notifications,
 };
 
 /** slug → PUBLIC route table (no session required; still rate-limited). */
 export const extPublicRoutes: Record<string, ExtPublicRouteTable> = {
   "billing": publicRoutes_billing,
+  "docs": publicRoutes_docs,
 };
