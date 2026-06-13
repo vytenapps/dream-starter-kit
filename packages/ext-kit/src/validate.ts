@@ -98,6 +98,18 @@ export function validateManifest(m: ExtensionManifest): string[] {
       `[${m.slug}] "${settingsGlobalSlug(m.slug)}" is implicit via cms.hasSettings — don't also list it in cms.globals`,
     );
   }
+  if (m.cms.settingsTabFor) {
+    if (m.cms.hasSettings) {
+      errors.push(
+        `[${m.slug}] cms.settingsTabFor and cms.hasSettings are mutually exclusive — an adapter contributes a tab OR owns a settings global, not both`,
+      );
+    }
+    if (!m.requires.includes(m.cms.settingsTabFor)) {
+      errors.push(
+        `[${m.slug}] cms.settingsTabFor "${m.cms.settingsTabFor}" must be listed in requires (the target's settings global hosts the tab)`,
+      );
+    }
+  }
   for (const fn of m.server.edgeFunctions) {
     if (!fn.startsWith(`${m.slug}-`)) {
       errors.push(

@@ -26,7 +26,9 @@ export default defineExtension({
     tables: [],
   },
   cms: {
-    hasSettings: true,
+    // Contributes a "Sendblue" tab to the AI Chat settings global (target: chat)
+    // instead of owning a standalone settings screen.
+    settingsTabFor: "chat",
     hasMigrations: true,
   },
 });

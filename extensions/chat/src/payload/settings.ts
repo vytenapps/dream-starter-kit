@@ -17,6 +17,9 @@ import { defineExtensionSettings } from "@acme/ext-kit/payload";
 export const settings = defineExtensionSettings({
   slug: "chat",
   name: "AI Chat",
+  // Own admin nav group so the settings screen, the Chat Skills collection, and
+  // the adapter tabs all cluster under "AI Chat".
+  group: "AI Chat",
   fields: [
     {
       type: "tabs",
