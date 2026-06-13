@@ -14,6 +14,11 @@ export const Tags: CollectionConfig = {
     useAsTitle: "title",
     group: "Content",
     defaultColumns: ["title", "slug", "group"],
+    // Managed inline from the Tag Groups page (the `tags` join below), so the
+    // flat list is hidden from the nav to keep one entry point. Ungrouped tags
+    // stay reachable via relationship pickers and the REST/Local API; create a
+    // catch-all group (e.g. "General") if you want them editable in the UI.
+    hidden: true,
   },
   defaultPopulate: { title: true, slug: true },
   access: {
@@ -59,5 +64,17 @@ export const TagGroups: CollectionConfig = {
     slugField(),
     { name: "description", type: "textarea" },
     { name: "displayOrder", type: "number", admin: { position: "sidebar" } },
+    // Tags in this group, managed inline (the Tags collection is hidden from
+    // the nav — this join is the single entry point). Inverse of `Tags.group`.
+    {
+      name: "tags",
+      type: "join",
+      collection: "tags",
+      on: "group",
+      admin: {
+        defaultColumns: ["title", "slug"],
+        description: "Tags that belong to this group.",
+      },
+    },
   ],
 };

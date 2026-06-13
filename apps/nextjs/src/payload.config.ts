@@ -315,9 +315,27 @@ export default buildConfig({
         payment: false,
       },
       redirectRelationships: ["pages"],
-      formOverrides: { admin: { group: "Marketing" } },
-      formSubmissionOverrides: {
+      formOverrides: {
         admin: { group: "Marketing" },
+        // Surface a form's submissions inline (inverse of form-submissions.form)
+        // so the form is the single page for both — submissions are hidden from
+        // the nav below.
+        fields: ({ defaultFields }) => [
+          ...defaultFields,
+          {
+            name: "submissions",
+            type: "join",
+            collection: "form-submissions",
+            on: "form",
+            admin: {
+              defaultColumns: ["createdAt"],
+              description: "Submissions received for this form.",
+            },
+          },
+        ],
+      },
+      formSubmissionOverrides: {
+        admin: { group: "Marketing", hidden: true },
         access: { read: isStaff, delete: isStaff },
       },
     }),

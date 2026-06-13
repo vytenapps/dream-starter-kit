@@ -12,7 +12,7 @@ import { slugField } from "../fields/slug";
  */
 export const Pages: CollectionConfig = {
   slug: "ext-docs-pages",
-  labels: { singular: "Doc Page", plural: "Doc Pages" },
+  labels: { singular: "Documentation Page", plural: "Documentation" },
   admin: {
     useAsTitle: "title",
     group: "Content",
