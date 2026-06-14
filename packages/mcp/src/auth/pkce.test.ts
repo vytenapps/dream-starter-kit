@@ -6,9 +6,7 @@ import { isSupportedChallengeMethod, s256, verifyPkceS256 } from "./pkce";
 describe("pkce", () => {
   it("s256 matches base64url(sha256(verifier))", () => {
     const verifier = "the-quick-brown-fox";
-    const expected = createHash("sha256")
-      .update(verifier)
-      .digest("base64url");
+    const expected = createHash("sha256").update(verifier).digest("base64url");
     expect(s256(verifier)).toBe(expected);
   });
 

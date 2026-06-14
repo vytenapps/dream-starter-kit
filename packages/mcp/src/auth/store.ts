@@ -238,7 +238,8 @@ export async function markRefreshTokenRotated(
     .from("mcp_refresh_tokens")
     .update({ rotated_to: newHash, revoked_at: new Date().toISOString() })
     .eq("token_hash", oldHash);
-  if (error) throw new Error(`markRefreshTokenRotated failed: ${error.message}`);
+  if (error)
+    throw new Error(`markRefreshTokenRotated failed: ${error.message}`);
 }
 
 /**

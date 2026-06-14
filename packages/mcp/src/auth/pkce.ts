@@ -29,6 +29,8 @@ export function verifyPkceS256(verifier: string, challenge: string): boolean {
 }
 
 /** Only S256 is accepted (spec + security). */
-export function isSupportedChallengeMethod(method: string | undefined): boolean {
+export function isSupportedChallengeMethod(
+  method: string | undefined,
+): boolean {
   return method === "S256";
 }

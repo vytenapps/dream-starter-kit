@@ -1,10 +1,10 @@
-import { isSupportedChallengeMethod, verifyPkceS256 } from "./pkce";
+import type { McpStoreClient, OAuthClientRow } from "./store";
 import {
   issuerIdentifier,
   MCP_SCOPE,
   resourceIdentifier,
 } from "./oauth-metadata";
-import type { McpStoreClient, OAuthClientRow } from "./store";
+import { isSupportedChallengeMethod, verifyPkceS256 } from "./pkce";
 import {
   consumeAuthorizationCode,
   getClient,
@@ -144,7 +144,8 @@ export async function validateAuthorizeRequest(
 ): Promise<ValidatedAuthorizeRequest> {
   const clientId = params.get("client_id");
   const redirectUri = params.get("redirect_uri");
-  if (!clientId) throw new OAuthError("invalid_request", "client_id is required");
+  if (!clientId)
+    throw new OAuthError("invalid_request", "client_id is required");
   if (!redirectUri)
     throw new OAuthError("invalid_request", "redirect_uri is required");
 
@@ -176,7 +177,11 @@ export async function validateAuthorizeRequest(
       params.get("state"),
     );
   }
-  if (!isSupportedChallengeMethod(params.get("code_challenge_method") ?? undefined)) {
+  if (
+    !isSupportedChallengeMethod(
+      params.get("code_challenge_method") ?? undefined,
+    )
+  ) {
     throw new OAuthRedirectError(
       redirectUri,
       "invalid_request",
@@ -310,11 +315,18 @@ async function authorizationCodeGrant(
   }
 
   const row = await consumeAuthorizationCode(store, code);
-  if (!row) throw new OAuthError("invalid_grant", "Authorization code is invalid or expired");
+  if (!row)
+    throw new OAuthError(
+      "invalid_grant",
+      "Authorization code is invalid or expired",
+    );
   if (row.client_id !== clientId)
     throw new OAuthError("invalid_grant", "client_id does not match the code");
   if (row.redirect_uri !== redirectUri)
-    throw new OAuthError("invalid_grant", "redirect_uri does not match the code");
+    throw new OAuthError(
+      "invalid_grant",
+      "redirect_uri does not match the code",
+    );
   if (!verifyPkceS256(verifier, row.code_challenge))
     throw new OAuthError("invalid_grant", "PKCE verification failed");
 
@@ -352,7 +364,10 @@ async function refreshTokenGrant(
       row.supabase_user_id,
       row.client_id,
     );
-    throw new OAuthError("invalid_grant", "Refresh token has already been used");
+    throw new OAuthError(
+      "invalid_grant",
+      "Refresh token has already been used",
+    );
   }
   if (Date.parse(row.expires_at) <= Date.now())
     throw new OAuthError("invalid_grant", "Refresh token expired");

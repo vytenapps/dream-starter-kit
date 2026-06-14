@@ -37,7 +37,11 @@ describe("access tokens", () => {
       scope: "mcp",
     });
     await expect(
-      verifyAccessToken({ ...base, secret: "a-totally-different-secret-value", token }),
+      verifyAccessToken({
+        ...base,
+        secret: "a-totally-different-secret-value",
+        token,
+      }),
     ).rejects.toThrow();
   });
 
@@ -49,7 +53,11 @@ describe("access tokens", () => {
       scope: "mcp",
     });
     await expect(
-      verifyAccessToken({ ...base, audience: "https://evil.example.com/mcp", token }),
+      verifyAccessToken({
+        ...base,
+        audience: "https://evil.example.com/mcp",
+        token,
+      }),
     ).rejects.toThrow();
   });
 

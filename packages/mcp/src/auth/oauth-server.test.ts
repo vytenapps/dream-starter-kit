@@ -1,12 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { s256 } from "./pkce";
 import type {
   AuthorizationCodeRow,
   McpStoreClient,
   OAuthClientRow,
   RefreshTokenRow,
 } from "./store";
+// Imported after the mock declaration; vitest hoists vi.mock above imports.
+import {
+  handleClientRegistration,
+  handleTokenRequest,
+  issueAuthorizationCode,
+  OAuthError,
+  validateAuthorizeRequest,
+} from "./oauth-server";
+import { s256 } from "./pkce";
 import { hashToken } from "./tokens";
 
 /**
@@ -38,21 +46,23 @@ vi.mock("./store", () => ({
   getClient: vi.fn((_db: unknown, id: string) =>
     Promise.resolve(state.clients.get(id) ?? null),
   ),
-  saveAuthorizationCode: vi.fn((_db: unknown, input: Record<string, unknown>) => {
-    state.codes.set(input.code as string, {
-      code: input.code as string,
-      client_id: input.clientId as string,
-      supabase_user_id: input.supabaseUserId as string,
-      redirect_uri: input.redirectUri as string,
-      code_challenge: input.codeChallenge as string,
-      code_challenge_method: "S256",
-      scope: (input.scope as string | undefined) ?? null,
-      expires_at: new Date(Date.now() + 60_000).toISOString(),
-      consumed_at: null,
-      created_at: new Date().toISOString(),
-    });
-    return Promise.resolve();
-  }),
+  saveAuthorizationCode: vi.fn(
+    (_db: unknown, input: Record<string, unknown>) => {
+      state.codes.set(input.code as string, {
+        code: input.code as string,
+        client_id: input.clientId as string,
+        supabase_user_id: input.supabaseUserId as string,
+        redirect_uri: input.redirectUri as string,
+        code_challenge: input.codeChallenge as string,
+        code_challenge_method: "S256",
+        scope: (input.scope as string | undefined) ?? null,
+        expires_at: new Date(Date.now() + 60_000).toISOString(),
+        consumed_at: null,
+        created_at: new Date().toISOString(),
+      });
+      return Promise.resolve();
+    },
+  ),
   consumeAuthorizationCode: vi.fn((_db: unknown, code: string) => {
     const row = state.codes.get(code);
     if (!row || row.consumed_at || Date.parse(row.expires_at) <= Date.now())
@@ -96,15 +106,6 @@ vi.mock("./store", () => ({
     },
   ),
 }));
-
-// Imported after the mock declaration; vitest hoists vi.mock above imports.
-import {
-  handleClientRegistration,
-  handleTokenRequest,
-  issueAuthorizationCode,
-  OAuthError,
-  validateAuthorizeRequest,
-} from "./oauth-server";
 
 const db = {} as McpStoreClient;
 const config = { origin: "https://app.example.com", jwtSecret: "x".repeat(40) };

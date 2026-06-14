@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { handleClientRegistration, OAuthError } from "@acme/mcp";
 import { slidingWindow } from "@acme/config";
+import { handleClientRegistration, OAuthError } from "@acme/mcp";
 
 import { getMcpStoreClient, isMcpEnabled } from "~/lib/mcp/config";
 import { corsJson, corsPreflight } from "~/lib/mcp/http";
