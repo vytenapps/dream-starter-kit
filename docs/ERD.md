@@ -10,7 +10,6 @@ access is enforced at the database.
 > as a **single baseline migration** (`20260609000001_initial.sql`); extend it with
 > **new** migrations only — never edit the shipped baseline.
 
-
 > **Extension refactor (2026-06):** the feature tables documented below now ship
 > as **extensions** (see `docs/EXTENSIONS.md`) and are prefixed accordingly:
 > `reminders` → `ext_reminders`, `notifications` → `ext_notifications`,
@@ -160,39 +159,52 @@ erDiagram
 
 ## Tables by group
 
-**Identity & access** *(core — keep)*
+**Identity & access** _(core — keep)_
+
 - `auth.users` — managed by **Supabase Auth**; you don't create this table.
 - `profiles` — app-level user record, 1:1 with `auth.users` (same `id`). Created by a trigger on signup. The anchor for most RLS policies.
 
-**Teams / multi-tenancy** *(optional — drop for single-user apps)*
+**Teams / multi-tenancy** _(optional — drop for single-user apps)_
+
 - `organizations` — a workspace/company.
 - `memberships` — the user↔org join with a `role` (drives org-scoped RLS).
 - `invitations` — pending invites by email.
 
-**Billing** *(core for any paid app — written by the Stripe webhook)*
+**Billing** _(core for any paid app — written by the Stripe webhook)_
+
 - `customers` — maps a user to their `stripe_customer_id` (zero-or-one per user).
 - `products`, `prices` — mirrors of your Stripe catalog.
 - `subscriptions` — the canonical Stripe subscription state (`status`, `current_period_end`) used to gate premium features on web **and** mobile.
 
-**App domain** *(this is your idea — add it)*
+**App domain** _(this is your idea — add it)_
+
 - The kit ships **no** example domain table; you add your own per-user tables (the primary records of your product) following the canonical RLS pattern below. Use `data jsonb` on a table if you want idea-specific fields before formalizing columns.
 
-**Engagement** *(many apps are reminder/nudge engines — keep what fits)*
+**Engagement** _(many apps are reminder/nudge engines — keep what fits)_
+
 - `reminders` — scheduled nudges/follow-ups (due time, channel, status).
 - `push_tokens` — Expo push tokens per device.
 - `notifications` — in-app notification feed with `read_at`.
 
-**Tags** *(user segmentation)*
+**Tags** _(user segmentation)_
+
 - `tags` — reusable tag definitions (`name`, `color`, `is_system`). Readable by any authenticated user; written by the server only.
 - `user_tags` — links a user to a tag (read-own via RLS). Assigned automatically by the Stripe webhook (a plan-name tag when a subscription is active; a "Free" tag at signup) and manually by staff from the admin. No client write policy — the service role is the only writer.
 
-**Files** *(keep if the app stores uploads)*
+**Files** _(keep if the app stores uploads)_
+
 - `files` — metadata for objects in **Supabase Storage** (bucket + path + mime + size), in the RLS-governed `user-files` bucket.
 
-**AI assistant** *(keep if the app has AI features)*
+**AI assistant** _(keep if the app has AI features)_
+
 - `chat_threads` / `chat_messages` — persisted conversations for the in-app assistant (AI SDK via the Vercel AI Gateway). `token_usage` supports cost/observability.
 
-**Content** *(Payload CMS — outside this ERD)*
+**Remote MCP server** _(OAuth state — server-only)_
+
+- `mcp_oauth_clients` / `mcp_authorization_codes` / `mcp_refresh_tokens` — OAuth 2.1 state for the remote MCP server (`packages/mcp`, mounted at `/mcp`). Unlike every other `public` table these are **deny-all**: RLS is enabled with **no policies**, and privileges are revoked from `anon`/`authenticated`/`payload_cms`. Only the service-role client (BYPASSRLS) touches them — never an RLS browser/mobile client. Access tokens are stateless signed JWTs (no table). The RLS suite asserts the deny-all stance.
+
+**Content** _(Payload CMS — outside this ERD)_
+
 - Editorial/marketing content (`articles`, `events`, `videos`, `audio`, `photos`, `locations`, `pages`, plus `media` uploads and Payload's own `users`) lives in the separate **`cms`** Postgres schema, owned and migrated by **Payload CMS**. It is intentionally **outside Supabase RLS** — Payload enforces its own access-control (e.g. published-or-admin) and connects as a dedicated least-privilege `payload_cms` role scoped to `cms` only. Don't model it here or add it to the RLS tests.
 
 ---
@@ -239,6 +251,7 @@ create policy "read own subscriptions"
 ```
 
 Notes:
+
 - Storage buckets get their own RLS policies on `storage.objects` (path-prefixed by user/org), mirroring the `files` table.
 - The Stripe webhook (a Supabase edge function) uses the **service role key** to write `customers` / `subscriptions` — clients never write billing rows.
 - Wrapping `auth.uid()` as `(select auth.uid())` lets Postgres cache it per statement (a standard Supabase performance tip).
@@ -258,6 +271,7 @@ Keep the substrate and add your own idea-specific tables. The first question is 
   pages and to mobile over REST. Add one via [`CLAUDE.md` → How to add a Payload content type](../CLAUDE.md#how-to-add-a-payload-content-type).
 
 Rules of thumb for the Supabase side:
+
 - **Single-user consumer app** → drop `organizations` / `memberships` / `invitations`; own everything by `user_id`.
 - **B2B / team SaaS** → keep the org layer; scope your tables by `org_id` (org-scoped policy above).
 - **Marketplace** → add a transactions/`orders` table and model the two sides with `memberships` roles (buyer/seller); RLS lets each side see only their own orders.

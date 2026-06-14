@@ -589,3 +589,45 @@ describe("premium gating: only active/trialing subscriptions unlock premium", ()
     expect(row?.status).toBe("trialing");
   });
 });
+
+describe("RLS: MCP OAuth tables are server-only (deny-all)", () => {
+  // The mcp_oauth_* tables (migration 20260614120000_mcp_oauth.sql) have RLS
+  // enabled with NO policies, so anon/authenticated get nothing; only the
+  // service-role key (BYPASSRLS) reaches them. They're not in the generated
+  // Database type, so use untyped clients here.
+  const MCP_TABLES = [
+    "mcp_oauth_clients",
+    "mcp_authorization_codes",
+    "mcp_refresh_tokens",
+  ];
+
+  it("anonymous users read no rows", async () => {
+    const anon = createClient(
+      SUPABASE_URL,
+      ANON_KEY,
+      noPersist,
+    ) as unknown as SupabaseClient;
+    for (const table of MCP_TABLES) {
+      const { data } = await anon.from(table).select("*");
+      expect(data ?? []).toHaveLength(0);
+    }
+  });
+
+  it("an authenticated user cannot read or insert", async () => {
+    const authed = clientA as unknown as SupabaseClient;
+    for (const table of MCP_TABLES) {
+      const { data } = await authed.from(table).select("*");
+      expect(data ?? []).toHaveLength(0);
+    }
+    const { error } = await authed
+      .from("mcp_oauth_clients")
+      .insert({ id: `evil_${stamp}`, redirect_uris: ["https://evil.test/cb"] });
+    expect(error).not.toBeNull();
+  });
+
+  it("the service role bypasses RLS (can read)", async () => {
+    const svc = admin as unknown as SupabaseClient;
+    const { error } = await svc.from("mcp_oauth_clients").select("*");
+    expect(error).toBeNull();
+  });
+});
