@@ -377,6 +377,46 @@ Serif fonts (Merriweather/Lora) are loaded on `<html>` alongside the sans/mono s
 - **Don't track create-t3-turbo upstream** (see `docs/ARCHITECTURE.md` → Keeping
   dependencies current): snapshot + cherry-pick only. The forked SHA is in `NOTICE`.
 
+## Staying current with the kit (upstream sync)
+
+When this repo is a **fork/clone of the kit** and you're asked to "sync with
+upstream", "pull in kit updates", or "merge upstream", run the tested routine
+(full guide: `docs/UPDATING.md`). The whole flow depends on **sharing git history**
+with the kit, so the cardinal rule is: keep the merge commits, never squash them.
+
+- **Remote.** The named remote is `upstream`
+  (`git remote add upstream https://github.com/vytenapps/dream-starter-kit.git`);
+  add it if missing, then `git fetch upstream`.
+- **Detect the starting situation:** `git merge-base <yourmain> upstream/main`.
+  Resolves → shared history (GitHub "Fork"), merge normally. Empty/non-zero →
+  unrelated history ("Use this template", or re-init'd/squashed-snapshot repos);
+  fix it **once** with `git merge upstream/main --allow-unrelated-histories`
+  (nearly conflict-free where the tree already matches upstream — identical files
+  merge cleanly against the empty base), resolve, commit. After that one merge,
+  `upstream/main` is a real ancestor and every later update is a plain three-way merge.
+- **The routine (every update):** `git fetch upstream` → branch off main
+  (`git checkout -b sync/upstream-YYYY-MM-DD`) → `git merge upstream/main` → resolve →
+  `pnpm install && pnpm typecheck && pnpm lint && pnpm test` → open a PR into main.
+- **NEVER squash a sync PR** — land it with a merge commit or rebase/fast-forward.
+  Squashing flattens the merge commit that records `upstream/main` as an ancestor,
+  re-breaking the relationship and forcing `--allow-unrelated-histories` next time.
+- **Conflict hotspots:** generated files (`packages/cms/src/payload-types.ts` →
+  `pnpm cms:gen-types`; Supabase types → `pnpm db:gen-types`) — take either side
+  then **regenerate**, don't hand-merge; `payload-types.ts` also shows phantom
+  quote/`SupportedTimezones` churn after a generate — discard it
+  (`git checkout -- <file>`). Migrations are append-only — keep **both** sides'
+  files, then `pnpm db:reset` (+ `pnpm db:gen-migrations` if the bundle JSON drifts).
+  Env: reconcile both `.env.example` and the zod schema. `pnpm-lock.yaml`: re-run
+  `pnpm install`, don't hand-merge.
+- **Intentional divergence** (branding, your CI, README): pin with `.gitattributes`
+  (`path/** merge=ours`) + `git config merge.ours.driver true` (per-clone, not
+  committed). `merge=ours` doesn't cover modify/delete — re-delete those.
+- **Single urgent fix without a full sync:** `git fetch upstream` then
+  `git cherry-pick <sha>` (patch-based — works across unrelated histories).
+- **Post-merge:** `pnpm install`, `pnpm db:reset`, regenerate types, then the gates
+  (`pnpm typecheck && pnpm lint && pnpm test`, plus `pnpm test:rls` if schema/RLS
+  changed). Commit `docs:`/`chore:`, branch off main, PR with what & why.
+
 ## Status
 
 The kit is **feature-complete and ready to clone** — and is now an **extension

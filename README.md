@@ -46,6 +46,7 @@ backend are wired in. Clone it, rename a few things, and extend it into a real p
 - **[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)** — stack, structure, security model, and dependency policy.
 - **[`docs/ERD.md`](./docs/ERD.md)** — data model + the canonical RLS pattern every table follows.
 - **[`docs/CMS.md`](./docs/CMS.md)** — the Payload CMS reference: every collection, global, field & access rule.
+- **[`docs/UPDATING.md`](./docs/UPDATING.md)** — how to pull upstream kit updates into your fork without losing your changes.
 - **[`CLAUDE.md`](./CLAUDE.md)** — working agreement, the golden security rules, and the "how to add a feature" recipe.
 
 If anything here disagrees with those, **they win.**
@@ -192,24 +193,24 @@ Every variable is validated by a zod schema (`packages/config/env` + each app's
 - The Supabase **service-role key bypasses RLS** and lives **only** server-side
   (edge functions / server routes) — never in web client or mobile code.
 
-| Variable                                                                                | Public? | Where to get it                                                                                                             |
-| --------------------------------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_URL`                                 | ✅      | `supabase start` output / Dashboard → Project Settings → API                                                                |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `EXPO_PUBLIC_SUPABASE_ANON_KEY`                       | ✅      | same                                                                                                                        |
-| `SUPABASE_SERVICE_ROLE_KEY`                                                             | 🔒      | same (server-only; bypasses RLS)                                                                                            |
-| `SUPABASE_DB_URL`                                                                       | 🔒      | local default in `.env.example` / hosted pooler URL                                                                         |
-| `CRON_SECRET`                                                                           | 🔒      | you choose; guards the `reminders-process` function                                                                         |
-| `NEXT_PUBLIC_APP_URL` / `EXPO_PUBLIC_API_URL`                                           | ✅      | your web origin (LAN IP in mobile dev). On Vercel the web origin is auto-detected — see `NEXT_PUBLIC_SITE_URL`              |
-| `NEXT_PUBLIC_SITE_URL`                                                                  | ✅      | optional — pin the public web origin to a custom domain; else auto-detected on Vercel / falls back to `NEXT_PUBLIC_APP_URL` |
-| `AI_GATEWAY_API_KEY`                                                                    | 🔒      | [Vercel AI Gateway](https://vercel.com/ai-gateway) (auto on Vercel)                                                         |
-| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`                                           | 🔒      | Stripe Dashboard / `stripe listen`                                                                                          |
-| `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY`                                          | 🔒      | Stripe price IDs (`price_…`)                                                                                                |
+| Variable                                                                                | Public? | Where to get it                                                                                                                          |
+| --------------------------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_URL`                                 | ✅      | `supabase start` output / Dashboard → Project Settings → API                                                                             |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `EXPO_PUBLIC_SUPABASE_ANON_KEY`                       | ✅      | same                                                                                                                                     |
+| `SUPABASE_SERVICE_ROLE_KEY`                                                             | 🔒      | same (server-only; bypasses RLS)                                                                                                         |
+| `SUPABASE_DB_URL`                                                                       | 🔒      | local default in `.env.example` / hosted pooler URL                                                                                      |
+| `CRON_SECRET`                                                                           | 🔒      | you choose; guards the `reminders-process` function                                                                                      |
+| `NEXT_PUBLIC_APP_URL` / `EXPO_PUBLIC_API_URL`                                           | ✅      | your web origin (LAN IP in mobile dev). On Vercel the web origin is auto-detected — see `NEXT_PUBLIC_SITE_URL`                           |
+| `NEXT_PUBLIC_SITE_URL`                                                                  | ✅      | optional — pin the public web origin to a custom domain; else auto-detected on Vercel / falls back to `NEXT_PUBLIC_APP_URL`              |
+| `AI_GATEWAY_API_KEY`                                                                    | 🔒      | [Vercel AI Gateway](https://vercel.com/ai-gateway) (auto on Vercel)                                                                      |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`                                           | 🔒      | Stripe Dashboard / `stripe listen`                                                                                                       |
+| `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY`                                          | 🔒      | Stripe price IDs (`price_…`)                                                                                                             |
 | `PAYLOAD_DATABASE_URL`                                                                  | 🔒      | `payload_cms` role connection (`search_path=cms`); local default in `.env.example` — hosted: optional, derived from the service-role key |
-| `PAYLOAD_SECRET`                                                                        | 🔒      | Payload admin auth/encryption (`openssl rand -base64 32`) — hosted: optional, derived from the service-role key             |
-| `S3_ENDPOINT` / `S3_REGION` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` / `S3_BUCKET` | 🔒      | Supabase Storage (S3) for Payload media — the `cms-media` bucket; local defaults in `.env.example`                          |
-| `NEXT_PUBLIC_CMS_URL` / `EXPO_PUBLIC_CMS_URL`                                           | ✅      | Payload REST origin (mobile reads content; web is same-origin)                                                              |
-| `SUPABASE_AUTH_EXTERNAL_GOOGLE_*` / `_APPLE_*`                                          | 🔒      | OAuth provider consoles (local dev only; prod uses the Dashboard)                                                           |
-| `EXPO_PUBLIC_EAS_PROJECT_ID` / `EXPO_PUBLIC_AUTH_SCHEME`                                | ✅      | `eas init` / `app.config.ts` `scheme`                                                                                       |
+| `PAYLOAD_SECRET`                                                                        | 🔒      | Payload admin auth/encryption (`openssl rand -base64 32`) — hosted: optional, derived from the service-role key                          |
+| `S3_ENDPOINT` / `S3_REGION` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` / `S3_BUCKET` | 🔒      | Supabase Storage (S3) for Payload media — the `cms-media` bucket; local defaults in `.env.example`                                       |
+| `NEXT_PUBLIC_CMS_URL` / `EXPO_PUBLIC_CMS_URL`                                           | ✅      | Payload REST origin (mobile reads content; web is same-origin)                                                                           |
+| `SUPABASE_AUTH_EXTERNAL_GOOGLE_*` / `_APPLE_*`                                          | 🔒      | OAuth provider consoles (local dev only; prod uses the Dashboard)                                                                        |
+| `EXPO_PUBLIC_EAS_PROJECT_ID` / `EXPO_PUBLIC_AUTH_SCHEME`                                | ✅      | `eas init` / `app.config.ts` `scheme`                                                                                                    |
 
 The AI model id is **not** an env var — it's centralized in `packages/config`
 (`DEFAULT_AI_MODEL`) and is swappable.
@@ -298,6 +299,15 @@ The kit ships two reference shapes to copy, depending on whose data it is:
 `@acme/*` is inherited. To rebrand to `@your-scope/*`, do a careful find-and-replace
 across `package.json` files, `tsconfig` paths, and imports, then `pnpm install`. Do it
 **once, before building features** — not mid-stream.
+
+### Staying up to date with the kit
+
+The kit keeps shipping fixes, new extensions, and security hardening after you fork.
+Pull them in without losing your changes: add the kit as an `upstream` remote once,
+then merge `upstream/main` into a `sync/…` branch and open a PR — **never squash sync
+PRs** (it breaks the shared-history relationship and forces a full re-merge next time).
+Full tested routine, conflict hotspots, and the `merge=ours` pinning trick for files
+you intentionally diverge on: **[`docs/UPDATING.md`](./docs/UPDATING.md)**.
 
 ## Testing
 
