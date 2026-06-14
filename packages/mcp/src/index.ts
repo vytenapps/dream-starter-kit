@@ -50,3 +50,7 @@ export { buildMcpServer, handleMcpRequest } from "./server";
 export { resolveStaffPayloadUser } from "./payload-context";
 export type { McpToolContext } from "./payload-context";
 export { MCP_COLLECTIONS } from "./tools/registry";
+
+// --- Notifications dispatch worker --------------------------------------------
+export { runDispatch } from "./dispatch/run-dispatch";
+export type { DispatchDeps, DispatchResult } from "./dispatch/run-dispatch";
