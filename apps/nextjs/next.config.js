@@ -27,6 +27,7 @@ const config = {
     "@acme/cms",
     "@acme/config",
     "@acme/ext-kit",
+    "@acme/mcp",
     "@acme/ui",
     ...extPackages,
   ],

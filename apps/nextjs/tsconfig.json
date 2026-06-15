@@ -9,6 +9,6 @@
     },
     "plugins": [{ "name": "next" }]
   },
-  "include": [".", ".next/types/**/*.ts"],
+  "include": [".", ".next/types/**/*.ts", "src/app/.well-known/**/*.ts"],
   "exclude": ["node_modules"]
 }

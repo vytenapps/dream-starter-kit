@@ -37,7 +37,12 @@ backend are wired in. Clone it, rename a few things, and extend it into a real p
 - **AI assistant** — Vercel AI SDK v6 → Claude through the AI Gateway, behind an
   authed, rate-limited, token-capped server route; conversations persist.
 - **Engagement** — in-app notifications, reminders, and Expo push (with a scheduled
-  edge function to fire due reminders).
+  worker that fires due reminders and delivers scheduled notifications).
+- **A remote MCP server** — connect Claude, ChatGPT, Cursor, or any MCP client to
+  manage CMS content and push notifications in natural language. OAuth 2.1 browser
+  login (reuses your Supabase sign-in, staff-only); every action runs with the admin's
+  Payload permissions. Off until `MCP_JWT_SECRET` is set — see
+  [`docs/MCP.md`](./docs/MCP.md).
 - **Quality gates** — typecheck, lint, Vitest, an RLS isolation regression, Playwright
   e2e, and a copyleft license check — all run in CI.
 
@@ -46,6 +51,7 @@ backend are wired in. Clone it, rename a few things, and extend it into a real p
 - **[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)** — stack, structure, security model, and dependency policy.
 - **[`docs/ERD.md`](./docs/ERD.md)** — data model + the canonical RLS pattern every table follows.
 - **[`docs/CMS.md`](./docs/CMS.md)** — the Payload CMS reference: every collection, global, field & access rule.
+- **[`docs/MCP.md`](./docs/MCP.md)** — the remote MCP server: enabling it, connecting clients, OAuth, tools & security.
 - **[`docs/UPDATING.md`](./docs/UPDATING.md)** — how to pull upstream kit updates into your fork without losing your changes.
 - **[`CLAUDE.md`](./CLAUDE.md)** — working agreement, the golden security rules, and the "how to add a feature" recipe.
 
@@ -63,6 +69,7 @@ If anything here disagrees with those, **they win.**
 | Data layer    | `@supabase/supabase-js` typed client + react-query hooks (`packages/api`) |
 | Payments      | Stripe (web only) + webhook edge function                                 |
 | AI            | Vercel AI SDK v6 via the AI Gateway (Claude default)                      |
+| MCP           | Remote MCP server (`@acme/mcp`) at `/mcp` — OAuth 2.1, staff-only         |
 | Ship          | Vercel (web) · EAS (mobile) · Expo Push                                   |
 
 > The package scope is `@acme/*` (inherited from the template) — renameable; see
@@ -199,7 +206,8 @@ Every variable is validated by a zod schema (`packages/config/env` + each app's
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `EXPO_PUBLIC_SUPABASE_ANON_KEY`                       | ✅      | same                                                                                                                                     |
 | `SUPABASE_SERVICE_ROLE_KEY`                                                             | 🔒      | same (server-only; bypasses RLS)                                                                                                         |
 | `SUPABASE_DB_URL`                                                                       | 🔒      | local default in `.env.example` / hosted pooler URL                                                                                      |
-| `CRON_SECRET`                                                                           | 🔒      | you choose; guards the `reminders-process` function                                                                                      |
+| `CRON_SECRET`                                                                           | 🔒      | you choose; guards the `reminders-process` function and the notifications dispatch route                                                 |
+| `MCP_JWT_SECRET` / `MCP_ENABLED`                                                        | 🔒      | enables the remote MCP server (`openssl rand -base64 32`); `MCP_ENABLED="off"` is a kill switch — see [docs/MCP.md](./docs/MCP.md)       |
 | `NEXT_PUBLIC_APP_URL` / `EXPO_PUBLIC_API_URL`                                           | ✅      | your web origin (LAN IP in mobile dev). On Vercel the web origin is auto-detected — see `NEXT_PUBLIC_SITE_URL`                           |
 | `NEXT_PUBLIC_SITE_URL`                                                                  | ✅      | optional — pin the public web origin to a custom domain; else auto-detected on Vercel / falls back to `NEXT_PUBLIC_APP_URL`              |
 | `AI_GATEWAY_API_KEY`                                                                    | 🔒      | [Vercel AI Gateway](https://vercel.com/ai-gateway) (auto on Vercel)                                                                      |
@@ -233,12 +241,15 @@ pnpm dev                # or: pnpm -F @acme/expo dev
 apps/nextjs        # web — Next.js App Router, shadcn/ui (thin entry point)
   src/app/(frontend)/(public)/  # public CMS pages (server-rendered via Payload Local API)
   src/app/(payload)/            # Payload admin (/admin) + REST (/cms-api)
+  src/app/(mcp)/                # remote MCP server (/mcp) + OAuth (/oauth/*)
+  src/app/.well-known/          # OAuth discovery metadata for MCP clients
   src/payload/                  # Payload collections, access-control, seed
   src/payload.config.ts         # Payload config (collections, db, S3 storage)
 apps/expo          # mobile — Expo Router, react-native-reusables (thin entry point)
 packages/api       # Supabase data layer: typed client, generated DB types, react-query hooks
 packages/app       # cross-platform features: zod validators, hooks (incl. content hooks), pure logic
 packages/cms       # Payload content TYPES ONLY (generated; safe to import on mobile)
+packages/mcp       # remote MCP server: OAuth 2.1, CMS/notification tools, dispatch worker (server-only)
 packages/ui        # shared UI tokens/primitives + theme/toast
 packages/config    # zod env schema + constants (DEFAULT_AI_MODEL, PLANS, rate limit)
 supabase/          # migrations (schema + RLS), payload/ (cms role+schema), seed.sql, edge functions, config.toml

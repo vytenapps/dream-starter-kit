@@ -69,6 +69,22 @@ export const serverEnvSchema = z.object({
   S3_ACCESS_KEY_ID: z.string().min(1).optional(),
   S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   S3_BUCKET: z.string().min(1).default("cms-media"),
+
+  // --- Remote MCP server (packages/mcp) — optional until configured ---
+  /**
+   * HMAC secret the MCP OAuth server signs access-token JWTs with. The remote
+   * MCP server (/mcp + /oauth/*) is OFF until this is set; `isMcpConfigured()`
+   * gates it. Generate with `openssl rand -base64 32`.
+   */
+  MCP_JWT_SECRET: z.string().min(1).optional(),
+  /** Explicit kill switch — set to "off" to disable MCP even when the secret is present. */
+  MCP_ENABLED: z.enum(["on", "off"]).optional(),
+  /**
+   * Shared secret guarding scheduled worker endpoints (the in-app notifications
+   * dispatch route, and the `reminders-process` edge function). Sent as a bearer
+   * token by Vercel Cron / pg_cron.
+   */
+  CRON_SECRET: z.string().min(1).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -102,6 +118,18 @@ export function isAiGatewayConfigured(
   source: Record<string, string | undefined> = process.env,
 ): boolean {
   return Boolean(source.AI_GATEWAY_API_KEY ?? source.VERCEL_OIDC_TOKEN);
+}
+
+/**
+ * Is the remote MCP server enabled? Needs a signing secret AND not explicitly
+ * switched off. Routes (`/mcp`, `/oauth/*`, `/.well-known/oauth-*`) gate on this
+ * so a deploy without `MCP_JWT_SECRET` simply 404s the MCP surface instead of
+ * exposing half-configured OAuth endpoints.
+ */
+export function isMcpConfigured(
+  source: Record<string, string | undefined> = process.env,
+): boolean {
+  return Boolean(source.MCP_JWT_SECRET) && source.MCP_ENABLED !== "off";
 }
 
 function formatIssues(error: z.ZodError): string {

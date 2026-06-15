@@ -21,6 +21,22 @@ const matchesPrefix = (pathname: string, prefix: string) =>
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // The remote MCP server (packages/mcp) authenticates by OAuth bearer token /
+  // dynamic client registration — NOT the Supabase session cookie — so these
+  // endpoints bypass session refresh entirely (refreshing would rewrite
+  // Set-Cookie on responses MCP clients don't carry cookies for). NOTE:
+  // /oauth/authorize and /oauth/callback are deliberately excluded — they DO
+  // read the Supabase session to identify the signing-in staff user.
+  if (
+    pathname === "/mcp" ||
+    pathname.startsWith("/mcp/") ||
+    pathname.startsWith("/.well-known/oauth-") ||
+    pathname === "/oauth/register" ||
+    pathname === "/oauth/token"
+  ) {
+    return NextResponse.next();
+  }
+
   const { response, user, supabase } = await updateSession(request);
 
   // Payload CMS (/admin UI + /cms-api REST) authenticates from the Supabase session

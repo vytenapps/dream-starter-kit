@@ -5,7 +5,7 @@ Read this first, then `docs/ARCHITECTURE.md` and `docs/ERD.md` — those two are
 **source of truth**. If anything here conflicts with them, they win.
 (`docs/CMS.md` is the per-collection CMS reference — keep it in sync when you
 touch Payload collections; `docs/EXTENSIONS.md` is the extension framework
-reference.)
+reference; `docs/MCP.md` is the remote MCP server reference.)
 
 ## What this is
 
@@ -312,6 +312,51 @@ webhook auto-tags on active subscription; "Free" at signup) and are staff-manage
 Payload **Users** page — which now mirrors **all** Supabase users (see `lib/cms/mirror-user.ts`;
 `profiles.is_staff` still gates admin login). Tags show on the app `/profile` (web + native).
 
+## Remote MCP server (`@acme/mcp`)
+
+The web app hosts a **remote MCP server** so a workspace admin can connect an MCP client
+(Claude, ChatGPT, Cursor, …) and manage CMS content + push notifications in natural
+language. It's **core, not an extension** — MCP clients discover auth at domain-root paths
+(`/.well-known/oauth-*`) and connect to `/mcp`, which extensions (mounted under
+`/api/ext/<slug>`) can't serve. All logic lives in the server-only package **`packages/mcp`
+(`@acme/mcp`)**; thin Next.js route handlers wire it in and **inject** Payload + the
+service-role client, so the package stays framework-agnostic and unit-testable (and never
+enters the Expo bundle). It's **gated by `MCP_JWT_SECRET`** (`isMcpConfigured`/`isMcpEnabled`,
+
+- an `MCP_ENABLED` kill switch) — the whole surface 404s until set.
+
+* **Auth = OAuth 2.1 browser login** (MCP authorization spec). The app is its own OAuth 2.1
+  authorization server: `/.well-known/oauth-protected-resource` + `/.well-known/oauth-authorization-server`
+  discovery, dynamic client registration (`/oauth/register`), and PKCE (S256-only)
+  `/oauth/authorize` + `/oauth/token`. **`/oauth/authorize` reuses the existing Supabase
+  `/sign-in`** (redirects anonymous users there with itself as `redirectTo`) and gates on
+  `profiles.is_staff` — signing in IS the consent, there's no second login UI. Access tokens
+  are stateless **HS256 JWTs** (verified with `MCP_JWT_SECRET`, no DB hit); refresh tokens are
+  opaque, hashed, and **rotate with reuse detection**. OAuth state lives in three **server-only,
+  deny-all-RLS** `public.mcp_oauth_*` tables (see `docs/ERD.md`). `proxy.ts` bypasses session
+  refresh for the bearer/DCR endpoints (`/mcp`, `/.well-known/oauth-`, `/oauth/register`,
+  `/oauth/token`); `/oauth/authorize` flows through normally so it can read the session.
+* **Transport:** the MCP SDK's **Web-standard Streamable HTTP transport, stateless**
+  (`@modelcontextprotocol/sdk` — no `mcp-handler`), so a Next.js `Request` maps straight to a
+  `Response` with no session store. `/mcp` verifies the bearer token, resolves the staff
+  `cms.users` row, and runs **every tool through the Payload Local API as that user with
+  `overrideAccess: false`** — so role-based access control is enforced exactly as in `/admin`.
+  A missing/invalid token returns `401` with the `WWW-Authenticate` header that kicks off the
+  client's OAuth flow (mandatory — don't drop it).
+* **Tools:** `list_collections`, `search_content`, `read_content`, `create_content`,
+  `update_content`, `delete_content` over an **allowlist** of editorial/community/marketing
+  collections (`tools/registry.ts` — auth/PII collections excluded); `notify_create` /
+  `notify_schedule` / `notify_list` / `notify_cancel`; and ChatGPT-compatible **`search` +
+  `fetch`** (ids are `collection:id`). To expose another collection, add it to
+  `MCP_COLLECTIONS`.
+* **Notification delivery:** `notify_schedule` writes a `scheduled` Payload `notification`; the
+  **dispatch worker** (`/api/cms/notifications/dispatch`, `CRON_SECRET`-guarded, Vercel Cron —
+  `apps/nextjs/vercel.json`) sends it. See `docs/CMS.md` → `notifications`.
+* **Don't hardcode the origin** — absolute URLs (issuer/resource/metadata) come from
+  `getSiteUrl()`. Tests: pure logic (pkce/tokens/oauth flow), an in-memory MCP client↔server
+  tool test against a fake Payload, and the dispatch worker all run under `pnpm test` (no
+  backend); the OAuth dance + a live MCP `tools/call` are Playwright/e2e against `next dev`.
+
 ## Theming (shadcn, one source of truth)
 
 The **front end** is driven by one editable shadcn theme; the Payload `/admin` panel
@@ -420,8 +465,9 @@ with the kit, so the cardinal rule is: keep the merge commits, never squash them
 ## Status
 
 The kit is **feature-complete and ready to clone** — and is now an **extension
-host** (docs/EXTENSIONS.md): auth, the CMS registry, theming and the app shell
-are core; dashboard, notifications, reminders, chat and billing ship as
+host** (docs/EXTENSIONS.md): auth, the CMS registry, theming, the app shell, and
+the **remote MCP server** (`@acme/mcp`, docs/MCP.md) are core; dashboard,
+notifications, reminders, chat and billing ship as
 pre-installed extensions under `extensions/` with the full lifecycle
 (create/add/update/remove, CMS-driven menus, per-extension settings screens,
 the /admin/extensions panel + extension-ops workflow). The test/CI suite is
