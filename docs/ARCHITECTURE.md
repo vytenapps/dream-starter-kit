@@ -30,19 +30,20 @@ Two ideas make it maintainable:
 
 ## 2. Stack at a glance
 
-| Layer | Choice |
-|---|---|
-| Monorepo / build | Turborepo + pnpm (one catalog pins every version) |
-| Web app | Next.js (App Router) + shadcn/ui + Tailwind CSS |
-| Mobile app | Expo + Expo Router + react-native-reusables + NativeWind |
-| Backend | Supabase — Postgres, Auth, Storage, Edge Functions (Deno) |
-| Authorization | Postgres **Row-Level Security** on every app table |
-| Data layer | `@supabase/supabase-js` typed client + react-query hooks |
-| Content / CMS | **Payload CMS v3** (web/server only) — own `cms` schema, admin at `/admin`, REST at `/cms-api` |
-| Payments | Stripe (web subscriptions) + a webhook edge function |
-| AI | Vercel AI SDK v6 through the **Vercel AI Gateway** (Claude default) |
-| Mobile build / submit / push | Expo EAS + Expo Push |
-| Web hosting | Vercel |
+| Layer                        | Choice                                                                                         |
+| ---------------------------- | ---------------------------------------------------------------------------------------------- |
+| Monorepo / build             | Turborepo + pnpm (one catalog pins every version)                                              |
+| Web app                      | Next.js (App Router) + shadcn/ui + Tailwind CSS                                                |
+| Mobile app                   | Expo + Expo Router + react-native-reusables + NativeWind                                       |
+| Backend                      | Supabase — Postgres, Auth, Storage, Edge Functions (Deno)                                      |
+| Authorization                | Postgres **Row-Level Security** on every app table                                             |
+| Data layer                   | `@supabase/supabase-js` typed client + react-query hooks                                       |
+| Content / CMS                | **Payload CMS v3** (web/server only) — own `cms` schema, admin at `/admin`, REST at `/cms-api` |
+| Payments                     | Stripe (web subscriptions) + a webhook edge function                                           |
+| AI                           | Vercel AI SDK v6 through the **Vercel AI Gateway** (Claude default)                            |
+| Remote MCP                   | `@acme/mcp` server at `/mcp` — OAuth 2.1 (Supabase login), staff-only                          |
+| Mobile build / submit / push | Expo EAS + Expo Push                                                                           |
+| Web hosting                  | Vercel                                                                                         |
 
 ---
 
@@ -55,6 +56,7 @@ dream-starter-kit/
 │  │  └─ src/
 │  │     ├─ app/(frontend)/(public)/   # public CMS pages (RSC via Payload Local API)
 │  │     ├─ app/(payload)/             # Payload admin (/admin) + REST (/cms-api)
+│  │     ├─ app/(mcp)/ + app/.well-known/  # remote MCP server (/mcp) + OAuth (/oauth/*, discovery)
 │  │     ├─ payload/                   # Payload collections, access-control, seed
 │  │     └─ payload.config.ts          # Payload config (collections, db, S3 storage)
 │  └─ expo/                  # mobile — Expo Router → iOS + Android (thin entry point)
@@ -62,6 +64,7 @@ dream-starter-kit/
 │  ├─ api/                   # Supabase client, generated DB types, session provider
 │  ├─ app/                   # shared features: zod validators, react-query hooks, pure logic
 │  ├─ cms/                   # Payload content TYPES ONLY (generated; safe to import on mobile)
+│  ├─ mcp/                   # remote MCP server: OAuth 2.1 + CMS/notification tools + dispatch (server-only)
 │  ├─ ui/                    # shared UI tokens/primitives + theme/toast
 │  └─ config/                # zod env schema + constants (DEFAULT_AI_MODEL, PLANS, rate limit)
 ├─ supabase/
@@ -151,6 +154,7 @@ orgs, billing, engagement, files/storage, chat, CMS staff flag); your features
 extend it with **new** migrations (append-only — never edit a shipped one).
 
 Three edge functions run server-side with the service-role key:
+
 - **`billing-stripe-webhook`** — verifies Stripe signatures and syncs billing state.
 - **`delete-account`** — verifies the caller, then deletes their auth user
   (the database cascades clean-up) and cancels any live Stripe subscription.
@@ -165,10 +169,10 @@ This is the part a founder most needs to get right, so it's enforced structurall
   table in the `public` schema has an owner (`user_id`, or reachable through
   `memberships`) and policies that scope rows to the signed-in user (`auth.uid()`).
   A bug in app code cannot leak another user's data. There's an automated test
-  (`pnpm test:rls`) that proves one user can't read or write another's rows. *(The
+  (`pnpm test:rls`) that proves one user can't read or write another's rows. _(The
   one deliberate exception is Payload's `cms` schema, which is governed by Payload's
-  own access-control instead — see [§4.10](#410-content--payload-cms).)*
-- **The service-role key is server-only.** It bypasses RLS and appears *only* in
+  own access-control instead — see [§4.10](#410-content--payload-cms).)_
+- **The service-role key is server-only.** It bypasses RLS and appears _only_ in
   edge functions / server code — never in the web client or the mobile bundle.
 - **Secrets go through a zod env schema.** Every variable is validated on boot
   (`packages/config` + each app's `env.ts`); the app fails loudly if one is
@@ -205,7 +209,7 @@ guest checkout that provisions the account post-payment) + the customer portal;
 
 The mobile apps stay free to download and unlock premium by reading the
 `subscriptions` table (RLS read-own) — so **no in-app-purchase tooling is
-needed**. Selling digital goods *inside* the iOS/Android apps is out of scope
+needed**. Selling digital goods _inside_ the iOS/Android apps is out of scope
 (Apple/Google require their own billing); add that yourself only if you need it.
 
 ### 4.8 AI assistant — Vercel AI SDK via the AI Gateway
@@ -279,7 +283,7 @@ How the two backends stay separate:
   `/api/push/*`). Collections live in `apps/nextjs/src/payload/collections/`; the
   config is `apps/nextjs/src/payload.config.ts`.
 - **Its own `cms` schema, outside RLS.** Payload owns a dedicated **`cms`** Postgres
-  schema *inside the same Supabase database*, but **outside Supabase RLS** by design
+  schema _inside the same Supabase database_, but **outside Supabase RLS** by design
   — access is enforced by Payload's own role-based access-control (e.g. published-or-staff, owner-scoped rows). It
   connects as a least-privilege role **`payload_cms`** (USAGE+CREATE on `cms` only;
   nothing on `public`/`auth`) — **not** the service-role key, and server-only. The
@@ -361,16 +365,43 @@ provisioned DB short-circuits after one cheap inspection), skipped during `next 
 and when no admin URL is set, and it **never throws** — failures log `[db-bootstrap]`
 and the app degrades to the manual flow. Opt out with `DB_BOOTSTRAP=off`.
 
+### 4.12 Remote MCP server — `@acme/mcp`
+
+The web app hosts a **remote Model Context Protocol server** so a workspace admin can
+connect any MCP client (Claude, ChatGPT, Cursor, …) and manage CMS content + push
+notifications in natural language. Full reference: **[`docs/MCP.md`](./MCP.md)**.
+
+- **Core, not an extension.** MCP clients discover auth at domain-root paths
+  (`/.well-known/oauth-*`) and connect to `/mcp`, which extensions (mounted under
+  `/api/ext/<slug>`) can't serve. Logic lives in the server-only package
+  **`packages/mcp`**; thin Next.js route handlers inject Payload + the service-role
+  client, so the package stays framework-agnostic, unit-testable, and out of the
+  Expo bundle. Gated by `MCP_JWT_SECRET` — the surface 404s until set.
+- **Auth = OAuth 2.1 browser login** (MCP authorization spec): the app is its own
+  authorization server (discovery metadata, dynamic client registration, PKCE
+  S256). `/oauth/authorize` **reuses the existing Supabase `/sign-in`** and gates on
+  `profiles.is_staff` — signing in is the consent. Access tokens are stateless HS256
+  JWTs; refresh tokens rotate with reuse detection. State lives in three server-only,
+  **deny-all-RLS** `public.mcp_oauth_*` tables (see [ERD](./ERD.md)).
+- **Transport + authz.** The MCP SDK's Web-standard **Streamable HTTP** transport
+  (stateless) maps a `Request` to a `Response`. `/mcp` verifies the bearer token and
+  runs **every tool through the Payload Local API as the staff user with
+  `overrideAccess: false`** — RBAC is enforced exactly as in `/admin`.
+- **Tools:** content CRUD over an allowlist of collections, push-notification
+  authoring/scheduling, and ChatGPT-compatible `search`/`fetch`. Scheduled
+  notifications are delivered by the dispatch worker
+  (`/api/cms/notifications/dispatch`, Vercel Cron).
+
 ---
 
 ## 5. External services (the signups)
 
-| Service | Used for | Free to start | Required |
-|---|---|---|---|
-| Supabase | Database, Auth, Storage, Edge Functions | Yes | Yes |
-| Vercel | Web hosting + the AI Gateway | Yes (Hobby) | Yes |
-| Expo (EAS) | iOS/Android builds, submit, push | Yes | For mobile builds |
-| Stripe | Web subscriptions | Yes (per-txn) | For monetization |
+| Service    | Used for                                | Free to start | Required          |
+| ---------- | --------------------------------------- | ------------- | ----------------- |
+| Supabase   | Database, Auth, Storage, Edge Functions | Yes           | Yes               |
+| Vercel     | Web hosting + the AI Gateway            | Yes (Hobby)   | Yes               |
+| Expo (EAS) | iOS/Android builds, submit, push        | Yes           | For mobile builds |
+| Stripe     | Web subscriptions                       | Yes (per-txn) | For monetization  |
 
 Core path is **four signups** + GitHub. AI runs through the Vercel AI Gateway
 under your Vercel account (billed pass-through at provider rates) — no separate
@@ -413,7 +444,7 @@ attributions are in [`NOTICE`](../NOTICE):
   it fails on strong copyleft (GPL/AGPL/SSPL) and allows permissive plus weak,
   file-level copyleft (LGPL/MPL) that is safe to depend on.
 
-*(Engineering guidance, not legal advice — have counsel review anything load-bearing.)*
+_(Engineering guidance, not legal advice — have counsel review anything load-bearing.)_
 
 ---
 
@@ -422,13 +453,13 @@ attributions are in [`NOTICE`](../NOTICE):
 Versions are centralized in the pnpm **catalog** (`pnpm-workspace.yaml`) so a bump
 is one line and web/native never drift. Update channels:
 
-| Component | How to update |
-|---|---|
-| npm packages (AI SDK, Stripe, Supabase, Next.js, React Query, Tailwind/NativeWind, …) | `pnpm update` — Renovate is preconfigured in `.github/renovate.json` to open update PRs |
-| Payload CMS (`payload`, `@payloadcms/*`, `sharp`) | catalog-pinned like everything else — `pnpm update` / Renovate. No Payload source is vendored. Run `pnpm cms:gen-types` after changing collections |
-| Expo SDK + `expo-*` + React Native | `expo install --fix` + the Expo SDK upgrade guide (let Expo own native-compatible versions) |
-| shadcn/ui & react-native-reusables | re-run the registry add (`pnpm ui-add <component>`), diff, re-apply your edits |
-| create-t3-turbo scaffold | cherry-pick discrete fixes only (not a tracked dependency) |
+| Component                                                                             | How to update                                                                                                                                      |
+| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| npm packages (AI SDK, Stripe, Supabase, Next.js, React Query, Tailwind/NativeWind, …) | `pnpm update` — Renovate is preconfigured in `.github/renovate.json` to open update PRs                                                            |
+| Payload CMS (`payload`, `@payloadcms/*`, `sharp`)                                     | catalog-pinned like everything else — `pnpm update` / Renovate. No Payload source is vendored. Run `pnpm cms:gen-types` after changing collections |
+| Expo SDK + `expo-*` + React Native                                                    | `expo install --fix` + the Expo SDK upgrade guide (let Expo own native-compatible versions)                                                        |
+| shadcn/ui & react-native-reusables                                                    | re-run the registry add (`pnpm ui-add <component>`), diff, re-apply your edits                                                                     |
+| create-t3-turbo scaffold                                                              | cherry-pick discrete fixes only (not a tracked dependency)                                                                                         |
 
 ---
 

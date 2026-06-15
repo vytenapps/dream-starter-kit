@@ -5,7 +5,7 @@ Read this first, then `docs/ARCHITECTURE.md` and `docs/ERD.md` — those two are
 **source of truth**. If anything here conflicts with them, they win.
 (`docs/CMS.md` is the per-collection CMS reference — keep it in sync when you
 touch Payload collections; `docs/EXTENSIONS.md` is the extension framework
-reference.)
+reference; `docs/MCP.md` is the remote MCP server reference.)
 
 ## What this is
 
@@ -465,8 +465,9 @@ with the kit, so the cardinal rule is: keep the merge commits, never squash them
 ## Status
 
 The kit is **feature-complete and ready to clone** — and is now an **extension
-host** (docs/EXTENSIONS.md): auth, the CMS registry, theming and the app shell
-are core; dashboard, notifications, reminders, chat and billing ship as
+host** (docs/EXTENSIONS.md): auth, the CMS registry, theming, the app shell, and
+the **remote MCP server** (`@acme/mcp`, docs/MCP.md) are core; dashboard,
+notifications, reminders, chat and billing ship as
 pre-installed extensions under `extensions/` with the full lifecycle
 (create/add/update/remove, CMS-driven menus, per-extension settings screens,
 the /admin/extensions panel + extension-ops workflow). The test/CI suite is
