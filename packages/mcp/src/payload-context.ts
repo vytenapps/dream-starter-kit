@@ -151,3 +151,20 @@ export async function deleteDoc(
   });
   return doc;
 }
+
+/**
+ * The sanitized field list for a collection (from the running Payload config),
+ * used by write-verification to know which keys are real, writable data fields.
+ * Returns an empty array if the collection isn't registered.
+ */
+export function getCollectionFields(
+  ctx: McpToolContext,
+  collection: string,
+): unknown[] {
+  const collections = (
+    ctx.payload as unknown as {
+      collections?: Record<string, { config?: { fields?: unknown[] } }>;
+    }
+  ).collections;
+  return collections?.[collection]?.config?.fields ?? [];
+}

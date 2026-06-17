@@ -8,10 +8,66 @@ import {
   deleteDoc,
   findDoc,
   findDocs,
+  getCollectionFields,
   updateDoc,
 } from "../payload-context";
+import type { ToolResult } from "./shared";
+import type { DroppedField } from "./verify";
 import { COLLECTION_SLUGS, docTitle, getCollectionInfo } from "./registry";
 import { errorResult, jsonResult, runTool } from "./shared";
+import { collectFieldMeta, detectDroppedFields } from "./verify";
+
+/**
+ * Re-read a just-written document and confirm every field the caller supplied
+ * actually persisted. Returns null when the write fully landed; otherwise an
+ * `isError` result naming the dropped fields — so a partial write is never
+ * reported as a success (the Payload write echo is never trusted as proof; see
+ * verify.ts). `requested` is the caller's `data`; `id` is the document id.
+ */
+async function verifyWrite(
+  ctx: McpToolContext,
+  slug: string,
+  id: string | number,
+  requested: Record<string, unknown>,
+  op: "create" | "update",
+): Promise<{ doc: Record<string, unknown> | null; error: ToolResult | null }> {
+  const fresh = await findDoc(ctx, slug, String(id), 0);
+  if (!fresh) return { doc: null, error: null };
+
+  const dropped = detectDroppedFields({
+    requested,
+    persisted: fresh,
+    fields: collectFieldMeta(getCollectionFields(ctx, slug)),
+  });
+  if (dropped.length === 0) return { doc: fresh, error: null };
+
+  return { doc: fresh, error: droppedResult(op, slug, id, dropped, fresh) };
+}
+
+function droppedResult(
+  op: "create" | "update",
+  slug: string,
+  id: string | number,
+  dropped: DroppedField[],
+  doc: Record<string, unknown>,
+): ToolResult {
+  const verb = op === "create" ? "Created" : "Updated";
+  const lines = dropped.map((d) => `  - ${d.field}: ${d.reason}`).join("\n");
+  const message =
+    `${verb} ${slug}/${id}, but ${dropped.length} supplied field(s) were NOT ` +
+    `persisted:\n${lines}\n\nReported as an error so this is not mistaken for ` +
+    `a success. The document was saved with the fields above ignored — fix ` +
+    `them and retry. Verify with read_content (never the write echo).`;
+  return {
+    content: [
+      {
+        type: "text",
+        text: `${message}\n\n${JSON.stringify({ dropped, doc }, null, 2)}`,
+      },
+    ],
+    isError: true,
+  };
+}
 
 /**
  * The generic CMS content tools: search / read / create / update / delete
@@ -95,7 +151,10 @@ export function registerContentTools(
       title: "Create content",
       description:
         "Create a document in a collection. `data` is the collection's fields " +
-        "as JSON; Payload validates it and rejects fields you can't set.",
+        "as JSON. The write is re-read and verified: if any field you supplied " +
+        "was not stored (access-restricted, read-only/derived, or invalid — " +
+        "e.g. a `blocks` entry missing its `blockType`), the call returns an " +
+        "error naming those fields rather than a false success.",
       inputSchema: {
         collection,
         data: z.record(z.string(), z.unknown()).describe("Field values."),
@@ -104,7 +163,15 @@ export function registerContentTools(
     ({ collection: slug, data }) =>
       runTool(async () => {
         const doc = await createDoc(ctx, slug, data);
-        return jsonResult({ created: true, id: doc.id, doc });
+        const { doc: fresh, error } = await verifyWrite(
+          ctx,
+          slug,
+          doc.id as string | number,
+          data,
+          "create",
+        );
+        if (error) return error;
+        return jsonResult({ created: true, id: doc.id, doc: fresh ?? doc });
       }),
   );
 
@@ -113,7 +180,11 @@ export function registerContentTools(
     {
       title: "Update content",
       description:
-        "Update a document by id. `data` contains only the fields to change.",
+        "Update a document by id. `data` contains only the fields to change. " +
+        "The write is re-read and verified: if any field you supplied was not " +
+        "stored (access-restricted, read-only/derived, or invalid — e.g. a " +
+        "`blocks` entry missing its `blockType`), the call returns an error " +
+        "naming those fields rather than a false success.",
       inputSchema: {
         collection,
         id: z.string(),
@@ -123,7 +194,15 @@ export function registerContentTools(
     ({ collection: slug, id, data }) =>
       runTool(async () => {
         const doc = await updateDoc(ctx, slug, id, data);
-        return jsonResult({ updated: true, id: doc.id, doc });
+        const { doc: fresh, error } = await verifyWrite(
+          ctx,
+          slug,
+          doc.id as string | number,
+          data,
+          "update",
+        );
+        if (error) return error;
+        return jsonResult({ updated: true, id: doc.id, doc: fresh ?? doc });
       }),
   );
 

@@ -30,6 +30,18 @@ function isError(res: unknown): boolean {
 
 function makeFakePayload() {
   return {
+    // Minimal collection config so write-verification can flatten fields.
+    collections: {
+      posts: {
+        config: {
+          fields: [
+            { name: "title", type: "text" },
+            { name: "slug", type: "text" },
+            { name: "planMd", type: "json", admin: { readOnly: true } },
+          ],
+        },
+      },
+    } as Record<string, unknown>,
     find: vi.fn(() =>
       Promise.resolve({
         docs: [
@@ -45,8 +57,9 @@ function makeFakePayload() {
         totalPages: 1,
       }),
     ),
-    findByID: vi.fn(() =>
-      Promise.resolve({ id: "1", title: "Hello world", slug: "hello" }),
+    findByID: vi.fn(
+      (): Promise<Record<string, unknown>> =>
+        Promise.resolve({ id: "1", title: "Hello world", slug: "hello" }),
     ),
     create: vi.fn((args: { data: Record<string, unknown> }) =>
       Promise.resolve({ id: "new", ...args.data }),
@@ -152,6 +165,47 @@ describe("mcp tool layer", () => {
         data: dataMatch,
       }),
     );
+  });
+
+  it("update_content errors (no false success) when a field is silently dropped", async () => {
+    const client = await connectClient();
+    // Payload's write echo claims planMd was saved, but the authoritative
+    // re-read (findByID) shows it stored as null — the field was stripped.
+    fake.findByID.mockResolvedValueOnce({
+      id: "1",
+      title: "Hello world",
+      slug: "hello",
+      planMd: null,
+    });
+    const res: unknown = await client.callTool({
+      name: "update_content",
+      arguments: {
+        collection: "posts",
+        id: "1",
+        data: { planMd: { overview: "should not persist" } },
+      },
+    });
+    expect(isError(res)).toBe(true);
+    const text = textOf(res);
+    expect(text).toContain("planMd");
+    expect(text).not.toContain('"updated": true');
+    // The doc was still written (other fields), but it's flagged, not "updated:true".
+    expect(fake.update).toHaveBeenCalled();
+  });
+
+  it("update_content reports success when all supplied fields persist", async () => {
+    const client = await connectClient();
+    fake.findByID.mockResolvedValueOnce({
+      id: "1",
+      title: "Renamed",
+      slug: "hello",
+    });
+    const res: unknown = await client.callTool({
+      name: "update_content",
+      arguments: { collection: "posts", id: "1", data: { title: "Renamed" } },
+    });
+    expect(isError(res)).toBe(false);
+    expect(textOf(res)).toContain('"updated": true');
   });
 
   it("fetch parses a collection:id and returns a document", async () => {
