@@ -11,7 +11,9 @@ import {
   pendingMigrations,
   pgConnectionOptions,
   resolveAdminDbUrl,
+  resolveRuntimeDbUrl,
   summarizeDbError,
+  transactionPoolerUrl,
 } from "./bootstrap-core";
 
 const mig = (version: string, name = `m${version}`): SqlMigration => ({
@@ -108,6 +110,69 @@ describe("resolveAdminDbUrl", () => {
     ).toBe(
       "postgres://postgres.ref:pw@aws-1-eu-west-2.pooler.supabase.com:5432/postgres",
     );
+  });
+});
+
+describe("transactionPoolerUrl", () => {
+  it("returns a :6543 Supavisor pooler URL byte-for-byte", () => {
+    const url =
+      "postgres://postgres.ref:pw@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x";
+    expect(transactionPoolerUrl(url)).toBe(url);
+  });
+
+  it("rejects anything that isn't a :6543 pooler host", () => {
+    // Session pooler (5432) — not the transaction one.
+    expect(
+      transactionPoolerUrl(
+        "postgres://postgres.ref:pw@aws-0-us-east-1.pooler.supabase.com:5432/postgres",
+      ),
+    ).toBeUndefined();
+    // Direct/custom host on 6543 — can't assume it multiplexes.
+    expect(
+      transactionPoolerUrl(
+        "postgresql://postgres:pw@db.ref.supabase.co:6543/postgres",
+      ),
+    ).toBeUndefined();
+    expect(transactionPoolerUrl(undefined)).toBeUndefined();
+    expect(transactionPoolerUrl("not a url")).toBeUndefined();
+  });
+});
+
+describe("resolveRuntimeDbUrl", () => {
+  it("prefers the TRANSACTION pooler (:6543) for the per-request pool", () => {
+    // The runtime query pool wants transaction mode so a cold-start burst can't
+    // exhaust the session-mode client cap (EMAXCONNSESSION). The bootstrap, by
+    // contrast, rewrites the SAME POSTGRES_URL down to the session pooler (5432).
+    const env = {
+      POSTGRES_URL:
+        "postgres://postgres.ref:pw@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require",
+      POSTGRES_URL_NON_POOLING:
+        "postgresql://postgres:pw@db.ref.supabase.co:5432/postgres",
+    };
+    expect(resolveRuntimeDbUrl(env)).toBe(
+      "postgres://postgres.ref:pw@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require",
+    );
+    // Same env, the bootstrap path still resolves the SESSION pooler (5432).
+    expect(resolveAdminDbUrl(env)).toBe(
+      "postgres://postgres.ref:pw@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require",
+    );
+  });
+
+  it("falls back to the session/direct admin URL when no :6543 pooler exists", () => {
+    // Local dev / non-integration: no transaction pooler, so the runtime pool
+    // uses the same session/direct URL the bootstrap does (behavior unchanged).
+    expect(
+      resolveRuntimeDbUrl({
+        SUPABASE_DB_URL:
+          "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+      }),
+    ).toBe("postgresql://postgres:postgres@127.0.0.1:54322/postgres");
+    expect(
+      resolveRuntimeDbUrl({
+        POSTGRES_URL_NON_POOLING: "postgresql://direct",
+      }),
+    ).toBe("postgresql://direct");
+    expect(resolveRuntimeDbUrl({})).toBeUndefined();
   });
 });
 

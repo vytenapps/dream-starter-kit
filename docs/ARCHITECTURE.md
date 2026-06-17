@@ -474,8 +474,18 @@ is one line and web/native never drift. Update channels:
 - **Payload + Next 16 bundler.** Payload v3 required bumping `next` to `^16.2.6`. If
   the admin fails to build/run under Next 16's default Turbopack, fall back to Webpack
   (`next dev --webpack` / `next build --webpack`).
-- **Payload DB connection.** Point `PAYLOAD_DATABASE_URL` at the **direct/session**
-  Postgres connection (not the transaction pooler) — Payload's migrations and prepared
-  statements need a session-mode connection.
+- **Payload DB connection (two pooler modes).** The kit splits the CMS Postgres
+  connection in two. The bootstrap / migrations / advisory-lock / DDL paths need
+  **session mode** (5432 / direct): a `pg_advisory_lock` must outlive its transaction.
+  The **per-request Payload query pool** instead uses **transaction mode** (Supavisor,
+  6543) when the Vercel<->Supabase integration provides it (`POSTGRES_URL`): a fresh
+  deploy cold-starts many serverless instances at once, and session mode caps clients at
+  `pool_size` (~15) per role, so the burst blew the cap with `EMAXCONNSESSION` until the
+  pool was multiplexed. Both are derived automatically (see `resolveRuntimeDbUrl` /
+  `resolveCmsCredentials`). Transaction mode is safe here because `pg` uses unnamed
+  prepared statements and `payload_cms`'s `search_path = cms` is set at the **role**
+  level (not just per-connection). An **explicit `PAYLOAD_DATABASE_URL` still wins for
+  both** — keep it **session/direct** (5432), since it also drives the lock/DDL paths.
+  Operationally you can also just raise the pooler `pool_size` in the Supabase dashboard.
 - **Two auth systems.** Payload `users` (content editors at `/admin`) are **not**
   Supabase users (app users). Different tables, different sessions — don't conflate them.

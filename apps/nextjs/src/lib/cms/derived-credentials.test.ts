@@ -91,14 +91,50 @@ describe("resolveCmsCredentials", () => {
     expect(creds.derived).toEqual({ secret: true, databaseUrl: true });
   });
 
-  it("explicit env always wins over derivation", () => {
+  it("derives a TRANSACTION-mode runtime pool URL (:6543) while the lock/DDL URL stays session-mode (:5432)", () => {
+    // The Vercel<->Supabase integration injects POSTGRES_URL as the transaction
+    // pooler (6543); the runtime Payload query pool should use it so a cold-start
+    // burst can't exhaust the session-mode client cap (EMAXCONNSESSION). The
+    // bootstrap/advisory-lock/DDL connection (`databaseUrl`) stays on the session
+    // pooler (5432). Both carry the same derived payload_cms credentials.
+    const creds = resolveCmsCredentials({
+      SUPABASE_SERVICE_ROLE_KEY: SEED,
+      POSTGRES_URL:
+        "postgres://postgres.ref:pw@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require",
+    });
+    const password = derivePayloadPassword(SEED);
+    // runtime → transaction pooler (6543)
+    expect(creds.runtimeDatabaseUrl).toBe(
+      `postgres://payload_cms.ref:${password}@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&options=-c%20search_path%3Dcms`,
+    );
+    // session/DDL → session pooler (5432), derived from the same POSTGRES_URL
+    expect(creds.databaseUrl).toBe(
+      `postgres://payload_cms.ref:${password}@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require&options=-c%20search_path%3Dcms`,
+    );
+  });
+
+  it("falls back to the session/direct URL for the runtime pool when no :6543 pooler exists", () => {
+    // Only the session pooler is available (no transaction POSTGRES_URL) — the
+    // runtime pool URL matches the session/DDL URL, i.e. behavior is unchanged.
+    const creds = resolveCmsCredentials(INTEGRATION_ENV);
+    expect(creds.runtimeDatabaseUrl).toBe(creds.databaseUrl);
+    expect(creds.runtimeDatabaseUrl).toContain(":5432/");
+  });
+
+  it("explicit env always wins over derivation (for both connections)", () => {
     const creds = resolveCmsCredentials({
       ...INTEGRATION_ENV,
+      // even with a transaction pooler present, an explicit URL pins both
+      POSTGRES_URL:
+        "postgres://postgres.ref:pw@aws-0-us-east-1.pooler.supabase.com:6543/postgres",
       PAYLOAD_SECRET: "explicit-secret",
       PAYLOAD_DATABASE_URL: "postgresql://payload_cms:explicit@host/db",
     });
     expect(creds.secret).toBe("explicit-secret");
     expect(creds.databaseUrl).toBe("postgresql://payload_cms:explicit@host/db");
+    expect(creds.runtimeDatabaseUrl).toBe(
+      "postgresql://payload_cms:explicit@host/db",
+    );
     expect(creds.derived).toEqual({ secret: false, databaseUrl: false });
   });
 
@@ -120,6 +156,7 @@ describe("resolveCmsCredentials", () => {
     ).toEqual({
       secret: undefined,
       databaseUrl: undefined,
+      runtimeDatabaseUrl: undefined,
       derived: { secret: false, databaseUrl: false },
     });
   });
@@ -128,6 +165,7 @@ describe("resolveCmsCredentials", () => {
     const creds = resolveCmsCredentials({ SUPABASE_SERVICE_ROLE_KEY: SEED });
     expect(creds.secret).toBeDefined();
     expect(creds.databaseUrl).toBeUndefined();
+    expect(creds.runtimeDatabaseUrl).toBeUndefined();
     expect(creds.derived).toEqual({ secret: true, databaseUrl: false });
   });
 
