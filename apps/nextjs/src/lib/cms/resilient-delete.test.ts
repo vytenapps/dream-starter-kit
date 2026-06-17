@@ -19,9 +19,9 @@ describe("isBulkCollectionDelete", () => {
   });
 
   it("ignores a by-id delete (two segments)", () => {
-    expect(
-      isBulkCollectionDelete(["idea-categories", "42"], params("")),
-    ).toBe(false);
+    expect(isBulkCollectionDelete(["idea-categories", "42"], params(""))).toBe(
+      false,
+    );
   });
 
   it("ignores a bulk delete with no where (Payload's own 400 path)", () => {

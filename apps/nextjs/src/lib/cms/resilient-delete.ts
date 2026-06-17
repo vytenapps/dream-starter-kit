@@ -75,7 +75,10 @@ export function isBulkCollectionDelete(
 }
 
 /** Resolve a Payload label for the request's language (mirrors getTranslation). */
-function resolveLabel(label: StaticLabel | undefined, language: string): string {
+function resolveLabel(
+  label: StaticLabel | undefined,
+  language: string,
+): string {
   if (typeof label === "string") return label;
   if (label && typeof label === "object") {
     return label[language] ?? Object.values(label)[0] ?? "";
@@ -117,10 +120,16 @@ export function formatBulkDeleteResponse(
   const total = result.docs.length + errors.length;
   const message = t("error:unableToDeleteCount", {
     count: errors.length,
-    label: resolveLabel(total === 1 ? labels.singular : labels.plural, language),
+    label: resolveLabel(
+      total === 1 ? labels.singular : labels.plural,
+      language,
+    ),
     total,
   });
-  return Response.json({ ...result, errors, message }, { headers, status: 400 });
+  return Response.json(
+    { ...result, errors, message },
+    { headers, status: 400 },
+  );
 }
 
 /**
