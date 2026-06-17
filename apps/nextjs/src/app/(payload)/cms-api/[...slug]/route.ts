@@ -1,5 +1,8 @@
 /* THIS FILE WAS GENERATED AUTOMATICALLY BY PAYLOAD. */
 /* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+/* KIT CUSTOMIZATION: DELETE is wrapped so collection BULK deletes don't fail   */
+/* wholesale when one row is blocked — see ~/lib/cms/resilient-delete.ts. If    */
+/* Payload regenerates this file, re-apply the DELETE wrap below.               */
 import config from "@payload-config";
 import {
   REST_DELETE,
@@ -10,9 +13,11 @@ import {
   REST_PUT,
 } from "@payloadcms/next/routes";
 
+import { resilientCmsDelete } from "~/lib/cms/resilient-delete";
+
 export const GET = REST_GET(config);
 export const POST = REST_POST(config);
-export const DELETE = REST_DELETE(config);
+export const DELETE = resilientCmsDelete(config, REST_DELETE(config));
 export const PATCH = REST_PATCH(config);
 export const PUT = REST_PUT(config);
 export const OPTIONS = REST_OPTIONS(config);

@@ -8,6 +8,14 @@ see the recipe in [`CLAUDE.md`](../CLAUDE.md#how-to-add-a-payload-content-type).
 
 - **Admin UI:** `/admin` · **REST API:** `/cms-api` · **Local API:** `getPayload()`
   (server-only, used by public RSC pages)
+- **Bulk delete is resilient:** Payload's stock `DELETE /cms-api/<collection>`
+  runs every selected row's delete in ONE transaction, so a single blocked row
+  (a foreign-key reference, a throwing hook) aborts the batch and the admin
+  reports "Unable to delete N out of N" with nothing removed. The kit wraps that
+  one route (`lib/cms/resilient-delete.ts`, applied in the generated
+  `cms-api/[...slug]/route.ts`) to delete transaction-free, so the deletable
+  rows are removed and only the genuinely-blocked ones error. Global
+  transactions stay on for every other write
 - **Storage:** all collections live in the dedicated **`cms` Postgres schema**
   (least-privilege `payload_cms` role); media binaries go to the public-read
   `cms-media` Supabase Storage bucket via the S3 adapter
