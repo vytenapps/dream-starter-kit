@@ -1,15 +1,9 @@
 import type { CollectionConfig } from "payload";
 
-import { generatePreviewPath } from "../../lib/preview";
+import { generatePreviewPath, previewBreakpoints } from "../../lib/preview";
 import { isStaff, publishedOrStaff } from "../access";
 import { pageBlocks } from "../blocks";
 import { slugField } from "../fields/slug";
-
-const previewBreakpoints = [
-  { label: "Mobile", name: "mobile", width: 375, height: 667 },
-  { label: "Tablet", name: "tablet", width: 768, height: 1024 },
-  { label: "Desktop", name: "desktop", width: 1440, height: 900 },
-];
 
 /**
  * Marketing/legal pages, addressed by slug (home, about, contact, terms,
