@@ -16,6 +16,13 @@ see the recipe in [`CLAUDE.md`](../CLAUDE.md#how-to-add-a-payload-content-type).
   `cms-api/[...slug]/route.ts`) to delete transaction-free, so the deletable
   rows are removed and only the genuinely-blocked ones error. Global
   transactions stay on for every other write
+- **Document locking is disabled** CMS-wide (`lib/cms/no-document-lock.ts`,
+  mapped over every collection + global in `payload.config.ts`). Payload's
+  lock check (`checkDocumentLockStatus`) runs a **req-less** query on every
+  save/delete, which checks out a second pool connection inside the operation's
+  transaction — on the small serverless pool that starves and the save 500s
+  ("Failed query: … payload_locked_documents …"). The trade-off is no
+  "another user is editing this document" warning
 - **Storage:** all collections live in the dedicated **`cms` Postgres schema**
   (least-privilege `payload_cms` role); media binaries go to the public-read
   `cms-media` Supabase Storage bucket via the S3 adapter

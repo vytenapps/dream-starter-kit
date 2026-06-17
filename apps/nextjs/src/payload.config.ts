@@ -16,6 +16,7 @@ import {
   extPlugins,
 } from "./ext/registry.payload.generated";
 import { resolveCmsCredentials } from "./lib/cms/derived-credentials";
+import { noDocumentLock } from "./lib/cms/no-document-lock";
 import { pgConnectionOptions } from "./lib/db/bootstrap-core";
 import { isStaff } from "./payload/access";
 import { Audio } from "./payload/collections/Audio";
@@ -166,14 +167,14 @@ export default buildConfig({
     NavItems,
     // Installed extensions' collections (generated registry — `pnpm ext sync`)
     ...extCollections,
-  ],
+  ].map(noDocumentLock),
   globals: [
     SiteSettings,
     ThemeSettings,
     ProfileFields,
     // Installed extensions' globals incl. their settings screens (§1.7)
     ...extGlobals,
-  ],
+  ].map(noDocumentLock),
   // One shared, cross-collection folder tree ("Browse by Folder") for the
   // collections that enable `folders: true`.
   folders: { browseByFolder: true },
