@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 
-import { DetailLayout } from "~/components/content/detail-layout";
-import { CmsRichText } from "~/components/rich-text";
+import { PostDetail } from "~/components/content/post-detail";
+import { PostLivePreview } from "~/components/content/post-live-preview";
 import { getPost } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
@@ -29,22 +30,9 @@ export default async function PostPage({
   const post = await getPost(slug);
   if (!post) notFound();
 
-  const image =
-    typeof post.featuredImage === "object" && post.featuredImage?.url
-      ? { url: post.featuredImage.url, alt: post.featuredImage.alt }
-      : null;
-
-  return (
-    <DetailLayout
-      title={post.title}
-      image={image}
-      meta={
-        post.publishedAt
-          ? new Date(post.publishedAt).toLocaleDateString()
-          : undefined
-      }
-    >
-      <CmsRichText data={post.body} />
-    </DetailLayout>
-  );
+  // In draft mode (Payload Live Preview) hand off to the client wrapper so edits
+  // stream into the admin iframe live; otherwise render server-side.
+  const { isEnabled } = await draftMode();
+  if (isEnabled) return <PostLivePreview initialData={post} />;
+  return <PostDetail post={post} />;
 }

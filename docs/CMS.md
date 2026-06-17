@@ -101,7 +101,8 @@ Long-form articles with drafts + scheduled publishing. **Fields:** `title`\*,
 (media), `author` + `coAuthors` (users), `categories`, `tags`, `relatedPosts`,
 virtual `readingTime`/`authorName`, `accessLevel`, `featured`,
 `commentsEnabled`, `publishedAt`, join `comments`. **Access:** read
-`publishedOrStaff`; write `isStaff`. Drafts (max 25) · trash · folders.
+`publishedOrStaff`; write `isStaff`. Drafts (max 25) · live preview · trash ·
+folders.
 
 ### `videos` — landscape videos & vertical shorts
 
@@ -164,7 +165,7 @@ Belong to a `series` of `kind: course`. **Fields:** `title`_, `slug`, `course`_,
 `locationType` (category), `tags`, read-only `ratingAverage` (denormalized from
 approved reviews), `temporarilyClosed`, `featured`, `commentsEnabled`; joins
 `reviews`/`events`. **Access:** read `publishedOrStaff`; write `isStaff`.
-Drafts · trash · folders.
+Drafts · live preview · trash · folders.
 
 ### `events` — scheduled events
 
@@ -175,7 +176,8 @@ Editorial `_status` (drafts) is independent from lifecycle `eventStatus`
 `location`/`virtualUrl`, `featuredImage`/`gallery`, `isFree` →
 `price`/`currency`, `ticketUrl`, `capacity`, `registrationRequired`,
 `organizer`/`speakers` (users), `featured`, `commentsEnabled`, `publishedAt`.
-**Access:** read `publishedOrStaff`; write `isStaff`. Drafts · trash · folders.
+**Access:** read `publishedOrStaff`; write `isStaff`. Drafts · live preview ·
+trash · folders.
 
 ### `categories` — hierarchical taxonomy
 

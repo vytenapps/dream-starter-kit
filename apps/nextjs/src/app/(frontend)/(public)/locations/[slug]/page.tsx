@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 
-import { DetailLayout } from "~/components/content/detail-layout";
-import { CmsRichText } from "~/components/rich-text";
-import { formatAddress, getLocation } from "~/lib/payload";
+import { LocationDetail } from "~/components/content/location-detail";
+import { LocationLivePreview } from "~/components/content/location-live-preview";
+import { formatAddress } from "~/lib/format-address";
+import { getLocation } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
 
@@ -32,30 +34,9 @@ export default async function LocationPage({
   const location = await getLocation(slug);
   if (!location) notFound();
 
-  const image =
-    typeof location.featuredImage === "object" && location.featuredImage?.url
-      ? { url: location.featuredImage.url, alt: location.featuredImage.alt }
-      : null;
-  const address = formatAddress(location.address);
-  // Payload `point` stores [lng, lat].
-  const coords = location.coordinates;
-
-  return (
-    <DetailLayout
-      title={location.name}
-      image={image}
-      meta={
-        <dl className="space-y-1">
-          {address && <div>{address}</div>}
-          {coords && (
-            <div>
-              {coords[1]}, {coords[0]}
-            </div>
-          )}
-        </dl>
-      }
-    >
-      <CmsRichText data={location.description} />
-    </DetailLayout>
-  );
+  // In draft mode (Payload Live Preview) hand off to the client wrapper so edits
+  // stream into the admin iframe live; otherwise render server-side.
+  const { isEnabled } = await draftMode();
+  if (isEnabled) return <LocationLivePreview initialData={location} />;
+  return <LocationDetail location={location} />;
 }

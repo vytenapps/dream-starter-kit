@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 import { defaultTimezones } from "payload/shared";
 
+import { generatePreviewPath, previewBreakpoints } from "../../lib/preview";
 import { isStaff, publishedOrStaff } from "../access";
 import { commentsEnabledField } from "../fields/comments-enabled";
 import { slugField } from "../fields/slug";
@@ -25,6 +26,21 @@ export const Events: CollectionConfig = {
     group: "Content",
     defaultColumns: ["title", "startsAt", "eventStatus", "_status"],
     listSearchableFields: ["title", "shortDescription"],
+    // Live Preview: the admin iframe loads /next/preview, which enables draft
+    // mode and renders the event's draft (see lib/preview + /next/preview route).
+    livePreview: {
+      url: ({ data }) =>
+        generatePreviewPath({
+          collection: "events",
+          slug: typeof data.slug === "string" ? data.slug : undefined,
+        }),
+      breakpoints: previewBreakpoints,
+    },
+    preview: (doc) =>
+      generatePreviewPath({
+        collection: "events",
+        slug: typeof doc.slug === "string" ? doc.slug : undefined,
+      }),
   },
   versions: { drafts: { schedulePublish: true }, maxPerDoc: 25 },
   access: {

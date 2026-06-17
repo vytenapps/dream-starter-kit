@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 
+import { generatePreviewPath, previewBreakpoints } from "../../lib/preview";
 import { isStaff, publishedOrStaff } from "../access";
 import { accessLevelField } from "../fields/access-level";
 import { commentsEnabledField } from "../fields/comments-enabled";
@@ -31,6 +32,21 @@ export const Posts: CollectionConfig = {
     group: "Content",
     defaultColumns: ["title", "authorName", "publishedAt", "_status"],
     listSearchableFields: ["title", "excerpt"],
+    // Live Preview: the admin iframe loads /next/preview, which enables draft
+    // mode and renders the post's draft (see lib/preview + /next/preview route).
+    livePreview: {
+      url: ({ data }) =>
+        generatePreviewPath({
+          collection: "posts",
+          slug: typeof data.slug === "string" ? data.slug : undefined,
+        }),
+      breakpoints: previewBreakpoints,
+    },
+    preview: (doc) =>
+      generatePreviewPath({
+        collection: "posts",
+        slug: typeof doc.slug === "string" ? doc.slug : undefined,
+      }),
   },
   versions: { drafts: { schedulePublish: true }, maxPerDoc: 25 },
   access: {

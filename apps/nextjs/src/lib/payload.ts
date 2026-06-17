@@ -79,12 +79,20 @@ export function listPosts(): Promise<Post[]> {
   }, []);
 }
 
+/**
+ * A post by slug. Like `getPage`, honors Next.js draft mode (Payload Live
+ * Preview via `/next/preview`): returns the latest DRAFT and bypasses the
+ * published-only access control when previewing; otherwise published only.
+ */
 export function getPost(slug: string): Promise<Post | null> {
   return safe(async () => {
+    const { isEnabled: draft } = await draftMode();
     const payload = await client();
     const { docs } = await payload.find({
       collection: "posts",
-      where: publishedSlug(slug),
+      where: draft ? { slug: { equals: slug } } : publishedSlug(slug),
+      draft,
+      overrideAccess: draft,
       depth: 1,
       limit: 1,
     });
@@ -106,12 +114,16 @@ export function listEvents(): Promise<EventDoc[]> {
   }, []);
 }
 
+/** An event by slug. Honors draft mode for Live Preview (see `getPost`). */
 export function getEvent(slug: string): Promise<EventDoc | null> {
   return safe(async () => {
+    const { isEnabled: draft } = await draftMode();
     const payload = await client();
     const { docs } = await payload.find({
       collection: "events",
-      where: publishedSlug(slug),
+      where: draft ? { slug: { equals: slug } } : publishedSlug(slug),
+      draft,
+      overrideAccess: draft,
       depth: 1,
       limit: 1,
     });
@@ -173,26 +185,20 @@ export function listLocations(): Promise<LocationDoc[]> {
   }, []);
 }
 
-/** One-line postal address from a location's structured `address` group. */
-export function formatAddress(address: LocationDoc["address"]): string | null {
-  if (!address) return null;
-  const parts = [
-    address.street,
-    address.street2,
-    address.city,
-    address.region,
-    address.postalCode,
-    address.country,
-  ].filter((p): p is string => Boolean(p?.trim()));
-  return parts.length > 0 ? parts.join(", ") : null;
-}
+// Re-exported from the client-safe module so server callers can keep importing
+// it from here; the client Live Preview wrapper imports it directly.
+export { formatAddress } from "./format-address";
 
+/** A location by slug. Honors draft mode for Live Preview (see `getPost`). */
 export function getLocation(slug: string): Promise<LocationDoc | null> {
   return safe(async () => {
+    const { isEnabled: draft } = await draftMode();
     const payload = await client();
     const { docs } = await payload.find({
       collection: "locations",
-      where: publishedSlug(slug),
+      where: draft ? { slug: { equals: slug } } : publishedSlug(slug),
+      draft,
+      overrideAccess: draft,
       depth: 1,
       limit: 1,
     });

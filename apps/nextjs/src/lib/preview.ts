@@ -8,6 +8,17 @@
  */
 import { env } from "../env";
 
+/**
+ * Device breakpoints offered in the admin Live Preview toolbar (the
+ * mobile/tablet/desktop frame switcher). Shared by every collection that
+ * enables `admin.livePreview`.
+ */
+export const previewBreakpoints = [
+  { label: "Mobile", name: "mobile", width: 375, height: 667 },
+  { label: "Tablet", name: "tablet", width: 768, height: 1024 },
+  { label: "Desktop", name: "desktop", width: 1440, height: 900 },
+];
+
 /** The public front-end path for a CMS document. */
 export function docPath(collection: string, slug?: string | null): string {
   if (collection === "pages") {
