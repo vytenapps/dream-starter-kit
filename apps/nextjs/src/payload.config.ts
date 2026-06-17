@@ -198,25 +198,47 @@ export default buildConfig({
     // cert chain fails pg's default verify-full handling otherwise. Local
     // plaintext URLs pass through untouched.
     //
-    // The pool is deliberately SMALL: on serverless every instance gets its
-    // own pool, and hosted Supabase's session-mode pooler allows only
-    // ~pool_size (15 by default) clients per role — pg's default of 10 per
-    // instance exhausted it on a fresh deploy's cold-start burst
-    // ("EMAXCONNSESSION max clients reached in session mode"). Idle
-    // connections are released quickly so frozen instances give slots back.
+    // This is the PER-REQUEST query pool, so it uses `runtimeDatabaseUrl`: on
+    // the Vercel<->Supabase integration that's the TRANSACTION-mode pooler
+    // (6543), NOT the session-mode one (5432) that the bootstrap / DDL /
+    // advisory-lock paths use (`databaseUrl`). Why: a fresh deploy cold-starts
+    // many serverless instances at once, each with its own pool; session mode
+    // dedicates one Postgres backend per client and caps clients at ~pool_size
+    // (15) per role, so the burst collectively blew the cap and every request
+    // 500'd with "EMAXCONNSESSION max clients reached in session mode" for the
+    // first 1-3 minutes after a deploy. Transaction mode (Supavisor) holds a
+    // backend only for the duration of a transaction, so it multiplexes and has
+    // no per-role client cap to exhaust. See resolveRuntimeDbUrl.
     //
-    // A small pool also means starvation must FAIL, not wait: pg's default
-    // acquire wait is infinite, so a wedged pool used to ride out Vercel's
-    // 300s timeout — and the killed invocation left its transaction open,
-    // poisoning the still-warm Fluid instance (and pinning Supavisor slots)
-    // for every later request. connectionTimeoutMillis bounds the acquire
-    // wait; idle_in_transaction_session_timeout has Postgres reap abandoned
+    // Transaction-mode caveats, both satisfied here:
+    //   - Prepared statements: a multiplexed pooler can't keep SESSION-level
+    //     named prepared statements (the next query may land on a different
+    //     backend). Payload's adapter is `@payloadcms/db-postgres` on drizzle +
+    //     node-postgres (`pg`), and `pg` uses the UNNAMED prepared statement
+    //     (re-parsed per execute, never persisted) — safe per-transaction. We
+    //     don't issue `.prepare()`d statements, so nothing to disable.
+    //   - search_path: the role itself carries `alter role payload_cms set
+    //     search_path = cms` (cmsProvisionStatements / 00_cms_role.sql), so every
+    //     backend the pooler hands out resolves `cms` regardless of multiplexing;
+    //     the URL's `options=-c search_path=cms` reinforces it, and Payload also
+    //     schema-qualifies identifiers from `schemaName: "cms"`.
+    //
+    // The pool stays SMALL per instance: `max: 2` is plenty for a read-heavy
+    // request and keeps each instance's footprint on the shared pooler modest
+    // (transaction mode lifts the hard session cap, but courtesy still matters).
+    // Starvation must FAIL, not wait: pg's default acquire wait is infinite, so
+    // a wedged pool used to ride out Vercel's 300s timeout — and the killed
+    // invocation left its transaction open, poisoning the still-warm Fluid
+    // instance (and pinning Supavisor slots) for every later request.
+    // connectionTimeoutMillis bounds the acquire wait; idle connections are
+    // released quickly so frozen instances give slots back; and
+    // idle_in_transaction_session_timeout has Postgres reap abandoned
     // transactions (releasing their row locks + pooler slots) within 60s.
     // Hook authors: always pass `req` to nested Local API calls — a req-less
     // call inside a transaction checks out a second connection and is exactly
     // how such a wedge forms (see payload/hooks/validate-custom-fields.ts).
     pool: {
-      ...pgConnectionOptions(cmsCredentials.databaseUrl),
+      ...pgConnectionOptions(cmsCredentials.runtimeDatabaseUrl),
       max: 2,
       idleTimeoutMillis: 20_000,
       connectionTimeoutMillis: 15_000,

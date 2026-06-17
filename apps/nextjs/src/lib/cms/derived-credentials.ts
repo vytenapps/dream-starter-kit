@@ -1,7 +1,11 @@
 import { createHmac } from "node:crypto";
 
 import { env } from "../../env";
-import { CMS_ROLE, resolveAdminDbUrl } from "../db/bootstrap-core";
+import {
+  CMS_ROLE,
+  resolveAdminDbUrl,
+  resolveRuntimeDbUrl,
+} from "../db/bootstrap-core";
 
 /**
  * Zero-touch CMS credentials. The Vercel<->Supabase integration injects the
@@ -104,7 +108,24 @@ export interface CmsCredentialSource {
 
 export interface CmsCredentials {
   secret: string | undefined;
+  /**
+   * SESSION/direct connection — the credential source and the connection used
+   * by every path that needs session-level state: the bootstrap's role
+   * provisioning (password extraction), the request-time schema heal's DDL
+   * (lib/cms/ensure-schema.ts) and the cross-instance advisory locks
+   * (lib/cms/init-lock.ts). Port 5432 / direct.
+   */
   databaseUrl: string | undefined;
+  /**
+   * Connection for the PER-REQUEST Payload query pool (payload.config.ts). On
+   * the Vercel<->Supabase integration this is the TRANSACTION-mode pooler
+   * (6543), which multiplexes and so has no per-role session-client cap to
+   * exhaust on a cold-start burst (the production `EMAXCONNSESSION` failure —
+   * see resolveRuntimeDbUrl). Falls back to `databaseUrl` (session/direct) when
+   * no transaction pooler is available (local dev, non-integration projects, or
+   * an explicit PAYLOAD_DATABASE_URL — which still wins for both).
+   */
+  runtimeDatabaseUrl: string | undefined;
   /** Which of the two came from derivation rather than explicit env. */
   derived: { secret: boolean; databaseUrl: boolean };
 }
@@ -119,7 +140,12 @@ export function resolveCmsCredentials(
 ): CmsCredentials {
   const seed = nonEmpty(source.SUPABASE_SERVICE_ROLE_KEY);
   let secret = nonEmpty(source.PAYLOAD_SECRET);
-  let databaseUrl = nonEmpty(source.PAYLOAD_DATABASE_URL);
+  // An explicit PAYLOAD_DATABASE_URL wins for BOTH connections — a founder who
+  // pins it owns the tradeoff (it's documented as session/direct, since it also
+  // drives the advisory-lock / DDL paths via `databaseUrl`).
+  const explicitUrl = nonEmpty(source.PAYLOAD_DATABASE_URL);
+  let databaseUrl = explicitUrl;
+  let runtimeDatabaseUrl = explicitUrl;
   const derived = { secret: false, databaseUrl: false };
 
   if (!secret && seed) {
@@ -127,19 +153,26 @@ export function resolveCmsCredentials(
     derived.secret = true;
   }
   if (!databaseUrl && seed) {
-    const adminUrl = resolveAdminDbUrl({
+    const urlEnv = {
       SUPABASE_DB_URL: source.SUPABASE_DB_URL,
       POSTGRES_URL: source.POSTGRES_URL,
       POSTGRES_URL_NON_POOLING: source.POSTGRES_URL_NON_POOLING,
-    });
+    };
+    const password = derivePayloadPassword(seed);
+    const adminUrl = resolveAdminDbUrl(urlEnv);
     if (adminUrl) {
-      databaseUrl = derivePayloadDatabaseUrl(
-        adminUrl,
-        derivePayloadPassword(seed),
-      );
+      databaseUrl = derivePayloadDatabaseUrl(adminUrl, password);
       derived.databaseUrl = databaseUrl !== undefined;
     }
+    // The per-request pool prefers the TRANSACTION pooler (6543) so a deploy's
+    // cold-start burst stops exhausting the session-mode client cap. Falls back
+    // to the session/direct derived URL when no `:6543` pooler exists.
+    const runtimeUrl = resolveRuntimeDbUrl(urlEnv);
+    runtimeDatabaseUrl =
+      (runtimeUrl
+        ? derivePayloadDatabaseUrl(runtimeUrl, password)
+        : undefined) ?? databaseUrl;
   }
 
-  return { secret, databaseUrl, derived };
+  return { secret, databaseUrl, runtimeDatabaseUrl, derived };
 }

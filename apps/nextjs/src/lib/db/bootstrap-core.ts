@@ -95,6 +95,61 @@ export function resolveAdminDbUrl(
   return undefined;
 }
 
+/**
+ * Validates that `POSTGRES_URL` is the Supavisor TRANSACTION-mode pooler
+ * (`<region>.pooler.supabase.com:6543`) and returns it byte-for-byte; otherwise
+ * undefined. This is the URL the Vercel<->Supabase integration injects as
+ * `POSTGRES_URL`, so no rewrite is needed — the guard just refuses anything that
+ * isn't recognizably a `:6543` pooler (a custom/direct URL must not be assumed
+ * to multiplex). Counterpart to `sessionPoolerUrl` (which rewrites 6543 → 5432).
+ */
+export function transactionPoolerUrl(
+  postgresUrl: string | undefined,
+): string | undefined {
+  if (!postgresUrl) return undefined;
+  let parsed: URL;
+  try {
+    parsed = new URL(postgresUrl);
+  } catch {
+    return undefined;
+  }
+  if (
+    !parsed.hostname.endsWith(".pooler.supabase.com") ||
+    parsed.port !== "6543"
+  ) {
+    return undefined;
+  }
+  return postgresUrl;
+}
+
+/**
+ * Connection for the PER-REQUEST Payload query pool (payload.config.ts), as
+ * distinct from `resolveAdminDbUrl` (the bootstrap / DDL / advisory-lock path).
+ *
+ * Why the split: a fresh Vercel deploy cold-starts many serverless instances at
+ * once; each holds its own small Payload pool. Supabase's SESSION-mode pooler
+ * (5432) dedicates one Postgres backend per client and caps clients at
+ * `pool_size` (~15) per role, so the burst collectively blows the cap and every
+ * request 500s with `EMAXCONNSESSION` for the first 1-3 minutes after a deploy.
+ * The TRANSACTION-mode pooler (6543, Supavisor) multiplexes — a backend is held
+ * only for the duration of a transaction, not the whole client session — so it
+ * has no per-role client cap to exhaust. The runtime pool is read-heavy and
+ * short-transaction, the exact workload transaction mode is built for.
+ *
+ * Bootstrap/DDL/migrations/advisory-locks STAY on session mode (those need
+ * session-level state a multiplexed pooler can't keep) — see `resolveAdminDbUrl`
+ * and `lib/cms/init-lock.ts`.
+ *
+ * Precedence: the transaction pooler from `POSTGRES_URL` when present; otherwise
+ * fall back to the session/direct admin URL (local dev, or any project without
+ * the integration's `:6543` URL), so behavior there is unchanged.
+ */
+export function resolveRuntimeDbUrl(
+  env: Record<string, string | undefined>,
+): string | undefined {
+  return transactionPoolerUrl(env.POSTGRES_URL) ?? resolveAdminDbUrl(env);
+}
+
 /** pg-compatible ssl setting with libpq-style semantics. */
 export type PgSsl = false | true | { rejectUnauthorized: false };
 
