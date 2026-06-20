@@ -396,14 +396,43 @@ number/message fields); submissions are publicly creatable, staff-read.
 
 ## Globals
 
-| Global             | Purpose                                                                                                                                                                                                                                                                                                                                                                                                     | Read               | Update    |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | --------- |
-| `site-settings`    | Site chrome: General (siteName, defaultMeta), Header nav + actions, Footer columns/policies/copyright, Social handles — consumed by the Launch UI navbar/footer                                                                                                                                                                                                                                             | `anyone`           | `isStaff` |
-| `pricing-settings` | `/pricing` page: heading/subheading, `billingToggleDefault`, up to 3 `featuredPlans`, optional `freeTier` group, disclaimer                                                                                                                                                                                                                                                                                 | `anyone`           | `isStaff` |
-| `theme-settings`   | The **front-end** shadcn theme (versioned, drafts→publish): Branding (appName, brandLink, appIcon, light/dark logos), Light/Dark color tokens, Typography (sans/serif/mono, letterSpacing), Other (radius, spacing, shadow). Serialized by `lib/theme/serialize.ts` into `<ThemeStyle />`; branding read by `getBranding()`. The `/admin` chrome uses a separate fixed palette (`lib/theme/admin-theme.ts`) | `publishedOrStaff` | `isStaff` |
-| `profile-fields`   | Admin-defined custom member fields (key, label, type, options, required, visibility, editableByMember, order) — drives `users.customFields` validation + profile UI                                                                                                                                                                                                                                         | `anyone`           | `isStaff` |
+| Global                      | Purpose                                                                                                                                                                                                                                                                                                                                                                                                     | Read               | Update    |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | --------- |
+| `site-settings`             | Site chrome: General (siteName, defaultMeta), Header nav + actions, Footer columns/policies/copyright, Social handles — consumed by the Launch UI navbar/footer                                                                                                                                                                                                                                             | `anyone`           | `isStaff` |
+| `pricing-settings`          | `/pricing` page: heading/subheading, `billingToggleDefault`, up to 3 `featuredPlans`, optional `freeTier` group, disclaimer                                                                                                                                                                                                                                                                                 | `anyone`           | `isStaff` |
+| `theme-settings`            | The **front-end** shadcn theme (versioned, drafts→publish): Branding (appName, brandLink, appIcon, light/dark logos), Light/Dark color tokens, Typography (sans/serif/mono, letterSpacing), Other (radius, spacing, shadow). Serialized by `lib/theme/serialize.ts` into `<ThemeStyle />`; branding read by `getBranding()`. The `/admin` chrome uses a separate fixed palette (`lib/theme/admin-theme.ts`) | `publishedOrStaff` | `isStaff` |
+| `profile-fields`            | Admin-defined custom member fields (key, label, type, options, required, visibility, editableByMember, order) — drives `users.customFields` validation + profile UI                                                                                                                                                                                                                                         | `anyone`           | `isStaff` |
+| `image-generation-settings` | **System → Image Generation.** Workspace settings for AI image generation: `enabled` (kill switch), `model` (gateway image-model slug from the `@acme/config` catalog), `systemPrompt` (art direction). Resolution order at generation time: global → env → code default                                                                                                                                    | `isStaff`          | `isStaff` |
 
 ---
+
+## AI image generation
+
+Image-enabled content collections (and the Media library, via the MCP
+`generate_media` tool) auto-generate images from a text **`imagePrompt`**. See
+[ARCHITECTURE.md → core CMS image generation](./ARCHITECTURE.md) for the moving
+parts; the highlights:
+
+- **Opt-in fields.** A collection adds `...generatedImageFields({ formats })`
+  (`payload/fields/generated-images.ts`) + a two-hook `beforeChange` array
+  `[generateImagesHook(cfg), syncImageUrls(cfg)]` (`payload/hooks/generate-images.ts`).
+  This yields, per format: an `upload`→`media` field (`imageHero` / `imageOg` /
+  `imageSquare`), a hidden `<field>Url` cache the public surfaces read, and a
+  `CopyImageUrl` admin control; plus the shared `imageAlt` text and the
+  `imagePrompt` textarea. Presets live in `lib/image-formats.ts`:
+  **FEATURED** (hero 16:9 + OG 1200×630) and **CARD** (+ a 1:1 square).
+- **Enabled on:** `posts`, `pages`, `videos`, `audio` (FEATURED) and `events`,
+  `series`, `locations` (CARD). **Not** on `photos` (the upload _is_ the image)
+  or `community-posts` (member-authored — avoids member-triggered gateway spend).
+- **Semantics (verified, do not regress).** `beforeChange`, not `afterChange`,
+  so generation triggers off the incoming `imagePrompt`, the new media ids land
+  in the same write, and there's no second write/recursion. **Fill-missing
+  slots:** only empty slots are filled; clear a slot to regenerate just that one.
+  **Per-format isolation:** one format failing (content-safety, gateway, sharp)
+  is logged with its cause and never blocks the write or the other formats.
+  **S3-configured guard runs first** so a misconfigured deploy spends zero
+  gateway budget. The kill switch (`enabled`) and `req.context.skipImageGeneration`
+  (set by the seed) both short-circuit.
 
 ## Adding or changing a collection
 

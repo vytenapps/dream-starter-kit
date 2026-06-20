@@ -225,6 +225,25 @@ The chat route (`apps/nextjs/src/app/api/chat`) is **authenticated**,
 key to clients. Conversations persist in the `chat_threads` / `chat_messages`
 tables. The mobile app calls the same route.
 
+**Image generation** uses the same gateway. Saving an image-enabled Payload doc
+with an `imagePrompt` (or calling the MCP `generate_media` tool) renders the
+missing images server-side via `gateway.imageModel(...)` +
+`experimental_generateImage`, normalizes them with `sharp`, and stores each as a
+Media doc — attached in the same write. The renderer
+(`apps/nextjs/src/lib/image-generation.ts`, server-only) is generic over a
+caller-supplied set of formats (presets in `lib/image-formats.ts`); a Payload
+field helper + `beforeChange` hook factory
+(`payload/fields/generated-images.ts`, `payload/hooks/generate-images.ts`) make
+opting a collection in a one-liner; and the `image-generation-settings` global
+(model/system-prompt/kill-switch, resolved global → env → `@acme/config` default)
+governs it. The image model slug lives only in `@acme/config`
+(`DEFAULT_IMAGE_MODEL` / `IMAGE_GENERATION_MODELS`, golden rule #5). Generation
+is gated: it needs configured S3 storage (checked first, so a misconfigured
+deploy spends nothing) and the gateway; the `generate_media` tool is staff-only
+and bounded to one image per call. Storage credentials resolve via
+`lib/s3-config.ts` (dedicated S3 keys, or Supabase session-token mode deriving
+the endpoint + region — zero S3-specific env on a Vercel↔Supabase deploy).
+
 ### 4.9 Engagement — notifications, reminders, push
 
 In-app notifications and reminders are ordinary RLS-protected tables with shared
@@ -477,8 +496,7 @@ is one line and web/native never drift. Update channels:
 - **Payload DB connection (two pooler modes).** The kit splits the CMS Postgres
   connection in two. The bootstrap / migrations / advisory-lock / DDL paths need
   **session mode** (5432 / direct): a `pg_advisory_lock` must outlive its transaction.
-  The **per-request Payload query pool** instead uses **transaction mode** (Supavisor,
-  6543) when the Vercel<->Supabase integration provides it (`POSTGRES_URL`): a fresh
+  The **per-request Payload query pool** instead uses **transaction mode** (Supavisor, 6543) when the Vercel<->Supabase integration provides it (`POSTGRES_URL`): a fresh
   deploy cold-starts many serverless instances at once, and session mode caps clients at
   `pool_size` (~15) per role, so the burst blew the cap with `EMAXCONNSESSION` until the
   pool was multiplexed. Both are derived automatically (see `resolveRuntimeDbUrl` /
