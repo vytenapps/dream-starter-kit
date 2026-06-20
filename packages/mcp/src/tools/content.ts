@@ -95,7 +95,11 @@ export function registerContentTools(
       title: "Create content",
       description:
         "Create a document in a collection. `data` is the collection's fields " +
-        "as JSON; Payload validates it and rejects fields you can't set.",
+        "as JSON; Payload validates it and rejects fields you can't set. For " +
+        "image-enabled collections (posts, pages, videos, audio, events, series, " +
+        "locations) set `imagePrompt` (+ optional `imageAlt`) and the doc's " +
+        "hero/OG images are generated and attached automatically on save — no " +
+        "need to call generate_media or upload anything.",
       inputSchema: {
         collection,
         data: z.record(z.string(), z.unknown()).describe("Field values."),
@@ -113,7 +117,9 @@ export function registerContentTools(
     {
       title: "Update content",
       description:
-        "Update a document by id. `data` contains only the fields to change.",
+        "Update a document by id. `data` contains only the fields to change. " +
+        "Setting `imagePrompt` on an image-enabled collection regenerates any " +
+        "empty image slots on save (clear a slot to regenerate just that one).",
       inputSchema: {
         collection,
         id: z.string(),
