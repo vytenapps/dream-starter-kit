@@ -30,6 +30,16 @@ export const serverEnvSchema = z.object({
    * called directly. Optional — voice input is off until this is set.
    */
   OPENAI_API_KEY: z.string().min(1).optional(),
+  /**
+   * Optional overrides for core CMS image generation (apps/nextjs image-generation
+   * lib). Both optional — generation defaults through `@acme/config`
+   * (DEFAULT_IMAGE_MODEL / DEFAULT_IMAGE_SYSTEM_PROMPT) and the
+   * `image-generation-settings` global wins over both at runtime. Model slugs
+   * live ONLY in `@acme/config` (golden rule #5); IMAGE_GENERATION_MODEL is a
+   * deploy-time pin, not a new source of slugs.
+   */
+  IMAGE_GENERATION_MODEL: z.string().min(1).optional(),
+  IMAGE_GENERATION_SYSTEM_PROMPT: z.string().min(1).optional(),
 
   // --- Chat channel adapters (optional; each adapter is off until set) ---
   // Slack (ext-chat-adapter-slack) — Events API webhook + chat.postMessage.
