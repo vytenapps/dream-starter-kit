@@ -1,9 +1,15 @@
 import type { CollectionConfig } from "payload";
 
+import { FEATURED_FORMATS } from "../../lib/image-formats";
 import { anyone, isStaff } from "../access";
 import { accessLevelField } from "../fields/access-level";
 import { commentsEnabledField } from "../fields/comments-enabled";
+import { generatedImageFields } from "../fields/generated-images";
 import { slugField } from "../fields/slug";
+import { generateImagesHook, syncImageUrls } from "../hooks/generate-images";
+
+/** AI image generation: a hero + OG image from the episode's imagePrompt. */
+const audioImages = { formats: FEATURED_FORMATS };
 
 /**
  * Podcast/audio episodes — an UPLOAD collection: the row IS the audio binary
@@ -29,6 +35,9 @@ export const Audio: CollectionConfig = {
     create: isStaff,
     update: isStaff,
     delete: isStaff,
+  },
+  hooks: {
+    beforeChange: [generateImagesHook(audioImages), syncImageUrls(audioImages)],
   },
   fields: [
     { name: "title", type: "text", required: true },
@@ -154,5 +163,6 @@ export const Audio: CollectionConfig = {
         description: "RSS <pubDate>.",
       },
     },
+    ...generatedImageFields(audioImages),
   ],
 };

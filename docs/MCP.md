@@ -126,23 +126,47 @@ store, ideal for serverless. Per request it:
 
 ## Tools
 
-| Tool               | Input                                                                  | Does                                                                 |
-| ------------------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `list_collections` | —                                                                      | Lists allowlisted collections (+ your roles). Call this first.       |
-| `search_content`   | `collection`, `query?`, `limit?`, `page?`                              | Paginated search of a collection (title/text fields).                |
-| `read_content`     | `collection`, `id`                                                     | One document, relationships one level deep.                          |
-| `create_content`   | `collection`, `data`                                                   | Create a document (Payload validates; rejects fields you can't set). |
-| `update_content`   | `collection`, `id`, `data`                                             | Update changed fields.                                               |
-| `delete_content`   | `collection`, `id`                                                     | Delete (soft-delete → Trash where the collection has `trash`).       |
-| `notify_create`    | `title`, `body?`, `channel?`, `audience?`, `targetUsers?`, `deepLink?` | Create a **draft** notification.                                     |
-| `notify_schedule`  | …same + `scheduledAt?`                                                 | Create + **schedule** (status `scheduled`; defaults to "now").       |
-| `notify_list`      | `status?`, `limit?`                                                    | Recent notifications, newest first.                                  |
-| `notify_cancel`    | `id`                                                                   | Unschedule (back to draft) — only before it's sent.                  |
-| `search`           | `query`                                                                | **ChatGPT-compatible** — `{ results: [{ id, title, url }] }`.        |
-| `fetch`            | `id` (`collection:id`)                                                 | **ChatGPT-compatible** — full `{ id, title, text, url, metadata }`.  |
+| Tool               | Input                                                                  | Does                                                                                               |
+| ------------------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `list_collections` | —                                                                      | Lists allowlisted collections (+ your roles). Call this first.                                     |
+| `search_content`   | `collection`, `query?`, `limit?`, `page?`                              | Paginated search of a collection (title/text fields).                                              |
+| `read_content`     | `collection`, `id`                                                     | One document, relationships one level deep.                                                        |
+| `create_content`   | `collection`, `data`                                                   | Create a document (Payload validates; rejects fields you can't set).                               |
+| `update_content`   | `collection`, `id`, `data`                                             | Update changed fields.                                                                             |
+| `delete_content`   | `collection`, `id`                                                     | Delete (soft-delete → Trash where the collection has `trash`).                                     |
+| `notify_create`    | `title`, `body?`, `channel?`, `audience?`, `targetUsers?`, `deepLink?` | Create a **draft** notification.                                                                   |
+| `notify_schedule`  | …same + `scheduledAt?`                                                 | Create + **schedule** (status `scheduled`; defaults to "now").                                     |
+| `notify_list`      | `status?`, `limit?`                                                    | Recent notifications, newest first.                                                                |
+| `notify_cancel`    | `id`                                                                   | Unschedule (back to draft) — only before it's sent.                                                |
+| `generate_media`   | `prompt`, `format?` (`hero`/`og`/`square`), `alt?`                     | Render an image via the AI Gateway → store a reusable **Media** asset; returns `{ id, url, alt }`. |
+| `search`           | `query`                                                                | **ChatGPT-compatible** — `{ results: [{ id, title, url }] }`.                                      |
+| `fetch`            | `id` (`collection:id`)                                                 | **ChatGPT-compatible** — full `{ id, title, text, url, metadata }`.                                |
 
 Every tool returns its result as JSON text content; failures (e.g. a Payload permission
 or validation error) come back as a readable `isError` result, not a transport crash.
+
+### Images: write a prompt → images appear
+
+Two ways for an MCP client to get artwork, no upload step:
+
+1. **On a content doc.** `create_content` / `update_content` on an image-enabled
+   collection (`posts`, `pages`, `videos`, `audio`, `events`, `series`,
+   `locations`) accept an **`imagePrompt`** (+ optional `imageAlt`) in `data`. On
+   save, the collection's `beforeChange` hook renders the doc's empty image slots
+   (hero/OG, + a square for the CARD collections) via the AI Gateway and attaches
+   them in the same write — so just setting `imagePrompt` makes images appear.
+   Filled slots are left alone; clear one to regenerate it.
+2. **A standalone asset.** `generate_media` mints a reusable Media doc from a
+   prompt and returns its `id` + public `url`; reference the id from any upload
+   field. Defaults to a 1:1 `square`; pass `format` for `hero` (16:9) or `og`
+   (1200×630).
+
+Both run server-side through the **same gateway** as the rest of the kit, as the
+verified staff user (`overrideAccess: false`), and need configured S3 storage +
+gateway — otherwise generation is skipped (content) or returns an error
+(`generate_media`) with zero gateway spend. See
+[CMS.md → AI image generation](./CMS.md) and the `image-generation-settings`
+global (kill switch / model / art-direction prompt).
 
 ### The collection allowlist
 

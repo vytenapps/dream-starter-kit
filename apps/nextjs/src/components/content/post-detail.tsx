@@ -9,10 +9,15 @@ import { CmsRichText } from "~/components/rich-text";
  * markup stays identical in both.
  */
 export function PostDetail({ post }: { post: Post }) {
+  // Prefer an explicit featuredImage; otherwise fall back to the AI-generated
+  // hero (its public URL is cached on `imageHeroUrl` by the syncImageUrls hook,
+  // so no relation populate is needed).
   const image =
     typeof post.featuredImage === "object" && post.featuredImage?.url
       ? { url: post.featuredImage.url, alt: post.featuredImage.alt }
-      : null;
+      : post.imageHeroUrl
+        ? { url: post.imageHeroUrl, alt: post.imageAlt ?? post.title }
+        : null;
 
   return (
     <DetailLayout

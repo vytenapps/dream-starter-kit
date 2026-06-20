@@ -12,6 +12,7 @@ import * as migration_20260613_023123_ext_docs_initial from './20260613_023123_e
 import * as migration_20260613_025126_ext_chat_adapter_slack_initial from './20260613_025126_ext_chat_adapter_slack_initial';
 import * as migration_20260613_025129_ext_chat_adapter_sendblue_initial from './20260613_025129_ext_chat_adapter_sendblue_initial';
 import * as migration_20260613_161650_ai_chat_adapter_settings_tabs from './20260613_161650_ai_chat_adapter_settings_tabs';
+import * as migration_20260620_212733_image_generation from './20260620_212733_image_generation';
 
 export const migrations = [
   {
@@ -82,6 +83,11 @@ export const migrations = [
   {
     up: migration_20260613_161650_ai_chat_adapter_settings_tabs.up,
     down: migration_20260613_161650_ai_chat_adapter_settings_tabs.down,
-    name: '20260613_161650_ai_chat_adapter_settings_tabs'
+    name: '20260613_161650_ai_chat_adapter_settings_tabs',
+  },
+  {
+    up: migration_20260620_212733_image_generation.up,
+    down: migration_20260620_212733_image_generation.down,
+    name: '20260620_212733_image_generation'
   },
 ];

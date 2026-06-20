@@ -9,6 +9,7 @@ import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
+import type { S3ConfigSource } from "./lib/s3-config";
 import {
   extCollections,
   extGlobals,
@@ -18,6 +19,7 @@ import {
 import { resolveCmsCredentials } from "./lib/cms/derived-credentials";
 import { noDocumentLock } from "./lib/cms/no-document-lock";
 import { pgConnectionOptions } from "./lib/db/bootstrap-core";
+import { resolveS3Config } from "./lib/s3-config";
 import { isStaff } from "./payload/access";
 import { Audio } from "./payload/collections/Audio";
 import { Banners } from "./payload/collections/Banners";
@@ -47,6 +49,7 @@ import { SpaceGroups } from "./payload/collections/SpaceGroups";
 import { TagGroups, Tags } from "./payload/collections/Tags";
 import { Users } from "./payload/collections/Users";
 import { Videos } from "./payload/collections/Videos";
+import { ImageGenerationSettings } from "./payload/globals/ImageGenerationSettings";
 import { ProfileFields } from "./payload/globals/ProfileFields";
 import { SiteSettings } from "./payload/globals/SiteSettings";
 import { ThemeSettings } from "./payload/globals/ThemeSettings";
@@ -68,6 +71,17 @@ const cmsCredentials = resolveCmsCredentials();
 // Postgres") before throwing; silence the logger for that expected failure so
 // build output stays clean. NEXT_PHASE is set by Next itself during the build.
 const buildPhase = process.env.NEXT_PHASE === "phase-production-build";
+
+// S3 (Supabase Storage) config — dedicated keys or derived Supabase
+// session-token mode (see lib/s3-config.ts). Falls back to empty credentials
+// when unconfigured so the adapter still registers (uploads no-op until set).
+const s3 = resolveS3Config(process.env as S3ConfigSource) ?? {
+  bucket: process.env.S3_BUCKET ?? "cms-media",
+  endpoint: process.env.S3_ENDPOINT,
+  region: process.env.S3_REGION,
+  forcePathStyle: true as const,
+  credentials: { accessKeyId: "", secretAccessKey: "" },
+};
 
 export default buildConfig({
   ...(buildPhase ? { logger: { options: { level: "silent" } } } : {}),
@@ -171,6 +185,7 @@ export default buildConfig({
   globals: [
     SiteSettings,
     ThemeSettings,
+    ImageGenerationSettings,
     ProfileFields,
     // Installed extensions' globals incl. their settings screens (§1.7)
     ...extGlobals,
@@ -295,15 +310,18 @@ export default buildConfig({
         photos: { prefix: "photos" },
         audio: { prefix: "audio" },
       },
-      bucket: process.env.S3_BUCKET ?? "cms-media",
+      // Raw process.env (the Payload CLI loads this config without full env
+      // validation). resolveS3Config supports dedicated S3 keys OR Supabase
+      // session-token mode (deriving endpoint + region), so a Vercel↔Supabase
+      // integration deploy needs zero S3-specific env. Falls back to empty
+      // credentials when unconfigured (uploads just won't work — image
+      // generation's isS3Configured guard skips before spending on the gateway).
+      bucket: s3.bucket,
       config: {
-        endpoint: process.env.S3_ENDPOINT,
-        region: process.env.S3_REGION,
+        endpoint: s3.endpoint,
+        region: s3.region,
         forcePathStyle: true, // required for Supabase's S3-compatible endpoint
-        credentials: {
-          accessKeyId: process.env.S3_ACCESS_KEY_ID ?? "",
-          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "",
-        },
+        credentials: s3.credentials,
       },
     }),
     seoPlugin({

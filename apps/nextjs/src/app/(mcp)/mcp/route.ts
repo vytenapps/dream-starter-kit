@@ -11,6 +11,7 @@ import {
 } from "@acme/mcp";
 
 import { getMcpOAuthConfig, isMcpEnabled } from "~/lib/mcp/config";
+import { generateMediaAsset } from "~/lib/mcp/generate-media";
 import { corsPreflight, MCP_CORS_HEADERS } from "~/lib/mcp/http";
 import { getSiteUrl } from "~/lib/site-url";
 
@@ -80,7 +81,14 @@ async function authenticate(
     );
   }
 
-  return { payload, user, origin };
+  return {
+    payload,
+    user,
+    origin,
+    // Inject the server-only image renderer so @acme/mcp stays framework-agnostic.
+    // Runs as this staff user (overrideAccess: false) — see generate-media.ts.
+    generateMedia: (args) => generateMediaAsset(payload, user, args),
+  };
 }
 
 async function dispatch(req: NextRequest): Promise<Response> {

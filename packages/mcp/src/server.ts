@@ -5,6 +5,7 @@ import type { McpToolContext } from "./payload-context";
 import { registerChatGptTools } from "./tools/chatgpt";
 import { registerCollectionTools } from "./tools/collections";
 import { registerContentTools } from "./tools/content";
+import { registerMediaTools } from "./tools/media";
 import { registerNotificationTools } from "./tools/notifications";
 
 const SERVER_INFO = { name: "dream-starter-kit", version: "1.0.0" };
@@ -24,6 +25,7 @@ export function buildMcpServer(ctx: McpToolContext): McpServer {
   registerContentTools(server, ctx);
   registerChatGptTools(server, ctx);
   registerNotificationTools(server, ctx);
+  registerMediaTools(server, ctx);
   return server;
 }
 

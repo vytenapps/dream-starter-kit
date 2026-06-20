@@ -1,10 +1,16 @@
 import type { CollectionConfig } from "payload";
 import { defaultTimezones } from "payload/shared";
 
+import { CARD_FORMATS } from "../../lib/image-formats";
 import { generatePreviewPath, previewBreakpoints } from "../../lib/preview";
 import { isStaff, publishedOrStaff } from "../access";
 import { commentsEnabledField } from "../fields/comments-enabled";
+import { generatedImageFields } from "../fields/generated-images";
 import { slugField } from "../fields/slug";
+import { generateImagesHook, syncImageUrls } from "../hooks/generate-images";
+
+/** AI image generation: hero + OG + a square card from the event's imagePrompt. */
+const eventImages = { formats: CARD_FORMATS };
 
 const CURRENCIES = ["usd", "eur", "gbp", "cad", "aud"].map((c) => ({
   label: c.toUpperCase(),
@@ -48,6 +54,9 @@ export const Events: CollectionConfig = {
     create: isStaff,
     update: isStaff,
     delete: isStaff,
+  },
+  hooks: {
+    beforeChange: [generateImagesHook(eventImages), syncImageUrls(eventImages)],
   },
   fields: [
     { name: "title", type: "text", required: true },
@@ -183,5 +192,6 @@ export const Events: CollectionConfig = {
         date: { pickerAppearance: "dayAndTime" },
       },
     },
+    ...generatedImageFields(eventImages),
   ],
 };

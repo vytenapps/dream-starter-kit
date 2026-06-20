@@ -100,6 +100,68 @@ export type ChatChannel = (typeof CHAT_CHANNELS)[number];
 export const DEFAULT_STORAGE_BUCKET = "user-files";
 
 /**
+ * Default image-generation model — a Vercel AI Gateway image-model slug
+ * (golden rule #5: image model ids live ONLY here, like DEFAULT_AI_MODEL).
+ *
+ * Used by the core CMS image-generation lib (apps/nextjs/src/lib/image-generation.ts)
+ * to render content/Media artwork from a text prompt. Swapping the default model
+ * is a one-line change here; the `image-generation-settings` global can override
+ * it per-workspace and `IMAGE_GENERATION_MODEL` (env) sits in between. See
+ * docs/ARCHITECTURE.md → image generation.
+ */
+export const DEFAULT_IMAGE_MODEL = "google/imagen-4.0-generate-001";
+
+/**
+ * Curated catalog of image-generation models offered in the
+ * `image-generation-settings` global's `model` select (gateway image-model
+ * slugs — golden rule #5: the only place these live). Keep the default first.
+ */
+export const IMAGE_GENERATION_MODELS = [
+  {
+    id: "google/imagen-4.0-generate-001",
+    name: "Imagen 4",
+    provider: "google",
+    description: "Google's high-quality general-purpose image model (default).",
+  },
+  {
+    id: "google/imagen-4.0-fast-generate-001",
+    name: "Imagen 4 Fast",
+    provider: "google",
+    description: "Faster, cheaper Imagen 4 — good for bulk thumbnails.",
+  },
+  {
+    id: "openai/gpt-image-1",
+    name: "GPT Image 1",
+    provider: "openai",
+    description: "OpenAI's image model with strong prompt adherence.",
+  },
+  {
+    id: "bfl/flux-pro-1.1",
+    name: "FLUX Pro 1.1",
+    provider: "bfl",
+    description: "Black Forest Labs FLUX — photoreal, fast.",
+  },
+] as const;
+
+export type ImageGenerationModelId =
+  (typeof IMAGE_GENERATION_MODELS)[number]["id"];
+
+/**
+ * Default art-direction system prompt prepended to every image-generation
+ * request. Deliberately steers toward bold, minimal, flat illustration with NO
+ * text/logos (generated text is unreliable and looks broken). Overridable via
+ * the `image-generation-settings` global or `IMAGE_GENERATION_SYSTEM_PROMPT`.
+ */
+export const DEFAULT_IMAGE_SYSTEM_PROMPT =
+  "Bold, minimal, modern flat illustration with clean shapes and a cohesive, " +
+  "vibrant color palette. Strong focal subject, generous negative space, soft " +
+  "studio lighting. No text, no words, no letters, no logos, no watermarks, no " +
+  "UI chrome. High quality, professional, editorial.";
+
+/** Cost guardrail: max image formats a single generation request may render. */
+export const IMAGE_GENERATION_MAX_FORMATS = 6;
+
+/**
  * Subscription plans — a single "Pro" product billed monthly or yearly.
  * Display lives here (cross-platform); the matching Stripe price ids are
  * server-only env (STRIPE_PRICE_MONTHLY / STRIPE_PRICE_YEARLY). The server maps

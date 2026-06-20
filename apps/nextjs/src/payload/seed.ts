@@ -860,6 +860,12 @@ export async function seedCmsContent(
         });
         await payload.create({
           collection: "posts",
+          // Demo of AI image generation: this post ships with an `imagePrompt`
+          // but EMPTY image slots. Seeding passes `skipImageGeneration` so the
+          // seed stays scalar-only (no gateway spend / binary fixtures); the
+          // first time a staff user re-saves this post in /admin (with the AI
+          // Gateway + S3 configured), the hero + OG images generate and attach.
+          context: { skipImageGeneration: true },
           data: {
             title: "Modeling content in Payload",
             slug: "modeling-content-in-payload",
@@ -870,6 +876,9 @@ export async function seedCmsContent(
             ]),
             author: authorId,
             publishedAt: "2026-01-02T00:00:00.000Z",
+            imagePrompt:
+              "A clean, modern flat illustration of content blocks and a database, representing a headless CMS — bold shapes, vibrant palette.",
+            imageAlt: "Illustration of a headless CMS content model",
             _status: "published",
           },
         });

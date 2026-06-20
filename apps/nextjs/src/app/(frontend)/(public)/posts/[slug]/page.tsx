@@ -15,9 +15,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPost(slug).catch(() => null);
+  // Use the AI-generated OG card (then the hero) as the social-share image when
+  // present — both URLs are cached on the doc by the syncImageUrls hook.
+  const ogImage = post?.imageOgUrl ?? post?.imageHeroUrl ?? undefined;
   return {
     title: post?.meta?.title ?? post?.title ?? "Post",
     description: post?.meta?.description ?? post?.excerpt ?? undefined,
+    ...(ogImage ? { openGraph: { images: [ogImage] } } : {}),
   };
 }
 
