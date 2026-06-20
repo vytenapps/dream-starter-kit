@@ -1,10 +1,7 @@
 import type { CollectionBeforeChangeHook } from "payload";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  GeneratedImage,
-  ImageFormatSpec,
-} from "../../lib/image-generation";
+import type { GeneratedImage, ImageFormatSpec } from "../../lib/image-formats";
 
 // Mock the heavy generation lib (loads `ai` + `sharp`); we only need
 // generateOneImage to return a buffer (or reject) per format.
@@ -69,12 +66,14 @@ async function run(
   ctx: {
     data: Record<string, unknown>;
     originalDoc?: Record<string, unknown>;
-    req: { payload: FakePayload };
+    req: { payload: FakePayload; context?: Record<string, unknown> };
     collection?: { slug: string };
   },
 ): Promise<Record<string, unknown>> {
+  // Payload always provides req.context; the hook reads skipImageGeneration off it.
+  const withContext = { ...ctx, req: { context: {}, ...ctx.req } };
   return (await hook(
-    ctx as unknown as Parameters<CollectionBeforeChangeHook>[0],
+    withContext as unknown as Parameters<CollectionBeforeChangeHook>[0],
   )) as Record<string, unknown>;
 }
 
@@ -106,6 +105,19 @@ describe("generateImagesHook", () => {
     const data = { title: "x" };
     const out = await run(hook, { data, originalDoc: undefined, req: { payload }, collection: { slug: "posts" } });
     expect(out).toBe(data);
+    expect(generateOneImageMock).not.toHaveBeenCalled();
+    expect(payload.create).not.toHaveBeenCalled();
+  });
+
+  it("skips when req.context.skipImageGeneration is set (seed path)", async () => {
+    const payload = fakePayload();
+    const hook = generateImagesHook({ formats: FORMATS });
+    const data: Record<string, unknown> = { imagePrompt: "a fox" };
+    await run(hook, {
+      data,
+      req: { payload, context: { skipImageGeneration: true } },
+      collection: { slug: "posts" },
+    });
     expect(generateOneImageMock).not.toHaveBeenCalled();
     expect(payload.create).not.toHaveBeenCalled();
   });

@@ -685,6 +685,30 @@ export interface Post {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1181,6 +1205,30 @@ export interface Page {
   layout?: (HeroBlock | ItemsBlock | LogosBlock | StatsBlock | CTABlock | FAQBlock | ProseBlock)[] | null;
   showInNav?: boolean | null;
   publishedAt?: string | null;
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1476,6 +1524,30 @@ export interface Video {
    */
   commentsEnabled?: boolean | null;
   publishedAt?: string | null;
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1640,6 +1712,38 @@ export interface Series {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
+  /**
+   * square image (1080×1080). Auto-generated from the prompt below when empty.
+   */
+  imageSquare?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageSquareUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1758,6 +1862,30 @@ export interface Audio {
    * RSS <pubDate>.
    */
   publishedAt?: string | null;
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
   prefix?: string | null;
   meta?: {
     title?: string | null;
@@ -1956,6 +2084,38 @@ export interface Event {
    */
   commentsEnabled?: boolean | null;
   publishedAt?: string | null;
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
+  /**
+   * square image (1080×1080). Auto-generated from the prompt below when empty.
+   */
+  imageSquare?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageSquareUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -2050,6 +2210,38 @@ export interface Location {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
+  /**
+   * square image (1080×1080). Auto-generated from the prompt below when empty.
+   */
+  imageSquare?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageSquareUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -3300,6 +3492,12 @@ export interface PostsSelect<T extends boolean = true> {
   commentsEnabled?: T;
   publishedAt?: T;
   comments?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
   meta?:
     | T
     | {
@@ -3355,6 +3553,12 @@ export interface VideosSelect<T extends boolean = true> {
   featured?: T;
   commentsEnabled?: T;
   publishedAt?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
   meta?:
     | T
     | {
@@ -3410,6 +3614,12 @@ export interface AudioSelect<T extends boolean = true> {
   featured?: T;
   commentsEnabled?: T;
   publishedAt?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
   prefix?: T;
   meta?:
     | T
@@ -3571,6 +3781,14 @@ export interface SeriesSelect<T extends boolean = true> {
   videoEpisodes?: T;
   audioEpisodes?: T;
   lessons?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
+  imageSquare?: T;
+  imageSquareUrl?: T;
   meta?:
     | T
     | {
@@ -3657,6 +3875,14 @@ export interface LocationsSelect<T extends boolean = true> {
   commentsEnabled?: T;
   reviews?: T;
   events?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
+  imageSquare?: T;
+  imageSquareUrl?: T;
   meta?:
     | T
     | {
@@ -3708,6 +3934,14 @@ export interface EventsSelect<T extends boolean = true> {
   featured?: T;
   commentsEnabled?: T;
   publishedAt?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
+  imageSquare?: T;
+  imageSquareUrl?: T;
   meta?:
     | T
     | {
@@ -3909,6 +4143,12 @@ export interface PagesSelect<T extends boolean = true> {
       };
   showInNav?: T;
   publishedAt?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
   meta?:
     | T
     | {

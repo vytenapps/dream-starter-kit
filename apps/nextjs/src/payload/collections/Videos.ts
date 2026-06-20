@@ -1,9 +1,15 @@
 import type { CollectionConfig } from "payload";
 
+import { FEATURED_FORMATS } from "../../lib/image-formats";
 import { isStaff, publishedOrStaff } from "../access";
 import { accessLevelField } from "../fields/access-level";
 import { commentsEnabledField } from "../fields/comments-enabled";
+import { generatedImageFields } from "../fields/generated-images";
 import { slugField } from "../fields/slug";
+import { generateImagesHook, syncImageUrls } from "../hooks/generate-images";
+
+/** AI image generation: a hero + OG poster from the video's imagePrompt. */
+const videoImages = { formats: FEATURED_FORMATS };
 
 const CAPTION_LANGUAGES = [
   { label: "English", value: "en" },
@@ -39,6 +45,9 @@ export const Videos: CollectionConfig = {
     create: isStaff,
     update: isStaff,
     delete: isStaff,
+  },
+  hooks: {
+    beforeChange: [generateImagesHook(videoImages), syncImageUrls(videoImages)],
   },
   fields: [
     { name: "title", type: "text", required: true },
@@ -181,5 +190,6 @@ export const Videos: CollectionConfig = {
         date: { pickerAppearance: "dayAndTime" },
       },
     },
+    ...generatedImageFields(videoImages),
   ],
 };

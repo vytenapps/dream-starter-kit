@@ -1,10 +1,16 @@
 import type { CollectionConfig } from "payload";
 
+import { FEATURED_FORMATS } from "../../lib/image-formats";
 import { generatePreviewPath, previewBreakpoints } from "../../lib/preview";
 import { isStaff, publishedOrStaff } from "../access";
 import { accessLevelField } from "../fields/access-level";
 import { commentsEnabledField } from "../fields/comments-enabled";
+import { generatedImageFields } from "../fields/generated-images";
 import { slugField } from "../fields/slug";
+import { generateImagesHook, syncImageUrls } from "../hooks/generate-images";
+
+/** AI image generation: a hero + OG card from the post's imagePrompt. */
+const postImages = { formats: FEATURED_FORMATS };
 
 /** Rough reading time (minutes) from the Lexical body's text content. */
 function estimateReadingTime(body: unknown): number | null {
@@ -54,6 +60,10 @@ export const Posts: CollectionConfig = {
     create: isStaff,
     update: isStaff,
     delete: isStaff,
+  },
+  // Generation runs BEFORE the URL-sync hook so the cache picks up new media.
+  hooks: {
+    beforeChange: [generateImagesHook(postImages), syncImageUrls(postImages)],
   },
   fields: [
     { name: "title", type: "text", required: true },
@@ -148,5 +158,6 @@ export const Posts: CollectionConfig = {
       collection: "comments",
       on: "target",
     },
+    ...generatedImageFields(postImages),
   ],
 };

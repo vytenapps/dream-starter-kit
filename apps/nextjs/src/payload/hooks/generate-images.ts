@@ -12,9 +12,14 @@ import {
 } from "@acme/config";
 
 import { env } from "../../env";
-import type { ImageFormatSpec } from "../../lib/image-generation";
-import { generateOneImage } from "../../lib/image-generation";
+import type { ImageFormatSpec } from "../../lib/image-formats";
 import { isS3Configured } from "../../lib/s3-config";
+
+// NOTE: the actual renderer (lib/image-generation) imports `ai` + `sharp` behind
+// `import "server-only"`. It is loaded LAZILY (dynamic import inside the hook) so
+// the Payload CLI (generate:types / migrate:create), which loads payload.config
+// but never runs hooks, never resolves the server-only module. It executes only
+// at runtime in the Next server.
 
 /**
  * Generic image-generation hooks for any Payload collection. A collection opts
@@ -162,6 +167,10 @@ export function generateImagesHook(
       typeof doc[promptField] === "string" ? doc[promptField].trim() : "";
     if (!prompt) return data;
 
+    // Opt-out (mirrors billing's skipStripeSync): the seed sets this so demo
+    // content stays scalar-only and spends zero gateway budget on first boot.
+    if (req.context.skipImageGeneration === true) return data;
+
     const missing = formats.filter((f) => slotEmpty(f.field, doc, orig));
     if (missing.length === 0) return data;
 
@@ -198,6 +207,10 @@ export function generateImagesHook(
     const altValue =
       typeof doc[altField] === "string" ? doc[altField].trim() : "";
     const alt = altValue.length > 0 ? altValue : prompt;
+
+    // Lazy server-only renderer (keeps `ai`/`sharp`/server-only out of the
+    // Payload CLI's config-load graph; see the note at the top of this file).
+    const { generateOneImage } = await import("../../lib/image-generation");
 
     // Per-format isolation: each format generated + attached in its own
     // try/catch; one failure is logged with its cause and never discards
