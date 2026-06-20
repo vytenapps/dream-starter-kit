@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import type { S3ConfigSource } from "./s3-config";
 import {
   isS3Configured,
   projectRefFromUrl,
   regionFromPostgresUrl,
   resolveS3Config,
-  type S3ConfigSource,
 } from "./s3-config";
 
 const REF = "abcdefghijklmnop";

@@ -61,7 +61,7 @@ const FALLBACK_REGION = "us-east-1";
 
 const clean = (v?: string): string | undefined => {
   const t = v?.trim();
-  return t ? t : undefined;
+  return t && t.length > 0 ? t : undefined;
 };
 
 /** Extract the Supabase project ref (subdomain) from a Supabase URL. */
@@ -147,6 +147,9 @@ export function resolveS3Config(src: S3ConfigSource): ResolvedS3Config | null {
  * with one actionable log line and waste zero gateway spend.
  */
 export function isS3Configured(
+  // Reads raw process.env by design (this file spans server + public Supabase
+  // vars not all present in the validated ~/env; see the file header).
+  // eslint-disable-next-line no-restricted-properties
   src: S3ConfigSource = process.env as S3ConfigSource,
 ): boolean {
   return resolveS3Config(src) !== null;

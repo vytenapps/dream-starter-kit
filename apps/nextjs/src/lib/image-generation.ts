@@ -58,6 +58,13 @@ export interface GenerateImagesArgs {
 /** WebP quality for normalized outputs — visually lossless, small files. */
 const WEBP_QUALITY = 82;
 
+/** Trim a value; return undefined when blank (so `??` falls through to defaults). */
+function nonEmpty(value?: string): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 /**
  * Compose the full prompt sent to the model: art direction, then the subject,
  * then this format's composition note. Kept deterministic for unit tests.
@@ -85,8 +92,8 @@ export function composeImagePrompt(
 export async function generateImages(
   args: GenerateImagesArgs,
 ): Promise<GeneratedImage[]> {
-  const model = args.model?.trim() || DEFAULT_IMAGE_MODEL;
-  const systemPrompt = args.systemPrompt?.trim() || DEFAULT_IMAGE_SYSTEM_PROMPT;
+  const model = nonEmpty(args.model) ?? DEFAULT_IMAGE_MODEL;
+  const systemPrompt = nonEmpty(args.systemPrompt) ?? DEFAULT_IMAGE_SYSTEM_PROMPT;
   const subject = args.prompt;
 
   return Promise.all(

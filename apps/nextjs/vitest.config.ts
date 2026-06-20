@@ -15,8 +15,12 @@ export default defineConfig({
   test: {
     environment: "node",
     // Scoped to pure logic (theme color/derivation, image-generation) + the
-    // generated-file drift tests. Component/route code is exercised by
-    // typecheck + Playwright, not unit tests.
-    include: ["src/lib/**/*.test.ts", "src/ext/**/*.test.ts"],
+    // generated-file drift tests + Payload hook/field logic. Component/route
+    // code is exercised by typecheck + Playwright, not unit tests.
+    include: [
+      "src/lib/**/*.test.ts",
+      "src/ext/**/*.test.ts",
+      "src/payload/**/*.test.ts",
+    ],
   },
 });

@@ -5,8 +5,9 @@ import { DEFAULT_IMAGE_MODEL } from "@acme/config";
 
 // Capture the args passed to the gateway + generateImage so we can assert prompt
 // composition and model resolution without a live gateway.
-const generateImageMock = vi.fn();
-const imageModelMock = vi.fn((slug: string) => ({ slug }));
+const generateImageMock =
+  vi.fn<(args: unknown) => Promise<{ image: { uint8Array: Uint8Array } }>>();
+const imageModelMock = vi.fn<(slug: string) => { slug: string }>();
 
 vi.mock("ai", () => ({
   experimental_generateImage: (args: unknown) => generateImageMock(args),
@@ -18,7 +19,6 @@ import {
   composeImagePrompt,
   FEATURED_FORMATS,
   generateImages,
-  type ImageFormatSpec,
 } from "./image-generation";
 
 /** Build a real PNG buffer so sharp has something valid to normalize. */
@@ -105,7 +105,7 @@ describe("generateImages", () => {
     await generateImages({
       prompt: "x",
       model: "openai/gpt-image-1",
-      formats: [FEATURED_FORMATS[0] as ImageFormatSpec],
+      formats: [FEATURED_FORMATS[0]],
     });
     expect(imageModelMock).toHaveBeenCalledWith("openai/gpt-image-1");
   });

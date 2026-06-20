@@ -43,6 +43,7 @@
     "@payloadcms/plugin-stripe": "catalog:",
     "@payloadcms/richtext-lexical": "catalog:",
     "@payloadcms/storage-s3": "catalog:",
+    "@payloadcms/ui": "catalog:",
     "@supabase/ssr": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "@t3-oss/env-nextjs": "^0.13.8",
