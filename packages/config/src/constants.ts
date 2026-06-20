@@ -143,7 +143,8 @@ export const IMAGE_GENERATION_MODELS = [
   },
 ] as const;
 
-export type ImageGenerationModelId = (typeof IMAGE_GENERATION_MODELS)[number]["id"];
+export type ImageGenerationModelId =
+  (typeof IMAGE_GENERATION_MODELS)[number]["id"];
 
 /**
  * Default art-direction system prompt prepended to every image-generation

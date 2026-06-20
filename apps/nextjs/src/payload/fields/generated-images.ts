@@ -71,7 +71,8 @@ export function generatedImageFields(config: GeneratedImagesConfig): Field[] {
       name: altField,
       type: "text",
       admin: {
-        description: "Alt text for the generated image(s). Defaults to the prompt.",
+        description:
+          "Alt text for the generated image(s). Defaults to the prompt.",
       },
     },
     ...perFormat,

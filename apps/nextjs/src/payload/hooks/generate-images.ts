@@ -11,8 +11,8 @@ import {
   isAiGatewayConfigured,
 } from "@acme/config";
 
-import { env } from "../../env";
 import type { ImageFormatSpec } from "../../lib/image-formats";
+import { env } from "../../env";
 import { isS3Configured } from "../../lib/s3-config";
 
 // NOTE: the actual renderer (lib/image-generation) imports `ai` + `sharp` behind

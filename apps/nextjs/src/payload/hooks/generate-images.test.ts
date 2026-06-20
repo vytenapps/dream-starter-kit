@@ -2,6 +2,11 @@ import type { CollectionBeforeChangeHook } from "payload";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GeneratedImage, ImageFormatSpec } from "../../lib/image-formats";
+import {
+  generateImagesHook,
+  syncImageUrls,
+  urlCacheField,
+} from "./generate-images";
 
 // Mock the heavy generation lib (loads `ai` + `sharp`); we only need
 // generateOneImage to return a buffer (or reject) per format.
@@ -11,12 +16,6 @@ vi.mock("../../lib/image-generation", () => ({
   generateOneImage: (args: { format: ImageFormatSpec }) =>
     generateOneImageMock(args),
 }));
-
-import {
-  generateImagesHook,
-  syncImageUrls,
-  urlCacheField,
-} from "./generate-images";
 
 const FORMATS: ImageFormatSpec[] = [
   {
@@ -39,18 +38,23 @@ const FORMATS: ImageFormatSpec[] = [
 
 // Inline impls so each mock's return type is inferred (not `any`); mirrors the
 // fake-Payload pattern in packages/mcp/src/tools/tools.test.ts.
-function fakePayload(over?: {
-  findGlobal?: () => Promise<unknown>;
-}) {
+function fakePayload(over?: { findGlobal?: () => Promise<unknown> }) {
   let nextId = 100;
   return {
-    logger: { warn: vi.fn<(m: string) => void>(), info: vi.fn<(m: string) => void>(), error: vi.fn<(m: string) => void>() },
+    logger: {
+      warn: vi.fn<(m: string) => void>(),
+      info: vi.fn<(m: string) => void>(),
+      error: vi.fn<(m: string) => void>(),
+    },
     findGlobal: vi.fn<() => Promise<unknown>>(() =>
       Promise.resolve({ enabled: true, model: "m", systemPrompt: "sp" }),
     ),
-    create: vi.fn<(args: { collection: string; data: { alt: string } }) => Promise<{ id: number }>>(
-      () => Promise.resolve({ id: nextId++ }),
-    ),
+    create: vi.fn<
+      (args: {
+        collection: string;
+        data: { alt: string };
+      }) => Promise<{ id: number }>
+    >(() => Promise.resolve({ id: nextId++ })),
     findByID: vi.fn<() => Promise<{ url: string }>>(() =>
       Promise.resolve({ url: "/cms-api/media/file/x.webp" }),
     ),
@@ -103,7 +107,12 @@ describe("generateImagesHook", () => {
     const payload = fakePayload();
     const hook = generateImagesHook({ formats: FORMATS });
     const data = { title: "x" };
-    const out = await run(hook, { data, originalDoc: undefined, req: { payload }, collection: { slug: "posts" } });
+    const out = await run(hook, {
+      data,
+      originalDoc: undefined,
+      req: { payload },
+      collection: { slug: "posts" },
+    });
     expect(out).toBe(data);
     expect(generateOneImageMock).not.toHaveBeenCalled();
     expect(payload.create).not.toHaveBeenCalled();
@@ -126,7 +135,12 @@ describe("generateImagesHook", () => {
     const payload = fakePayload();
     const hook = generateImagesHook({ formats: FORMATS });
     const data: Record<string, unknown> = { imagePrompt: "a fox" };
-    await run(hook, { data, originalDoc: undefined, req: { payload }, collection: { slug: "posts" } });
+    await run(hook, {
+      data,
+      originalDoc: undefined,
+      req: { payload },
+      collection: { slug: "posts" },
+    });
     expect(generateOneImageMock).toHaveBeenCalledTimes(2);
     expect(payload.create).toHaveBeenCalledTimes(2);
     expect(data.imageHero).toBe(100);
@@ -142,7 +156,12 @@ describe("generateImagesHook", () => {
     const hook = generateImagesHook({ formats: FORMATS });
     const data: Record<string, unknown> = { imagePrompt: "a fox" };
     // hero already set on the existing doc → only og should generate
-    await run(hook, { data, originalDoc: { imageHero: 7 }, req: { payload }, collection: { slug: "posts" } });
+    await run(hook, {
+      data,
+      originalDoc: { imageHero: 7 },
+      req: { payload },
+      collection: { slug: "posts" },
+    });
     expect(generateOneImageMock).toHaveBeenCalledTimes(1);
     expect(generateOneImageMock.mock.calls[0]?.[0].format.key).toBe("og");
     expect(data.imageHero).toBeUndefined(); // untouched
@@ -158,7 +177,12 @@ describe("generateImagesHook", () => {
     );
     const hook = generateImagesHook({ formats: FORMATS });
     const data: Record<string, unknown> = { imagePrompt: "a fox" };
-    const out = await run(hook, { data, originalDoc: undefined, req: { payload }, collection: { slug: "posts" } });
+    const out = await run(hook, {
+      data,
+      originalDoc: undefined,
+      req: { payload },
+      collection: { slug: "posts" },
+    });
     expect(out).toBe(data); // never throws
     expect(data.imageHero).toBeUndefined(); // failed
     expect(data.imageOg).toBe(100); // succeeded
@@ -177,10 +201,17 @@ describe("generateImagesHook", () => {
     const payload = fakePayload();
     const hook = generateImagesHook({ formats: FORMATS });
     const data: Record<string, unknown> = { imagePrompt: "a fox" };
-    await run(hook, { data, originalDoc: undefined, req: { payload }, collection: { slug: "posts" } });
+    await run(hook, {
+      data,
+      originalDoc: undefined,
+      req: { payload },
+      collection: { slug: "posts" },
+    });
     expect(generateOneImageMock).not.toHaveBeenCalled(); // no gateway spend
     expect(payload.create).not.toHaveBeenCalled();
-    expect(payload.logger.warn).toHaveBeenCalledWith(expect.stringContaining("S3 storage not configured"));
+    expect(payload.logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("S3 storage not configured"),
+    );
   });
 
   it("kill switch: settings.enabled=false → skip", async () => {
@@ -189,9 +220,16 @@ describe("generateImagesHook", () => {
     });
     const hook = generateImagesHook({ formats: FORMATS });
     const data: Record<string, unknown> = { imagePrompt: "a fox" };
-    await run(hook, { data, originalDoc: undefined, req: { payload }, collection: { slug: "posts" } });
+    await run(hook, {
+      data,
+      originalDoc: undefined,
+      req: { payload },
+      collection: { slug: "posts" },
+    });
     expect(generateOneImageMock).not.toHaveBeenCalled();
-    expect(payload.logger.info).toHaveBeenCalledWith(expect.stringContaining("disabled"));
+    expect(payload.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining("disabled"),
+    );
   });
 
   it("caps formats at IMAGE_GENERATION_MAX_FORMATS", async () => {
@@ -206,7 +244,12 @@ describe("generateImagesHook", () => {
     const payload = fakePayload();
     const hook = generateImagesHook({ formats: many });
     const data: Record<string, unknown> = { imagePrompt: "p" };
-    await run(hook, { data, originalDoc: undefined, req: { payload }, collection: { slug: "x" } });
+    await run(hook, {
+      data,
+      originalDoc: undefined,
+      req: { payload },
+      collection: { slug: "x" },
+    });
     expect(generateOneImageMock.mock.calls.length).toBeLessThanOrEqual(6);
   });
 });
@@ -224,7 +267,11 @@ describe("syncImageUrls", () => {
     const payload = fakePayload();
     const hook = syncImageUrls({ formats: FORMATS });
     const data: Record<string, unknown> = { imageHero: null };
-    await run(hook, { data, originalDoc: { imageHero: 5, imageHeroUrl: "/old" }, req: { payload } });
+    await run(hook, {
+      data,
+      originalDoc: { imageHero: 5, imageHeroUrl: "/old" },
+      req: { payload },
+    });
     expect(data.imageHeroUrl).toBeNull();
     expect(payload.findByID).not.toHaveBeenCalled();
   });

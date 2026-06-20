@@ -1,6 +1,6 @@
 import "server-only";
 
-import { experimental_generateImage as generateImage, gateway } from "ai";
+import { gateway, experimental_generateImage as generateImage } from "ai";
 import sharp from "sharp";
 
 import { DEFAULT_IMAGE_MODEL, DEFAULT_IMAGE_SYSTEM_PROMPT } from "@acme/config";
@@ -76,7 +76,8 @@ export async function generateImages(
   args: GenerateImagesArgs,
 ): Promise<GeneratedImage[]> {
   const model = nonEmpty(args.model) ?? DEFAULT_IMAGE_MODEL;
-  const systemPrompt = nonEmpty(args.systemPrompt) ?? DEFAULT_IMAGE_SYSTEM_PROMPT;
+  const systemPrompt =
+    nonEmpty(args.systemPrompt) ?? DEFAULT_IMAGE_SYSTEM_PROMPT;
   const subject = args.prompt;
 
   return Promise.all(
@@ -96,7 +97,11 @@ export async function generateOneImage(args: {
   const { format } = args;
   const { image } = await generateImage({
     model: gateway.imageModel(args.model),
-    prompt: composeImagePrompt(args.systemPrompt, args.subject, format.composition),
+    prompt: composeImagePrompt(
+      args.systemPrompt,
+      args.subject,
+      format.composition,
+    ),
     aspectRatio: format.aspectRatio,
   });
 

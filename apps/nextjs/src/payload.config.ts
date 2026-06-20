@@ -9,6 +9,7 @@ import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
+import type { S3ConfigSource } from "./lib/s3-config";
 import {
   extCollections,
   extGlobals,
@@ -18,7 +19,7 @@ import {
 import { resolveCmsCredentials } from "./lib/cms/derived-credentials";
 import { noDocumentLock } from "./lib/cms/no-document-lock";
 import { pgConnectionOptions } from "./lib/db/bootstrap-core";
-import { resolveS3Config, type S3ConfigSource } from "./lib/s3-config";
+import { resolveS3Config } from "./lib/s3-config";
 import { isStaff } from "./payload/access";
 import { Audio } from "./payload/collections/Audio";
 import { Banners } from "./payload/collections/Banners";

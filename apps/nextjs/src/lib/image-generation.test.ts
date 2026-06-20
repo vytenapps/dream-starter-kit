@@ -3,6 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_IMAGE_MODEL } from "@acme/config";
 
+import {
+  CARD_FORMATS,
+  composeImagePrompt,
+  FEATURED_FORMATS,
+  generateImages,
+} from "./image-generation";
+
 // Capture the args passed to the gateway + generateImage so we can assert prompt
 // composition and model resolution without a live gateway.
 const generateImageMock =
@@ -13,13 +20,6 @@ vi.mock("ai", () => ({
   experimental_generateImage: (args: unknown) => generateImageMock(args),
   gateway: { imageModel: (slug: string) => imageModelMock(slug) },
 }));
-
-import {
-  CARD_FORMATS,
-  composeImagePrompt,
-  FEATURED_FORMATS,
-  generateImages,
-} from "./image-generation";
 
 /** Build a real PNG buffer so sharp has something valid to normalize. */
 async function fakePng(): Promise<Uint8Array> {

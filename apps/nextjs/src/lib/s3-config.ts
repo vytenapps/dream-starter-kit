@@ -115,7 +115,9 @@ export function resolveS3Config(src: S3ConfigSource): ResolvedS3Config | null {
   }
 
   // Mode 2: Supabase session-token mode.
-  const ref = projectRefFromUrl(src.SUPABASE_URL ?? src.NEXT_PUBLIC_SUPABASE_URL);
+  const ref = projectRefFromUrl(
+    src.SUPABASE_URL ?? src.NEXT_PUBLIC_SUPABASE_URL,
+  );
   const anon = anonKey(src);
   const serviceRole = clean(src.SUPABASE_SERVICE_ROLE_KEY);
   if (ref && anon && serviceRole) {

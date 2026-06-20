@@ -126,9 +126,9 @@ describe("isS3Configured", () => {
     expect(isS3Configured({})).toBe(false);
     expect(resolveS3Config({})).toBeNull();
     // partial supabase env (no service role) is not enough
-    expect(
-      isS3Configured({ SUPABASE_URL: `https://${REF}.supabase.co` }),
-    ).toBe(false);
+    expect(isS3Configured({ SUPABASE_URL: `https://${REF}.supabase.co` })).toBe(
+      false,
+    );
   });
   it("is true in either mode", () => {
     expect(

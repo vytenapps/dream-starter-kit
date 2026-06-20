@@ -4,10 +4,10 @@ import type { Payload, TypedUser } from "payload";
 
 import { isAiGatewayConfigured } from "@acme/config";
 
-import { generateImages } from "../image-generation";
-import { IMAGE_FORMAT_PRESETS, SQUARE_FORMAT } from "../image-formats";
-import { isS3Configured } from "../s3-config";
 import { resolveImageGenerationSettings } from "../../payload/hooks/generate-images";
+import { IMAGE_FORMAT_PRESETS, SQUARE_FORMAT } from "../image-formats";
+import { generateImages } from "../image-generation";
+import { isS3Configured } from "../s3-config";
 
 /**
  * Host-side implementation of the MCP `generate_media` tool (injected into the
@@ -35,7 +35,9 @@ export async function generateMediaAsset(
   }
   const settings = await resolveImageGenerationSettings(payload);
   if (!settings.enabled) {
-    throw new Error("Image generation is disabled in image-generation-settings.");
+    throw new Error(
+      "Image generation is disabled in image-generation-settings.",
+    );
   }
 
   const spec = args.format ? IMAGE_FORMAT_PRESETS[args.format] : SQUARE_FORMAT;
