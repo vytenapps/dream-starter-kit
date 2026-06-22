@@ -35,14 +35,14 @@ Everything is **test mode** first (no real money). You flip to live mode at the 
 
 ### What each environment variable is for
 
-| Variable | Secrecy | What it is | Where it's used |
-| --- | --- | --- | --- |
-| `STRIPE_SECRET_KEY` | 🔒 server‑only | Your Stripe API key (`sk_test_…` / `rk_test_…` / `sk_live_…`). Lets the kit create products, prices, checkout sessions, etc. | Next.js server routes + both webhooks |
-| `STRIPE_WEBHOOK_SECRET` | 🔒 server‑only | Signing secret for the **Supabase edge‑function** webhook (mirrors products/prices/subscriptions into `public.*` for the apps). | `billing-stripe-webhook` edge function |
-| `STRIPE_WEBHOOKS_ENDPOINT_SECRET` | 🔒 server‑only | Signing secret for the **Payload** webhook (mirrors `customer.subscription.*` into the CMS `subscriptions` collection). A **second, separate** webhook. | `/cms-api/stripe/webhooks` |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | public | Client‑safe key (`pk_test_…`). **Not required** by the default redirect‑to‑Checkout flow; reserved for future in‑page card capture. | (optional) client |
-| `SITE_URL` | server‑only | Your site origin, used to build the guest‑checkout invite redirect. Defaults to `NEXT_PUBLIC_APP_URL`/localhost. | edge‑function webhook |
-| `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY` | 🔒 | **Legacy / unused** by the plan‑driven flow. Leave blank. | — |
+| Variable                                       | Secrecy        | What it is                                                                                                                                              | Where it's used                        |
+| ---------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `STRIPE_SECRET_KEY`                            | 🔒 server‑only | Your Stripe API key (`sk_test_…` / `rk_test_…` / `sk_live_…`). Lets the kit create products, prices, checkout sessions, etc.                            | Next.js server routes + both webhooks  |
+| `STRIPE_WEBHOOK_SECRET`                        | 🔒 server‑only | Signing secret for the **Supabase edge‑function** webhook (mirrors products/prices/subscriptions into `public.*` for the apps).                         | `billing-stripe-webhook` edge function |
+| `STRIPE_WEBHOOKS_ENDPOINT_SECRET`              | 🔒 server‑only | Signing secret for the **Payload** webhook (mirrors `customer.subscription.*` into the CMS `subscriptions` collection). A **second, separate** webhook. | `/cms-api/stripe/webhooks`             |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`           | public         | Client‑safe key (`pk_test_…`). **Not required** by the default redirect‑to‑Checkout flow; reserved for future in‑page card capture.                     | (optional) client                      |
+| `SITE_URL`                                     | server‑only    | Your site origin, used to build the guest‑checkout invite redirect. Defaults to `NEXT_PUBLIC_APP_URL`/localhost.                                        | edge‑function webhook                  |
+| `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY` | 🔒             | **Legacy / unused** by the plan‑driven flow. Leave blank.                                                                                               | —                                      |
 
 > The kit fails loudly if a required var is missing. Optional vars must be **absent
 > or blank** — never set to `""` in a way the schema rejects (the cloud session hook
@@ -80,18 +80,18 @@ A restricted key (`rk_live_…`) grants only the permissions you choose. The kit
 specific, small set of Stripe resources, so you can lock the key down to exactly
 these. Set **everything not listed below to _None_**:
 
-| Stripe resource (in the "Create restricted key" screen) | Permission | Why the kit needs it |
-| --- | --- | --- |
-| **Products** | **Write** | Create/update a product when you save a plan |
-| **Prices** | **Write** | Create new prices / archive old ones (prices are immutable) |
-| **Coupons** | **Write** | Create/update/delete intro‑offer & marketing coupons |
-| **Promotion codes** | **Write** | Create customer‑facing promo codes (e.g. `LAUNCH20`) |
-| **Customers** | **Write** | Find or create the Stripe customer at checkout |
-| **Checkout Sessions** | **Write** | Create the hosted checkout page; read its line items |
-| **Customer portal** | **Write** | Open the self‑serve billing portal (`/billing`) |
-| **Subscriptions** | **Read** | Read subscription state in the webhooks |
-| **Invoices** | **Read** | List a customer's past invoices on `/billing` |
-| _Everything else_ | **None** | Not used |
+| Stripe resource (in the "Create restricted key" screen) | Permission | Why the kit needs it                                        |
+| ------------------------------------------------------- | ---------- | ----------------------------------------------------------- |
+| **Products**                                            | **Write**  | Create/update a product when you save a plan                |
+| **Prices**                                              | **Write**  | Create new prices / archive old ones (prices are immutable) |
+| **Coupons**                                             | **Write**  | Create/update/delete intro‑offer & marketing coupons        |
+| **Promotion codes**                                     | **Write**  | Create customer‑facing promo codes (e.g. `LAUNCH20`)        |
+| **Customers**                                           | **Write**  | Find or create the Stripe customer at checkout              |
+| **Checkout Sessions**                                   | **Write**  | Create the hosted checkout page; read its line items        |
+| **Customer portal**                                     | **Write**  | Open the self‑serve billing portal (`/billing`)             |
+| **Subscriptions**                                       | **Read**   | Read subscription state in the webhooks                     |
+| **Invoices**                                            | **Read**   | List a customer's past invoices on `/billing`               |
+| _Everything else_                                       | **None**   | Not used                                                    |
 
 > Signature‑verifying incoming webhooks does **not** require any key permission — it
 > only uses the webhook **signing secret** (§4), not the API key.
@@ -147,10 +147,10 @@ Stripe needs to call your app when things happen (a payment succeeds, a subscrip
 renews or cancels). The kit listens on **two separate endpoints**, each with its
 **own signing secret**.
 
-| # | Endpoint path | Env var for its secret | What it does | Events to send |
-| --- | --- | --- | --- | --- |
-| 1 | `…/functions/v1/billing-stripe-webhook` (Supabase edge function) | `STRIPE_WEBHOOK_SECRET` | Mirrors products, prices, customers & subscriptions into the **`public.*`** tables the web/mobile apps read (RLS). Drives guest‑checkout signup + plan tags. | `product.*`, `price.*`, `checkout.session.completed`, `customer.subscription.*` |
-| 2 | `…/cms-api/stripe/webhooks` (Next.js / Payload) | `STRIPE_WEBHOOKS_ENDPOINT_SECRET` | Mirrors `customer.subscription.*` into the **CMS `subscriptions`** collection. | `customer.subscription.created/updated/deleted` |
+| #   | Endpoint path                                                    | Env var for its secret            | What it does                                                                                                                                                 | Events to send                                                                  |
+| --- | ---------------------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| 1   | `…/functions/v1/billing-stripe-webhook` (Supabase edge function) | `STRIPE_WEBHOOK_SECRET`           | Mirrors products, prices, customers & subscriptions into the **`public.*`** tables the web/mobile apps read (RLS). Drives guest‑checkout signup + plan tags. | `product.*`, `price.*`, `checkout.session.completed`, `customer.subscription.*` |
+| 2   | `…/cms-api/stripe/webhooks` (Next.js / Payload)                  | `STRIPE_WEBHOOKS_ENDPOINT_SECRET` | Mirrors `customer.subscription.*` into the **CMS `subscriptions`** collection.                                                                               | `customer.subscription.created/updated/deleted`                                 |
 
 **Permissions for webhooks:** there is **no permission/scope to choose** when
 creating a webhook — a webhook endpoint just needs the **events** listed above. The
@@ -288,7 +288,7 @@ Do these in order. Test mode throughout.
 - **Paid in test mode but nothing unlocked / no subscription row** → the webhook isn't
   reaching you or the signing secret is wrong. Check the endpoint's **delivery
   attempts** in the Stripe Dashboard (or the CLI terminal). A `400 Signature
-  verification failed` means `STRIPE_WEBHOOK_SECRET` / `STRIPE_WEBHOOKS_ENDPOINT_SECRET`
+verification failed` means `STRIPE_WEBHOOK_SECRET` / `STRIPE_WEBHOOKS_ENDPOINT_SECRET`
   doesn't match that endpoint — copy the right `whsec_…` (remember: two endpoints, two
   secrets) and redeploy.
 - **Subscriptions show in the apps but not in the CMS (or vice‑versa)** → you've only
