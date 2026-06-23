@@ -160,6 +160,31 @@ so an attacker can't forge events.) Keep both signing secrets **server‑only**.
 
 > ⚠️ Two endpoints = two different `whsec_…` values. Don't reuse one for both vars.
 
+### 4.0 Which kind of webhook? (v1 snapshot events on **your own account**)
+
+Stripe's dashboard now has more than one webhook-style flow. Use the right one:
+
+- **Type:** the kit uses **v1 "snapshot" webhooks** — the classic kind that POST the
+  full event object (e.g. `customer.subscription.updated`) to your URL, verified with
+  a `whsec_…` signing secret. It does **not** use the newer **v2 / "thin events"**
+  (event‑destinations API) shape. If the dashboard asks, an **API version**‑based
+  endpoint is what you want, not a "thin payload" one.
+- **Scope = "Your account".** When the **Event destination scope** step offers **Your
+  account** vs **Connected accounts**, choose **Your account**. The kit is **not** a
+  Stripe **Connect** platform (no connected accounts), so the Accounts‑v2‑vs‑v1
+  routing described in Stripe's Connect docs does **not** apply.
+- **API version — pick a recent one (important).** The kit runs **stripe‑node v22**
+  and reads the subscription billing period from the **subscription _item_**
+  (`item.current_period_start/​end`), which is how Stripe sends it on **API version
+  `2025-03-31` and newer**. If you create the endpoint on an **old** version (the
+  dashboard sometimes defaults to something like `2016-07-06`), those period fields
+  arrive in the old shape and the CMS mirror records empty periods. So set the
+  endpoint's **API version** to your account's **current/default** version (2025+),
+  not the legacy default. _(The Supabase edge function tolerates both shapes; the
+  Payload mirror expects the new one — so this matters for the CMS `subscriptions`
+  endpoint in particular.)_ The **Stripe CLI** (§4.1) already forwards using a recent
+  version, so local dev is fine by default.
+
 ### 4.1 Local development (using the Stripe CLI — no public URL needed)
 
 Locally, Stripe can't reach your laptop, so you use the **Stripe CLI** to forward
@@ -197,43 +222,68 @@ events. It prints a `whsec_…` for each forwarder.
 > `CLAUDE.md`), so only forwarder 2 (Payload) is testable there. The e2e suite uses
 > self‑signed events for the rest.
 
-### 4.2 Production / hosted (Stripe Dashboard)
+### 4.2 Production / hosted (Stripe Dashboard) — step by step
 
-Do this once your app is deployed and reachable at a public URL.
+Do this once your app is deployed and reachable at a public URL. You create **two**
+endpoints, one per row of the table above. (Stripe has renamed "Webhooks" to **Event
+destinations** in newer dashboards — the steps are the same; if you still see
+**Developers → Webhooks → Add endpoint**, that works too.)
 
-1. Stripe Dashboard → **Developers → Webhooks** → **Add endpoint**
-   (<https://dashboard.stripe.com/test/webhooks> in test mode).
-2. **Create endpoint #1 (edge function):**
-   - **Endpoint URL:**
-     `https://<your-project-ref>.supabase.co/functions/v1/billing-stripe-webhook`
-     (find `<your-project-ref>` in Supabase → Project Settings → API).
-   - **Select events:** `product.created`, `product.updated`, `price.created`,
-     `price.updated`, `checkout.session.completed`,
-     `customer.subscription.created`, `customer.subscription.updated`,
-     `customer.subscription.deleted`. (Selecting "all events" also works.)
-   - **Add endpoint**, then on its page click **Reveal** under **Signing secret** and
-     copy the `whsec_…`. Set it as a Supabase function secret:
+**Open the create flow:**
 
-     ```bash
-     supabase secrets set STRIPE_WEBHOOK_SECRET="whsec_...."
-     ```
+1. Confirm the **Test mode** toggle (top‑right) is set the way you want — set up in
+   **test** first, then repeat in **live** later.
+2. Go to **Developers → Webhooks / Event destinations → Add endpoint / Create**
+   (<https://dashboard.stripe.com/test/webhooks>).
+3. If asked for an **Event destination scope**, choose **Your account** (see §4.0 —
+   _not_ Connected accounts).
+4. If asked for a **destination type / payload style**, choose the
+   **snapshot / Webhook endpoint** option (an **API version**‑based endpoint), _not_
+   "thin events".
+5. Set the **API version** to your account's **current/default** version (2025+) — not
+   the legacy default (§4.0).
 
-3. **Create endpoint #2 (Payload):**
-   - **Endpoint URL:** `https://<your-domain>/cms-api/stripe/webhooks`.
-   - **Select events:** `customer.subscription.created`,
-     `customer.subscription.updated`, `customer.subscription.deleted`.
-   - **Add endpoint**, reveal its `whsec_…`, and set it in **Vercel** (Project →
-     Settings → Environment Variables) as `STRIPE_WEBHOOKS_ENDPOINT_SECRET`, then
-     redeploy.
-4. **Deploy the edge function** (if not already):
+**Endpoint #1 — Supabase edge function (`STRIPE_WEBHOOK_SECRET`):**
+
+6. **Endpoint URL:**
+   `https://<your-project-ref>.supabase.co/functions/v1/billing-stripe-webhook`
+   (find `<your-project-ref>` in Supabase → Project Settings → API).
+7. **Select events:** `product.created`, `product.updated`, `price.created`,
+   `price.updated`, `checkout.session.completed`, `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted`. (Selecting "all
+   events" also works.)
+8. Click **Add endpoint / Create**, then on its page click **Reveal** under **Signing
+   secret** and copy the `whsec_…`. Set it as a Supabase **function secret**:
 
    ```bash
-   supabase functions deploy billing-stripe-webhook
+   supabase secrets set STRIPE_WEBHOOK_SECRET="whsec_...."
    ```
 
-5. Also make sure `STRIPE_SECRET_KEY` is set in **both** Vercel and Supabase secrets
-   (§3.3), and set `SITE_URL` to your site origin in the Supabase secrets so guest
-   invite links point at the right place.
+**Endpoint #2 — Payload / CMS (`STRIPE_WEBHOOKS_ENDPOINT_SECRET`):**
+
+9. Repeat steps 2–5 to start a **second** endpoint (same scope, type, and API version).
+10. **Endpoint URL:** `https://<your-domain>/cms-api/stripe/webhooks`.
+11. **Select events:** `customer.subscription.created`,
+    `customer.subscription.updated`, `customer.subscription.deleted`.
+12. **Add endpoint / Create**, reveal its **different** `whsec_…`, and set it in
+    **Vercel** (Project → Settings → Environment Variables) as
+    `STRIPE_WEBHOOKS_ENDPOINT_SECRET`, then **redeploy**.
+
+**Finish wiring:**
+
+13. **Deploy the edge function** (if not already):
+
+    ```bash
+    supabase functions deploy billing-stripe-webhook
+    ```
+
+14. Make sure `STRIPE_SECRET_KEY` is set in **both** Vercel and Supabase secrets
+    (§3.3), and set `SITE_URL` to your site origin in the Supabase secrets so guest
+    invite links point at the right place.
+15. **Verify:** trigger a test event (Stripe Dashboard → the endpoint → **Send test
+    event**, or do a real test‑card purchase per §5) and confirm a **200** under the
+    endpoint's **delivery attempts**. A `400 Signature verification failed` means the
+    `whsec_…` in that environment doesn't match the endpoint (§6).
 
 ### 4.3 Updating / rotating a webhook secret
 
@@ -294,6 +344,10 @@ verification failed` means `STRIPE_WEBHOOK_SECRET` / `STRIPE_WEBHOOKS_ENDPOINT_S
 - **Subscriptions show in the apps but not in the CMS (or vice‑versa)** → you've only
   configured one of the two webhooks. Both endpoints in §4 are required for full
   coverage.
+- **CMS subscription row has empty "current period" dates** → the webhook endpoint was
+  created on an **old API version**. The CMS mirror reads the period from the
+  subscription item (API 2025+). Edit the endpoint's **API version** to your account's
+  current version (§4.0) and re‑send / re‑trigger the event.
 - **Guest‑checkout invite emails point at the wrong site** → set `SITE_URL` in the
   Supabase function secrets to your production origin.
 - **Never** put the secret key or a signing secret in `NEXT_PUBLIC_*` / `EXPO_PUBLIC_*`
