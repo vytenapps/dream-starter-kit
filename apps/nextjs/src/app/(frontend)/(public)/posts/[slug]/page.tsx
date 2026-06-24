@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { PostDetail } from "~/components/content/post-detail";
 import { PostLivePreview } from "~/components/content/post-live-preview";
+import { getPremiumPlan } from "~/lib/billing-plan";
 import { getPost } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
@@ -38,5 +39,9 @@ export default async function PostPage({
   // stream into the admin iframe live; otherwise render server-side.
   const { isEnabled } = await draftMode();
   if (isEnabled) return <PostLivePreview initialData={post} />;
-  return <PostDetail post={post} />;
+  // Premium posts SSR-seed the paywall with the resolved plan so the modal has
+  // pricing instantly (skipped for non-premium posts — no needless query).
+  const premiumPlan =
+    post.accessLevel === "premium" ? await getPremiumPlan() : null;
+  return <PostDetail post={post} premiumPlan={premiumPlan} />;
 }

@@ -270,7 +270,8 @@ The registry spans five admin groups:
   `community-posts`, with one `comments` system (threaded, gated per document
   by `commentsEnabled`) and a `reports` moderation queue.
 - **People** — the single `users` collection (see SSO below), `device-tokens`,
-  `feed-tokens`, `favorites`, `enrollments` and `reviews`.
+  `feed-tokens`, `enrollments` and `reviews`. (Favorites are **not** a CMS
+  collection — they live in the RLS table `public.content_favorites`, §identity.)
 - **Commerce** — `plans`, `coupons` and the webhook-written `subscriptions`
   mirror (§4.7).
 - **Marketing** — block-based `pages`, `onboarding` slides, `banners`,
@@ -284,7 +285,7 @@ space-groups), Form Builder and Stripe (§4.7).
 Access control is **role-based**: `users.roles` is a multi-select of
 `admin | editor | author | member`. Staff (admin/editor, plus author for the
 panel) get the admin UI; every app signup is mirrored in as a `member`.
-Member-scoped collections (favorites, comments, device-tokens, …) carry
+Member-scoped collections (comments, device-tokens, enrollments, …) carry
 owner-scoped access rules (`ownsOrStaff`), with the owner forced to the
 requesting user on create — but note the **SSO bridge currently authenticates
 staff only**, so members reach this data through your own server routes for

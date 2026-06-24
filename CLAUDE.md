@@ -42,7 +42,7 @@ clarity beat cleverness.
    reachable via `memberships`) and policies scoped to `(select auth.uid())`. See
    `docs/ERD.md`. **The one allowed exception is Payload CMS**, which owns the
    separate `cms` schema and enforces its own **role-based access rules** — content
-   AND member-engagement data (profiles, favorites, comments, enrollments, the
+   AND member-engagement data (profiles, comments, enrollments, the
    `subscriptions` mirror) live there governed by Payload access control, contained
    via a dedicated least-privilege, server-only `payload_cms` role (no access to
    `public`/`auth`; provisioned automatically at server boot in production by
@@ -51,7 +51,16 @@ clarity beat cleverness.
    their CMS-side data through your own server routes until the member-auth
    follow-up ships. Security-critical per-user state that RLS clients consume
    directly (auth, chat, reminders, billing entitlements in `public.subscriptions`)
-   stays in `public` under RLS.
+   stays in `public` under RLS. **Favorites are RLS, not CMS:** saves across all
+   content collections live in `public.content_favorites` (`(user_id, collection,
+   item_id)`, own-row RLS) so they work for **anonymous** users — it is the ONE
+   table anon sessions may write (see the anonymous-identity note below).
+   **Anonymous-account-first identity:** a logged-out visitor gets a real
+   `auth.uid()` (a Supabase anonymous user, minted on first action — e.g.
+   favoriting) so checkout always ties to an account; it converts to permanent
+   once an email is known (see `docs/TURNSTILE.md`, `lib/auth/merge-anon.ts`).
+   Anonymous sign-in is guarded by Cloudflare Turnstile; anon users are never
+   staff and a RESTRICTIVE policy blocks them from the cost-bearing AI chat tables.
 2. **Service role key is server-only.** It bypasses RLS. It appears ONLY in
    Supabase edge functions / server code (e.g. the Stripe webhook). Never in
    `apps/expo` or web client code.
@@ -203,7 +212,7 @@ a full registry across five admin groups — **Content** (posts, videos incl. ve
 shorts, audio/podcast episodes, photos, series/courses + lessons, locations, events,
 categories/tags), **Community** (space-groups → community-spaces → community-posts,
 one threaded `comments` system, a `reports` moderation queue), **People** (users,
-device-tokens, feed-tokens, favorites, enrollments, reviews), **Commerce**
+device-tokens, feed-tokens, enrollments, reviews), **Commerce**
 (plans/coupons/subscriptions) and **Marketing** (pages, onboarding, banners,
 notifications, forms). Collections live in the `cms` schema and are governed by
 **Payload's role-based access-control, not RLS** (`payload/access/index.ts`:
@@ -211,7 +220,7 @@ notifications, forms). Collections live in the `cms` schema and are governed by
 the owner on create via `payload/hooks/assign-owner.ts`).
 
 1. **Collection.** Add a config in `apps/nextjs/src/payload/collections/` (copy
-   `Posts.ts` for editorial content, `Favorites.ts` for owner-scoped member data).
+   `Posts.ts` for editorial content, `Enrollments.ts` for owner-scoped member data).
    Set fields, `slug`, `admin.group`, and `access` (e.g. `publishedOrStaff` reads).
    Reusable field helpers live in `payload/fields/` (slug, link, accessLevel,
    commentsEnabled, destination).

@@ -12,12 +12,19 @@ interface AdminUser {
   id: string;
   email?: string;
   email_confirmed_at?: string | null;
+  is_anonymous?: boolean;
 }
 
 interface ProfileRow {
   id: string;
   display_name: string | null;
   is_staff: boolean;
+}
+
+interface ContentFavoriteRow {
+  user_id: string;
+  collection: string;
+  item_id: string;
 }
 
 function serviceHeaders(): Record<string, string> {
@@ -58,4 +65,71 @@ export async function fetchProfile(
   }
   const rows = (await res.json()) as ProfileRow[];
   return rows[0];
+}
+
+/** Fetch an auth.users row by id (incl. `is_anonymous`) via GoTrue admin. */
+export async function fetchAuthUser(
+  id: string,
+): Promise<AdminUser | undefined> {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${id}`, {
+    headers: serviceHeaders(),
+  });
+  if (!res.ok) return undefined;
+  return (await res.json()) as AdminUser;
+}
+
+/** Read public.content_favorites rows matching a PostgREST query string. */
+export async function fetchContentFavorites(
+  query: string,
+): Promise<ContentFavoriteRow[]> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/content_favorites?${query}`,
+    { headers: serviceHeaders() },
+  );
+  if (!res.ok) throw new Error(`content_favorites read failed: ${res.status}`);
+  return (await res.json()) as ContentFavoriteRow[];
+}
+
+/**
+ * Webhook-style write of an active subscription for `userId` (the Stripe edge
+ * webhook is the only writer in production; here we mimic it so specs can assert
+ * the premium-gating outcome without depending on local webhook delivery).
+ */
+export async function grantActiveSubscription(userId: string): Promise<void> {
+  const headers = {
+    ...serviceHeaders(),
+    "content-type": "application/json",
+    Prefer: "resolution=merge-duplicates",
+  };
+  await fetch(`${SUPABASE_URL}/rest/v1/ext_billing_products`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ id: "prod_e2e_paywall", name: "E2E Paywall" }),
+  });
+  await fetch(`${SUPABASE_URL}/rest/v1/ext_billing_prices`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      id: "price_e2e_paywall",
+      product_id: "prod_e2e_paywall",
+      active: true,
+      unit_amount: 3999,
+      currency: "usd",
+      type: "recurring",
+      interval: "month",
+    }),
+  });
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/ext_billing_subscriptions`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      id: `sub_e2e_paywall_${userId}`,
+      user_id: userId,
+      price_id: "price_e2e_paywall",
+      status: "active",
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`grantActiveSubscription failed: ${res.status}`);
+  }
 }

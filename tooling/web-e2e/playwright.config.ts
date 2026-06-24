@@ -45,5 +45,15 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // Exercise the Cloudflare Turnstile path in e2e with the always-pass test
+    // site key (https://developers.cloudflare.com/turnstile/troubleshooting/testing/),
+    // unless the env already provides one. The widget solves silently; Supabase
+    // CAPTCHA stays OFF locally (config.toml), so the token is accepted-and-ignored
+    // — anon sign-in / sign-up / favorites all work without a live challenge.
+    env: {
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY:
+        process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ??
+        "1x00000000000000000000AA",
+    },
   },
 });

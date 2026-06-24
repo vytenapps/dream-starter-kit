@@ -30,7 +30,6 @@ import { CommunitySpaces } from "./payload/collections/CommunitySpaces";
 import { DeviceTokens } from "./payload/collections/DeviceTokens";
 import { Enrollments } from "./payload/collections/Enrollments";
 import { Events } from "./payload/collections/Events";
-import { Favorites } from "./payload/collections/Favorites";
 import { FeedTokens } from "./payload/collections/FeedTokens";
 import { KitExtensions } from "./payload/collections/KitExtensions";
 import { Lessons } from "./payload/collections/Lessons";
@@ -149,7 +148,6 @@ export default buildConfig({
     Users,
     DeviceTokens,
     FeedTokens,
-    Favorites,
     Enrollments,
     Reviews,
     // Content

@@ -3,7 +3,11 @@ import "server-only";
 import type Stripe from "stripe";
 import { z } from "zod/v4";
 
-import type { ExtPublicRouteTable, ExtRouteTable } from "@acme/ext-kit/server";
+import type {
+  ExtPublicRouteContext,
+  ExtPublicRouteTable,
+  ExtRouteTable,
+} from "@acme/ext-kit/server";
 
 import { getStripe } from "../stripe/client";
 
@@ -27,6 +31,42 @@ function siteUrl(): string {
 }
 
 const checkoutSchema = z.object({ planId: z.union([z.string(), z.number()]) });
+
+const expressIntentSchema = z.object({
+  planId: z.union([z.string(), z.number()]),
+});
+
+/**
+ * Resolve (or create) a Stripe customer for the current request — signed-in
+ * users reuse their saved customer; guests get a fresh blank customer the
+ * Express Checkout / Payment Element fills in (the webhook matches by email).
+ * Shared by /checkout and /express-intent.
+ */
+async function resolveCustomer(
+  ctx: ExtPublicRouteContext,
+  stripe: ReturnType<typeof getStripe>,
+): Promise<string | undefined> {
+  const user = ctx.user;
+  if (!user) return undefined;
+  const { data: existing } = await ctx.supabase
+    .from("ext_billing_customers")
+    .select("stripe_customer_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (existing?.stripe_customer_id) return existing.stripe_customer_id;
+  const byEmail = user.email
+    ? await stripe.customers.list({ email: user.email, limit: 1 })
+    : null;
+  return (
+    byEmail?.data[0]?.id ??
+    (
+      await stripe.customers.create({
+        email: user.email ?? undefined,
+        metadata: { supabase_user_id: user.id },
+      })
+    ).id
+  );
+}
 
 /**
  * Billing API, served by the host dispatcher at /api/ext/billing/*.
@@ -123,6 +163,122 @@ export const publicRoutes: ExtPublicRouteTable = {
 
     const session = await stripe.checkout.sessions.create(params);
     return Response.json({ url: session.url });
+  },
+
+  /**
+   * Create a payment/setup intent for the EMBEDDED Express Checkout Element
+   * (in-modal Apple Pay / Google Pay + card). Returns a `clientSecret` the
+   * client mounts via <Elements>. Recurring plans create a subscription
+   * (default_incomplete; intro coupon / trial applied) returning its first
+   * invoice's PaymentIntent — or a SetupIntent when a trial means no immediate
+   * charge; one-time plans return a PaymentIntent.
+   *
+   * Ties checkout to the session: `ensureAnonSession` runs client-side first, so
+   * a logged-out buyer arrives with an anonymous account and the intent stamps
+   * `supabase_user_id` in metadata — the webhook then links the subscription to
+   * that account (and converts/merges it to permanent once the email is known).
+   */
+  "POST /express-intent": async (req, ctx) => {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return json(503, { error: "Billing not configured" });
+    }
+    const parsed = expressIntentSchema.safeParse(await req.json());
+    if (!parsed.success) return json(400, { error: "Invalid plan" });
+
+    const stripe = getStripe();
+    const user = ctx.user;
+
+    try {
+      const customerId = await resolveCustomer(ctx, stripe);
+      const baseMeta: Record<string, string> = user
+        ? { supabase_user_id: user.id }
+        : {};
+
+      const payload = await ctx.getPayload();
+      const plan = await payload
+        .findByID({
+          collection: "ext-billing-plans",
+          id: parsed.data.planId,
+          depth: 0,
+        })
+        .catch(() => null);
+      if (!plan?.stripePriceId) {
+        return json(409, {
+          error: "This plan isn't available for purchase yet.",
+        });
+      }
+      const metadata = { ...baseMeta, plan_id: String(plan.id) };
+
+      if (plan.pricingType !== "recurring") {
+        const pi = await stripe.paymentIntents.create({
+          amount: Math.round(plan.unitAmount),
+          currency: plan.currency || "usd",
+          ...(customerId ? { customer: customerId } : {}),
+          automatic_payment_methods: { enabled: true },
+          metadata,
+        });
+        return Response.json({
+          clientSecret: pi.client_secret,
+          mode: "payment",
+        });
+      }
+
+      // A customer is required to open a subscription.
+      const subCustomer =
+        customerId ??
+        (await stripe.customers.create({ metadata: baseMeta })).id;
+      const sub = await stripe.subscriptions.create({
+        customer: subCustomer,
+        items: [{ price: plan.stripePriceId }],
+        metadata,
+        ...(plan.trialDays ? { trial_period_days: plan.trialDays } : {}),
+        ...(plan.stripeIntroCouponId
+          ? { discounts: [{ coupon: plan.stripeIntroCouponId }] }
+          : {}),
+        payment_behavior: "default_incomplete",
+        payment_settings: { save_default_payment_method: "on_subscription" },
+        // Stripe API version 2026-05-27.dahlia REMOVED `invoice.payment_intent`.
+        // The first invoice's PaymentIntent client secret now lives on
+        // `confirmation_secret` (whose `type` is always "payment_intent").
+        // Expanding the old field throws and crashed this route with an empty
+        // body (client saw "Unexpected end of JSON input").
+        expand: ["latest_invoice.confirmation_secret", "pending_setup_intent"],
+      });
+
+      const invoice =
+        sub.latest_invoice && typeof sub.latest_invoice === "object"
+          ? sub.latest_invoice
+          : null;
+      const paymentSecret = invoice?.confirmation_secret?.client_secret ?? null;
+      if (paymentSecret) {
+        return Response.json({ clientSecret: paymentSecret, mode: "payment" });
+      }
+
+      // Trial / $0-now subscription: collect a payment method via a SetupIntent.
+      const setup =
+        sub.pending_setup_intent && typeof sub.pending_setup_intent === "object"
+          ? sub.pending_setup_intent
+          : null;
+      if (setup?.client_secret) {
+        return Response.json({
+          clientSecret: setup.client_secret,
+          mode: "setup",
+        });
+      }
+      const si = await stripe.setupIntents.create({
+        customer: subCustomer,
+        automatic_payment_methods: { enabled: true },
+        metadata,
+      });
+      return Response.json({ clientSecret: si.client_secret, mode: "setup" });
+    } catch (err) {
+      // Never crash with an empty body — the client parses JSON and would
+      // otherwise surface a cryptic "Unexpected end of JSON input".
+      const message =
+        err instanceof Error ? err.message : "Could not start checkout.";
+      console.error("[billing] express-intent failed:", message);
+      return json(502, { error: message });
+    }
   },
 };
 

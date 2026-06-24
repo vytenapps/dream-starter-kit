@@ -10,6 +10,7 @@ import { signInWithOAuth, signUpSchema, signUpWithPassword } from "@acme/app";
 import { cn } from "@acme/ui";
 import { toast } from "@acme/ui/toast";
 
+import { useCaptcha } from "~/components/captcha/captcha-provider";
 import { Button } from "~/components/ui/button";
 import {
   Field,
@@ -29,6 +30,7 @@ export function SignupForm({
 }: React.ComponentProps<"div">) {
   const supabase = createClient();
   const configured = isSupabaseConfigured();
+  const { token: captchaToken, reset: resetCaptcha } = useCaptcha();
   // First account = the founder, so route every sign-up through /welcome, which
   // sends the founder into the CMS seed flow (/cms-setup) and everyone else to
   // /a. Used for both the password redirect below and the OAuth callback.
@@ -44,6 +46,7 @@ export function SignupForm({
     try {
       const { session } = await signUpWithPassword(supabase, values, {
         emailRedirectTo: callback,
+        captchaToken,
       });
       if (session) {
         // Email confirmations are off — the user is already signed in.
@@ -63,6 +66,9 @@ export function SignupForm({
       }
     } catch (e) {
       toast.error(authErrorMessage(e, "Sign up failed"));
+    } finally {
+      // Turnstile tokens are single-use — mint a fresh one for the next attempt.
+      resetCaptcha();
     }
   }
 

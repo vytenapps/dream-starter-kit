@@ -122,6 +122,11 @@ export const env = createEnv({
     // default deploy targets the real domain without any manual env.
     NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+    // Cloudflare Turnstile site key (public) for the CAPTCHA on anonymous/auth
+    // sign-ins. Optional — when unset the widget is skipped (use only with
+    // CAPTCHA disabled in Supabase). The SECRET lives in Supabase, not here.
+    // See docs/TURNSTILE.md.
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
     // Origin hosting the Payload REST API. In the browser the app reads content
     // same-origin (relative /cms-api); this is mainly for completeness/SSR.
     NEXT_PUBLIC_CMS_URL: z.url().optional(),
@@ -148,6 +153,7 @@ export const env = createEnv({
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
     NEXT_PUBLIC_CMS_URL: process.env.NEXT_PUBLIC_CMS_URL,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL:

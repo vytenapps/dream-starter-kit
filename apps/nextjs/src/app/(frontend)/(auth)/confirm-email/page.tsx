@@ -1,5 +1,6 @@
 "use client";
 
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
@@ -37,15 +38,24 @@ export default function ConfirmEmailPage() {
     async function confirm() {
       const query = new URLSearchParams(window.location.search);
       const tokenHash = query.get("token_hash");
+      // Anonymous→permanent conversions (updateUser email) link with
+      // `type=email_change`; sign-ups with `type=signup`. Honor whichever.
+      const type = (query.get("type") as EmailOtpType | null) ?? "signup";
+      // Conversions pass `?next=<origin>` to return the buyer to where they
+      // started (a paid, now-permanent user). Same-origin relative paths only
+      // (open-redirect guard); default to /welcome (routes by role).
+      const nextParam = query.get("next");
+      const next =
+        nextParam && /^\/(?!\/)/.test(nextParam) ? nextParam : "/welcome";
       history.replaceState(null, "", window.location.pathname);
 
       if (tokenHash) {
         const { error } = await supabase.auth.verifyOtp({
-          type: "signup",
+          type,
           token_hash: tokenHash,
         });
         if (!error) {
-          window.location.assign("/welcome");
+          window.location.assign(next);
           return;
         }
         // Token used/expired — an earlier visit may have already confirmed.
@@ -53,7 +63,7 @@ export default function ConfirmEmailPage() {
 
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        window.location.assign("/welcome");
+        window.location.assign(next);
         return;
       }
       setStatus("invalid");
