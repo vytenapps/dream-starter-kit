@@ -84,7 +84,7 @@ caller's Supabase session and JIT-provisions a `cms.users` row (linked by
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `assignOwner(field)`                            | Forces the owner field to the requesting user on create (staff/Local API may override)                                                |
 | `requireCommentsEnabled`                        | Rejects comments whose target has `commentsEnabled: false`                                                                            |
-| `uniquePolymorphic(...)`                        | One row per owner + polymorphic target (favorites, open reports)                                                                      |
+| `uniquePolymorphic(...)`                        | One row per owner + polymorphic target (open reports)                                                                                 |
 | `incrementReportCount`                          | Denormalizes `reportCount` onto the reported doc                                                                                      |
 | `invite-user`                                   | On staff-created Users rows: Supabase invite email + `is_staff` flag                                                                  |
 | `sync-plan-to-stripe` / `sync-coupon-to-stripe` | afterChange → create/update Stripe product, **recreate + archive** immutable prices/coupons; status lands on `syncStatus`/`syncError` |
@@ -101,7 +101,8 @@ Long-form articles with drafts + scheduled publishing. **Fields:** `title`\*,
 (media), `author` + `coAuthors` (users), `categories`, `tags`, `relatedPosts`,
 virtual `readingTime`/`authorName`, `accessLevel`, `featured`,
 `commentsEnabled`, `publishedAt`, join `comments`. **Access:** read
-`publishedOrStaff`; write `isStaff`. Drafts (max 25) · trash · folders.
+`publishedOrStaff`; write `isStaff`. Drafts (max 25) · live preview · trash ·
+folders.
 
 ### `videos` — landscape videos & vertical shorts
 
@@ -164,7 +165,7 @@ Belong to a `series` of `kind: course`. **Fields:** `title`_, `slug`, `course`_,
 `locationType` (category), `tags`, read-only `ratingAverage` (denormalized from
 approved reviews), `temporarilyClosed`, `featured`, `commentsEnabled`; joins
 `reviews`/`events`. **Access:** read `publishedOrStaff`; write `isStaff`.
-Drafts · trash · folders.
+Drafts · live preview · trash · folders.
 
 ### `events` — scheduled events
 
@@ -175,7 +176,8 @@ Editorial `_status` (drafts) is independent from lifecycle `eventStatus`
 `location`/`virtualUrl`, `featuredImage`/`gallery`, `isFree` →
 `price`/`currency`, `ticketUrl`, `capacity`, `registrationRequired`,
 `organizer`/`speakers` (users), `featured`, `commentsEnabled`, `publishedAt`.
-**Access:** read `publishedOrStaff`; write `isStaff`. Drafts · trash · folders.
+**Access:** read `publishedOrStaff`; write `isStaff`. Drafts · live preview ·
+trash · folders.
 
 ### `categories` — hierarchical taxonomy
 
@@ -264,7 +266,7 @@ global, staff-managed `tags`); **Contact tab** (phone, DOB, timezone, language,
 address); **Preferences tab** (push/SMS/marketing opt-ins,
 `notificationPreferences`, `onboardingCompleted`, `lastActiveAt`); **Billing
 tab** (read-only `stripeCustomerID`); joins
-`subscriptions`/`favorites`/`enrollments`/`devices`. **Access:** admin panel
+`subscriptions`/`enrollments`/`devices`. **Access:** admin panel
 `canAccessAdmin`; create `isAdmin` (triggers the invite hook); read/update
 `isAdminOrSelf`; delete `isAdmin`. Trash (soft delete; bridge rejects trashed).
 
@@ -281,11 +283,13 @@ Opaque per-member tokens embedded in private RSS URLs. **Fields:** read-only
 unique `token`_ (UUID default), `user`_, `show` (podcast series), `revoked`,
 `lastAccessedAt`. **Access:** create any user; the rest `ownsOrStaff`.
 
-### `favorites` — bookmarks
+### Favorites — moved to `public.content_favorites` (RLS)
 
-Polymorphic join: one row per user+target (`uniquePolymorphic`). **Fields:**
-`user`_ (auto-assigned), `target`_ (posts/videos/audio/photos/locations/events),
-`notes`. **Access:** create any user; the rest `ownsOrStaff`.
+There is no CMS `favorites` collection. Saves across **all** content collections
+live in the Supabase RLS table `public.content_favorites` (`(user_id,
+collection, item_id)`, own-row RLS) so they also work for **anonymous** users —
+see `docs/ERD.md` and `packages/app/src/hooks/use-favorites.ts`. It's the one
+table anonymous sessions may write.
 
 ### `enrollments` — course enrollment + progress
 
@@ -394,20 +398,49 @@ number/message fields); submissions are publicly creatable, staff-read.
 
 ## Globals
 
-| Global             | Purpose                                                                                                                                                                                                                                                                                                                                                                                                     | Read               | Update    |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | --------- |
-| `site-settings`    | Site chrome: General (siteName, defaultMeta), Header nav + actions, Footer columns/policies/copyright, Social handles — consumed by the Launch UI navbar/footer                                                                                                                                                                                                                                             | `anyone`           | `isStaff` |
-| `pricing-settings` | `/pricing` page: heading/subheading, `billingToggleDefault`, up to 3 `featuredPlans`, optional `freeTier` group, disclaimer                                                                                                                                                                                                                                                                                 | `anyone`           | `isStaff` |
-| `theme-settings`   | The **front-end** shadcn theme (versioned, drafts→publish): Branding (appName, brandLink, appIcon, light/dark logos), Light/Dark color tokens, Typography (sans/serif/mono, letterSpacing), Other (radius, spacing, shadow). Serialized by `lib/theme/serialize.ts` into `<ThemeStyle />`; branding read by `getBranding()`. The `/admin` chrome uses a separate fixed palette (`lib/theme/admin-theme.ts`) | `publishedOrStaff` | `isStaff` |
-| `profile-fields`   | Admin-defined custom member fields (key, label, type, options, required, visibility, editableByMember, order) — drives `users.customFields` validation + profile UI                                                                                                                                                                                                                                         | `anyone`           | `isStaff` |
+| Global                      | Purpose                                                                                                                                                                                                                                                                                                                                                                                                     | Read               | Update    |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | --------- |
+| `site-settings`             | Site chrome: General (siteName, defaultMeta), Header nav + actions, Footer columns/policies/copyright, Social handles — consumed by the Launch UI navbar/footer                                                                                                                                                                                                                                             | `anyone`           | `isStaff` |
+| `pricing-settings`          | `/pricing` page: heading/subheading, `billingToggleDefault`, up to 3 `featuredPlans`, optional `freeTier` group, disclaimer                                                                                                                                                                                                                                                                                 | `anyone`           | `isStaff` |
+| `theme-settings`            | The **front-end** shadcn theme (versioned, drafts→publish): Branding (appName, brandLink, appIcon, light/dark logos), Light/Dark color tokens, Typography (sans/serif/mono, letterSpacing), Other (radius, spacing, shadow). Serialized by `lib/theme/serialize.ts` into `<ThemeStyle />`; branding read by `getBranding()`. The `/admin` chrome uses a separate fixed palette (`lib/theme/admin-theme.ts`) | `publishedOrStaff` | `isStaff` |
+| `profile-fields`            | Admin-defined custom member fields (key, label, type, options, required, visibility, editableByMember, order) — drives `users.customFields` validation + profile UI                                                                                                                                                                                                                                         | `anyone`           | `isStaff` |
+| `image-generation-settings` | **System → Image Generation.** Workspace settings for AI image generation: `enabled` (kill switch), `model` (gateway image-model slug from the `@acme/config` catalog), `systemPrompt` (art direction). Resolution order at generation time: global → env → code default                                                                                                                                    | `isStaff`          | `isStaff` |
 
 ---
+
+## AI image generation
+
+Image-enabled content collections (and the Media library, via the MCP
+`generate_media` tool) auto-generate images from a text **`imagePrompt`**. See
+[ARCHITECTURE.md → core CMS image generation](./ARCHITECTURE.md) for the moving
+parts; the highlights:
+
+- **Opt-in fields.** A collection adds `...generatedImageFields({ formats })`
+  (`payload/fields/generated-images.ts`) + a two-hook `beforeChange` array
+  `[generateImagesHook(cfg), syncImageUrls(cfg)]` (`payload/hooks/generate-images.ts`).
+  This yields, per format: an `upload`→`media` field (`imageHero` / `imageOg` /
+  `imageSquare`), a hidden `<field>Url` cache the public surfaces read, and a
+  `CopyImageUrl` admin control; plus the shared `imageAlt` text and the
+  `imagePrompt` textarea. Presets live in `lib/image-formats.ts`:
+  **FEATURED** (hero 16:9 + OG 1200×630) and **CARD** (+ a 1:1 square).
+- **Enabled on:** `posts`, `pages`, `videos`, `audio` (FEATURED) and `events`,
+  `series`, `locations` (CARD). **Not** on `photos` (the upload _is_ the image)
+  or `community-posts` (member-authored — avoids member-triggered gateway spend).
+- **Semantics (verified, do not regress).** `beforeChange`, not `afterChange`,
+  so generation triggers off the incoming `imagePrompt`, the new media ids land
+  in the same write, and there's no second write/recursion. **Fill-missing
+  slots:** only empty slots are filled; clear a slot to regenerate just that one.
+  **Per-format isolation:** one format failing (content-safety, gateway, sharp)
+  is logged with its cause and never blocks the write or the other formats.
+  **S3-configured guard runs first** so a misconfigured deploy spends zero
+  gateway budget. The kill switch (`enabled`) and `req.context.skipImageGeneration`
+  (set by the seed) both short-circuit.
 
 ## Adding or changing a collection
 
 Follow [`CLAUDE.md` → How to add a Payload content type](../CLAUDE.md#how-to-add-a-payload-content-type):
 copy the closest collection above (e.g. `Posts.ts` for editorial,
-`Favorites.ts` for owner-scoped member data), register it in
+`Enrollments.ts` for owner-scoped member data), register it in
 `payload.config.ts`, then `pnpm cms:gen-types`, `pnpm cms:migrate:create`
 (commit the migration — production applies it automatically via
 `prodMigrations`), add a seed step in `payload/seed.ts`, and keep this document

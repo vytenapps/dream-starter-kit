@@ -70,7 +70,6 @@ export interface Config {
     users: User;
     "device-tokens": DeviceToken;
     "feed-tokens": FeedToken;
-    favorites: Favorite;
     enrollments: Enrollment;
     reviews: Review;
     media: Media;
@@ -113,7 +112,6 @@ export interface Config {
   collectionsJoins: {
     users: {
       subscriptions: "ext-billing-subscriptions";
-      favorites: "favorites";
       enrollments: "enrollments";
       devices: "device-tokens";
     };
@@ -170,7 +168,6 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     "device-tokens": DeviceTokensSelect<false> | DeviceTokensSelect<true>;
     "feed-tokens": FeedTokensSelect<false> | FeedTokensSelect<true>;
-    favorites: FavoritesSelect<false> | FavoritesSelect<true>;
     enrollments: EnrollmentsSelect<false> | EnrollmentsSelect<true>;
     reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -233,6 +230,7 @@ export interface Config {
   globals: {
     "site-settings": SiteSetting;
     "theme-settings": ThemeSetting;
+    "image-generation-settings": ImageGenerationSetting;
     "profile-fields": ProfileField;
     "ext-billing-settings": ExtBillingSetting;
     "ext-chat-settings": ExtChatSetting;
@@ -241,6 +239,9 @@ export interface Config {
   globalsSelect: {
     "site-settings": SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     "theme-settings": ThemeSettingsSelect<false> | ThemeSettingsSelect<true>;
+    "image-generation-settings":
+      | ImageGenerationSettingsSelect<false>
+      | ImageGenerationSettingsSelect<true>;
     "profile-fields": ProfileFieldsSelect<false> | ProfileFieldsSelect<true>;
     "ext-billing-settings":
       | ExtBillingSettingsSelect<false>
@@ -460,11 +461,6 @@ export interface User {
   stripeCustomerID?: string | null;
   subscriptions?: {
     docs?: (number | ExtBillingSubscription)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  favorites?: {
-    docs?: (number | Favorite)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
@@ -717,6 +713,30 @@ export interface Post {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1229,6 +1249,30 @@ export interface Page {
     | null;
   showInNav?: boolean | null;
   publishedAt?: string | null;
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1526,6 +1570,30 @@ export interface Video {
    */
   commentsEnabled?: boolean | null;
   publishedAt?: string | null;
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1690,6 +1758,38 @@ export interface Series {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
+  /**
+   * square image (1080×1080). Auto-generated from the prompt below when empty.
+   */
+  imageSquare?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageSquareUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1808,6 +1908,30 @@ export interface Audio {
    * RSS <pubDate>.
    */
   publishedAt?: string | null;
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
   prefix?: string | null;
   meta?: {
     title?: string | null;
@@ -2006,6 +2130,38 @@ export interface Event {
    */
   commentsEnabled?: boolean | null;
   publishedAt?: string | null;
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
+  /**
+   * square image (1080×1080). Auto-generated from the prompt below when empty.
+   */
+  imageSquare?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageSquareUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -2116,6 +2272,38 @@ export interface Location {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  /**
+   * Describe the image(s) to generate. On save, empty slots above are filled via the AI Gateway. Clear a slot to regenerate just that one.
+   */
+  imagePrompt?: string | null;
+  /**
+   * Alt text for the generated image(s). Defaults to the prompt.
+   */
+  imageAlt?: string | null;
+  /**
+   * hero image (1600×900). Auto-generated from the prompt below when empty.
+   */
+  imageHero?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageHeroUrl?: string | null;
+  /**
+   * og image (1200×630). Auto-generated from the prompt below when empty.
+   */
+  imageOg?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageOgUrl?: string | null;
+  /**
+   * square image (1080×1080). Auto-generated from the prompt below when empty.
+   */
+  imageSquare?: (number | null) | Media;
+  /**
+   * Cached public URL — generated; do not edit.
+   */
+  imageSquareUrl?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -2279,47 +2467,6 @@ export interface Photo {
       filename?: string | null;
     };
   };
-}
-/**
- * Member bookmarks across content types.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "favorites".
- */
-export interface Favorite {
-  id: number;
-  user: number | User;
-  target:
-    | {
-        relationTo: "posts";
-        value: number | Post;
-      }
-    | {
-        relationTo: "videos";
-        value: number | Video;
-      }
-    | {
-        relationTo: "audio";
-        value: number | Audio;
-      }
-    | {
-        relationTo: "photos";
-        value: number | Photo;
-      }
-    | {
-        relationTo: "locations";
-        value: number | Location;
-      }
-    | {
-        relationTo: "events";
-        value: number | Event;
-      };
-  /**
-   * Personal note (optional).
-   */
-  notes?: string | null;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3089,142 +3236,6 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: "users";
-        value: number | User;
-      } | null)
-    | ({
-        relationTo: "device-tokens";
-        value: number | DeviceToken;
-      } | null)
-    | ({
-        relationTo: "feed-tokens";
-        value: number | FeedToken;
-      } | null)
-    | ({
-        relationTo: "favorites";
-        value: number | Favorite;
-      } | null)
-    | ({
-        relationTo: "enrollments";
-        value: number | Enrollment;
-      } | null)
-    | ({
-        relationTo: "reviews";
-        value: number | Review;
-      } | null)
-    | ({
-        relationTo: "media";
-        value: number | Media;
-      } | null)
-    | ({
-        relationTo: "posts";
-        value: number | Post;
-      } | null)
-    | ({
-        relationTo: "videos";
-        value: number | Video;
-      } | null)
-    | ({
-        relationTo: "audio";
-        value: number | Audio;
-      } | null)
-    | ({
-        relationTo: "photos";
-        value: number | Photo;
-      } | null)
-    | ({
-        relationTo: "series";
-        value: number | Series;
-      } | null)
-    | ({
-        relationTo: "lessons";
-        value: number | Lesson;
-      } | null)
-    | ({
-        relationTo: "locations";
-        value: number | Location;
-      } | null)
-    | ({
-        relationTo: "events";
-        value: number | Event;
-      } | null)
-    | ({
-        relationTo: "categories";
-        value: number | Category;
-      } | null)
-    | ({
-        relationTo: "tags";
-        value: number | Tag;
-      } | null)
-    | ({
-        relationTo: "tag-groups";
-        value: number | TagGroup;
-      } | null)
-    | ({
-        relationTo: "space-groups";
-        value: number | SpaceGroup;
-      } | null)
-    | ({
-        relationTo: "community-spaces";
-        value: number | CommunitySpace;
-      } | null)
-    | ({
-        relationTo: "community-posts";
-        value: number | CommunityPost;
-      } | null)
-    | ({
-        relationTo: "comments";
-        value: number | Comment;
-      } | null)
-    | ({
-        relationTo: "reports";
-        value: number | Report;
-      } | null)
-    | ({
-        relationTo: "pages";
-        value: number | Page;
-      } | null)
-    | ({
-        relationTo: "onboarding";
-        value: number | Onboarding;
-      } | null)
-    | ({
-        relationTo: "banners";
-        value: number | Banner;
-      } | null)
-    | ({
-        relationTo: "notifications";
-        value: number | Notification;
-      } | null)
-    | ({
-        relationTo: "kit-extensions";
-        value: number | KitExtension;
-      } | null)
-    | ({
-        relationTo: "nav-items";
-        value: number | NavItem;
-      } | null)
-    | ({
-        relationTo: "ext-billing-plans";
-        value: number | ExtBillingPlan;
-      } | null)
-    | ({
-        relationTo: "ext-billing-coupons";
-        value: number | ExtBillingCoupon;
-      } | null)
-    | ({
-        relationTo: "ext-billing-subscriptions";
-        value: number | ExtBillingSubscription;
-      } | null)
-    | ({
-        relationTo: "ext-chat-skills";
-        value: number | ExtChatSkill;
-      } | null)
-    | ({
-        relationTo: "ext-docs-pages";
-        value: number | ExtDocsPage;
-      } | null)
-    | ({
         relationTo: "forms";
         value: number | Form;
       } | null)
@@ -3346,7 +3357,6 @@ export interface UsersSelect<T extends boolean = true> {
   lastActiveAt?: T;
   stripeCustomerID?: T;
   subscriptions?: T;
-  favorites?: T;
   enrollments?: T;
   devices?: T;
   updatedAt?: T;
@@ -3380,17 +3390,6 @@ export interface FeedTokensSelect<T extends boolean = true> {
   show?: T;
   revoked?: T;
   lastAccessedAt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "favorites_select".
- */
-export interface FavoritesSelect<T extends boolean = true> {
-  user?: T;
-  target?: T;
-  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3523,6 +3522,12 @@ export interface PostsSelect<T extends boolean = true> {
   commentsEnabled?: T;
   publishedAt?: T;
   comments?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
   meta?:
     | T
     | {
@@ -3578,6 +3583,12 @@ export interface VideosSelect<T extends boolean = true> {
   featured?: T;
   commentsEnabled?: T;
   publishedAt?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
   meta?:
     | T
     | {
@@ -3633,6 +3644,12 @@ export interface AudioSelect<T extends boolean = true> {
   featured?: T;
   commentsEnabled?: T;
   publishedAt?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
   prefix?: T;
   meta?:
     | T
@@ -3794,6 +3811,14 @@ export interface SeriesSelect<T extends boolean = true> {
   videoEpisodes?: T;
   audioEpisodes?: T;
   lessons?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
+  imageSquare?: T;
+  imageSquareUrl?: T;
   meta?:
     | T
     | {
@@ -3880,6 +3905,14 @@ export interface LocationsSelect<T extends boolean = true> {
   commentsEnabled?: T;
   reviews?: T;
   events?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
+  imageSquare?: T;
+  imageSquareUrl?: T;
   meta?:
     | T
     | {
@@ -3931,6 +3964,14 @@ export interface EventsSelect<T extends boolean = true> {
   featured?: T;
   commentsEnabled?: T;
   publishedAt?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
+  imageSquare?: T;
+  imageSquareUrl?: T;
   meta?:
     | T
     | {
@@ -4132,6 +4173,12 @@ export interface PagesSelect<T extends boolean = true> {
       };
   showInNav?: T;
   publishedAt?: T;
+  imagePrompt?: T;
+  imageAlt?: T;
+  imageHero?: T;
+  imageHeroUrl?: T;
+  imageOg?: T;
+  imageOgUrl?: T;
   meta?:
     | T
     | {
@@ -5188,6 +5235,37 @@ export interface ThemeSetting {
   createdAt?: string | null;
 }
 /**
+ * Auto-generate content images from a text prompt (the `imagePrompt` field on image-enabled collections and the generate_media MCP tool). Renders via the Vercel AI Gateway and stores results in the Media library.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "image-generation-settings".
+ */
+export interface ImageGenerationSetting {
+  id: number;
+  /**
+   * Master switch. When off, saving a doc with an imagePrompt does NOT generate images (the save still succeeds).
+   */
+  enabled?: boolean | null;
+  /**
+   * Image model used for generation (AI Gateway slug).
+   */
+  model?:
+    | (
+        | "google/imagen-4.0-generate-001"
+        | "google/imagen-4.0-fast-generate-001"
+        | "openai/gpt-image-1"
+        | "bfl/flux-pro-1.1"
+      )
+    | null;
+  /**
+   * Art-direction prompt prepended to every generation. Leave blank to use the built-in default:
+   * Bold, minimal, modern flat illustration with clean shapes and a cohesive, vibrant color palette. Strong focal subject, generous negative space, soft studio lighting. No text, no words, no letters, no logos, no watermarks, no UI chrome. High quality, professional, editorial.
+   */
+  systemPrompt?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * Custom member profile fields stored in users.customFields.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -5576,6 +5654,18 @@ export interface ThemeSettingsSelect<T extends boolean = true> {
         offsetY?: T;
       };
   _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "image-generation-settings_select".
+ */
+export interface ImageGenerationSettingsSelect<T extends boolean = true> {
+  enabled?: T;
+  model?: T;
+  systemPrompt?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

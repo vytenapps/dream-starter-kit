@@ -580,6 +580,30 @@ export type Database = {
           },
         ];
       };
+      content_favorites: {
+        Row: {
+          collection: string;
+          created_at: string;
+          id: string;
+          item_id: string;
+          user_id: string;
+        };
+        Insert: {
+          collection: string;
+          created_at?: string;
+          id?: string;
+          item_id: string;
+          user_id: string;
+        };
+        Update: {
+          collection?: string;
+          created_at?: string;
+          id?: string;
+          item_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       files: {
         Row: {
           bucket: string;
@@ -727,21 +751,27 @@ export type Database = {
           created_at: string;
           display_name: string | null;
           id: string;
+          is_anonymous: boolean;
           is_staff: boolean;
+          phone: string | null;
         };
         Insert: {
           avatar_url?: string | null;
           created_at?: string;
           display_name?: string | null;
           id: string;
+          is_anonymous?: boolean;
           is_staff?: boolean;
+          phone?: string | null;
         };
         Update: {
           avatar_url?: string | null;
           created_at?: string;
           display_name?: string | null;
           id?: string;
+          is_anonymous?: boolean;
           is_staff?: boolean;
+          phone?: string | null;
         };
         Relationships: [];
       };

@@ -53,6 +53,11 @@ export const env = createEnv({
     // Opt-out for the runtime DB bootstrap (e.g. when CI owns migrations).
     DB_BOOTSTRAP: z.enum(["on", "off"]).optional(),
     AI_GATEWAY_API_KEY: z.string().min(1).optional(),
+    // Optional overrides for core CMS image generation. Both default through
+    // @acme/config; the image-generation-settings global wins at runtime.
+    // Model slugs live ONLY in @acme/config (golden rule #5).
+    IMAGE_GENERATION_MODEL: z.string().min(1).optional(),
+    IMAGE_GENERATION_SYSTEM_PROMPT: z.string().min(1).optional(),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
     // Signing secret for the PAYLOAD Stripe webhook endpoint
@@ -117,6 +122,11 @@ export const env = createEnv({
     // default deploy targets the real domain without any manual env.
     NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+    // Cloudflare Turnstile site key (public) for the CAPTCHA on anonymous/auth
+    // sign-ins. Optional — when unset the widget is skipped (use only with
+    // CAPTCHA disabled in Supabase). The SECRET lives in Supabase, not here.
+    // See docs/TURNSTILE.md.
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
     // Origin hosting the Payload REST API. In the browser the app reads content
     // same-origin (relative /cms-api); this is mainly for completeness/SSR.
     NEXT_PUBLIC_CMS_URL: z.url().optional(),
@@ -143,6 +153,7 @@ export const env = createEnv({
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
     NEXT_PUBLIC_CMS_URL: process.env.NEXT_PUBLIC_CMS_URL,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL:

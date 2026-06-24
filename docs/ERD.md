@@ -54,6 +54,7 @@ erDiagram
     chat_threads ||--o{ chat_messages : "contains"
     profiles ||--o{ user_tags : "tagged"
     tags ||--o{ user_tags : "applied to"
+    profiles ||--o{ content_favorites : "saves"
 
     auth_users {
         uuid id PK "managed by Supabase Auth"
@@ -63,6 +64,16 @@ erDiagram
         uuid id PK "= auth.users.id"
         text display_name
         text avatar_url
+        boolean is_anonymous "true for Supabase anon users"
+        boolean is_staff
+        text phone "captured from wallet checkout"
+        timestamptz created_at
+    }
+    content_favorites {
+        uuid id PK
+        uuid user_id FK "auth.users(id)"
+        text collection "Payload collection slug"
+        text item_id "content doc id (cms → no FK)"
         timestamptz created_at
     }
     organizations {
@@ -162,7 +173,8 @@ erDiagram
 **Identity & access** _(core — keep)_
 
 - `auth.users` — managed by **Supabase Auth**; you don't create this table.
-- `profiles` — app-level user record, 1:1 with `auth.users` (same `id`). Created by a trigger on signup. The anchor for most RLS policies.
+- `profiles` — app-level user record, 1:1 with `auth.users` (same `id`). Created by a trigger on signup. The anchor for most RLS policies. Carries `is_staff`, `is_anonymous` (true for Supabase anonymous users — minted on a logged-out visitor's first action; never staff; converted to permanent on email confirmation), and `phone` (captured from wallet checkout; column-grant updatable by the owner like `display_name`).
+- `content_favorites` — generic per-user saves across **all** content collections, keyed `(user_id, collection, item_id)` with own-row RLS. Content lives in the `cms` schema so the item is referenced by Payload collection slug + doc id (no FK). **The one table anonymous users may write** — so a logged-out visitor can favorite before signing up. Replaces the old CMS `favorites` collection.
 
 **Teams / multi-tenancy** _(optional — drop for single-user apps)_
 
@@ -197,7 +209,7 @@ erDiagram
 
 **AI assistant** _(keep if the app has AI features)_
 
-- `chat_threads` / `chat_messages` — persisted conversations for the in-app assistant (AI SDK via the Vercel AI Gateway). `token_usage` supports cost/observability.
+- `chat_threads` / `chat_messages` — persisted conversations for the in-app assistant (AI SDK via the Vercel AI Gateway). `token_usage` supports cost/observability. A **RESTRICTIVE** `no anon` policy is AND-ed onto the owner policies so **anonymous** sessions can't read/write these cost-bearing tables (`(auth.jwt()->>'is_anonymous')::boolean = false`); the AI route also rejects anon sessions server-side.
 
 **Remote MCP server** _(OAuth state — server-only)_
 

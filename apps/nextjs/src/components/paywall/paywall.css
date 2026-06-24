@@ -1,0 +1,444 @@
+/* Paywall modal + on-page dock styles. A self-contained dark surface (the
+ * checkout sheet is intentionally dark regardless of the site theme); only the
+ * accent + primary-foreground + background tokens come from the shadcn theme.
+ * Ported/generalized from the meet-dream paywall (the dr-/co- prefixes are
+ * distinctive enough to live in the global scope). */
+
+.dr-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 13, 22, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: paywall-fade 0.2s;
+}
+.dr-scrim.co-full {
+  align-items: stretch;
+  justify-content: stretch;
+  background: #0c0e16;
+}
+@keyframes paywall-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.drawer {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  background: #0c0e16;
+  color: #fff;
+  border-radius: 22px 22px 0 0;
+  padding: 30px 34px 26px;
+  box-shadow: 0 -30px 80px -20px rgba(0, 0, 0, 0.6);
+  animation: paywall-slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+@keyframes paywall-slide-up {
+  from {
+    transform: translateY(60px);
+  }
+  to {
+    transform: none;
+  }
+}
+.co-panel {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: #0c0e16;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px 60px;
+}
+.co-panel .dr-inner {
+  max-width: 520px;
+  width: 100%;
+}
+.dr-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.22);
+  margin: 0 auto 18px;
+}
+.dr-x {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 15px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+}
+.dr-x:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.dr-terms-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0 18px;
+}
+.dr-back {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 26px;
+  color: rgba(255, 255, 255, 0.7);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  line-height: 0;
+  border: none;
+  background: none;
+}
+.dr-back:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.dr-inner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dr-offer-h {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0 0 12px;
+  max-width: 18ch;
+  text-wrap: balance;
+}
+.dr-offer-sub {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+  margin: 0 0 26px;
+  max-width: 42ch;
+}
+.pay-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #fff;
+  color: #0c0e16;
+  font-weight: 600;
+  font-size: 16px;
+  border-radius: 13px;
+  padding: 15px 24px;
+  width: 100%;
+  max-width: 360px;
+  transition: 0.15s;
+  border: none;
+  cursor: pointer;
+}
+.pay-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.6);
+}
+.pay-btn:disabled {
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+/* Offer-screen brand wallet buttons (facsimiles → advance to consent). The LIVE
+   wallet button on the terms screen is Stripe's ExpressCheckoutElement. */
+
+/* Apple Pay — official native button (renders in Safari/WebKit). */
+.apple-pay-btn {
+  -webkit-appearance: -apple-pay-button;
+  appearance: -apple-pay-button;
+  -apple-pay-button-type: plain;
+  -apple-pay-button-style: white;
+  width: 100%;
+  max-width: 360px;
+  height: 48px;
+  margin: 0 auto;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Google Pay — white, rounded-rect to match the live Stripe wallet button. */
+.gpay-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 360px;
+  height: 48px;
+  margin: 0 auto;
+  background: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 500;
+  font-size: 17px;
+  color: #3c4043;
+  transition: 0.15s;
+}
+.gpay-btn:hover {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.gpay-pay {
+  line-height: 1;
+}
+.dr-cc {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin-top: 16px;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.dr-cc:hover {
+  text-decoration: underline;
+}
+.dr-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 24px 0 18px;
+}
+.dr-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  justify-content: center;
+}
+.dr-foot a,
+.dr-foot button {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.dr-foot a:hover,
+.dr-foot button:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+.is-terms .dr-inner {
+  text-align: left;
+  align-items: stretch;
+}
+.dr-terms-h {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.dr-terms-body {
+  font-size: 13.5px;
+  line-height: 1.62;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0 0 18px;
+}
+.dr-terms-body b {
+  color: #fff;
+  font-weight: 700;
+}
+.dr-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-left: 4px;
+  margin-bottom: 18px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+}
+.dr-consent input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+/* When the user tries to pay without agreeing, the consent text turns red. */
+.dr-consent-error,
+.dr-consent-error a {
+  color: #f87171;
+}
+.dr-consent-error input {
+  outline: 2px solid #f87171;
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+.dr-pay-wrap {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.dr-fineprint {
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 12px 0 0;
+  max-width: 38ch;
+  text-align: center;
+}
+.dr-paid {
+  text-align: center;
+  padding: 18px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dr-check {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--primary-foreground);
+  font-size: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+.dr-paid h2 {
+  font-size: 26px;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+.dr-paid p {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 24px;
+  max-width: 40ch;
+}
+
+/* Post-purchase annual upsell. */
+.dr-upsell {
+  padding: 8px 0 4px;
+}
+.dr-upsell h2 {
+  font-size: 24px;
+  margin: 0 0 12px;
+}
+.dr-upsell-price {
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 4px;
+}
+.dr-upsell-save {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 16px;
+}
+.dr-upsell-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto 20px;
+  max-width: 34ch;
+  text-align: left;
+}
+.dr-upsell-list li {
+  position: relative;
+  padding-left: 24px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0 0 8px;
+}
+.dr-upsell-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Docked paywall (on the detail page). */
+.dr-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  background: #0c0e16;
+  color: #fff;
+  padding: 24px 24px 22px;
+  box-shadow: 0 -16px 50px -16px rgba(0, 0, 0, 0.5);
+}
+.dr-dock-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 150px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, var(--background));
+}
+.drawer.dock {
+  max-width: 600px;
+  margin: 0 auto;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  animation: none;
+  max-height: 82vh;
+  overflow-y: auto;
+}
+
+/* ---------- on-page premium content gate ---------- */
+.premium-gate {
+  position: relative;
+}
+/* The body stays in the DOM but is blurred + non-interactive, with the lower
+   part faded so the dock reads as "there's more behind the paywall". */
+.premium-gate-blur {
+  filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
+  max-height: 60vh;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+}
+.premium-gate-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40%;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, var(--background));
+}

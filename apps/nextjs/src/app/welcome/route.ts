@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import config from "@payload-config";
 import { getPayload } from "payload";
 
+import { reconcileAnonByEmail } from "~/lib/auth/merge-anon";
 import { ensureCmsUser, ensureFreeTag } from "~/lib/cms/mirror-user";
 import { isCmsSeeded } from "~/lib/cms/seed-status";
 import { getSiteUrl } from "~/lib/site-url";
+import { createAdminClient } from "~/lib/supabase/admin";
 import { createClient } from "~/lib/supabase/server";
 
 /**
@@ -49,6 +51,26 @@ export async function GET() {
       (user.user_metadata.name as string | undefined),
   });
   await ensureFreeTag(user.id);
+
+  // Reconciliation safety net: a paid anonymous buyer who never confirmed and
+  // then signed up fresh would otherwise strand their subscription on the dead
+  // anon account. If this (now permanent) user hasn't transacted yet, merge any
+  // orphaned anonymous users that carry their email. Cheap guard avoids the
+  // listUsers scan for accounts that already have billing. Best-effort.
+  if (!user.is_anonymous && user.email) {
+    try {
+      const { data: customer } = await supabase
+        .from("ext_billing_customers")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!customer) {
+        await reconcileAnonByEmail(createAdminClient(), user.id, user.email);
+      }
+    } catch (e) {
+      console.warn("[welcome] anon reconciliation failed", e);
+    }
+  }
 
   // maybeSingle: zero rows is NOT an error (a missing profile row just routes
   // to /a) — but a query failure (e.g. the profiles table doesn't exist

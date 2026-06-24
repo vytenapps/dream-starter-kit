@@ -1,15 +1,15 @@
 import type { CollectionConfig } from "payload";
 
-import { generatePreviewPath } from "../../lib/preview";
+import { FEATURED_FORMATS } from "../../lib/image-formats";
+import { generatePreviewPath, previewBreakpoints } from "../../lib/preview";
 import { isStaff, publishedOrStaff } from "../access";
 import { pageBlocks } from "../blocks";
+import { generatedImageFields } from "../fields/generated-images";
 import { slugField } from "../fields/slug";
+import { generateImagesHook, syncImageUrls } from "../hooks/generate-images";
 
-const previewBreakpoints = [
-  { label: "Mobile", name: "mobile", width: 375, height: 667 },
-  { label: "Tablet", name: "tablet", width: 768, height: 1024 },
-  { label: "Desktop", name: "desktop", width: 1440, height: 900 },
-];
+/** AI image generation: a hero + OG image from the page's imagePrompt. */
+const pageImages = { formats: FEATURED_FORMATS };
 
 /**
  * Marketing/legal pages, addressed by slug (home, about, contact, terms,
@@ -51,6 +51,9 @@ export const Pages: CollectionConfig = {
     update: isStaff,
     delete: isStaff,
   },
+  hooks: {
+    beforeChange: [generateImagesHook(pageImages), syncImageUrls(pageImages)],
+  },
   fields: [
     { name: "title", type: "text", required: true },
     slugField(),
@@ -74,5 +77,6 @@ export const Pages: CollectionConfig = {
         date: { pickerAppearance: "dayAndTime" },
       },
     },
+    ...generatedImageFields(pageImages),
   ],
 };

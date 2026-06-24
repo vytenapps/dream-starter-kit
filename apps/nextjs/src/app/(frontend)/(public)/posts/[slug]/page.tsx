@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 
-import { DetailLayout } from "~/components/content/detail-layout";
-import { CmsRichText } from "~/components/rich-text";
+import { PostDetail } from "~/components/content/post-detail";
+import { PostLivePreview } from "~/components/content/post-live-preview";
+import { getPremiumPlan } from "~/lib/billing-plan";
 import { getPost } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +16,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPost(slug).catch(() => null);
+  // Use the AI-generated OG card (then the hero) as the social-share image when
+  // present — both URLs are cached on the doc by the syncImageUrls hook.
+  const ogImage = post?.imageOgUrl ?? post?.imageHeroUrl ?? undefined;
   return {
     title: post?.meta?.title ?? post?.title ?? "Post",
     description: post?.meta?.description ?? post?.excerpt ?? undefined,
+    ...(ogImage ? { openGraph: { images: [ogImage] } } : {}),
   };
 }
 
@@ -29,22 +35,13 @@ export default async function PostPage({
   const post = await getPost(slug);
   if (!post) notFound();
 
-  const image =
-    typeof post.featuredImage === "object" && post.featuredImage?.url
-      ? { url: post.featuredImage.url, alt: post.featuredImage.alt }
-      : null;
-
-  return (
-    <DetailLayout
-      title={post.title}
-      image={image}
-      meta={
-        post.publishedAt
-          ? new Date(post.publishedAt).toLocaleDateString()
-          : undefined
-      }
-    >
-      <CmsRichText data={post.body} />
-    </DetailLayout>
-  );
+  // In draft mode (Payload Live Preview) hand off to the client wrapper so edits
+  // stream into the admin iframe live; otherwise render server-side.
+  const { isEnabled } = await draftMode();
+  if (isEnabled) return <PostLivePreview initialData={post} />;
+  // Premium posts SSR-seed the paywall with the resolved plan so the modal has
+  // pricing instantly (skipped for non-premium posts — no needless query).
+  const premiumPlan =
+    post.accessLevel === "premium" ? await getPremiumPlan() : null;
+  return <PostDetail post={post} premiumPlan={premiumPlan} />;
 }

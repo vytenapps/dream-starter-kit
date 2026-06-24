@@ -18,6 +18,7 @@ import {
 import { cn } from "@acme/ui";
 import { toast } from "@acme/ui/toast";
 
+import { useCaptcha } from "~/components/captcha/captcha-provider";
 import { Button } from "~/components/ui/button";
 import {
   Field,
@@ -37,6 +38,7 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const supabase = createClient();
   const configured = isSupabaseConfigured();
+  const { token: captchaToken, reset: resetCaptcha } = useCaptcha();
   // Only honor same-origin paths — this value drives a full-page navigation
   // (and the OAuth callback `next`), so an absolute/protocol-relative URL would
   // be an open redirect. Default destination is /welcome, which routes by role:
@@ -58,7 +60,7 @@ export function LoginForm({
 
   async function onSubmit(values: SignInInput) {
     try {
-      await signInWithPassword(supabase, values);
+      await signInWithPassword(supabase, values, { captchaToken });
       window.location.assign(redirectTo);
     } catch (e) {
       // Unconfirmed email (correct password): don't dead-end on an error
@@ -79,6 +81,9 @@ export function LoginForm({
         return;
       }
       toast.error(authErrorMessage(e, "Sign in failed"));
+    } finally {
+      // Turnstile tokens are single-use — mint a fresh one for the next attempt.
+      resetCaptcha();
     }
   }
 
@@ -89,10 +94,15 @@ export function LoginForm({
       return;
     }
     try {
-      await signInWithOtp(supabase, email, { emailRedirectTo: callback });
+      await signInWithOtp(supabase, email, {
+        emailRedirectTo: callback,
+        captchaToken,
+      });
       toast.success("Check your email for a magic link");
     } catch (e) {
       toast.error(authErrorMessage(e, "Could not send link"));
+    } finally {
+      resetCaptcha();
     }
   }
 

@@ -2,18 +2,25 @@ import type { ExtSeedStep } from "@acme/ext-kit/payload";
 
 /**
  * Demo billing catalog — runs through the host's idempotent CMS seed flow
- * (the whole seed bails if content exists, so steps don't re-check). Plans
- * are created with `context.skipStripeSync` so seeded plans stay `unsynced`
- * until first saved by a real admin (the sync hook would otherwise need
- * Stripe credentials at seed time).
+ * (the whole seed bails if content exists, so steps don't re-check).
+ *
+ * Plans/coupons sync to Stripe at seed time **only when `STRIPE_SECRET_KEY` is
+ * set** — so a configured deploy gets immediately-purchasable seeded plans
+ * (the `/pricing` checkout needs a `stripePriceId`). Without a key (local dev,
+ * CI, cloud sessions) the sync hook is skipped, so the seed stays offline-safe
+ * and scalar-only; those plans show as `unsynced` and become purchasable the
+ * first time an admin saves them in `/admin`. The hook already fails soft
+ * (records `syncError`, never blocks the save), so enabling it here is safe.
  */
+const skipStripeSync = !process.env.STRIPE_SECRET_KEY;
+
 export const seed: ExtSeedStep[] = [
   {
     label: "Plans & pricing",
     run: async (payload) => {
       const monthly = await payload.create({
         collection: "ext-billing-plans",
-        context: { skipStripeSync: true },
+        context: { skipStripeSync },
         data: {
           name: "Dream Monthly Plan",
           slug: "dream-monthly",
@@ -32,7 +39,7 @@ export const seed: ExtSeedStep[] = [
       });
       const annual = await payload.create({
         collection: "ext-billing-plans",
-        context: { skipStripeSync: true },
+        context: { skipStripeSync },
         data: {
           name: "Dream Annual Plan",
           slug: "dream-annual",
@@ -55,7 +62,7 @@ export const seed: ExtSeedStep[] = [
       });
       const lifetime = await payload.create({
         collection: "ext-billing-plans",
-        context: { skipStripeSync: true },
+        context: { skipStripeSync },
         data: {
           name: "Dream Lifetime Plan",
           slug: "dream-lifetime",
@@ -75,7 +82,7 @@ export const seed: ExtSeedStep[] = [
       // so the capability is visible out of the box without affecting pricing.
       await payload.create({
         collection: "ext-billing-plans",
-        context: { skipStripeSync: true },
+        context: { skipStripeSync },
         data: {
           name: "Dream Pro (intro demo)",
           slug: "dream-pro-intro-demo",
@@ -95,7 +102,7 @@ export const seed: ExtSeedStep[] = [
       // code for this coupon per new free account.
       await payload.create({
         collection: "ext-billing-coupons",
-        context: { skipStripeSync: true },
+        context: { skipStripeSync },
         data: {
           name: "Welcome offer",
           discountType: "percent_off",

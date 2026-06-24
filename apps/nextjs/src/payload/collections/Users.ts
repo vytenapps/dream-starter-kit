@@ -389,12 +389,6 @@ export const Users: CollectionConfig = {
       on: "user",
     },
     {
-      name: "favorites",
-      type: "join",
-      collection: "favorites",
-      on: "user",
-    },
-    {
       name: "enrollments",
       type: "join",
       collection: "enrollments",

@@ -116,8 +116,7 @@ export function deepEqual(a: unknown, b: unknown): boolean {
     if (ak.length !== bk.length) return false;
     return ak.every(
       (k) =>
-        Object.prototype.hasOwnProperty.call(bo, k) &&
-        deepEqual(ao[k], bo[k]),
+        Object.prototype.hasOwnProperty.call(bo, k) && deepEqual(ao[k], bo[k]),
     );
   }
   return a === b;

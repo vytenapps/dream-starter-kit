@@ -12,6 +12,18 @@ export interface McpToolContext {
   user: TypedUser;
   /** Public app origin, for building absolute URLs (ChatGPT search/fetch). */
   origin: string;
+  /**
+   * Injected by the host (the /mcp route handler) so this framework-agnostic
+   * package never imports the server-only image renderer (`ai` + `sharp`).
+   * Renders ONE image from a prompt, stores it as a Media doc as the current
+   * staff user (overrideAccess: false), and returns its id + public URL. When
+   * unset (e.g. in unit tests), the `generate_media` tool is not registered.
+   */
+  generateMedia?: (args: {
+    prompt: string;
+    format?: "hero" | "og" | "square";
+    alt?: string;
+  }) => Promise<{ id: number | string; url: string | null; alt: string }>;
 }
 
 /** Roles allowed to use the MCP at all — mirrors /admin's canAccessAdmin gate. */

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 
-import { DetailLayout } from "~/components/content/detail-layout";
-import { CmsRichText } from "~/components/rich-text";
+import { EventDetail } from "~/components/content/event-detail";
+import { EventLivePreview } from "~/components/content/event-live-preview";
 import { getEvent } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
@@ -26,30 +27,9 @@ export default async function EventPage({
   const event = await getEvent(slug);
   if (!event) notFound();
 
-  const location =
-    typeof event.location === "object" && event.location
-      ? event.location
-      : null;
-  const image =
-    typeof event.featuredImage === "object" && event.featuredImage?.url
-      ? { url: event.featuredImage.url, alt: event.featuredImage.alt }
-      : null;
-
-  return (
-    <DetailLayout
-      title={event.title}
-      image={image}
-      meta={
-        <dl className="space-y-1">
-          <div>Starts: {new Date(event.startsAt).toLocaleString()}</div>
-          {event.endsAt && (
-            <div>Ends: {new Date(event.endsAt).toLocaleString()}</div>
-          )}
-          {location && <div>Location: {location.name}</div>}
-        </dl>
-      }
-    >
-      <CmsRichText data={event.description} />
-    </DetailLayout>
-  );
+  // In draft mode (Payload Live Preview) hand off to the client wrapper so edits
+  // stream into the admin iframe live; otherwise render server-side.
+  const { isEnabled } = await draftMode();
+  if (isEnabled) return <EventLivePreview initialData={event} />;
+  return <EventDetail event={event} />;
 }

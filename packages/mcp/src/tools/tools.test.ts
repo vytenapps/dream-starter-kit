@@ -73,7 +73,9 @@ function makeFakePayload() {
 
 let fake: ReturnType<typeof makeFakePayload>;
 
-async function connectClient(): Promise<Client> {
+async function connectClient(
+  generateMedia?: McpToolContext["generateMedia"],
+): Promise<Client> {
   const ctx: McpToolContext = {
     payload: fake as unknown as Payload,
     user: {
@@ -82,6 +84,7 @@ async function connectClient(): Promise<Client> {
       roles: ["editor"],
     } as unknown as TypedUser,
     origin: "https://app.test",
+    generateMedia,
   };
   const server = buildMcpServer(ctx);
   const [clientTransport, serverTransport] =
@@ -218,5 +221,51 @@ describe("mcp tool layer", () => {
     const text = textOf(res);
     expect(text).toContain("posts:1");
     expect(text).toContain("https://app.test/posts/hello");
+  });
+
+  it("does NOT register generate_media when no renderer is injected", async () => {
+    const client = await connectClient();
+    const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name)).not.toContain("generate_media");
+  });
+
+  it("generate_media renders + stores an asset via the injected renderer", async () => {
+    const generateMedia = vi.fn(
+      (args: { prompt: string; format?: string; alt?: string }) =>
+        Promise.resolve({
+          id: 42,
+          url: "/cms-api/media/file/generated.webp",
+          alt: args.alt ?? args.prompt,
+        }),
+    );
+    const client = await connectClient(generateMedia);
+
+    const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name)).toContain("generate_media");
+
+    const res: unknown = await client.callTool({
+      name: "generate_media",
+      arguments: { prompt: "a friendly robot", format: "square" },
+    });
+    expect(isError(res)).toBe(false);
+    expect(generateMedia).toHaveBeenCalledWith(
+      expect.objectContaining({ prompt: "a friendly robot", format: "square" }),
+    );
+    const text = textOf(res);
+    expect(text).toContain("42");
+    expect(text).toContain("/cms-api/media/file/generated.webp");
+  });
+
+  it("generate_media surfaces a renderer failure as a tool error", async () => {
+    const generateMedia = vi.fn(() =>
+      Promise.reject(new Error("S3 storage is not configured")),
+    );
+    const client = await connectClient(generateMedia);
+    const res: unknown = await client.callTool({
+      name: "generate_media",
+      arguments: { prompt: "x" },
+    });
+    expect(isError(res)).toBe(true);
+    expect(textOf(res)).toContain("S3 storage is not configured");
   });
 });
