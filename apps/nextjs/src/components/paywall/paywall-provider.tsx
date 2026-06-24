@@ -14,7 +14,7 @@ import {
   useState,
 } from "react";
 import dynamic from "next/dynamic";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import type { PayMethod } from "./paywall-body";
 import type { CheckoutVariant } from "./stripe";
@@ -94,7 +94,6 @@ export function PaywallProvider({
   initialPlan?: PlanLite | null;
 }) {
   const { isPremium, isLoading, userEmail } = usePremium();
-  const qc = useQueryClient();
   const { data: plans } = useResolvedPlan(initialPlan);
   const plan = plans?.plan ?? null;
   const annualPlan = plans?.annualPlan ?? null;
@@ -127,9 +126,12 @@ export function PaywallProvider({
 
   const handleSuccess = useCallback(() => {
     setOpen(false);
-    // Refresh gating (the webhook is the source of truth).
-    void qc.invalidateQueries({ queryKey: ["subscription"] });
-  }, [qc]);
+    // Premium bodies are withheld server-side until entitled, so a client query
+    // invalidation can't reveal the locked content — reload so the server
+    // re-renders the now-unlocked page (the sub is already linked by the
+    // guest-account route / webhook).
+    window.location.reload();
+  }, []);
 
   const value = useMemo<PaywallContextValue>(
     () => ({
