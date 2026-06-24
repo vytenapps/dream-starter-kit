@@ -37,12 +37,17 @@ import { getStripePromise } from "./stripe";
 interface IntentResponse {
   clientSecret?: string;
   mode?: "payment" | "setup";
+  /** Set for recurring plans — used by the 1-click annual upgrade. */
+  subscriptionId?: string;
+  customerId?: string;
   error?: string;
 }
 
 export interface CreatedIntent {
   clientSecret: string;
   mode: "payment" | "setup";
+  subscriptionId?: string;
+  customerId?: string;
 }
 
 export interface PaywallModalProps {
@@ -88,6 +93,9 @@ export function PaywallModal({
   // Buyer identity captured at checkout (wallet/card) — drives anon→permanent
   // conversion. `checkEmail` shows the "confirm your email" screen afterwards.
   const buyerRef = useRef<BuyerDetails | undefined>(undefined);
+  // The Stripe subscription created at confirm time — threaded to the annual
+  // upgrade so it never depends on the (webhook-written) customer mapping.
+  const subscriptionRef = useRef<string | undefined>(undefined);
   const [checkEmail, setCheckEmail] = useState<null | {
     email: string;
     existing: boolean;
@@ -108,16 +116,31 @@ export function PaywallModal({
     [annualPlan, plan],
   );
 
-  // Fire confetti once when the success screen appears.
+  // Fire confetti when the success screen appears. An opening burst plus a brief
+  // emission loop (~1s) so the celebration lingers about a second longer.
   useEffect(() => {
     if (!paid) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0;
+    const end = Date.now() + 1000;
     void confetti({
       particleCount: 120,
       spread: 75,
       origin: { y: 0.6 },
       disableForReducedMotion: true,
     });
+    const tick = () => {
+      void confetti({
+        particleCount: 24,
+        spread: 70,
+        startVelocity: 35,
+        origin: { y: 0.6 },
+        disableForReducedMotion: true,
+      });
+      if (Date.now() < end) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, [paid]);
 
   // After payment: if the buyer is anonymous and we captured an email, convert
@@ -125,8 +148,18 @@ export function PaywallModal({
   // they started). Otherwise finish normally.
   const proceedAfterPay = useCallback(async () => {
     const email = buyerRef.current?.email?.trim();
-    if (!isAnonymousUser(user) || !email) {
+    // Already a permanent signed-in buyer (or no email to attach) → just finish;
+    // gating flips off the subscription row, no email confirmation needed.
+    if ((user && !isAnonymousUser(user)) || !email) {
       onSuccess();
+      return;
+    }
+    // Guest buyer with no anonymous session (e.g. anon sign-in unavailable): the
+    // Stripe-webhook guest path creates their account from the checkout email and
+    // sends a set-password invite. Tell them to check their email rather than
+    // silently closing onto the still-locked page.
+    if (!user) {
+      setCheckEmail({ email, existing: false });
       return;
     }
     const next = `/confirm-email?next=${encodeURIComponent(originRef.current)}`;
@@ -166,7 +199,12 @@ export function PaywallModal({
       const res = await fetch("/api/ext/billing/upgrade-annual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: annualPlan.id }),
+        body: JSON.stringify({
+          planId: annualPlan.id,
+          // Lets the route upgrade this exact subscription without depending on
+          // the (webhook-written, possibly-not-yet-present) customer mapping.
+          subscriptionId: subscriptionRef.current,
+        }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
@@ -190,32 +228,49 @@ export function PaywallModal({
   const deferred = useMemo(() => deferredElementsOptions(plan), [plan]);
 
   // Create the PaymentIntent / subscription at CONFIRM time (not on open).
-  const createIntent = useCallback(async (): Promise<CreatedIntent> => {
-    if (planId == null) {
-      throw new Error("This plan isn't available yet.");
-    }
-    // Ensure the buyer has a session (anonymous if logged out) BEFORE creating
-    // the subscription, so express-intent stamps supabase_user_id and the
-    // webhook links the subscription to a real account (closes the embedded-
-    // checkout gap). Tokens are single-use — reset after.
-    try {
-      await ensureAnonSession(supabase, { captchaToken });
-    } catch {
-      /* CAPTCHA/anon failed — proceed; guest webhook fallback still applies */
-    } finally {
-      resetCaptcha();
-    }
-    const res = await fetch("/api/ext/billing/express-intent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId }),
-    });
-    const data = (await res.json()) as IntentResponse;
-    if (!res.ok || !data.clientSecret) {
-      throw new Error(data.error ?? "Could not start checkout.");
-    }
-    return { clientSecret: data.clientSecret, mode: data.mode ?? "payment" };
-  }, [planId, supabase, captchaToken, resetCaptcha]);
+  const createIntent = useCallback(
+    async (details?: BuyerDetails): Promise<CreatedIntent> => {
+      if (planId == null) {
+        throw new Error("This plan isn't available yet.");
+      }
+      // Ensure the buyer has a session (anonymous if logged out) BEFORE creating
+      // the subscription, so express-intent stamps supabase_user_id and the
+      // webhook links the subscription to a real account (closes the embedded-
+      // checkout gap). Tokens are single-use — reset after.
+      try {
+        await ensureAnonSession(supabase, { captchaToken });
+      } catch {
+        /* CAPTCHA/anon failed — proceed; guest webhook fallback still applies */
+      } finally {
+        resetCaptcha();
+      }
+      const res = await fetch("/api/ext/billing/express-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId,
+          // Forward the wallet/card identity so the server stamps the Stripe
+          // customer's email + name (carried onto every future invoice/receipt).
+          email: details?.email ?? undefined,
+          name: details?.name ?? undefined,
+        }),
+      });
+      const data = (await res.json()) as IntentResponse;
+      if (!res.ok || !data.clientSecret) {
+        throw new Error(data.error ?? "Could not start checkout.");
+      }
+      // Remember the subscription so the post-purchase annual upgrade can target it
+      // directly (no reliance on the webhook-written customer mapping).
+      subscriptionRef.current = data.subscriptionId;
+      return {
+        clientSecret: data.clientSecret,
+        mode: data.mode ?? "payment",
+        subscriptionId: data.subscriptionId,
+        customerId: data.customerId,
+      };
+    },
+    [planId, supabase, captchaToken, resetCaptcha],
+  );
 
   if (!open) return null;
 

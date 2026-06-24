@@ -34,11 +34,45 @@ const checkoutSchema = z.object({ planId: z.union([z.string(), z.number()]) });
 
 const expressIntentSchema = z.object({
   planId: z.union([z.string(), z.number()]),
+  // Buyer identity from the wallet sheet / card form — stamped onto the Stripe
+  // customer so every future invoice/receipt carries it (not just the first
+  // charge, which only the payment method carried).
+  email: z.string().email().optional(),
+  name: z.string().min(1).optional(),
 });
 
 const upgradeAnnualSchema = z.object({
   planId: z.union([z.string(), z.number()]),
+  // The just-created subscription (embedded flow) — lets the upgrade target it
+  // directly, before the webhook has written the customer mapping.
+  subscriptionId: z.string().optional(),
 });
+
+/**
+ * Ensure the Stripe customer carries the buyer's email + name. Sets the name
+ * whenever provided, and the email only when the customer doesn't already have
+ * one (so a signed-in user's account email is never overwritten by a different
+ * wallet email). Best-effort: a failure here must not abort checkout.
+ */
+async function applyCustomerIdentity(
+  stripe: ReturnType<typeof getStripe>,
+  customerId: string,
+  buyer: { email?: string; name?: string },
+): Promise<void> {
+  if (!buyer.email && !buyer.name) return;
+  try {
+    const customer = await stripe.customers.retrieve(customerId);
+    if (customer.deleted) return;
+    const update: Stripe.CustomerUpdateParams = {};
+    if (buyer.name && !customer.name) update.name = buyer.name;
+    if (buyer.email && !customer.email) update.email = buyer.email;
+    if (Object.keys(update).length > 0) {
+      await stripe.customers.update(customerId, update);
+    }
+  } catch (err) {
+    console.error("[billing] could not set customer identity:", err);
+  }
+}
 
 /**
  * Resolve (or create) a Stripe customer for the current request — signed-in
@@ -212,12 +246,17 @@ export const publicRoutes: ExtPublicRouteTable = {
         });
       }
       const metadata = { ...baseMeta, plan_id: String(plan.id) };
+      const buyer = { email: parsed.data.email, name: parsed.data.name };
 
       if (plan.pricingType !== "recurring") {
+        // Set identity on the customer when one exists; otherwise put the email
+        // on the PaymentIntent's receipt so the buyer still gets a receipt.
+        if (customerId) await applyCustomerIdentity(stripe, customerId, buyer);
         const pi = await stripe.paymentIntents.create({
           amount: Math.round(plan.unitAmount),
           currency: plan.currency || "usd",
           ...(customerId ? { customer: customerId } : {}),
+          ...(buyer.email ? { receipt_email: buyer.email } : {}),
           automatic_payment_methods: { enabled: true },
           metadata,
         });
@@ -230,7 +269,15 @@ export const publicRoutes: ExtPublicRouteTable = {
       // A customer is required to open a subscription.
       const subCustomer =
         customerId ??
-        (await stripe.customers.create({ metadata: baseMeta })).id;
+        (
+          await stripe.customers.create({
+            metadata: baseMeta,
+            ...(buyer.email ? { email: buyer.email } : {}),
+            ...(buyer.name ? { name: buyer.name } : {}),
+          })
+        ).id;
+      // Stamp identity on a reused/existing customer too (fills in blanks).
+      await applyCustomerIdentity(stripe, subCustomer, buyer);
       const sub = await stripe.subscriptions.create({
         customer: subCustomer,
         items: [{ price: plan.stripePriceId }],
@@ -255,7 +302,12 @@ export const publicRoutes: ExtPublicRouteTable = {
           : null;
       const paymentSecret = invoice?.confirmation_secret?.client_secret ?? null;
       if (paymentSecret) {
-        return Response.json({ clientSecret: paymentSecret, mode: "payment" });
+        return Response.json({
+          clientSecret: paymentSecret,
+          mode: "payment",
+          subscriptionId: sub.id,
+          customerId: subCustomer,
+        });
       }
 
       // Trial / $0-now subscription: collect a payment method via a SetupIntent.
@@ -267,6 +319,8 @@ export const publicRoutes: ExtPublicRouteTable = {
         return Response.json({
           clientSecret: setup.client_secret,
           mode: "setup",
+          subscriptionId: sub.id,
+          customerId: subCustomer,
         });
       }
       const si = await stripe.setupIntents.create({
@@ -274,7 +328,12 @@ export const publicRoutes: ExtPublicRouteTable = {
         automatic_payment_methods: { enabled: true },
         metadata,
       });
-      return Response.json({ clientSecret: si.client_secret, mode: "setup" });
+      return Response.json({
+        clientSecret: si.client_secret,
+        mode: "setup",
+        subscriptionId: sub.id,
+        customerId: subCustomer,
+      });
     } catch (err) {
       // Never crash with an empty body — the client parses JSON and would
       // otherwise surface a cryptic "Unexpected end of JSON input".
@@ -319,25 +378,47 @@ export const routes: ExtRouteTable = {
         });
       }
 
-      const { data: customer } = await ctx.supabase
-        .from("ext_billing_customers")
-        .select("stripe_customer_id")
-        .eq("user_id", ctx.user.id)
-        .maybeSingle();
-      if (!customer?.stripe_customer_id) {
-        return json(404, { error: "No billing account" });
+      // Resolve the subscription to upgrade. Prefer the id the embedded flow
+      // just created (verified to belong to this user) — it works immediately,
+      // before the Stripe webhook has written the customer mapping. Fall back to
+      // the mapping + active-subscription scan for the hosted/portal path.
+      let current: Stripe.Subscription | undefined;
+      if (parsed.data.subscriptionId) {
+        const sub = await stripe.subscriptions
+          .retrieve(parsed.data.subscriptionId)
+          .catch(() => null);
+        // Ownership check: the subscription must carry this user's id.
+        if (sub && sub.metadata.supabase_user_id === ctx.user.id) {
+          if (sub.items.data[0]?.price.id === plan.stripePriceId) {
+            return json(409, { error: "Already on the annual plan." });
+          }
+          if (sub.status === "active" || sub.status === "trialing") {
+            current = sub;
+          }
+        }
       }
 
-      // Find the user's active subscription to upgrade in place. Skip if it's
-      // already on the annual price (avoid a redundant charge).
-      const subs = await stripe.subscriptions.list({
-        customer: customer.stripe_customer_id,
-        status: "active",
-        limit: 10,
-      });
-      const current = subs.data.find(
-        (s) => s.items.data[0]?.price.id !== plan.stripePriceId,
-      );
+      if (!current) {
+        const { data: customer } = await ctx.supabase
+          .from("ext_billing_customers")
+          .select("stripe_customer_id")
+          .eq("user_id", ctx.user.id)
+          .maybeSingle();
+        if (!customer?.stripe_customer_id) {
+          return json(404, { error: "No billing account" });
+        }
+
+        // Find the user's active subscription to upgrade in place. Skip if it's
+        // already on the annual price (avoid a redundant charge).
+        const subs = await stripe.subscriptions.list({
+          customer: customer.stripe_customer_id,
+          status: "active",
+          limit: 10,
+        });
+        current = subs.data.find(
+          (s) => s.items.data[0]?.price.id !== plan.stripePriceId,
+        );
+      }
       if (!current) {
         return json(409, { error: "Already on the annual plan." });
       }
