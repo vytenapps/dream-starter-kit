@@ -42,8 +42,12 @@ export function PaywallBody({
   onClose,
 }: {
   copy: PaywallCopy;
-  /** Creates the PaymentIntent/subscription at confirm time (deferred flow). */
-  createIntent: () => Promise<{
+  /**
+   * Creates the PaymentIntent/subscription at confirm time (deferred flow).
+   * The buyer details (wallet billingDetails / card email) are forwarded so the
+   * server can stamp the Stripe customer's email + name on creation.
+   */
+  createIntent: (details?: BuyerDetails) => Promise<{
     clientSecret: string;
     mode: "payment" | "setup";
   }>;
@@ -94,9 +98,13 @@ export function PaywallBody({
       return;
     }
 
+    // Prefer wallet billingDetails; fall back to the card-form email.
+    const buyer: BuyerDetails | undefined =
+      details ?? (cardEmail ? { email: cardEmail } : undefined);
+
     let intent: { clientSecret: string; mode: "payment" | "setup" };
     try {
-      intent = await createIntent();
+      intent = await createIntent(buyer);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not start checkout.");
       setBusy(false);
@@ -129,9 +137,6 @@ export function PaywallBody({
       "setupIntent" in result
         ? result.setupIntent?.id
         : result.paymentIntent?.id;
-    // Prefer wallet billingDetails; fall back to the card-form email.
-    const buyer: BuyerDetails | undefined =
-      details ?? (cardEmail ? { email: cardEmail } : undefined);
     onPaid(intentId, buyer);
   }
 

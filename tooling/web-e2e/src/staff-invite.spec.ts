@@ -80,10 +80,10 @@ test("inviting a staff user from /admin → accept invite → /admin", async ({
 
   await inviteePage.getByLabel("Password", { exact: true }).fill("password123");
   await inviteePage.getByLabel("Confirm password").fill("password123");
-  await inviteePage.getByRole("button", { name: "Continue to admin" }).click();
+  await inviteePage.getByRole("button", { name: "Continue" }).click();
 
-  // is_staff was flagged at invite time, so the /admin gate passes and the
-  // SSO bridge maps the session onto the cms.users row created above.
+  // is_staff was flagged at invite time, so /welcome routes staff to /admin (the
+  // gate passes) and the SSO bridge maps the session onto the cms.users row above.
   await inviteePage.waitForURL(/\/admin/, { timeout: 30_000 });
 
   await inviteeContext.close();

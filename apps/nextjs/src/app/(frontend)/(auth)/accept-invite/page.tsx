@@ -102,8 +102,9 @@ export default function AcceptInvitePage() {
       await updatePassword(supabase, password);
       toast.success("Welcome aboard");
       // Hard navigation so the proxy + Payload SSO bridge re-read the fresh
-      // session; is_staff is already true, so the /admin gate passes.
-      window.location.assign("/admin");
+      // session. Route through /welcome, which sends staff to /admin and
+      // members (e.g. guest paywall buyers) to the app — not the gated /admin.
+      window.location.assign("/welcome");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not set password");
     }
@@ -171,7 +172,7 @@ export default function AcceptInvitePage() {
           )}
         </div>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Setting up…" : "Continue to admin"}
+          {isSubmitting ? "Setting up…" : "Continue"}
         </Button>
       </form>
     </div>
