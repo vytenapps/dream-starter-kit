@@ -202,8 +202,9 @@ export function PaywallModal({
     // the set-password invite and links the purchase), with the Stripe webhook
     // as the idempotent backstop. Best-effort: still show the screen on failure.
     if (!user) {
+      let loginToken: string | undefined;
       try {
-        await fetch("/api/ext/billing/guest-account", {
+        const res = await fetch("/api/ext/billing/guest-account", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -217,8 +218,31 @@ export function PaywallModal({
             customerId: customerRef.current,
           }),
         });
+        const data = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          loginToken?: string;
+        };
+        loginToken = data.loginToken;
       } catch {
         /* best-effort — the Stripe webhook backstops account creation */
+      }
+      // Log the buyer into THIS browser so access unlocks immediately and they
+      // don't depend on the emailed link (which often opens in a different
+      // browser / in-app webview). Verifying a one-time token needs no CAPTCHA.
+      // Best-effort: fall back to the "check your email" screen.
+      if (loginToken) {
+        try {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: loginToken,
+            type: "magiclink",
+          });
+          if (!error) {
+            onSuccess();
+            return;
+          }
+        } catch {
+          /* fall through to the email screen */
+        }
       }
       setCheckEmail({ email });
       return;

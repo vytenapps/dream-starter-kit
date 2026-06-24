@@ -56,6 +56,19 @@ export function authErrorMessage(
   ) {
     return "Couldn’t reach the authentication server. Check that your Supabase project is reachable, then try again.";
   }
+  // Email/OTP rate limit (HTTP 429). Supabase caps auth emails — common when
+  // retrying a magic link — so guide the user to wait instead of showing the
+  // raw error. (If you hit this in normal use, configure custom SMTP.)
+  const status = (error as { status?: number }).status;
+  const code = (error as { code?: string }).code;
+  if (
+    status === 429 ||
+    code === "over_email_send_rate_limit" ||
+    code === "over_request_rate_limit" ||
+    /rate limit|too many requests|only request this after/i.test(message)
+  ) {
+    return "Too many requests right now — please wait a minute and try again. If you just paid, you’re already signed in on the device you checked out from.";
+  }
   // A gateway hiccup can produce an empty/JSON-blob "message" (e.g. "{}") —
   // useless to a user, so fall back instead of toasting it verbatim.
   if (!message.trim() || /^[{[\]}\s]*$/.test(message)) return fallback;
