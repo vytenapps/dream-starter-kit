@@ -173,6 +173,23 @@ async function persistBuyerDetails(
   if (Object.keys(patch).length) {
     await admin.from("profiles").update(patch).eq("id", userId);
   }
+  // Stamp the captured identity into auth user_metadata — the carrier the
+  // cms.users mirror reads (the billing zip has no profiles column). Mirrors
+  // what the /guest-account route writes, so the webhook-only path still syncs
+  // name/phone/zip to Payload on the user's next login. GoTrue merges
+  // user_metadata, so other keys are preserved. Best-effort.
+  const meta: Record<string, unknown> = {};
+  if (details.name) meta.display_name = details.name;
+  if (details.phone) meta.phone = details.phone;
+  if (details.address?.postal_code) {
+    meta.billing_postal_code = details.address.postal_code;
+  }
+  if (details.address) meta.billing_address = details.address;
+  if (Object.keys(meta).length) {
+    await admin.auth.admin
+      .updateUserById(userId, { user_metadata: meta })
+      .then(undefined, () => undefined);
+  }
   if (customerId) {
     await stripe.customers
       .update(customerId, {
@@ -334,16 +351,42 @@ Deno.serve(async (req) => {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
+        const customerId = subscriptionCustomerId(sub);
         let userId = subscriptionUserIdFromMetadata(sub);
         if (!userId) {
           const { data } = await admin
             .from("ext_billing_customers")
             .select("user_id")
-            .eq("stripe_customer_id", subscriptionCustomerId(sub))
+            .eq("stripe_customer_id", customerId)
             .maybeSingle();
           userId = data?.user_id ?? null;
         }
+        // Guest who paid via the EMBEDDED wallet flow without an anonymous
+        // session: no metadata user, no mapping yet. Match the customer's email
+        // to an account (or create one + email an invite), same as guest
+        // Checkout. Not for the deleted event (don't resurrect accounts). The
+        // host's /api/ext/billing/guest-account route is the primary, synchronous
+        // path (it runs at "Continue"/"Maybe later"); this is the idempotent
+        // backstop for when that call didn't run or didn't land.
+        if (!userId && event.type !== "customer.subscription.deleted") {
+          const customer = await stripe.customers.retrieve(customerId);
+          if (!customer.deleted && customer.email) {
+            userId = await resolveOrInviteGuest(
+              admin,
+              customer.email,
+              customer.name ?? null,
+            );
+          }
+        }
         if (userId) {
+          // Persist the customer mapping so later portal/upgrade calls resolve
+          // it (checkout.session.completed isn't fired by the embedded flow).
+          await admin
+            .from("ext_billing_customers")
+            .upsert(
+              { user_id: userId, stripe_customer_id: customerId },
+              { onConflict: "user_id" },
+            );
           await admin
             .from("ext_billing_subscriptions")
             .upsert(mapSubscription(sub, userId));
@@ -357,12 +400,7 @@ Deno.serve(async (req) => {
           // Embedded checkout has no checkout.session — capture the buyer's
           // identity from the first charge on creation.
           if (event.type === "customer.subscription.created") {
-            await persistFromLatestCharge(
-              admin,
-              stripe,
-              userId,
-              subscriptionCustomerId(sub),
-            );
+            await persistFromLatestCharge(admin, stripe, userId, customerId);
           }
         }
         break;
