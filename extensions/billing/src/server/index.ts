@@ -578,7 +578,29 @@ export const publicRoutes: ExtPublicRouteTable = {
         }
       }
 
-      return Response.json({ ok: true, existing });
+      // Auto-login the buyer in THEIR browser. The emailed invite link often
+      // opens in a different browser / in-app webview (Gmail, Mail), so don't
+      // make the buyer depend on it — mint a one-time magic-link token the
+      // client verifies locally (no CAPTCHA, no email send). Best-effort: the
+      // emailed invite stays the fallback. Confirm the email first so magic-link
+      // generation succeeds (the completed payment is strong intent — mirrors
+      // the webhook's anon convert/confirm path).
+      let loginToken: string | undefined;
+      try {
+        await admin.auth.admin.updateUserById(userId, { email_confirm: true });
+        const { data: link } = await admin.auth.admin.generateLink({
+          type: "magiclink",
+          email,
+        });
+        loginToken = link.properties?.hashed_token ?? undefined;
+      } catch (err) {
+        console.error(
+          "[billing] guest auto-login token failed:",
+          err instanceof Error ? err.message : err,
+        );
+      }
+
+      return Response.json({ ok: true, existing, loginToken });
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Could not finish setup.";
