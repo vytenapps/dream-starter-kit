@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { createClient } from "~/lib/supabase/server";
 
 const ACTIVE_STATUSES = ["active", "trialing"];
@@ -24,24 +26,32 @@ export async function isViewerPremium(): Promise<boolean> {
  * (payload/access) gates `members`/`premium` fields. `isLoggedIn` excludes
  * anonymous Supabase users (they aren't "members"). Fails closed.
  */
-export async function getViewerEntitlement(): Promise<{
-  isPremium: boolean;
-  isLoggedIn: boolean;
-}> {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user || user.is_anonymous)
-      return { isPremium: false, isLoggedIn: false };
-    const { data } = await supabase
-      .from("ext_billing_subscriptions")
-      .select("id")
-      .in("status", ACTIVE_STATUSES)
-      .limit(1);
-    return { isPremium: Boolean(data && data.length > 0), isLoggedIn: true };
-  } catch {
-    return { isPremium: false, isLoggedIn: false };
-  }
-}
+export const getViewerEntitlement = cache(
+  async function getViewerEntitlement(): Promise<{
+    isPremium: boolean;
+    isLoggedIn: boolean;
+    /** The viewer's email (for owner-scoped reads, e.g. a claimed idea). */
+    email: string | null;
+  }> {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || user.is_anonymous)
+        return { isPremium: false, isLoggedIn: false, email: null };
+      const { data } = await supabase
+        .from("ext_billing_subscriptions")
+        .select("id")
+        .in("status", ACTIVE_STATUSES)
+        .limit(1);
+      return {
+        isPremium: Boolean(data && data.length > 0),
+        isLoggedIn: true,
+        email: user.email ?? null,
+      };
+    } catch {
+      return { isPremium: false, isLoggedIn: false, email: null };
+    }
+  },
+);

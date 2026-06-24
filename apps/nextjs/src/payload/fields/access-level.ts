@@ -8,10 +8,12 @@ import type { Field } from "payload";
  *   - `members` — any signed-in member
  *   - `premium` — active paid subscription (plans.entitlement = premium)
  */
-export const accessLevelField = (): Field => ({
+export const accessLevelField = (
+  defaultValue: "public" | "members" | "premium" = "public",
+): Field => ({
   name: "accessLevel",
   type: "select",
-  defaultValue: "public",
+  defaultValue,
   options: [
     { label: "Public", value: "public" },
     { label: "Members (logged in)", value: "members" },
