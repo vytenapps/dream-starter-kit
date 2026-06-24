@@ -334,16 +334,42 @@ Deno.serve(async (req) => {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
+        const customerId = subscriptionCustomerId(sub);
         let userId = subscriptionUserIdFromMetadata(sub);
         if (!userId) {
           const { data } = await admin
             .from("ext_billing_customers")
             .select("user_id")
-            .eq("stripe_customer_id", subscriptionCustomerId(sub))
+            .eq("stripe_customer_id", customerId)
             .maybeSingle();
           userId = data?.user_id ?? null;
         }
+        // Guest who paid via the EMBEDDED wallet flow without an anonymous
+        // session: no metadata user, no mapping yet. Match the customer's email
+        // to an account (or create one + email an invite), same as guest
+        // Checkout. Not for the deleted event (don't resurrect accounts). The
+        // host's /api/ext/billing/guest-account route is the primary, synchronous
+        // path (it runs at "Continue"/"Maybe later"); this is the idempotent
+        // backstop for when that call didn't run or didn't land.
+        if (!userId && event.type !== "customer.subscription.deleted") {
+          const customer = await stripe.customers.retrieve(customerId);
+          if (!customer.deleted && customer.email) {
+            userId = await resolveOrInviteGuest(
+              admin,
+              customer.email,
+              customer.name ?? null,
+            );
+          }
+        }
         if (userId) {
+          // Persist the customer mapping so later portal/upgrade calls resolve
+          // it (checkout.session.completed isn't fired by the embedded flow).
+          await admin
+            .from("ext_billing_customers")
+            .upsert(
+              { user_id: userId, stripe_customer_id: customerId },
+              { onConflict: "user_id" },
+            );
           await admin
             .from("ext_billing_subscriptions")
             .upsert(mapSubscription(sub, userId));
@@ -357,12 +383,7 @@ Deno.serve(async (req) => {
           // Embedded checkout has no checkout.session — capture the buyer's
           // identity from the first charge on creation.
           if (event.type === "customer.subscription.created") {
-            await persistFromLatestCharge(
-              admin,
-              stripe,
-              userId,
-              subscriptionCustomerId(sub),
-            );
+            await persistFromLatestCharge(admin, stripe, userId, customerId);
           }
         }
         break;

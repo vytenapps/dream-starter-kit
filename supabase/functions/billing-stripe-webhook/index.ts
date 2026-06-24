@@ -107,6 +107,100 @@ async function ensurePlanTag(
     );
 }
 
+/**
+ * Convert an anonymous buyer (who favorited → got an anon account → checked out)
+ * to a permanent account, or merge into the existing account that owns the email.
+ * Hosted Checkout redirects away, so the client-side email-confirmation flow
+ * can't run here — the completed redirect is strong intent, so we set+confirm the
+ * email directly. Returns the effective userId for the rest of the handler.
+ */
+async function convertOrMergeAnon(
+  admin: SupabaseClient,
+  anonId: string,
+  email: string,
+): Promise<string> {
+  const { data: got } = await admin.auth.admin.getUserById(anonId);
+  if (!got.user?.is_anonymous) return anonId; // already permanent
+
+  const existingId = await findUserIdByEmail(admin, email);
+  if (existingId && existingId !== anonId) {
+    // Merge billing into the existing account, then delete the anon user.
+    await admin
+      .from("ext_billing_subscriptions")
+      .update({ user_id: existingId })
+      .eq("user_id", anonId);
+    const { data: realCust } = await admin
+      .from("ext_billing_customers")
+      .select("user_id")
+      .eq("user_id", existingId)
+      .maybeSingle();
+    if (realCust) {
+      await admin.from("ext_billing_customers").delete().eq("user_id", anonId);
+    } else {
+      await admin
+        .from("ext_billing_customers")
+        .update({ user_id: existingId })
+        .eq("user_id", anonId);
+    }
+    await admin.auth.admin.deleteUser(anonId);
+    return existingId;
+  }
+  await admin.auth.admin.updateUserById(anonId, { email, email_confirm: true });
+  return anonId;
+}
+
+/** Name/email/phone/address from Checkout `customer_details` OR a charge's
+ *  `billing_details` — structurally the same shape. */
+interface BuyerContact {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: Stripe.Address | null;
+}
+
+/** Persist the buyer's captured identity to their profile + Stripe customer. */
+async function persistBuyerDetails(
+  admin: SupabaseClient,
+  stripe: Stripe,
+  userId: string,
+  customerId: string | undefined,
+  details: BuyerContact | null,
+): Promise<void> {
+  if (!details) return;
+  const patch: Record<string, string> = {};
+  if (details.name) patch.display_name = details.name;
+  if (details.phone) patch.phone = details.phone;
+  if (Object.keys(patch).length) {
+    await admin.from("profiles").update(patch).eq("id", userId);
+  }
+  if (customerId) {
+    await stripe.customers
+      .update(customerId, {
+        name: details.name ?? undefined,
+        email: details.email ?? undefined,
+        phone: details.phone ?? undefined,
+        address: details.address ?? undefined,
+      })
+      .catch(() => undefined);
+  }
+}
+
+/**
+ * Embedded checkout (express-intent) fires no `checkout.session.completed`, so
+ * pull the buyer's identity off the subscription's most recent charge
+ * (`billing_details`, captured from the wallet) and persist it the same way.
+ */
+async function persistFromLatestCharge(
+  admin: SupabaseClient,
+  stripe: Stripe,
+  userId: string,
+  customerId: string,
+): Promise<void> {
+  const charges = await stripe.charges.list({ customer: customerId, limit: 1 });
+  const bd = charges.data[0]?.billing_details ?? null;
+  if (bd) await persistBuyerDetails(admin, stripe, userId, customerId, bd);
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST")
     return new Response("Method not allowed", { status: 405 });
@@ -165,6 +259,21 @@ Deno.serve(async (req) => {
             admin,
             email,
             session.customer_details?.name ?? null,
+          );
+        }
+
+        // Anonymous buyer (anon account from a favorite) → convert/merge here.
+        if (userId && email) {
+          userId = await convertOrMergeAnon(admin, userId, email);
+        }
+        // Persist captured identity (name/phone/address) to profile + customer.
+        if (userId) {
+          await persistBuyerDetails(
+            admin,
+            stripe,
+            userId,
+            customerId,
+            session.customer_details,
           );
         }
 
@@ -238,7 +347,10 @@ Deno.serve(async (req) => {
         // Guest who paid via the EMBEDDED wallet flow without an anonymous
         // session: no metadata user, no mapping yet. Match the customer's email
         // to an account (or create one + email an invite), same as guest
-        // Checkout. Not for the deleted event (don't resurrect accounts).
+        // Checkout. Not for the deleted event (don't resurrect accounts). The
+        // host's /api/ext/billing/guest-account route is the primary, synchronous
+        // path (it runs at "Continue"/"Maybe later"); this is the idempotent
+        // backstop for when that call didn't run or didn't land.
         if (!userId && event.type !== "customer.subscription.deleted") {
           const customer = await stripe.customers.retrieve(customerId);
           if (!customer.deleted && customer.email) {
@@ -267,6 +379,11 @@ Deno.serve(async (req) => {
               userId,
               sub.items.data[0]?.price.id ?? null,
             );
+          }
+          // Embedded checkout has no checkout.session — capture the buyer's
+          // identity from the first charge on creation.
+          if (event.type === "customer.subscription.created") {
+            await persistFromLatestCharge(admin, stripe, userId, customerId);
           }
         }
         break;

@@ -133,9 +133,11 @@ export function PaywallModal({
   // Buyer identity captured at checkout (wallet/card) — drives anon→permanent
   // conversion. `checkEmail` shows the "confirm your email" screen afterwards.
   const buyerRef = useRef<BuyerDetails | undefined>(undefined);
-  // The Stripe subscription created at confirm time — threaded to the annual
-  // upgrade so it never depends on the (webhook-written) customer mapping.
+  // The Stripe subscription + customer created at confirm time — threaded to the
+  // annual upgrade and the guest-account route so neither depends on the
+  // (webhook-written) customer mapping.
   const subscriptionRef = useRef<string | undefined>(undefined);
+  const customerRef = useRef<string | undefined>(undefined);
   const [checkEmail, setCheckEmail] = useState<null | {
     email: string;
     existing: boolean;
@@ -195,12 +197,34 @@ export function PaywallModal({
       onSuccess();
       return;
     }
-    // Guest buyer with no anonymous session (e.g. anon sign-in unavailable): the
-    // Stripe-webhook guest path creates their account from the checkout email and
-    // sends a set-password invite. Tell them to check their email rather than
-    // silently closing onto the still-locked page.
+    // Guest buyer with no anonymous session (e.g. anon sign-in / Turnstile
+    // unavailable). Don't just promise an email and bank on the webhook —
+    // create/link the account NOW via the billing guest-account route (it sends
+    // the set-password invite and links the purchase), with the Stripe webhook
+    // as the idempotent backstop. Best-effort: still show the screen on failure.
     if (!user) {
-      setCheckEmail({ email, existing: false });
+      let existing = false;
+      try {
+        const res = await fetch("/api/ext/billing/guest-account", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            name: buyerRef.current?.name ?? undefined,
+            phone: buyerRef.current?.phone ?? undefined,
+            subscriptionId: subscriptionRef.current,
+            customerId: customerRef.current,
+          }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          existing?: boolean;
+        };
+        existing = !!data.existing;
+      } catch {
+        /* best-effort — the Stripe webhook backstops account creation */
+      }
+      setCheckEmail({ email, existing });
       return;
     }
     const next = `/confirm-email?next=${encodeURIComponent(originRef.current)}`;
@@ -245,6 +269,9 @@ export function PaywallModal({
           // Lets the route upgrade this exact subscription without depending on
           // the (webhook-written, possibly-not-yet-present) customer mapping.
           subscriptionId: subscriptionRef.current,
+          // Guest (no session) upsell: the route verifies this wallet email
+          // against the subscription's Stripe customer before upgrading.
+          email: buyerRef.current?.email?.trim() || undefined,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -301,9 +328,6 @@ export function PaywallModal({
       if (!res.ok || !data.clientSecret) {
         throw new Error(data.error ?? "Could not start checkout.");
       }
-      // Remember the subscription so the post-purchase annual upgrade can target it
-      // directly (no reliance on the webhook-written customer mapping).
-      subscriptionRef.current = data.subscriptionId;
       return {
         clientSecret: data.clientSecret,
         mode: data.mode ?? "payment",
@@ -314,8 +338,19 @@ export function PaywallModal({
     [planId, supabase, captchaToken, resetCaptcha],
   );
   // A caller can inject its own intent route (e.g. a one-time purchase);
-  // otherwise the built-in subscription/express-intent path runs.
-  const createIntent = createIntentProp ?? defaultCreateIntent;
+  // otherwise the built-in subscription/express-intent path runs. Either way,
+  // remember the Stripe subscription + customer so the post-purchase annual
+  // upgrade and the guest-account route can target them directly (no reliance
+  // on the webhook-written customer mapping).
+  const createIntent = useCallback(
+    async (details?: BuyerDetails): Promise<CreatedIntent> => {
+      const intent = await (createIntentProp ?? defaultCreateIntent)(details);
+      subscriptionRef.current = intent.subscriptionId;
+      customerRef.current = intent.customerId;
+      return intent;
+    },
+    [createIntentProp, defaultCreateIntent],
+  );
 
   if (!open) return null;
 
