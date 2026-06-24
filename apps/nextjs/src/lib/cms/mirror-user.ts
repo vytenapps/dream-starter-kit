@@ -23,9 +23,41 @@ export async function ensureCmsUser(user: {
   id: string;
   email?: string | null;
   name?: string | null;
+  /**
+   * Supabase `user_metadata`. The billing guest-account route + Stripe webhook
+   * stamp the wallet identity here (phone, billing_postal_code, billing_address)
+   * so this one-way Supabase -> Payload mirror can populate the cms.users
+   * contact/billing fields (docs/ARCHITECTURE.md: profiles is the RLS source for
+   * security-critical state incl. phone; cms.users mirrors + holds the address).
+   */
+  metadata?: Record<string, unknown> | null;
 }): Promise<void> {
   try {
     const payload = await getPayload({ config });
+
+    // Map wallet-captured contact/billing from user_metadata onto the cms.users
+    // shape (its `address` group has no `line1/line2/state`, so fold them in).
+    const meta = user.metadata ?? {};
+    const str = (v: unknown) =>
+      typeof v === "string" && v.trim() ? v.trim() : undefined;
+    const phone = str(meta.phone);
+    const rawAddr = (meta.billing_address ?? null) as Record<
+      string,
+      unknown
+    > | null;
+    const postalCode =
+      str(rawAddr?.postal_code) ?? str(meta.billing_postal_code);
+    const address =
+      rawAddr || postalCode
+        ? {
+            street: str(rawAddr?.line1) ?? str(rawAddr?.line2),
+            city: str(rawAddr?.city),
+            region: str(rawAddr?.state),
+            postalCode,
+            country: str(rawAddr?.country),
+          }
+        : undefined;
+
     // `trash: true` includes soft-deleted rows: a member an admin moved to the
     // Trash must stay deleted (restore happens from the admin Trash view), not
     // be resurrected — and re-creating would trip the unique supabaseUserId
@@ -66,7 +98,36 @@ export async function ensureCmsUser(user: {
           email: user.email ?? `${user.id}@users.noreply.local`,
           name: user.name ?? undefined,
           roles: isStaff ? ["admin"] : ["member"],
+          ...(phone ? { phone } : {}),
+          ...(address ? { address } : {}),
         },
+        overrideAccess: true,
+      });
+      return;
+    }
+
+    // Row exists: backfill the wallet contact/billing onto EMPTY fields only —
+    // never clobber a value a staff member or the user edited.
+    const doc = existing.docs[0] as {
+      id: string | number;
+      phone?: string | null;
+      address?: Record<string, string | null | undefined> | null;
+    };
+    const data: Record<string, unknown> = {};
+    if (phone && !str(doc.phone)) data.phone = phone;
+    if (address) {
+      const cur = doc.address ?? {};
+      const merged: Record<string, string> = {};
+      for (const [k, v] of Object.entries(address)) {
+        if (v && !str(cur[k])) merged[k] = v;
+      }
+      if (Object.keys(merged).length) data.address = { ...cur, ...merged };
+    }
+    if (Object.keys(data).length) {
+      await payload.update({
+        collection: "users",
+        id: doc.id,
+        data,
         overrideAccess: true,
       });
     }

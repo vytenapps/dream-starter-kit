@@ -173,6 +173,23 @@ async function persistBuyerDetails(
   if (Object.keys(patch).length) {
     await admin.from("profiles").update(patch).eq("id", userId);
   }
+  // Stamp the captured identity into auth user_metadata — the carrier the
+  // cms.users mirror reads (the billing zip has no profiles column). Mirrors
+  // what the /guest-account route writes, so the webhook-only path still syncs
+  // name/phone/zip to Payload on the user's next login. GoTrue merges
+  // user_metadata, so other keys are preserved. Best-effort.
+  const meta: Record<string, unknown> = {};
+  if (details.name) meta.display_name = details.name;
+  if (details.phone) meta.phone = details.phone;
+  if (details.address?.postal_code) {
+    meta.billing_postal_code = details.address.postal_code;
+  }
+  if (details.address) meta.billing_address = details.address;
+  if (Object.keys(meta).length) {
+    await admin.auth.admin
+      .updateUserById(userId, { user_metadata: meta })
+      .then(undefined, () => undefined);
+  }
   if (customerId) {
     await stripe.customers
       .update(customerId, {

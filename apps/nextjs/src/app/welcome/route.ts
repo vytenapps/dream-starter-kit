@@ -49,6 +49,7 @@ export async function GET() {
     name:
       (user.user_metadata.display_name as string | undefined) ??
       (user.user_metadata.name as string | undefined),
+    metadata: user.user_metadata,
   });
   await ensureFreeTag(user.id);
 

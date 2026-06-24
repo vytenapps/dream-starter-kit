@@ -57,6 +57,10 @@ const guestAccountSchema = z.object({
   // Buyer identity from the wallet sheet — stored on the new account.
   name: z.string().min(1).optional(),
   phone: z.string().min(1).optional(),
+  // Wallet billing address (Stripe shape: line1/line2/city/state/postal_code/
+  // country). Carried into user_metadata so the cms.users mirror can populate
+  // its billing address (incl. zip) — profiles has no column for it.
+  address: z.record(z.string(), z.unknown()).nullish(),
   // The just-completed embedded purchase — at least one is required, both to
   // prove this is a real checkout and to find the Stripe customer to link.
   subscriptionId: z.string().optional(),
@@ -432,10 +436,17 @@ export const publicRoutes: ExtPublicRouteTable = {
     }
     const parsed = guestAccountSchema.safeParse(await req.json());
     if (!parsed.success) return json(400, { error: "Invalid request" });
-    const { email, name, phone, subscriptionId, customerId } = parsed.data;
+    const { email, name, phone, address, subscriptionId, customerId } =
+      parsed.data;
     if (!subscriptionId && !customerId) {
       return json(400, { error: "Missing purchase reference" });
     }
+    // Billing zip from the wallet address — profiles has no column for it, so it
+    // rides user_metadata into the cms.users mirror (which has an address group).
+    const postalCode =
+      address && typeof address.postal_code === "string"
+        ? address.postal_code
+        : undefined;
 
     // A signed-in, non-anonymous caller already has an account — nothing to do.
     if (ctx.user && !ctx.user.is_anonymous) {
@@ -472,32 +483,60 @@ export const publicRoutes: ExtPublicRouteTable = {
 
       const admin = createAdminClient();
 
+      // The wallet identity, stored on the Supabase user. profiles is the RLS
+      // source for security-critical state (phone — "captured from wallet
+      // checkout"); user_metadata additionally carries the billing address/zip,
+      // which the cms.users mirror reads (per docs/ARCHITECTURE.md — one-way
+      // Supabase -> Payload sync; profiles has no address column).
+      const walletMeta: Record<string, unknown> = {
+        ...(name ? { display_name: name } : {}),
+        ...(phone ? { phone } : {}),
+        ...(postalCode ? { billing_postal_code: postalCode } : {}),
+        ...(address ? { billing_address: address } : {}),
+      };
+
       // 1) Account: link an existing one, or invite a new one (sends the email).
       let userId = await findUserIdByEmail(admin, email);
-      const existing = userId !== null;
+      let existing = userId !== null;
+      let created = false;
       if (!userId) {
         const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
           redirectTo: `${siteUrl()}/accept-invite`,
-          data: {
-            ...(name ? { display_name: name } : {}),
-            ...(phone ? { phone } : {}),
-          },
+          data: walletMeta,
         });
         if (error) {
           // email_exists race → link it; any other error fails so the client
           // falls back to the webhook + "check your email" screen.
           if (error.code === "email_exists" || /already/i.test(error.message)) {
             userId = await findUserIdByEmail(admin, email);
+            existing = true;
           } else {
             console.error("[billing] guest invite failed:", error.message);
             return json(502, { error: "Could not create your account." });
           }
         } else {
           userId = data.user.id;
+          created = true;
         }
       }
       if (!userId) {
         return json(502, { error: "Could not resolve your account." });
+      }
+
+      // The handle_new_user trigger seeds profiles.display_name but NOT phone,
+      // so set it here for a brand-new account (profiles is the documented home
+      // for the wallet phone). Best-effort; existing accounts are left as-is.
+      if (created && phone) {
+        const { error: phoneErr } = await admin
+          .from("profiles")
+          .update({ phone })
+          .eq("id", userId);
+        if (phoneErr) {
+          console.error(
+            "[billing] guest profile phone update failed:",
+            phoneErr.message,
+          );
+        }
       }
 
       // 2) Stamp the user id onto Stripe so the webhook + portal/upgrade resolve

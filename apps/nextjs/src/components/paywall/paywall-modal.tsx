@@ -212,6 +212,9 @@ export function PaywallModal({
             email,
             name: buyerRef.current?.name ?? undefined,
             phone: buyerRef.current?.phone ?? undefined,
+            // Wallet billing address (incl. zip) → stored on the Supabase user
+            // and mirrored into cms.users.address.
+            address: buyerRef.current?.address ?? undefined,
             subscriptionId: subscriptionRef.current,
             customerId: customerRef.current,
           }),
