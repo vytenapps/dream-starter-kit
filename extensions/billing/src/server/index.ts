@@ -36,6 +36,10 @@ const expressIntentSchema = z.object({
   planId: z.union([z.string(), z.number()]),
 });
 
+const upgradeAnnualSchema = z.object({
+  planId: z.union([z.string(), z.number()]),
+});
+
 /**
  * Resolve (or create) a Stripe customer for the current request — signed-in
  * users reuse their saved customer; guests get a fresh blank customer the
@@ -283,6 +287,87 @@ export const publicRoutes: ExtPublicRouteTable = {
 };
 
 export const routes: ExtRouteTable = {
+  /**
+   * One-click upgrade-in-place from the active (monthly) subscription to the
+   * annual plan, using the payment method already on file. Powers the
+   * post-purchase upsell screen. The annual plan's intro coupon discounts the
+   * immediate invoice, and `proration_behavior: "none"` keeps the already-paid
+   * monthly charge intact so the buyer's first-year spend matches the displayed
+   * total. The Stripe webhook mirrors the price change into
+   * public.ext_billing_subscriptions, flipping gating to the annual price.
+   */
+  "POST /upgrade-annual": async (req, ctx) => {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return json(503, { error: "Billing not configured" });
+    }
+    const parsed = upgradeAnnualSchema.safeParse(await req.json());
+    if (!parsed.success) return json(400, { error: "Invalid plan" });
+
+    const stripe = getStripe();
+    try {
+      const payload = await ctx.getPayload();
+      const plan = await payload
+        .findByID({
+          collection: "ext-billing-plans",
+          id: parsed.data.planId,
+          depth: 0,
+        })
+        .catch(() => null);
+      if (!plan?.stripePriceId) {
+        return json(409, {
+          error: "This plan isn't available for purchase yet.",
+        });
+      }
+
+      const { data: customer } = await ctx.supabase
+        .from("ext_billing_customers")
+        .select("stripe_customer_id")
+        .eq("user_id", ctx.user.id)
+        .maybeSingle();
+      if (!customer?.stripe_customer_id) {
+        return json(404, { error: "No billing account" });
+      }
+
+      // Find the user's active subscription to upgrade in place. Skip if it's
+      // already on the annual price (avoid a redundant charge).
+      const subs = await stripe.subscriptions.list({
+        customer: customer.stripe_customer_id,
+        status: "active",
+        limit: 10,
+      });
+      const current = subs.data.find(
+        (s) => s.items.data[0]?.price.id !== plan.stripePriceId,
+      );
+      if (!current) {
+        return json(409, { error: "Already on the annual plan." });
+      }
+      const itemId = current.items.data[0]?.id;
+      if (!itemId) {
+        return json(409, { error: "No subscription item to upgrade." });
+      }
+
+      const metadata = {
+        plan_id: String(plan.id),
+        supabase_user_id: ctx.user.id,
+      };
+      await stripe.subscriptions.update(current.id, {
+        items: [{ id: itemId, price: plan.stripePriceId }],
+        proration_behavior: "none",
+        billing_cycle_anchor: "now",
+        ...(plan.stripeIntroCouponId
+          ? { discounts: [{ coupon: plan.stripeIntroCouponId }] }
+          : { discounts: [] }),
+        metadata,
+      });
+      return Response.json({ ok: true });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Could not upgrade your plan.";
+      console.error("[billing] upgrade-annual failed:", message);
+      return json(502, { error: message });
+    }
+  },
+
   /** Open the Stripe customer portal for the signed-in user. */
   "POST /portal": async (_req, ctx) => {
     if (!process.env.STRIPE_SECRET_KEY) {

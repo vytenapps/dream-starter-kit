@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import type { PlanLite } from "./paywall-copy";
 import {
   buildPlanCopy,
+  buildUpsellCopy,
   cadence,
   deferredElementsOptions,
   formatPrice,
+  resolveAnnualPlan,
   resolvePremiumPlan,
 } from "./paywall-copy";
 
@@ -194,5 +196,106 @@ describe("resolvePremiumPlan", () => {
 
   it("returns null for an empty list", () => {
     expect(resolvePremiumPlan([])).toBeNull();
+  });
+});
+
+describe("resolveAnnualPlan", () => {
+  const docs: PlanLite[] = [
+    { id: 1, pricingType: "recurring", interval: "month", unitAmount: 3999 },
+    { id: 2, pricingType: "recurring", interval: "year", unitAmount: 39900 },
+    { id: 3, pricingType: "one_time", unitAmount: 99900 },
+  ];
+
+  it("picks the cheapest yearly recurring plan distinct from the primary", () => {
+    expect(resolveAnnualPlan(docs, 1)?.id).toBe(2);
+  });
+
+  it("excludes the primary plan itself", () => {
+    expect(resolveAnnualPlan(docs, 2)).toBeNull();
+  });
+
+  it("returns null when there's no yearly plan", () => {
+    expect(
+      resolveAnnualPlan(
+        [
+          {
+            id: 1,
+            pricingType: "recurring",
+            interval: "month",
+            unitAmount: 999,
+          },
+        ],
+        1,
+      ),
+    ).toBeNull();
+  });
+});
+
+const monthlyPlan: PlanLite = {
+  id: 10,
+  name: "Dream Monthly",
+  pricingType: "recurring",
+  interval: "month",
+  unitAmount: 3999,
+  currency: "usd",
+  introOffer: {
+    enabled: true,
+    introAmount: 199,
+    introInterval: "month",
+    introPeriods: 1,
+  },
+};
+
+describe("buildUpsellCopy — annual intro framing", () => {
+  const annualIntroPlan: PlanLite = {
+    id: 11,
+    name: "Dream Annual",
+    pricingType: "recurring",
+    interval: "year",
+    unitAmount: 39900,
+    currency: "usd",
+    introOffer: {
+      enabled: true,
+      introAmount: 17801,
+      introInterval: "year",
+      introPeriods: 1,
+    },
+  };
+  const copy = buildUpsellCopy(annualIntroPlan, monthlyPlan);
+
+  it("first-year total = annual intro charged now + monthly already paid", () => {
+    // 17801 + 199 = 18000 -> $180
+    expect(copy.priceLine).toBe("$180 for your first year, then $399/yr");
+  });
+
+  it("shows the discount vs the full annual price", () => {
+    // 39900 - 18000 = 21900 -> $219
+    expect(copy.savingsLine).toBe("$219 discount");
+  });
+
+  it("charges only the annual intro today and renews at the full price", () => {
+    expect(copy.fineprint).toContain("$178.01 now");
+    expect(copy.fineprint).toContain("$180 total");
+    expect(copy.fineprint).toContain("renews at $399/yr");
+    expect(copy.cta).toBe("Switch to Annual");
+  });
+});
+
+describe("buildUpsellCopy — savings framing (no annual intro)", () => {
+  const plainAnnual: PlanLite = {
+    id: 12,
+    name: "Dream Annual",
+    pricingType: "recurring",
+    interval: "year",
+    unitAmount: 39900,
+    currency: "usd",
+  };
+  const copy = buildUpsellCopy(plainAnnual, monthlyPlan);
+
+  it("charges the full annual price and frames savings vs annualized monthly", () => {
+    expect(copy.priceLine).toBe("$399/yr");
+    // 3999 * 12 = 47988; 47988 - 39900 = 8088 -> $80.88
+    expect(copy.savingsLine).toBe("Save $80.88/year vs monthly");
+    expect(copy.fineprint).toContain("$399 now");
   });
 });

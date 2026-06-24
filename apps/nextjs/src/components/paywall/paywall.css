@@ -340,6 +340,51 @@
   max-width: 40ch;
 }
 
+/* Post-purchase annual upsell. */
+.dr-upsell {
+  padding: 8px 0 4px;
+}
+.dr-upsell h2 {
+  font-size: 24px;
+  margin: 0 0 12px;
+}
+.dr-upsell-price {
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 4px;
+}
+.dr-upsell-save {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 16px;
+}
+.dr-upsell-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto 20px;
+  max-width: 34ch;
+  text-align: left;
+}
+.dr-upsell-list li {
+  position: relative;
+  padding-left: 24px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0 0 8px;
+}
+.dr-upsell-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
 /* Docked paywall (on the detail page). */
 .dr-dock {
   position: fixed;
