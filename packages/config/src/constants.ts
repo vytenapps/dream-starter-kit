@@ -162,6 +162,22 @@ export const DEFAULT_IMAGE_SYSTEM_PROMPT =
 export const IMAGE_GENERATION_MAX_FORMATS = 6;
 
 /**
+ * Default vision model that AUDITS a generated image against its prompt (golden
+ * rule #5: model ids live ONLY here). Must accept image input. Overridable per
+ * workspace via the `image-generation-settings` global's `auditModel` select,
+ * whose options come from the CHAT_MODELS catalog. See
+ * apps/nextjs/src/lib/image-audit.ts.
+ */
+export const DEFAULT_IMAGE_AUDIT_MODEL = "anthropic/claude-sonnet-4.5";
+
+/**
+ * Default number of generate→audit attempts before the audit gives up on an
+ * image. Surfaced as the `auditMaxAttempts` field on the
+ * `image-generation-settings` global (default 3).
+ */
+export const DEFAULT_IMAGE_AUDIT_MAX_ATTEMPTS = 3;
+
+/**
  * Subscription plans — a single "Pro" product billed monthly or yearly.
  * Display lives here (cross-platform); the matching Stripe price ids are
  * server-only env (STRIPE_PRICE_MONTHLY / STRIPE_PRICE_YEARLY). The server maps

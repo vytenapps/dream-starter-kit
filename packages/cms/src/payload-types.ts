@@ -5262,6 +5262,32 @@ export interface ImageGenerationSetting {
    * Bold, minimal, modern flat illustration with clean shapes and a cohesive, vibrant color palette. Strong focal subject, generous negative space, soft studio lighting. No text, no words, no letters, no logos, no watermarks, no UI chrome. High quality, professional, editorial.
    */
   systemPrompt?: string | null;
+  /**
+   * When on, every generated image is reviewed by a vision model against its prompt. Images that don't meet the prompt are regenerated and re-audited, up to the max attempts below.
+   */
+  auditEnabled?: boolean | null;
+  /**
+   * How many times to generate + audit an image before giving up (default 3).
+   */
+  auditMaxAttempts?: number | null;
+  /**
+   * After the final failed attempt, either keep the last image anyway, or skip it — leaving the slot empty so a later save can retry.
+   */
+  auditFailureAction?: ("publish" | "skip") | null;
+  /**
+   * Vision model (AI Gateway slug) that reviews each generated image. Must support image input.
+   */
+  auditModel?:
+    | (
+        | "anthropic/claude-sonnet-4.5"
+        | "anthropic/claude-opus-4.1"
+        | "anthropic/claude-haiku-4.5"
+      )
+    | null;
+  /**
+   * Additional, workspace-specific acceptance rules layered on top of the defaults (depicts the subject, no text/logos, not garbled).
+   */
+  auditInstructions?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -5666,6 +5692,11 @@ export interface ImageGenerationSettingsSelect<T extends boolean = true> {
   enabled?: T;
   model?: T;
   systemPrompt?: T;
+  auditEnabled?: T;
+  auditMaxAttempts?: T;
+  auditFailureAction?: T;
+  auditModel?: T;
+  auditInstructions?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -1,6 +1,5 @@
 import type { CollectionConfig } from "payload";
 
-import { FEATURED_FORMATS } from "../../lib/image-formats";
 import { generatePreviewPath, previewBreakpoints } from "../../lib/preview";
 import { isStaff, publishedOrStaff } from "../access";
 import { accessLevelField } from "../fields/access-level";
@@ -8,9 +7,7 @@ import { commentsEnabledField } from "../fields/comments-enabled";
 import { generatedImageFields } from "../fields/generated-images";
 import { slugField } from "../fields/slug";
 import { generateImagesHook, syncImageUrls } from "../hooks/generate-images";
-
-/** AI image generation: a hero + OG card from the post's imagePrompt. */
-const postImages = { formats: FEATURED_FORMATS };
+import { postImages } from "../image-collections";
 
 /** Rough reading time (minutes) from the Lexical body's text content. */
 function estimateReadingTime(body: unknown): number | null {

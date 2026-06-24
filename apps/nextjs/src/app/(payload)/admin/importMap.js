@@ -25,12 +25,14 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { CopyImageUrl as CopyImageUrl_84fcb81b7710fe95f583dcb8b959b243 } from '~/payload/components/CopyImageUrl'
 import { OverviewComponent as OverviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { MetaTitleComponent as MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { MetaDescriptionComponent as MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { MetaImageComponent as MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
+import { RegenerateAllImages as RegenerateAllImages_5552ed3b6af65aa0c30dbc3814b71069 } from '~/payload/components/RegenerateAllImages'
 import { LogoutButton as LogoutButton_6c9a924bbf94f383766dffe3be60632c } from '~/payload/components/LogoutButton'
 import { BrandIcon as BrandIcon_7f003298658d3b7c758be66cf37cc99a } from '~/payload/components/BrandIcon'
 import { SeedGate as SeedGate_579c462e1297910adc75e16d2ce018f6 } from '~/payload/components/SeedGate'
@@ -68,12 +70,14 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "~/payload/components/CopyImageUrl#CopyImageUrl": CopyImageUrl_84fcb81b7710fe95f583dcb8b959b243,
   "@payloadcms/plugin-seo/client#OverviewComponent": OverviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#MetaTitleComponent": MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#MetaDescriptionComponent": MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#MetaImageComponent": MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,
+  "~/payload/components/RegenerateAllImages#RegenerateAllImages": RegenerateAllImages_5552ed3b6af65aa0c30dbc3814b71069,
   "~/payload/components/LogoutButton#LogoutButton": LogoutButton_6c9a924bbf94f383766dffe3be60632c,
   "~/payload/components/BrandIcon#BrandIcon": BrandIcon_7f003298658d3b7c758be66cf37cc99a,
   "~/payload/components/SeedGate#SeedGate": SeedGate_579c462e1297910adc75e16d2ce018f6,

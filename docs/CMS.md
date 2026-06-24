@@ -404,7 +404,7 @@ number/message fields); submissions are publicly creatable, staff-read.
 | `pricing-settings`          | `/pricing` page: heading/subheading, `billingToggleDefault`, up to 3 `featuredPlans`, optional `freeTier` group, disclaimer                                                                                                                                                                                                                                                                                 | `anyone`           | `isStaff` |
 | `theme-settings`            | The **front-end** shadcn theme (versioned, drafts→publish): Branding (appName, brandLink, appIcon, light/dark logos), Light/Dark color tokens, Typography (sans/serif/mono, letterSpacing), Other (radius, spacing, shadow). Serialized by `lib/theme/serialize.ts` into `<ThemeStyle />`; branding read by `getBranding()`. The `/admin` chrome uses a separate fixed palette (`lib/theme/admin-theme.ts`) | `publishedOrStaff` | `isStaff` |
 | `profile-fields`            | Admin-defined custom member fields (key, label, type, options, required, visibility, editableByMember, order) — drives `users.customFields` validation + profile UI                                                                                                                                                                                                                                         | `anyone`           | `isStaff` |
-| `image-generation-settings` | **System → Image Generation.** Workspace settings for AI image generation: `enabled` (kill switch), `model` (gateway image-model slug from the `@acme/config` catalog), `systemPrompt` (art direction). Resolution order at generation time: global → env → code default                                                                                                                                    | `isStaff`          | `isStaff` |
+| `image-generation-settings` | **System → Image Generation.** Workspace settings for AI image generation: `enabled` (kill switch), `model` (gateway image-model slug from the `@acme/config` catalog), `systemPrompt` (art direction). Resolution order at generation time: global → env → code default. Also a **post-generation audit** (`auditEnabled`, `auditMaxAttempts`, `auditFailureAction` publish/skip, `auditModel`, `auditInstructions`) and a **Regenerate all images** button (re-renders every image-enabled doc against the current settings; backed by the staff-only `/api/cms/regenerate-images` route)                                                                                                | `isStaff`          | `isStaff` |
 
 ---
 
@@ -415,7 +415,7 @@ Image-enabled content collections (and the Media library, via the MCP
 [ARCHITECTURE.md → core CMS image generation](./ARCHITECTURE.md) for the moving
 parts; the highlights:
 
-- **Opt-in fields.** A collection adds `...generatedImageFields({ formats })`
+- **Opt-in fields.** A collection adds `...generatedImageFields(cfg)`
   (`payload/fields/generated-images.ts`) + a two-hook `beforeChange` array
   `[generateImagesHook(cfg), syncImageUrls(cfg)]` (`payload/hooks/generate-images.ts`).
   This yields, per format: an `upload`→`media` field (`imageHero` / `imageOg` /
@@ -423,9 +423,28 @@ parts; the highlights:
   `CopyImageUrl` admin control; plus the shared `imageAlt` text and the
   `imagePrompt` textarea. Presets live in `lib/image-formats.ts`:
   **FEATURED** (hero 16:9 + OG 1200×630) and **CARD** (+ a 1:1 square).
+- **One registry.** Each `cfg` lives in `payload/image-collections.ts`
+  (`IMAGE_COLLECTIONS` + the per-collection `postImages`/`eventImages`/… exports);
+  collections import their `cfg` from there so the field set and the on-save hook
+  can't drift, and the bulk-regenerate route iterates the same list.
 - **Enabled on:** `posts`, `pages`, `videos`, `audio` (FEATURED) and `events`,
   `series`, `locations` (CARD). **Not** on `photos` (the upload _is_ the image)
   or `community-posts` (member-authored — avoids member-triggered gateway spend).
+- **Post-generation audit (optional).** When `auditEnabled` is on, each generated
+  image is reviewed by a vision model (`lib/image-audit.ts`) against its prompt;
+  failures are regenerated and re-audited up to `auditMaxAttempts`. If none passes,
+  `auditFailureAction` decides: **publish** the last image anyway, or **skip** it
+  (leave the slot empty for a later retry). The judge **fails open** — an
+  unreachable audit model never discards a generated image. The generate→audit
+  loop is `generateAuditedImage` (`lib/image-generation.ts`); it runs in both the
+  on-save hook and the bulk regenerate.
+- **Bulk regenerate.** The **Regenerate all images** button on the settings global
+  (`payload/components/RegenerateAllImages.tsx`) POSTs to
+  `/api/cms/regenerate-images`, which re-renders every image-enabled doc that has
+  an `imagePrompt` against the current settings (model + art direction + audit) and
+  streams `{ done, total }` progress. Generation runs with bounded concurrency and
+  no DB connection; the media-create + doc-update writes are serialized so the tiny
+  Payload pool is never exhausted. Staff (admin/editor) only.
 - **Semantics (verified, do not regress).** `beforeChange`, not `afterChange`,
   so generation triggers off the incoming `imagePrompt`, the new media ids land
   in the same write, and there's no second write/recursion. **Fill-missing
