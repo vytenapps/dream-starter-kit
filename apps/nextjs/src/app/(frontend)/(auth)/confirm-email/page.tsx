@@ -7,6 +7,19 @@ import Link from "next/link";
 import { createClient } from "~/lib/supabase/client";
 
 /**
+ * Mirror the just-confirmed user into Payload's `users` collection via the host
+ * endpoint. Best-effort and idempotent — backstopped by the (app) layout and
+ * `cms:backfill-users`.
+ */
+async function mirrorSelf(): Promise<void> {
+  try {
+    await fetch("/api/cms/mirror-self", { method: "POST" });
+  } catch {
+    /* best-effort */
+  }
+}
+
+/**
  * Sign-up confirmation landing page. The kit's confirmation email template
  * (supabase/templates/confirmation.html) links here with `?token_hash=…`,
  * verified by an explicit `verifyOtp(type: "signup")` call.
@@ -55,6 +68,11 @@ export default function ConfirmEmailPage() {
           token_hash: tokenHash,
         });
         if (!error) {
+          // Mirror into Payload's `users` collection. The sign-up `next` is
+          // /welcome (which mirrors), but the anon→permanent conversion `next`
+          // is the buyer's origin page — that path never reaches /welcome, so
+          // do it here. Best-effort, idempotent.
+          await mirrorSelf();
           window.location.assign(next);
           return;
         }
@@ -63,6 +81,7 @@ export default function ConfirmEmailPage() {
 
       const { data } = await supabase.auth.getSession();
       if (data.session) {
+        await mirrorSelf();
         window.location.assign(next);
         return;
       }

@@ -25,6 +25,13 @@ import { validateCustomFields } from "../hooks/validate-custom-fields";
  * lib/cms/mirror-user.ts) so the admin Users page manages everyone — profiles,
  * tags, segmentation. Mirrored non-staff rows cannot access /admin.
  *
+ * The mirror (`ensureCmsUser`) runs everywhere a session can first appear, since
+ * the SSO bridge above only JIT-provisions STAFF: the server auth routes
+ * /welcome + /auth/callback, the /confirm-email page, the paywall guest-checkout
+ * flow (client-side sign-in → POST /api/cms/mirror-self), and a best-effort
+ * backstop in the (app) shell layout. `pnpm cms:backfill-users` catches up any
+ * account created before that wiring or whose mirror call was missed.
+ *
  * Creating a user here (new email) emails them a Supabase invite and grants
  * staff access. For an existing user, use "Grant staff access". The "User tags"
  * UI manages the Supabase `public.user_tags` segmentation (incl. the auto

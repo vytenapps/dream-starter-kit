@@ -5,6 +5,7 @@ import { BrandingProvider } from "~/components/branding-provider";
 import { AppExtWidgetsProvider } from "~/components/ext-widgets-provider";
 import { SiteHeader } from "~/components/site-header";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
+import { ensureCmsUser, ensureFreeTag } from "~/lib/cms/mirror-user";
 import { disabledExtensionSlugs } from "~/lib/ext/enabled";
 import { getWebNavItems } from "~/lib/ext/nav";
 import { getBranding } from "~/lib/payload";
@@ -38,6 +39,21 @@ export default async function AppLayout({
     disabledExtensionSlugs(),
     // Staff/admin flag gates the header's CMS settings shortcut (RLS read-own).
     supabase.from("profiles").select("is_staff").eq("id", user.id).single(),
+    // Universal backstop for the cms.users mirror: guest-checkout buyers (and
+    // any future out-of-band signup) establish their session without passing
+    // through /welcome or /auth/callback, so mirror here the first time they
+    // reach the app shell. Idempotent + best-effort (swallows its own errors),
+    // so it never blocks render — for already-mirrored users it's one indexed
+    // lookup. See lib/cms/mirror-user.ts.
+    ensureCmsUser({
+      id: user.id,
+      email: user.email,
+      name:
+        (user.user_metadata.display_name as string | undefined) ??
+        (user.user_metadata.name as string | undefined),
+      metadata: user.user_metadata,
+    }),
+    ensureFreeTag(user.id),
   ]);
   const isStaff = profile.data?.is_staff ?? false;
 
