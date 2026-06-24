@@ -14,6 +14,7 @@
 //
 // On the detail page the on-page gate dock IS step 1, so the modal opens
 // directly at step 2 (paywall-modal `initialStep`) — never two offer screens.
+import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -40,6 +41,7 @@ export function PaywallBody({
   onPaid,
   onBack,
   onClose,
+  topSlot,
 }: {
   copy: PaywallCopy;
   /**
@@ -63,6 +65,8 @@ export function PaywallBody({
   /** Back from the terms screen (→ offer, or close when terms is the entry). */
   onBack: () => void;
   onClose: () => void;
+  /** Optional content above the offer headline (e.g. a cross-sell between plans). */
+  topSlot?: ReactNode;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -265,6 +269,7 @@ export function PaywallBody({
       onWallet={() => goToTerms("wallet")}
       onCard={() => goToTerms("card")}
       onClose={onClose}
+      topSlot={topSlot}
     />
   );
 }

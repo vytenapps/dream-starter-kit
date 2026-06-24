@@ -6,6 +6,7 @@
 // + click handlers are passed per context; the layout is one source of truth.
 // No Stripe imports, so it can render outside <Elements> (the detail dock is
 // not inside the Elements provider).
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { WalletButton } from "./wallet-button";
@@ -16,6 +17,7 @@ export function PaywallOffer({
   onWallet,
   onCard,
   onClose,
+  topSlot,
 }: {
   headline: string;
   sub: string;
@@ -25,9 +27,12 @@ export function PaywallOffer({
   onCard: () => void;
   /** When provided, renders a "Maybe later" dismiss in the footer. */
   onClose?: () => void;
+  /** Optional content above the headline (e.g. a cross-sell between plans). */
+  topSlot?: ReactNode;
 }) {
   return (
     <div className="dr-inner">
+      {topSlot}
       <h2 className="dr-offer-h">{headline}</h2>
       <p className="dr-offer-sub">{sub}</p>
 

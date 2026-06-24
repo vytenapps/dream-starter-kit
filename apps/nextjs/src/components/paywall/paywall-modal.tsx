@@ -11,6 +11,7 @@
 //
 // All pricing + fine print is pulled from the Payload CMS plan
 // (lib/paywall-copy.ts), never hardcoded.
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Elements } from "@stripe/react-stripe-js";
 import confetti from "canvas-confetti";
@@ -24,7 +25,12 @@ import {
 
 import type { PayMethod, PaywallStep } from "./paywall-body";
 import type { CheckoutVariant } from "./stripe";
-import type { BuyerDetails, PlanLite } from "~/lib/paywall-copy";
+import type {
+  BuyerDetails,
+  DeferredElementsOptions,
+  PaywallCopy,
+  PlanLite,
+} from "~/lib/paywall-copy";
 import { useCaptcha } from "~/components/captcha/captcha-provider";
 import {
   buildPlanCopy,
@@ -66,6 +72,32 @@ export interface PaywallModalProps {
   initialMethod?: PayMethod;
   onClose: () => void;
   onSuccess: () => void;
+  // --- Optional extension points (default = the generic single-plan paywall) ---
+  // These let a product surface reuse this exact modal — and so inherit every
+  // upstream fix — by injecting flow-specific copy / pricing / purchase routes,
+  // instead of forking the component. All optional; when unset the modal behaves
+  // exactly as before.
+  /** Override the CMS-derived copy (e.g. a flow-specific headline/CTA). */
+  copy?: PaywallCopy;
+  /** Content rendered above the offer headline (e.g. a cross-sell between plans). */
+  offerTopSlot?: ReactNode;
+  /** Success-screen heading override (default "You're in."). */
+  paidTitle?: ReactNode;
+  /** Success-screen body override (default "Premium access unlocked."). */
+  paidBody?: ReactNode;
+  /** Replace the built-in intent creation (e.g. a one-time purchase route). */
+  createIntent?: (details?: BuyerDetails) => Promise<CreatedIntent>;
+  /** Run after the payment confirms, before the success screen (e.g. a server
+   *  confirm/stamp step). Best-effort; throwing won't block the success screen. */
+  onAfterPaid?: (
+    intentId?: string,
+    details?: BuyerDetails,
+  ) => void | Promise<void>;
+  /** Override the deferred <Elements> options (e.g. a one-time amount with no plan). */
+  deferred?: DeferredElementsOptions;
+  /** One-time purchase: no anon→permanent identity step or annual upsell — the
+   *  success screen finishes straight through `onSuccess`. */
+  oneTime?: boolean;
 }
 
 export function PaywallModal({
@@ -78,6 +110,14 @@ export function PaywallModal({
   initialMethod = "wallet",
   onClose,
   onSuccess,
+  copy: copyProp,
+  offerTopSlot,
+  paidTitle,
+  paidBody,
+  createIntent: createIntentProp,
+  onAfterPaid,
+  deferred: deferredProp,
+  oneTime = false,
 }: PaywallModalProps) {
   const supabase = useSupabase();
   const { user } = useSession();
@@ -106,7 +146,8 @@ export function PaywallModal({
     originRef.current = window.location.pathname + window.location.search;
   }, []);
 
-  const copy = useMemo(() => buildPlanCopy(plan), [plan]);
+  const computedCopy = useMemo(() => buildPlanCopy(plan), [plan]);
+  const copy = copyProp ?? computedCopy;
 
   // Only upsell to annual when a distinct annual plan is available (and the
   // bought plan isn't already that annual plan).
@@ -225,10 +266,11 @@ export function PaywallModal({
   // Deferred Elements options (mode + today's charge). Null while the plan is
   // still resolving — virtually never seen because the plan query is prefetched
   // + cached by the provider before the modal opens.
-  const deferred = useMemo(() => deferredElementsOptions(plan), [plan]);
+  const computedDeferred = useMemo(() => deferredElementsOptions(plan), [plan]);
+  const deferred = deferredProp ?? computedDeferred;
 
   // Create the PaymentIntent / subscription at CONFIRM time (not on open).
-  const createIntent = useCallback(
+  const defaultCreateIntent = useCallback(
     async (details?: BuyerDetails): Promise<CreatedIntent> => {
       if (planId == null) {
         throw new Error("This plan isn't available yet.");
@@ -271,6 +313,9 @@ export function PaywallModal({
     },
     [planId, supabase, captchaToken, resetCaptcha],
   );
+  // A caller can inject its own intent route (e.g. a one-time purchase);
+  // otherwise the built-in subscription/express-intent path runs.
+  const createIntent = createIntentProp ?? defaultCreateIntent;
 
   if (!open) return null;
 
@@ -280,8 +325,17 @@ export function PaywallModal({
     (isFull ? "co-panel" : isDock ? "drawer dock" : "drawer") +
     (step === "terms" && !paid ? " is-terms" : "");
 
-  function finishPayment(_intentId?: string, details?: BuyerDetails) {
+  async function finishPayment(intentId?: string, details?: BuyerDetails) {
     buyerRef.current = details;
+    // Optional server confirm/stamp step (e.g. a one-time purchase). Best-effort —
+    // it's idempotent and retryable, so a failure must not block the success UI.
+    if (onAfterPaid) {
+      try {
+        await onAfterPaid(intentId, details);
+      } catch {
+        /* swallow — see above */
+      }
+    }
     setPaid(true);
   }
 
@@ -369,13 +423,14 @@ export function PaywallModal({
         ) : paid ? (
           <div className="dr-paid">
             <div className="dr-check">✓</div>
-            <h2>You&apos;re in.</h2>
-            <p>Premium access unlocked.</p>
+            <h2>{paidTitle ?? "You're in."}</h2>
+            <p>{paidBody ?? "Premium access unlocked."}</p>
             <button
               className="pay-btn"
               style={{ margin: "0 auto" }}
               onClick={() => {
                 if (canUpsell) setUpsell(true);
+                else if (oneTime) onSuccess();
                 else void proceedAfterPay();
               }}
             >
@@ -405,11 +460,12 @@ export function PaywallModal({
               step={step}
               setStep={setStep}
               initialMethod={initialMethod}
-              onPaid={(id, details) => finishPayment(id, details)}
+              onPaid={(id, details) => void finishPayment(id, details)}
               onBack={
                 initialStep === "terms" ? onClose : () => setStep("offer")
               }
               onClose={onClose}
+              topSlot={offerTopSlot}
             />
           </Elements>
         ) : (
