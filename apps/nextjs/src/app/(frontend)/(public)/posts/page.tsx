@@ -43,6 +43,7 @@ export default async function PostsPage() {
                       : undefined
                   }
                   description={post.excerpt}
+                  favorite={{ collection: "posts", itemId: String(post.id) }}
                 />
               );
             })}

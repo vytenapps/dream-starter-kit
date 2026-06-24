@@ -40,6 +40,14 @@ export default defineConfig({
   ],
   // Playwright starts the web app (reused locally if already running). The CI
   // workflow provisions Supabase + the .env before this runs.
+  //
+  // NB: we deliberately do NOT force NEXT_PUBLIC_TURNSTILE_SITE_KEY on here. The
+  // Turnstile widget holds a live connection to challenges.cloudflare.com, which
+  // keeps the page from ever reaching `networkidle` — several specs wait on that.
+  // The suite runs with Supabase CAPTCHA OFF (config.toml), so anon sign-in /
+  // sign-up / favorites need no token. To exercise the widget locally, set
+  // NEXT_PUBLIC_TURNSTILE_SITE_KEY (Cloudflare's always-pass test key
+  // 1x00000000000000000000AA) in .env — see docs/TURNSTILE.md.
   webServer: {
     command: "pnpm --filter @acme/nextjs dev",
     url: baseURL,

@@ -70,7 +70,6 @@ export interface Config {
     users: User;
     "device-tokens": DeviceToken;
     "feed-tokens": FeedToken;
-    favorites: Favorite;
     enrollments: Enrollment;
     reviews: Review;
     media: Media;
@@ -113,7 +112,6 @@ export interface Config {
   collectionsJoins: {
     users: {
       subscriptions: "ext-billing-subscriptions";
-      favorites: "favorites";
       enrollments: "enrollments";
       devices: "device-tokens";
     };
@@ -170,7 +168,6 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     "device-tokens": DeviceTokensSelect<false> | DeviceTokensSelect<true>;
     "feed-tokens": FeedTokensSelect<false> | FeedTokensSelect<true>;
-    favorites: FavoritesSelect<false> | FavoritesSelect<true>;
     enrollments: EnrollmentsSelect<false> | EnrollmentsSelect<true>;
     reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -464,11 +461,6 @@ export interface User {
   stripeCustomerID?: string | null;
   subscriptions?: {
     docs?: (number | ExtBillingSubscription)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  favorites?: {
-    docs?: (number | Favorite)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
@@ -2477,47 +2469,6 @@ export interface Photo {
   };
 }
 /**
- * Member bookmarks across content types.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "favorites".
- */
-export interface Favorite {
-  id: number;
-  user: number | User;
-  target:
-    | {
-        relationTo: "posts";
-        value: number | Post;
-      }
-    | {
-        relationTo: "videos";
-        value: number | Video;
-      }
-    | {
-        relationTo: "audio";
-        value: number | Audio;
-      }
-    | {
-        relationTo: "photos";
-        value: number | Photo;
-      }
-    | {
-        relationTo: "locations";
-        value: number | Location;
-      }
-    | {
-        relationTo: "events";
-        value: number | Event;
-      };
-  /**
-   * Personal note (optional).
-   */
-  notes?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "enrollments".
  */
@@ -3406,7 +3357,6 @@ export interface UsersSelect<T extends boolean = true> {
   lastActiveAt?: T;
   stripeCustomerID?: T;
   subscriptions?: T;
-  favorites?: T;
   enrollments?: T;
   devices?: T;
   updatedAt?: T;
@@ -3440,17 +3390,6 @@ export interface FeedTokensSelect<T extends boolean = true> {
   show?: T;
   revoked?: T;
   lastAccessedAt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "favorites_select".
- */
-export interface FavoritesSelect<T extends boolean = true> {
-  user?: T;
-  target?: T;
-  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -8,6 +8,12 @@ export * from "./validators/auth";
 export * from "./validators/tag";
 export * from "./auth";
 export * from "./hooks/use-content";
+export {
+  useFavorites,
+  useToggleFavorite,
+  favoriteKey,
+  type ToggleFavoriteInput,
+} from "./hooks/use-favorites";
 export { useProfile, useUpdateProfile } from "./hooks/use-profile";
 export { useDeleteAccount } from "./hooks/use-delete-account";
 export { useUserTags } from "./hooks/use-tags";

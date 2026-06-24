@@ -84,7 +84,7 @@ caller's Supabase session and JIT-provisions a `cms.users` row (linked by
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `assignOwner(field)`                            | Forces the owner field to the requesting user on create (staff/Local API may override)                                                |
 | `requireCommentsEnabled`                        | Rejects comments whose target has `commentsEnabled: false`                                                                            |
-| `uniquePolymorphic(...)`                        | One row per owner + polymorphic target (favorites, open reports)                                                                      |
+| `uniquePolymorphic(...)`                        | One row per owner + polymorphic target (open reports)                                                                                 |
 | `incrementReportCount`                          | Denormalizes `reportCount` onto the reported doc                                                                                      |
 | `invite-user`                                   | On staff-created Users rows: Supabase invite email + `is_staff` flag                                                                  |
 | `sync-plan-to-stripe` / `sync-coupon-to-stripe` | afterChange → create/update Stripe product, **recreate + archive** immutable prices/coupons; status lands on `syncStatus`/`syncError` |
@@ -266,7 +266,7 @@ global, staff-managed `tags`); **Contact tab** (phone, DOB, timezone, language,
 address); **Preferences tab** (push/SMS/marketing opt-ins,
 `notificationPreferences`, `onboardingCompleted`, `lastActiveAt`); **Billing
 tab** (read-only `stripeCustomerID`); joins
-`subscriptions`/`favorites`/`enrollments`/`devices`. **Access:** admin panel
+`subscriptions`/`enrollments`/`devices`. **Access:** admin panel
 `canAccessAdmin`; create `isAdmin` (triggers the invite hook); read/update
 `isAdminOrSelf`; delete `isAdmin`. Trash (soft delete; bridge rejects trashed).
 
@@ -283,11 +283,13 @@ Opaque per-member tokens embedded in private RSS URLs. **Fields:** read-only
 unique `token`_ (UUID default), `user`_, `show` (podcast series), `revoked`,
 `lastAccessedAt`. **Access:** create any user; the rest `ownsOrStaff`.
 
-### `favorites` — bookmarks
+### Favorites — moved to `public.content_favorites` (RLS)
 
-Polymorphic join: one row per user+target (`uniquePolymorphic`). **Fields:**
-`user`_ (auto-assigned), `target`_ (posts/videos/audio/photos/locations/events),
-`notes`. **Access:** create any user; the rest `ownsOrStaff`.
+There is no CMS `favorites` collection. Saves across **all** content collections
+live in the Supabase RLS table `public.content_favorites` (`(user_id,
+collection, item_id)`, own-row RLS) so they also work for **anonymous** users —
+see `docs/ERD.md` and `packages/app/src/hooks/use-favorites.ts`. It's the one
+table anonymous sessions may write.
 
 ### `enrollments` — course enrollment + progress
 
@@ -438,7 +440,7 @@ parts; the highlights:
 
 Follow [`CLAUDE.md` → How to add a Payload content type](../CLAUDE.md#how-to-add-a-payload-content-type):
 copy the closest collection above (e.g. `Posts.ts` for editorial,
-`Favorites.ts` for owner-scoped member data), register it in
+`Enrollments.ts` for owner-scoped member data), register it in
 `payload.config.ts`, then `pnpm cms:gen-types`, `pnpm cms:migrate:create`
 (commit the migration — production applies it automatically via
 `prodMigrations`), add a seed step in `payload/seed.ts`, and keep this document

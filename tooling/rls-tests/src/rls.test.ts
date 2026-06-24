@@ -52,6 +52,7 @@ let orgAId = "";
 let msgAId = "";
 let notifAId = "";
 let tagId = "";
+let favAId = "";
 
 async function createUser(email: string, password: string): Promise<string> {
   const { data, error } = await admin.auth.admin.createUser({
@@ -155,6 +156,16 @@ beforeAll(async () => {
     path: `${aId}/avatar.png`,
     mime_type: "image/png",
   });
+
+  // As A: a content favorite (own-row RLS; the table anon users may also write).
+  const fav = await clientA
+    .from("content_favorites")
+    .insert({ user_id: aId, collection: "posts", item_id: `rls-post-${stamp}` })
+    .select()
+    .single();
+  expect(fav.error).toBeNull();
+  if (!fav.data) throw new Error("content_favorites insert returned no row");
+  favAId = fav.data.id;
 
   // As service role: a customer row and a notification for A (these are written
   // by the server/webhook, never by clients — RLS only grants read-own).
@@ -629,5 +640,92 @@ describe("RLS: MCP OAuth tables are server-only (deny-all)", () => {
     const svc = admin as unknown as SupabaseClient;
     const { error } = await svc.from("mcp_oauth_clients").select("*");
     expect(error).toBeNull();
+  });
+});
+
+describe("RLS: content_favorites are owner-scoped (across collections)", () => {
+  it("A can read A's own favorite", async () => {
+    const { data, error } = await clientA
+      .from("content_favorites")
+      .select("*")
+      .eq("id", favAId);
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+  });
+
+  it("A can favorite items in different collections", async () => {
+    const { error } = await clientA.from("content_favorites").insert({
+      user_id: aId,
+      collection: "videos",
+      item_id: `rls-video-${stamp}`,
+    });
+    expect(error).toBeNull();
+    const { data } = await clientA
+      .from("content_favorites")
+      .select("collection");
+    const collections = new Set((data ?? []).map((r) => r.collection));
+    expect(collections.has("posts")).toBe(true);
+    expect(collections.has("videos")).toBe(true);
+  });
+
+  it("B cannot read A's favorite", async () => {
+    const { data } = await clientB
+      .from("content_favorites")
+      .select("*")
+      .eq("id", favAId);
+    expect(data).toHaveLength(0);
+  });
+
+  it("B cannot write a favorite as A", async () => {
+    const { error } = await clientB.from("content_favorites").insert({
+      user_id: aId,
+      collection: "posts",
+      item_id: `evil-${stamp}`,
+    });
+    expect(error).not.toBeNull();
+  });
+});
+
+describe("RLS: anonymous users — favorites yes, AI chat no", () => {
+  let anon: SupabaseClient<Database>;
+  let anonId = "";
+
+  beforeAll(async () => {
+    // Requires enable_anonymous_sign_ins = true (and CAPTCHA off locally).
+    anon = createClient<Database>(SUPABASE_URL, ANON_KEY, noPersist);
+    const { data, error } = await anon.auth.signInAnonymously();
+    expect(error).toBeNull();
+    anonId = data.user?.id ?? "";
+    expect(anonId).not.toBe("");
+  });
+
+  afterAll(async () => {
+    if (anonId) await admin.auth.admin.deleteUser(anonId);
+  });
+
+  it("an anonymous user is never staff", async () => {
+    const { data } = await admin
+      .from("profiles")
+      .select("is_staff, is_anonymous")
+      .eq("id", anonId)
+      .single();
+    expect(data?.is_anonymous).toBe(true);
+    expect(data?.is_staff).toBe(false);
+  });
+
+  it("an anonymous user CAN save a favorite (its own)", async () => {
+    const { error } = await anon.from("content_favorites").insert({
+      user_id: anonId,
+      collection: "posts",
+      item_id: `anon-${stamp}`,
+    });
+    expect(error).toBeNull();
+  });
+
+  it("an anonymous user CANNOT create an AI chat thread (restrictive policy)", async () => {
+    const { error } = await anon
+      .from("ext_chat_threads")
+      .insert({ user_id: anonId, title: "should be blocked" });
+    expect(error).not.toBeNull();
   });
 });

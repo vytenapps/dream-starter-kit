@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { FavoriteButton } from "./favorite-button";
 
 export interface ContentCardProps {
   title: string;
@@ -16,12 +17,17 @@ export interface ContentCardProps {
   image?: { url: string; alt: string } | null;
   meta?: ReactNode;
   description?: string | null;
+  /**
+   * When set, renders a save/heart button (works across all collections + for
+   * anonymous visitors). Pass the Payload collection slug + content doc id.
+   */
+  favorite?: { collection: string; itemId: string };
 }
 
 /**
  * A uniform content card (optional cover image + title + meta + description),
  * used across the article/event/video/location list pages. Wrapped in a link
- * when `href` is provided.
+ * when `href` is provided; an optional save/heart button overlays the corner.
  */
 export function ContentCard({
   title,
@@ -30,6 +36,7 @@ export function ContentCard({
   image,
   meta,
   description,
+  favorite,
 }: ContentCardProps) {
   const card = (
     <Card className="hover:border-foreground/20 h-full gap-0 overflow-hidden py-0 transition-colors">
@@ -49,14 +56,27 @@ export function ContentCard({
     </Card>
   );
 
-  if (!href) return card;
-  return (
+  const linked = !href ? (
+    card
+  ) : (
     <Link
       href={href}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
     >
       {card}
     </Link>
+  );
+
+  if (!favorite) return linked;
+  return (
+    <div className="relative h-full">
+      {linked}
+      <FavoriteButton
+        collection={favorite.collection}
+        itemId={favorite.itemId}
+        className="absolute top-3 right-3 shadow-sm"
+      />
+    </div>
   );
 }
 

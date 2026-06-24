@@ -649,7 +649,7 @@ export async function seedCmsContent(
                     description:
                       "Let users save any content to come back to later.",
                     tooltip:
-                      "A polymorphic favorites collection keyed per user and target.",
+                      "A generic content_favorites table (RLS, anon-capable) keyed per user + collection + item.",
                     icon: "Heart",
                   },
                 ],

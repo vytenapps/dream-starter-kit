@@ -12,8 +12,15 @@ import type { SignInInput, SignUpInput } from "./validators/auth";
 export async function signInWithPassword(
   client: AppSupabaseClient,
   { email, password }: SignInInput,
+  opts?: { captchaToken?: string },
 ): Promise<void> {
-  const { error } = await client.auth.signInWithPassword({ email, password });
+  const { error } = await client.auth.signInWithPassword({
+    email,
+    password,
+    options: opts?.captchaToken
+      ? { captchaToken: opts.captchaToken }
+      : undefined,
+  });
   if (error) throw error;
 }
 
@@ -26,7 +33,7 @@ export async function signInWithPassword(
 export async function signUpWithPassword(
   client: AppSupabaseClient,
   { email, password, displayName }: SignUpInput,
-  opts?: { emailRedirectTo?: string },
+  opts?: { emailRedirectTo?: string; captchaToken?: string },
 ): Promise<{ user: User | null; session: Session | null }> {
   const { data, error } = await client.auth.signUp({
     email,
@@ -34,6 +41,7 @@ export async function signUpWithPassword(
     options: {
       data: displayName ? { display_name: displayName } : undefined,
       emailRedirectTo: opts?.emailRedirectTo,
+      captchaToken: opts?.captchaToken,
     },
   });
   if (error) throw error;
@@ -76,11 +84,14 @@ export async function resendSignUpEmail(
 export async function signInWithOtp(
   client: AppSupabaseClient,
   email: string,
-  opts?: { emailRedirectTo?: string },
+  opts?: { emailRedirectTo?: string; captchaToken?: string },
 ): Promise<void> {
   const { error } = await client.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: opts?.emailRedirectTo },
+    options: {
+      emailRedirectTo: opts?.emailRedirectTo,
+      captchaToken: opts?.captchaToken,
+    },
   });
   if (error) throw error;
 }
@@ -108,9 +119,11 @@ export async function resetPasswordForEmail(
   client: AppSupabaseClient,
   email: string,
   redirectTo: string,
+  opts?: { captchaToken?: string },
 ): Promise<void> {
   const { error } = await client.auth.resetPasswordForEmail(email, {
     redirectTo,
+    captchaToken: opts?.captchaToken,
   });
   if (error) throw error;
 }
@@ -125,5 +138,59 @@ export async function updatePassword(
 
 export async function signOut(client: AppSupabaseClient): Promise<void> {
   const { error } = await client.auth.signOut();
+  if (error) throw error;
+}
+
+/**
+ * Ensure the visitor has *some* Supabase session, minting an **anonymous** one
+ * if they're logged out. Called before the first per-user write (e.g. favoriting
+ * any content) so the action ties to a real `auth.uid()` — later converted to a
+ * permanent account once an email is known at checkout. Idempotent: returns the
+ * existing user when already signed in (anonymous or not).
+ *
+ * `captchaToken` is required when Supabase has CAPTCHA enabled (anonymous
+ * sign-ins are the prime bot target — see docs/TURNSTILE.md).
+ */
+export async function ensureAnonSession(
+  client: AppSupabaseClient,
+  opts?: { captchaToken?: string },
+): Promise<User> {
+  const { data: sessionData } = await client.auth.getSession();
+  const existing = sessionData.session?.user;
+  if (existing) return existing;
+
+  const { data, error } = await client.auth.signInAnonymously({
+    options: opts?.captchaToken
+      ? { captchaToken: opts.captchaToken }
+      : undefined,
+  });
+  if (error) throw error;
+  if (!data.user) throw new Error("Anonymous sign-in returned no user.");
+  return data.user;
+}
+
+/** True when the signed-in user is a Supabase anonymous user. */
+export function isAnonymousUser(user: User | null | undefined): boolean {
+  return Boolean(user?.is_anonymous);
+}
+
+/**
+ * Convert the current anonymous user to a permanent one by attaching an email.
+ * Supabase sends a confirmation email (with `enable_confirmations`); the user
+ * becomes permanent on click. Optionally stamp profile data (name/phone/address)
+ * into user_metadata at the same time. Throws on conflict (`email_exists`) so the
+ * caller can run the merge path. No-op-safe to call only when `is_anonymous`.
+ */
+export async function convertAnonToPermanent(
+  client: AppSupabaseClient,
+  email: string,
+  opts?: { emailRedirectTo?: string; data?: Record<string, unknown> },
+): Promise<void> {
+  const { error } = await client.auth.updateUser(
+    { email, data: opts?.data },
+    opts?.emailRedirectTo
+      ? { emailRedirectTo: opts.emailRedirectTo }
+      : undefined,
+  );
   if (error) throw error;
 }
