@@ -125,8 +125,9 @@ function isoOrNull(seconds: number | null | undefined): string | null {
  */
 function subscriptionRow(sub: Stripe.Subscription, userId: string) {
   const item = sub.items.data[0];
-  const itemEnd = (item as unknown as { current_period_end?: number } | undefined)
-    ?.current_period_end;
+  const itemEnd = (
+    item as unknown as { current_period_end?: number } | undefined
+  )?.current_period_end;
   const subEnd = (sub as unknown as { current_period_end?: number })
     .current_period_end;
   return {
@@ -468,7 +469,8 @@ export const publicRoutes: ExtPublicRouteTable = {
             typeof sub.customer === "string" ? sub.customer : sub.customer.id;
         }
       }
-      if (!resolvedCustomerId) return json(404, { error: "Purchase not found" });
+      if (!resolvedCustomerId)
+        return json(404, { error: "Purchase not found" });
 
       const customer = await stripe.customers
         .retrieve(resolvedCustomerId)
@@ -500,10 +502,13 @@ export const publicRoutes: ExtPublicRouteTable = {
       let existing = userId !== null;
       let created = false;
       if (!userId) {
-        const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-          redirectTo: `${siteUrl()}/accept-invite`,
-          data: walletMeta,
-        });
+        const { data, error } = await admin.auth.admin.inviteUserByEmail(
+          email,
+          {
+            redirectTo: `${siteUrl()}/accept-invite`,
+            data: walletMeta,
+          },
+        );
         if (error) {
           // email_exists race → link it; any other error fails so the client
           // falls back to the webhook + "check your email" screen.
