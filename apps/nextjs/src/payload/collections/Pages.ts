@@ -1,15 +1,12 @@
 import type { CollectionConfig } from "payload";
 
-import { FEATURED_FORMATS } from "../../lib/image-formats";
 import { generatePreviewPath, previewBreakpoints } from "../../lib/preview";
 import { isStaff, publishedOrStaff } from "../access";
 import { pageBlocks } from "../blocks";
 import { generatedImageFields } from "../fields/generated-images";
 import { slugField } from "../fields/slug";
 import { generateImagesHook, syncImageUrls } from "../hooks/generate-images";
-
-/** AI image generation: a hero + OG image from the page's imagePrompt. */
-const pageImages = { formats: FEATURED_FORMATS };
+import { pageImages } from "../image-collections";
 
 /**
  * Marketing/legal pages, addressed by slug (home, about, contact, terms,

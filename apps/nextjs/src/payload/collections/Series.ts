@@ -1,14 +1,11 @@
 import type { CollectionConfig } from "payload";
 
-import { CARD_FORMATS } from "../../lib/image-formats";
 import { isStaff, publishedOrStaff } from "../access";
 import { accessLevelField } from "../fields/access-level";
 import { generatedImageFields } from "../fields/generated-images";
 import { slugField } from "../fields/slug";
 import { generateImagesHook, syncImageUrls } from "../hooks/generate-images";
-
-/** AI image generation: hero + OG + a square cover from the series' imagePrompt. */
-const seriesImages = { formats: CARD_FORMATS };
+import { seriesImages } from "../image-collections";
 
 /** Apple Podcasts top-level categories (shared by category + subcategory). */
 const APPLE_PODCAST_CATEGORIES = [

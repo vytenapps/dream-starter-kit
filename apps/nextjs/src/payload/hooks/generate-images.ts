@@ -5,13 +5,18 @@ import type {
 } from "payload";
 
 import {
+  DEFAULT_IMAGE_AUDIT_MAX_ATTEMPTS,
   DEFAULT_IMAGE_MODEL,
   DEFAULT_IMAGE_SYSTEM_PROMPT,
   IMAGE_GENERATION_MAX_FORMATS,
   isAiGatewayConfigured,
 } from "@acme/config";
 
-import type { ImageFormatSpec } from "../../lib/image-formats";
+import type {
+  GeneratedImage,
+  ImageFormatSpec,
+  ResolvedAuditSettings,
+} from "../../lib/image-formats";
 import { env } from "../../env";
 import { isS3Configured } from "../../lib/s3-config";
 
@@ -66,6 +71,8 @@ export interface ResolvedImageSettings {
   enabled: boolean;
   model: string;
   systemPrompt: string;
+  /** Post-generation audit configuration (resolved from the global). */
+  audit: ResolvedAuditSettings;
 }
 
 /**
@@ -82,6 +89,11 @@ export async function resolveImageGenerationSettings(
         enabled?: boolean | null;
         model?: string | null;
         systemPrompt?: string | null;
+        auditEnabled?: boolean | null;
+        auditMaxAttempts?: number | null;
+        auditModel?: string | null;
+        auditInstructions?: string | null;
+        auditFailureAction?: string | null;
       }
     | undefined;
   try {
@@ -104,7 +116,20 @@ export async function resolveImageGenerationSettings(
     nonEmpty(env.IMAGE_GENERATION_SYSTEM_PROMPT) ??
     DEFAULT_IMAGE_SYSTEM_PROMPT;
 
-  return { enabled, model, systemPrompt };
+  const audit: ResolvedAuditSettings = {
+    enabled: global?.auditEnabled === true,
+    maxAttempts:
+      typeof global?.auditMaxAttempts === "number" &&
+      Number.isFinite(global.auditMaxAttempts) &&
+      global.auditMaxAttempts >= 1
+        ? Math.floor(global.auditMaxAttempts)
+        : DEFAULT_IMAGE_AUDIT_MAX_ATTEMPTS,
+    model: nonEmpty(global?.auditModel),
+    instructions: nonEmpty(global?.auditInstructions),
+    failureAction: global?.auditFailureAction === "skip" ? "skip" : "publish",
+  };
+
+  return { enabled, model, systemPrompt, audit };
 }
 
 /** Is a slot empty (no value in the incoming data nor the existing doc)? */
@@ -210,20 +235,57 @@ export function generateImagesHook(
 
     // Lazy server-only renderer (keeps `ai`/`sharp`/server-only out of the
     // Payload CLI's config-load graph; see the note at the top of this file).
-    const { generateOneImage } = await import("../../lib/image-generation");
+    const lib = await import("../../lib/image-generation");
 
     // Per-format isolation: each format generated + attached in its own
     // try/catch; one failure is logged with its cause and never discards
-    // formats that succeeded, and nothing throws.
+    // formats that succeeded, and nothing throws. When auditing is on, each
+    // format runs a generate→audit→regenerate loop (generateAuditedImage); an
+    // image that never passes is kept ("publish") or dropped ("skip"), per the
+    // global settings.
     await Promise.all(
       missing.map(async (format) => {
         try {
-          const image = await generateOneImage({
-            model: settings.model,
-            systemPrompt: settings.systemPrompt,
-            subject: prompt,
-            format,
-          });
+          let image: GeneratedImage;
+          if (settings.audit.enabled) {
+            const outcome = await lib.generateAuditedImage({
+              model: settings.model,
+              systemPrompt: settings.systemPrompt,
+              subject: prompt,
+              format,
+              audit: settings.audit,
+              onEvent: (message, err) =>
+                log.warn(
+                  `[image-generation] ${slug}: "${format.key}" ${message}` +
+                    (err instanceof Error ? ` — ${err.message}` : ""),
+                ),
+            });
+            if (!outcome.image) {
+              // Audit never passed + failure action "skip" → attach nothing.
+              log.warn(
+                `[image-generation] ${slug}: "${format.key}" audit failed ` +
+                  `after ${outcome.attempts} attempt(s) — skipped` +
+                  (outcome.reason ? `: ${outcome.reason}` : ""),
+              );
+              return;
+            }
+            if (!outcome.passed) {
+              // Failure action "publish" → keep the last image, but flag it.
+              log.warn(
+                `[image-generation] ${slug}: "${format.key}" audit failed ` +
+                  `after ${outcome.attempts} attempt(s) — publishing last image` +
+                  (outcome.reason ? `: ${outcome.reason}` : ""),
+              );
+            }
+            image = outcome.image;
+          } else {
+            image = await lib.generateOneImage({
+              model: settings.model,
+              systemPrompt: settings.systemPrompt,
+              subject: prompt,
+              format,
+            });
+          }
           const filename = `${slug}-${format.key}-${Date.now()}.webp`;
           const id = await createMediaFromBuffer(req.payload, {
             data: image.data,

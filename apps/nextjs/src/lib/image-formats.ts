@@ -83,3 +83,25 @@ export const IMAGE_FORMAT_PRESETS: Record<string, ImageFormatSpec> = {
   og: OG_FORMAT,
   square: SQUARE_FORMAT,
 };
+
+// --- Post-generation audit (pure types) ---------------------------------------
+// The audit runtime (vision model via the AI Gateway) lives in the server-only
+// `image-audit.ts`; these types are server-free so both the settings resolver
+// (payload/hooks/generate-images.ts) and the renderer can share them.
+
+/** What to do with an image that never passes the audit within max attempts. */
+export type AuditFailureAction = "publish" | "skip";
+
+/** Resolved post-generation audit settings (from the global, with defaults). */
+export interface ResolvedAuditSettings {
+  /** When true, every generated image is reviewed and bad ones regenerated. */
+  enabled: boolean;
+  /** Total generate→audit attempts before giving up (>= 1). */
+  maxAttempts: number;
+  /** Gateway vision-model slug for the audit, or undefined for the code default. */
+  model?: string;
+  /** Extra, workspace-specific acceptance criteria for the judge. */
+  instructions?: string;
+  /** After the final failed attempt: keep the last image, or attach nothing. */
+  failureAction: AuditFailureAction;
+}

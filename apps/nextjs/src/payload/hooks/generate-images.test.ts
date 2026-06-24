@@ -9,12 +9,23 @@ import {
 } from "./generate-images";
 
 // Mock the heavy generation lib (loads `ai` + `sharp`); we only need
-// generateOneImage to return a buffer (or reject) per format.
+// generateOneImage / generateAuditedImage to return a buffer (or reject/skip).
 const generateOneImageMock =
   vi.fn<(args: { format: ImageFormatSpec }) => Promise<GeneratedImage>>();
+interface AuditedOutcome {
+  format: ImageFormatSpec;
+  image: GeneratedImage | null;
+  passed: boolean;
+  attempts: number;
+  reason?: string;
+}
+const generateAuditedImageMock =
+  vi.fn<(args: { format: ImageFormatSpec }) => Promise<AuditedOutcome>>();
 vi.mock("../../lib/image-generation", () => ({
   generateOneImage: (args: { format: ImageFormatSpec }) =>
     generateOneImageMock(args),
+  generateAuditedImage: (args: { format: ImageFormatSpec }) =>
+    generateAuditedImageMock(args),
 }));
 
 const FORMATS: ImageFormatSpec[] = [
@@ -92,6 +103,15 @@ beforeEach(() => {
   generateOneImageMock.mockReset();
   generateOneImageMock.mockImplementation(({ format }) =>
     Promise.resolve(okImage(format)),
+  );
+  generateAuditedImageMock.mockReset();
+  generateAuditedImageMock.mockImplementation(({ format }) =>
+    Promise.resolve({
+      format,
+      image: okImage(format),
+      passed: true,
+      attempts: 1,
+    }),
   );
   vi.stubEnv("S3_ACCESS_KEY_ID", "stub");
   vi.stubEnv("S3_SECRET_ACCESS_KEY", "secret");
@@ -229,6 +249,88 @@ describe("generateImagesHook", () => {
     expect(generateOneImageMock).not.toHaveBeenCalled();
     expect(payload.logger.info).toHaveBeenCalledWith(
       expect.stringContaining("disabled"),
+    );
+  });
+
+  it("audit ON: uses the generate→audit loop, not the plain generator", async () => {
+    const payload = fakePayload({
+      findGlobal: () => Promise.resolve({ enabled: true, auditEnabled: true }),
+    });
+    const hook = generateImagesHook({ formats: FORMATS });
+    const data: Record<string, unknown> = { imagePrompt: "a fox" };
+    await run(hook, {
+      data,
+      req: { payload },
+      collection: { slug: "posts" },
+    });
+    expect(generateOneImageMock).not.toHaveBeenCalled();
+    expect(generateAuditedImageMock).toHaveBeenCalledTimes(2);
+    expect(payload.create).toHaveBeenCalledTimes(2);
+    expect(data.imageHero).toBe(100);
+    expect(data.imageOg).toBe(101);
+  });
+
+  it("audit ON + skip: a failed audit attaches nothing and warns", async () => {
+    const payload = fakePayload({
+      findGlobal: () =>
+        Promise.resolve({
+          enabled: true,
+          auditEnabled: true,
+          auditFailureAction: "skip",
+        }),
+    });
+    generateAuditedImageMock.mockImplementation(({ format }) =>
+      Promise.resolve({
+        format,
+        image: null,
+        passed: false,
+        attempts: 3,
+        reason: "contains text",
+      }),
+    );
+    const hook = generateImagesHook({ formats: FORMATS });
+    const data: Record<string, unknown> = { imagePrompt: "a fox" };
+    await run(hook, {
+      data,
+      req: { payload },
+      collection: { slug: "posts" },
+    });
+    expect(payload.create).not.toHaveBeenCalled();
+    expect(data.imageHero).toBeUndefined();
+    expect(payload.logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("skipped"),
+    );
+  });
+
+  it("audit ON + publish: a failed audit still attaches the last image, flagged", async () => {
+    const payload = fakePayload({
+      findGlobal: () =>
+        Promise.resolve({
+          enabled: true,
+          auditEnabled: true,
+          auditFailureAction: "publish",
+        }),
+    });
+    generateAuditedImageMock.mockImplementation(({ format }) =>
+      Promise.resolve({
+        format,
+        image: okImage(format),
+        passed: false,
+        attempts: 3,
+        reason: "still imperfect",
+      }),
+    );
+    const hook = generateImagesHook({ formats: FORMATS });
+    const data: Record<string, unknown> = { imagePrompt: "a fox" };
+    await run(hook, {
+      data,
+      req: { payload },
+      collection: { slug: "posts" },
+    });
+    expect(payload.create).toHaveBeenCalledTimes(2);
+    expect(data.imageHero).toBe(100);
+    expect(payload.logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("publishing last image"),
     );
   });
 

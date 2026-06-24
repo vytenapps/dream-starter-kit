@@ -14,6 +14,7 @@ import * as migration_20260613_025129_ext_chat_adapter_sendblue_initial from './
 import * as migration_20260613_161650_ai_chat_adapter_settings_tabs from './20260613_161650_ai_chat_adapter_settings_tabs';
 import * as migration_20260620_212733_image_generation from './20260620_212733_image_generation';
 import * as migration_20260624_000100_drop_favorites from './20260624_000100_drop_favorites';
+import * as migration_20260624_151421_image_audit_settings from './20260624_151421_image_audit_settings';
 
 export const migrations = [
   {
@@ -89,11 +90,16 @@ export const migrations = [
   {
     up: migration_20260620_212733_image_generation.up,
     down: migration_20260620_212733_image_generation.down,
-    name: '20260620_212733_image_generation'
+    name: '20260620_212733_image_generation',
   },
   {
     up: migration_20260624_000100_drop_favorites.up,
     down: migration_20260624_000100_drop_favorites.down,
-    name: '20260624_000100_drop_favorites'
+    name: '20260624_000100_drop_favorites',
+  },
+  {
+    up: migration_20260624_151421_image_audit_settings.up,
+    down: migration_20260624_151421_image_audit_settings.down,
+    name: '20260624_151421_image_audit_settings'
   },
 ];

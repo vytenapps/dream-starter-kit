@@ -1,15 +1,12 @@
 import type { CollectionConfig } from "payload";
 
-import { CARD_FORMATS } from "../../lib/image-formats";
 import { generatePreviewPath, previewBreakpoints } from "../../lib/preview";
 import { isStaff, publishedOrStaff } from "../access";
 import { commentsEnabledField } from "../fields/comments-enabled";
 import { generatedImageFields } from "../fields/generated-images";
 import { slugField } from "../fields/slug";
 import { generateImagesHook, syncImageUrls } from "../hooks/generate-images";
-
-/** AI image generation: hero + OG + a square card from the location's imagePrompt. */
-const locationImages = { formats: CARD_FORMATS };
+import { locationImages } from "../image-collections";
 
 const DAYS = [
   { label: "Monday", value: "monday" },
