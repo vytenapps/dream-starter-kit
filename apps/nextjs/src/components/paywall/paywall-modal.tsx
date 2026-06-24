@@ -138,10 +138,9 @@ export function PaywallModal({
   // (webhook-written) customer mapping.
   const subscriptionRef = useRef<string | undefined>(undefined);
   const customerRef = useRef<string | undefined>(undefined);
-  const [checkEmail, setCheckEmail] = useState<null | {
-    email: string;
-    existing: boolean;
-  }>(null);
+  // Existence-agnostic "check your email" screen — the copy doesn't reveal
+  // whether the address already had an account, so a single email is all we track.
+  const [checkEmail, setCheckEmail] = useState<null | { email: string }>(null);
   // The page the buyer started on, so the confirmation email returns them here.
   const originRef = useRef<string>("/");
   useEffect(() => {
@@ -203,9 +202,8 @@ export function PaywallModal({
     // the set-password invite and links the purchase), with the Stripe webhook
     // as the idempotent backstop. Best-effort: still show the screen on failure.
     if (!user) {
-      let existing = false;
       try {
-        const res = await fetch("/api/ext/billing/guest-account", {
+        await fetch("/api/ext/billing/guest-account", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -219,27 +217,31 @@ export function PaywallModal({
             customerId: customerRef.current,
           }),
         });
-        const data = (await res.json().catch(() => ({}))) as {
-          ok?: boolean;
-          existing?: boolean;
-        };
-        existing = !!data.existing;
       } catch {
         /* best-effort — the Stripe webhook backstops account creation */
       }
-      setCheckEmail({ email, existing });
+      setCheckEmail({ email });
       return;
     }
     const next = `/confirm-email?next=${encodeURIComponent(originRef.current)}`;
+    const walletAddress = buyerRef.current?.address ?? undefined;
+    const walletPostal =
+      walletAddress && typeof walletAddress.postal_code === "string"
+        ? walletAddress.postal_code
+        : undefined;
     try {
       await convertAnonToPermanent(supabase, email, {
         emailRedirectTo: `${window.location.origin}${next}`,
+        // Carry the full wallet identity into user_metadata so the cms.users
+        // mirror gets name/phone/billing address (incl. zip) on this path too.
         data: {
           display_name: buyerRef.current?.name ?? undefined,
           phone: buyerRef.current?.phone ?? undefined,
+          ...(walletPostal ? { billing_postal_code: walletPostal } : {}),
+          ...(walletAddress ? { billing_address: walletAddress } : {}),
         },
       });
-      setCheckEmail({ email, existing: false });
+      setCheckEmail({ email });
     } catch (e) {
       // Email already belongs to an account → merge this purchase into it.
       const code = (e as { code?: string }).code;
@@ -249,7 +251,7 @@ export function PaywallModal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),
         }).catch(() => undefined);
-        setCheckEmail({ email, existing: true });
+        setCheckEmail({ email });
       } else {
         // Conversion failed (transient) — they're still premium as an anon user;
         // don't block. Finish; they can convert later from settings.
@@ -395,25 +397,15 @@ export function PaywallModal({
         )}
 
         {checkEmail ? (
-          // Anonymous buyer converted — confirm email to secure the account.
+          // Post-purchase: tell the buyer to check their email. Deliberately
+          // existence-agnostic (doesn't reveal whether the address had an
+          // account) — the guest-account route sends a login/set-password link.
           <div className="dr-paid">
             <div className="dr-check">✉</div>
-            <h2>Confirm your email</h2>
+            <h2>Check your email</h2>
             <p>
-              {checkEmail.existing ? (
-                <>
-                  That email already has an account — we&apos;ve linked this
-                  purchase to it. Check <strong>{checkEmail.email}</strong> for
-                  a sign-in link.
-                </>
-              ) : (
-                <>
-                  We sent a link to <strong>{checkEmail.email}</strong>. Confirm
-                  it to secure your account — your access is already active.
-                  You&apos;re passwordless; you can add a password anytime from
-                  your account settings.
-                </>
-              )}
+              If you have an account, we have sent a login link to{" "}
+              <strong>{checkEmail.email}</strong>.
             </p>
             <button
               className="pay-btn"
