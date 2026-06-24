@@ -234,3 +234,109 @@ export function buildPlanCopy(plan?: PlanLite | null): PaywallCopy {
       : `By subscribing, the payment method you select will be charged on a recurring basis. You can cancel anytime from billing.`,
   };
 }
+
+/**
+ * The annual plan offered as a 1-click upsell after a (monthly) purchase: the
+ * cheapest yearly-interval recurring plan that isn't the just-purchased plan.
+ * Returns null when there's no distinct annual plan (then no upsell is shown).
+ */
+export function resolveAnnualPlan(
+  docs: PlanLite[],
+  primaryId?: string | number | null,
+): PlanLite | null {
+  const yearly = docs
+    .filter(
+      (p) =>
+        p.pricingType === "recurring" &&
+        p.interval === "year" &&
+        p.id !== primaryId,
+    )
+    .sort((a, b) => (a.unitAmount ?? 0) - (b.unitAmount ?? 0));
+  return yearly[0] ?? null;
+}
+
+/** Copy for the post-purchase 1-click "Upgrade to Annual" screen. */
+export interface UpsellCopy {
+  headline: string;
+  /** Big price line, e.g. "$180 for your first year, then $399/yr". */
+  priceLine: string;
+  /** Discount/savings line, e.g. "$219 discount" or "Save $80/year vs monthly". */
+  savingsLine: string | null;
+  /** Reassurance bullets under the price. */
+  benefits: string[];
+  /** Full fine print shown beneath the buttons. */
+  fineprint: string;
+  /** Primary CTA label. */
+  cta: string;
+}
+
+/**
+ * Compose the annual upsell shown right after a monthly subscription succeeds.
+ *
+ * Pricing is CMS-driven: the annual plan's intro offer (if any) plus what the
+ * buyer already paid on the monthly plan. The displayed "first year" total is
+ * the annual intro charged-today amount PLUS the monthly intro already paid —
+ * mirroring the /upgrade-annual route, which charges only the annual intro today
+ * (the monthly charge already happened), so the buyer's real first-year spend
+ * equals the displayed number.
+ */
+export function buildUpsellCopy(
+  annual: PlanLite,
+  monthly?: PlanLite | null,
+): UpsellCopy {
+  const currency = annual.currency ?? "usd";
+  const annualFull = annual.unitAmount ?? 0;
+  const fullLabel = formatPrice(annualFull, currency);
+  const cad = cadence(annual); // "/yr"
+  const monthlyPaid = introAmountOf(monthly) ?? monthly?.unitAmount ?? 0;
+
+  const annualIntro = introAmountOf(annual);
+
+  // --- Intro framing: first year = annual intro charged now + monthly paid ---
+  if (annualIntro != null) {
+    const firstYear = annualIntro + monthlyPaid;
+    const firstYearLabel = formatPrice(firstYear, currency);
+    const discount = annualFull - firstYear;
+    return {
+      headline: "Upgrade to Annual Access",
+      priceLine: `${firstYearLabel} for your first year, then ${fullLabel}${cad}`,
+      savingsLine:
+        discount > 0 ? `${formatPrice(discount, currency)} discount` : null,
+      benefits: [
+        "A full year of unlimited access — locked in",
+        "Switch instantly using the card on file",
+        "Cancel anytime",
+      ],
+      fineprint:
+        `Your plan switches to annual today using the payment method on file. ` +
+        `You'll be charged ${formatPrice(annualIntro, currency)} now for the rest of your first year ` +
+        `(${firstYearLabel} total including what you've already paid). After your first year, ` +
+        `your subscription automatically renews at ${fullLabel}${cad} until you cancel. ` +
+        `You can cancel anytime from billing.`,
+      cta: "Switch to Annual",
+    };
+  }
+
+  // --- Savings framing: full annual price, vs annualized monthly ---
+  const monthlyFull = monthly?.unitAmount ?? 0;
+  const annualizedMonthly = monthlyFull * 12;
+  const savings = annualizedMonthly - annualFull;
+  return {
+    headline: "Upgrade to Annual Access",
+    priceLine: `${fullLabel}${cad}`,
+    savingsLine:
+      savings > 0
+        ? `Save ${formatPrice(savings, currency)}/year vs monthly`
+        : null,
+    benefits: [
+      "A full year of unlimited access — locked in",
+      "Switch instantly using the card on file",
+      "Cancel anytime",
+    ],
+    fineprint:
+      `Your plan switches to annual today using the payment method on file. ` +
+      `You'll be charged ${fullLabel} now and your subscription automatically renews at ` +
+      `${fullLabel}${cad} until you cancel. You can cancel anytime from billing.`,
+    cta: "Switch to Annual",
+  };
+}

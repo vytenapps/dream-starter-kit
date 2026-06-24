@@ -882,6 +882,31 @@ export async function seedCmsContent(
             _status: "published",
           },
         });
+        // Premium-gated demo post: `accessLevel: "premium"` makes the public
+        // post page blur/lock the body behind the embedded wallet-first paywall
+        // (offer → terms/consent → Apple/Google Pay or card → confetti, then the
+        // anon→permanent email-confirmation + annual-upgrade flow). Lets you
+        // exercise the whole paywall end-to-end on a fresh clone at
+        // /posts/premium-preview. See components/paywall + docs/TURNSTILE.md.
+        await payload.create({
+          collection: "posts",
+          context: { skipImageGeneration: true },
+          data: {
+            title: "Premium preview: members-only deep dive",
+            slug: "premium-preview",
+            excerpt:
+              "A premium post — the body is gated behind the paywall for non-subscribers.",
+            accessLevel: "premium",
+            body: richText([
+              "This is premium content. Signed-out and free visitors see the first lines blurred behind the paywall dock; subscribers (an active row in public.ext_billing_subscriptions) see the full post.",
+              "Use it to test the paywall: open it as a logged-out visitor, pay with Stripe's 4242 test card, watch the confetti, then confirm the emailed link to convert your anonymous checkout into a permanent account — and optionally accept the 1-click annual upgrade.",
+              "Everything below this point is the gated payload you are paying to unlock. Swap this copy for your real members-only material.",
+            ]),
+            author: authorId,
+            publishedAt: "2026-01-03T00:00:00.000Z",
+            _status: "published",
+          },
+        });
       },
     },
     {

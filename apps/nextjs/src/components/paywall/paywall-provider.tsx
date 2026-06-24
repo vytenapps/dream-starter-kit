@@ -19,8 +19,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PayMethod } from "./paywall-body";
 import type { CheckoutVariant } from "./stripe";
 import type { PlanLite } from "~/lib/paywall-copy";
-import { resolvePremiumPlan } from "~/lib/paywall-copy";
+import { resolveAnnualPlan, resolvePremiumPlan } from "~/lib/paywall-copy";
 import { usePremium } from "./use-premium";
+
+interface ResolvedPlans {
+  plan: PlanLite | null;
+  /** The yearly plan offered as a 1-click upsell after purchase (if distinct). */
+  annualPlan: PlanLite | null;
+}
 
 // The paywall modal pulls in @stripe/stripe-js + @stripe/react-stripe-js, which
 // are dead weight until someone opens the paywall. Load it lazily (client-only)
@@ -59,17 +65,22 @@ export function usePaywall(): PaywallContextValue {
  * (resolvePremiumPlan) so server + client never drift.
  */
 function useResolvedPlan(initialPlan?: PlanLite | null) {
-  return useQuery<PlanLite | null>({
+  return useQuery<ResolvedPlans>({
     queryKey: ["billing-premium-plan"],
     queryFn: async () => {
       const res = await fetch(
         "/cms-api/ext-billing-plans?where[active][equals]=true&sort=displayOrder&limit=50&depth=0",
       );
-      if (!res.ok) return null;
+      if (!res.ok) return { plan: null, annualPlan: null };
       const data = (await res.json()) as { docs: PlanLite[] };
-      return resolvePremiumPlan(data.docs);
+      const plan = resolvePremiumPlan(data.docs);
+      return { plan, annualPlan: resolveAnnualPlan(data.docs, plan?.id) };
     },
-    ...(initialPlan !== undefined ? { initialData: initialPlan } : {}),
+    // SSR seeds only the primary plan; the annual upsell plan resolves on the
+    // client fetch (it's only needed after a purchase, so there's ample time).
+    ...(initialPlan !== undefined
+      ? { initialData: { plan: initialPlan, annualPlan: null } }
+      : {}),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -84,7 +95,9 @@ export function PaywallProvider({
 }) {
   const { isPremium, isLoading, userEmail } = usePremium();
   const qc = useQueryClient();
-  const { data: plan } = useResolvedPlan(initialPlan);
+  const { data: plans } = useResolvedPlan(initialPlan);
+  const plan = plans?.plan ?? null;
+  const annualPlan = plans?.annualPlan ?? null;
 
   const [open, setOpen] = useState(false);
   const [variant, setVariant] = useState<CheckoutVariant>("full");
@@ -156,7 +169,8 @@ export function PaywallProvider({
             open={open}
             variant={variant}
             planId={planId}
-            plan={plan ?? null}
+            plan={plan}
+            annualPlan={annualPlan}
             initialStep={variant === "dock" ? "terms" : "offer"}
             initialMethod={method}
             onClose={() => setOpen(false)}

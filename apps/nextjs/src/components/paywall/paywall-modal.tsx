@@ -26,7 +26,11 @@ import type { PayMethod, PaywallStep } from "./paywall-body";
 import type { CheckoutVariant } from "./stripe";
 import type { BuyerDetails, PlanLite } from "~/lib/paywall-copy";
 import { useCaptcha } from "~/components/captcha/captcha-provider";
-import { buildPlanCopy, deferredElementsOptions } from "~/lib/paywall-copy";
+import {
+  buildPlanCopy,
+  buildUpsellCopy,
+  deferredElementsOptions,
+} from "~/lib/paywall-copy";
 import { PaywallBody } from "./paywall-body";
 import { getStripePromise } from "./stripe";
 
@@ -48,6 +52,8 @@ export interface PaywallModalProps {
   planId?: string | number | null;
   /** Resolved Payload plan (pricing + fine-print source). */
   plan?: PlanLite | null;
+  /** The yearly plan offered as a 1-click upsell after purchase (if distinct). */
+  annualPlan?: PlanLite | null;
   /** Step to open at. The detail-page gate dock is itself the offer, so it
    *  opens the modal directly at "terms" (no duplicate offer screen). */
   initialStep?: PaywallStep;
@@ -62,6 +68,7 @@ export function PaywallModal({
   variant,
   planId,
   plan,
+  annualPlan,
   initialStep = "offer",
   initialMethod = "wallet",
   onClose,
@@ -73,6 +80,11 @@ export function PaywallModal({
 
   const [step, setStep] = useState<PaywallStep>(initialStep);
   const [paid, setPaid] = useState(false);
+  // Post-purchase upsell: shown after a purchase when a distinct annual plan
+  // exists. `switching` covers the in-flight switch request.
+  const [upsell, setUpsell] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
   // Buyer identity captured at checkout (wallet/card) — drives anon→permanent
   // conversion. `checkEmail` shows the "confirm your email" screen afterwards.
   const buyerRef = useRef<BuyerDetails | undefined>(undefined);
@@ -87,6 +99,14 @@ export function PaywallModal({
   }, []);
 
   const copy = useMemo(() => buildPlanCopy(plan), [plan]);
+
+  // Only upsell to annual when a distinct annual plan is available (and the
+  // bought plan isn't already that annual plan).
+  const canUpsell = !!annualPlan?.id && annualPlan.id !== planId;
+  const upsellCopy = useMemo(
+    () => (annualPlan ? buildUpsellCopy(annualPlan, plan) : null),
+    [annualPlan, plan],
+  );
 
   // Fire confetti once when the success screen appears.
   useEffect(() => {
@@ -136,6 +156,33 @@ export function PaywallModal({
       }
     }
   }, [supabase, user, onSuccess]);
+
+  // 1-click switch to annual using the card on file (post-purchase upsell).
+  const switchToAnnual = useCallback(async () => {
+    if (!annualPlan?.id) return;
+    setSwitching(true);
+    setSwitchError(null);
+    try {
+      const res = await fetch("/api/ext/billing/upgrade-annual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: annualPlan.id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+      };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "Could not switch to annual.");
+      }
+      await proceedAfterPay();
+    } catch (e) {
+      setSwitchError(
+        e instanceof Error ? e.message : "Could not switch to annual.",
+      );
+      setSwitching(false);
+    }
+  }, [annualPlan?.id, proceedAfterPay]);
 
   // Deferred Elements options (mode + today's charge). Null while the plan is
   // still resolving — virtually never seen because the plan query is prefetched
@@ -229,6 +276,41 @@ export function PaywallModal({
               Done
             </button>
           </div>
+        ) : paid && upsell && upsellCopy ? (
+          // Post-purchase 1-click upsell to the annual plan.
+          <div className="dr-paid dr-upsell">
+            <h2>{upsellCopy.headline}</h2>
+            <p className="dr-upsell-price">{upsellCopy.priceLine}</p>
+            {upsellCopy.savingsLine && (
+              <p className="dr-upsell-save">{upsellCopy.savingsLine}</p>
+            )}
+            <ul className="dr-upsell-list">
+              {upsellCopy.benefits.map((b) => (
+                <li key={b}>{b}</li>
+              ))}
+            </ul>
+            {switchError && (
+              <p className="mb-3 text-sm text-red-400" role="alert">
+                {switchError}
+              </p>
+            )}
+            <button
+              className="pay-btn"
+              style={{ margin: "4px auto 0" }}
+              disabled={switching}
+              onClick={() => void switchToAnnual()}
+            >
+              {switching ? "Switching…" : upsellCopy.cta}
+            </button>
+            <button
+              className="dr-cc"
+              disabled={switching}
+              onClick={() => void proceedAfterPay()}
+            >
+              Maybe later
+            </button>
+            <p className="dr-fineprint">{upsellCopy.fineprint}</p>
+          </div>
         ) : paid ? (
           <div className="dr-paid">
             <div className="dr-check">✓</div>
@@ -237,7 +319,10 @@ export function PaywallModal({
             <button
               className="pay-btn"
               style={{ margin: "0 auto" }}
-              onClick={() => void proceedAfterPay()}
+              onClick={() => {
+                if (canUpsell) setUpsell(true);
+                else void proceedAfterPay();
+              }}
             >
               Continue
             </button>
