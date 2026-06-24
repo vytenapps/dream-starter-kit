@@ -18,6 +18,7 @@ import type {
 import { APP_NAME } from "@acme/config/constants";
 
 import type { ThemeSettingsInput } from "./theme/defaults";
+import { getViewerEntitlement } from "./billing-entitlement";
 
 /**
  * Server-side access to Payload via its LOCAL API (in-process, no HTTP) — the
@@ -88,11 +89,19 @@ export function getPost(slug: string): Promise<Post | null> {
   return safe(async () => {
     const { isEnabled: draft } = await draftMode();
     const payload = await client();
+    // Resolve the viewer's entitlement and pass it as Local-API context so
+    // `premiumFieldAccess` gates the body for non-entitled viewers (access
+    // control strips it server-side). overrideAccess:false (non-draft) keeps
+    // both collection + field access live; staff/draft bypass.
+    const entitlement = draft
+      ? { isPremium: true, isLoggedIn: true }
+      : await getViewerEntitlement();
     const { docs } = await payload.find({
       collection: "posts",
       where: draft ? { slug: { equals: slug } } : publishedSlug(slug),
       draft,
       overrideAccess: draft,
+      context: entitlement,
       depth: 1,
       limit: 1,
     });

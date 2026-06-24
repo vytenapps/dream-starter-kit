@@ -83,6 +83,36 @@ export const approvedOrStaff: Access = ({ req: { user } }) => {
 export const staffFieldAccess: FieldAccess = ({ req: { user } }) =>
   hasRole(user, STAFF_ROLES);
 
+/**
+ * Field-level premium gate (CMS-configurable, Stripe-unlocked). A field carrying
+ * this `read` access is returned only when the document's `accessLevel` allows
+ * the viewer:
+ *   - `public`  → always
+ *   - `members` → any signed-in viewer
+ *   - `premium` → an active/trialing subscription
+ * Staff always read it (so /admin previews the real content).
+ *
+ * Entitlement is resolved server-side (Supabase session + RLS subscription read)
+ * and injected via the Local-API `context: { isPremium, isLoggedIn }`. Because
+ * Payload strips a field whose `read` returns false, premium content never
+ * leaves the server for a non-entitled viewer — the paywall is enforced by
+ * access control, not just hidden client-side. Requires an `accessLevel` select
+ * field on the collection (see fields/access-level.ts).
+ */
+export const premiumFieldAccess: FieldAccess = ({ req, doc, siblingData }) => {
+  if (hasRole(req.user, STAFF_ROLES)) return true;
+  const level =
+    (doc as { accessLevel?: string } | null | undefined)?.accessLevel ??
+    (siblingData as { accessLevel?: string } | null | undefined)?.accessLevel ??
+    "public";
+  const ctx = req.context as
+    | { isPremium?: boolean; isLoggedIn?: boolean }
+    | undefined;
+  if (level === "premium") return Boolean(ctx?.isPremium);
+  if (level === "members") return Boolean(ctx?.isLoggedIn ?? ctx?.isPremium);
+  return true;
+};
+
 /** Field-level lock: only admins may update (e.g. `users.roles`). */
 export const adminFieldAccess: FieldAccess = ({ req: { user } }) =>
   Boolean(user?.roles.includes("admin"));

@@ -36,8 +36,15 @@ export function PostDetail({
         ? { url: post.imageHeroUrl, alt: post.imageAlt ?? post.title }
         : null;
 
-  const body = <CmsRichText data={post.body} />;
   const gated = post.accessLevel === "premium";
+  // On a gated post the body is stripped server-side by Payload field access for
+  // non-entitled viewers (it never reaches the client) — fall back to the
+  // excerpt as the blurred teaser so the paywall still has a preview.
+  const body = post.body ? (
+    <CmsRichText data={post.body} />
+  ) : gated && post.excerpt ? (
+    <p className="text-muted-foreground leading-relaxed">{post.excerpt}</p>
+  ) : null;
 
   return (
     <DetailLayout

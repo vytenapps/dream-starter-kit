@@ -15,19 +15,33 @@ const ACTIVE_STATUSES = ["active", "trialing"];
  * error — better to over-gate than to leak.
  */
 export async function isViewerPremium(): Promise<boolean> {
+  return (await getViewerEntitlement()).isPremium;
+}
+
+/**
+ * The viewer's content entitlement, resolved from their Supabase session — pass
+ * straight into a Payload Local-API read as `context` so `premiumFieldAccess`
+ * (payload/access) gates `members`/`premium` fields. `isLoggedIn` excludes
+ * anonymous Supabase users (they aren't "members"). Fails closed.
+ */
+export async function getViewerEntitlement(): Promise<{
+  isPremium: boolean;
+  isLoggedIn: boolean;
+}> {
   try {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return false;
+    if (!user || user.is_anonymous)
+      return { isPremium: false, isLoggedIn: false };
     const { data } = await supabase
       .from("ext_billing_subscriptions")
       .select("id")
       .in("status", ACTIVE_STATUSES)
       .limit(1);
-    return Boolean(data && data.length > 0);
+    return { isPremium: Boolean(data && data.length > 0), isLoggedIn: true };
   } catch {
-    return false;
+    return { isPremium: false, isLoggedIn: false };
   }
 }

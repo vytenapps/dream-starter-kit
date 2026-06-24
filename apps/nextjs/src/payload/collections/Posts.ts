@@ -1,7 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { generatePreviewPath, previewBreakpoints } from "../../lib/preview";
-import { isStaff, publishedOrStaff } from "../access";
+import { isStaff, premiumFieldAccess, publishedOrStaff } from "../access";
 import { accessLevelField } from "../fields/access-level";
 import { commentsEnabledField } from "../fields/comments-enabled";
 import { generatedImageFields } from "../fields/generated-images";
@@ -70,7 +70,15 @@ export const Posts: CollectionConfig = {
       type: "textarea",
       admin: { description: "Feed/preview text." },
     },
-    { name: "body", type: "richText" },
+    {
+      name: "body",
+      type: "richText",
+      // Premium gate: Payload strips the body for a non-entitled viewer when
+      // accessLevel = "premium"/"members", so it never leaves the server. The
+      // on-page paywall shows the excerpt teaser instead. CMS-configurable via
+      // the accessLevel field below; unlocked by an active Stripe subscription.
+      access: { read: premiumFieldAccess },
+    },
     {
       name: "featuredImage",
       type: "upload",
