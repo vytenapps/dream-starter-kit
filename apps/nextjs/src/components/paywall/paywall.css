@@ -215,6 +215,9 @@
   font-weight: 600;
   color: #fff;
   margin-top: 16px;
+  /* Comfortable tap target with extra bottom room so the text isn't cramped
+     against following fineprint (matches the "Or pay with credit card" link). */
+  padding: 4px 8px 12px;
   text-decoration: none;
   background: none;
   border: none;

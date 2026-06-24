@@ -47,10 +47,15 @@ export async function ensureCmsUser(user: {
     > | null;
     const postalCode =
       str(rawAddr?.postal_code) ?? str(meta.billing_postal_code);
+    // Stripe addresses have line1 + line2; the cms.users address has a single
+    // `street`, so fold both in rather than dropping line2.
+    const street =
+      [str(rawAddr?.line1), str(rawAddr?.line2)].filter(Boolean).join(", ") ||
+      undefined;
     const address =
       rawAddr || postalCode
         ? {
-            street: str(rawAddr?.line1) ?? str(rawAddr?.line2),
+            street,
             city: str(rawAddr?.city),
             region: str(rawAddr?.state),
             postalCode,
