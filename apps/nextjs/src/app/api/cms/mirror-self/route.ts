@@ -1,0 +1,47 @@
+import { NextResponse } from "next/server";
+
+import { ensureCmsUser, ensureFreeTag } from "~/lib/cms/mirror-user";
+import { createClient } from "~/lib/supabase/server";
+
+/**
+ * Mirror the CURRENT Supabase session user into the Payload `users` collection
+ * (and ensure a default tag). Idempotent and best-effort.
+ *
+ * Why this exists: `ensureCmsUser` otherwise only runs on the two server auth
+ * navigations (`/welcome`, `/auth/callback`). Several flows establish a session
+ * CLIENT-SIDE and never hit either — most notably the paywall guest checkout
+ * (paywall-modal.tsx): it creates the account via /api/ext/billing/guest-account,
+ * receives a one-time login token, calls `verifyOtp` to sign the buyer in, then
+ * unlocks inline with `onSuccess()`. Without this endpoint those buyers (members,
+ * not staff — so the SSO bridge never provisions them either) would be missing
+ * from the admin Users page until they happened to pass through /welcome. The
+ * client calls this right after the session is established. See lib/cms/mirror-
+ * user.ts and the (app) layout backstop.
+ *
+ * Authenticated by the caller's OWN Supabase session — it only ever mirrors the
+ * authenticated user, so there is nothing to authorize beyond "is signed in".
+ */
+export const dynamic = "force-dynamic";
+
+export async function POST() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  await ensureCmsUser({
+    id: user.id,
+    email: user.email,
+    name:
+      (user.user_metadata.display_name as string | undefined) ??
+      (user.user_metadata.name as string | undefined),
+    metadata: user.user_metadata,
+  });
+  await ensureFreeTag(user.id);
+
+  return NextResponse.json({ ok: true });
+}

@@ -40,6 +40,21 @@ import {
 import { PaywallBody } from "./paywall-body";
 import { getStripePromise } from "./stripe";
 
+/**
+ * Mirror the just-signed-in buyer into Payload's `users` collection. The guest
+ * checkout flow establishes the session client-side and never hits /welcome or
+ * /auth/callback (the only routes that run the mirror), so call the host
+ * endpoint here. Best-effort — the (app) layout backstop + `cms:backfill-users`
+ * catch anyone this misses.
+ */
+async function mirrorSelf(): Promise<void> {
+  try {
+    await fetch("/api/cms/mirror-self", { method: "POST" });
+  } catch {
+    /* best-effort — backstopped by the (app) layout + backfill */
+  }
+}
+
 interface IntentResponse {
   clientSecret?: string;
   mode?: "payment" | "setup";
@@ -237,6 +252,12 @@ export function PaywallModal({
             type: "magiclink",
           });
           if (!error) {
+            // This guest flow signs the buyer in client-side and unlocks inline
+            // — it never passes through /welcome or /auth/callback, the only
+            // server routes that mirror the user into Payload's `users`
+            // collection. Mirror them now so they appear in the admin Users
+            // page. Best-effort (the (app) layout + backfill backstop it).
+            await mirrorSelf();
             onSuccess();
             return;
           }

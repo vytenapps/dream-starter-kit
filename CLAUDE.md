@@ -254,7 +254,20 @@ is disabled; `apps/nextjs/src/payload/auth/supabase-strategy.ts` authenticates e
 request from the Supabase session and provisions a `cms.users` row (linked by
 `supabaseUserId`). Users carry **`roles[]`** (`admin`/`editor`/`author`/`member`,
 WordPress-style): every app signup is mirrored in as a `member`
-(`lib/cms/mirror-user.ts`); staff get admin/editor and may enter `/admin`. Access is
+(`ensureCmsUser` in `lib/cms/mirror-user.ts`); staff get admin/editor and may enter
+`/admin`. **The mirror is wired at every point a session can first appear, because
+`cms.users` must list ALL users, not just staff** (the SSO bridge only ever
+JIT-provisions staff): the server auth navigations `/welcome` + `/auth/callback`;
+the `/confirm-email` client page (the anon→permanent buyer conversion returns to its
+origin page, never touching `/welcome`); the **paywall guest-checkout** flow, which
+signs the buyer in client-side via a one-time `loginToken` and unlocks inline —
+`paywall-modal.tsx` + `/confirm-email` POST `/api/cms/mirror-self` (mirrors the
+current session user) so those buyers aren't stranded out of the table; and a
+universal best-effort backstop in the `(app)` shell layout (any member reaching the
+app is mirrored regardless of entry path). All paths are idempotent. The catch-up
+tool for accounts created before any of this — or when a mirror call was missed —
+is **`pnpm cms:backfill-users`** (idempotent; lists Supabase users and mirrors each).
+Mirror failures are logged (`[mirror-user]`), never silently swallowed. Access is
 **default-deny**: only users with `profiles.is_staff = true` get in — **the bridge
 authenticates staff only for now**; member-scoped collections carry correct
 owner-scoped access rules, but opening `/cms-api` to member sessions is a documented

@@ -44,8 +44,19 @@ caller's Supabase session and JIT-provisions a `cms.users` row (linked by
 - `users.roles[]` (WordPress-style): **admin** (everything, incl. Users/roles and
   Commerce), **editor** (staff: content + moderation), **author** (may enter
   `/admin`), **member** (app user; no admin access).
-- Every app signup is mirrored in as a `member` (`lib/cms/mirror-user.ts`); only
-  users with `profiles.is_staff = true` pass the SSO bridge — **the CMS API is
+- Every app signup is mirrored in as a `member` by `ensureCmsUser`
+  (`lib/cms/mirror-user.ts`), so the admin Users page lists **all** app users, not
+  just staff (the SSO bridge only JIT-provisions staff). Because a session can first
+  appear on several paths, the mirror is wired at each: the server auth navigations
+  **`/welcome`** + **`/auth/callback`**; the **`/confirm-email`** client page; the
+  **paywall guest-checkout** flow (signs the buyer in client-side and unlocks
+  inline — `paywall-modal.tsx` + `/confirm-email` call **`POST /api/cms/mirror-self`**,
+  which mirrors the current session user); and a best-effort backstop in the **`(app)`
+  shell layout** (mirrors any member the first time they reach the app). All are
+  idempotent. Run **`pnpm cms:backfill-users`** (idempotent) to catch up accounts
+  created before this — or whenever a row is unexpectedly missing. Mirror failures
+  log under `[mirror-user]` rather than failing silently.
+- Only users with `profiles.is_staff = true` pass the SSO bridge — **the CMS API is
   staff-only today** (member-scoped collections already carry owner-scoped rules
   for the documented member-auth follow-up).
 - The **first signup** is auto-flagged staff (DB trigger) and JIT-provisioned

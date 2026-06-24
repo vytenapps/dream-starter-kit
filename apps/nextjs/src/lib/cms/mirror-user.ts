@@ -136,9 +136,16 @@ export async function ensureCmsUser(user: {
         overrideAccess: true,
       });
     }
-  } catch {
-    // Non-fatal — the SSO bridge JIT-provisions staff anyway, and a backfill
-    // script can catch up the rest.
+  } catch (e) {
+    // Non-fatal — the SSO bridge JIT-provisions staff anyway, the (app) layout
+    // backstop retries on the next app visit, and `cms:backfill-users` catches
+    // up the rest. Log (don't swallow silently) so a systemic mirror failure is
+    // diagnosable in the server logs instead of presenting as a silently empty
+    // Users page.
+    console.warn(
+      `[mirror-user] ensureCmsUser failed for ${user.id}`,
+      e instanceof Error ? e.message : e,
+    );
   }
 }
 
@@ -169,7 +176,11 @@ export async function ensureFreeTag(userId: string): Promise<void> {
         { user_id: userId, tag_id: tag.id },
         { onConflict: "user_id,tag_id" },
       );
-  } catch {
-    // Non-fatal.
+  } catch (e) {
+    // Non-fatal — log so a systemic failure is visible in the server logs.
+    console.warn(
+      `[mirror-user] ensureFreeTag failed for ${userId}`,
+      e instanceof Error ? e.message : e,
+    );
   }
 }

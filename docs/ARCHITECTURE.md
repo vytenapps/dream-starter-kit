@@ -284,7 +284,13 @@ space-groups), Form Builder and Stripe (§4.7).
 
 Access control is **role-based**: `users.roles` is a multi-select of
 `admin | editor | author | member`. Staff (admin/editor, plus author for the
-panel) get the admin UI; every app signup is mirrored in as a `member`.
+panel) get the admin UI; every app signup is mirrored in as a `member` by
+`ensureCmsUser` (`lib/cms/mirror-user.ts`) so `cms.users` lists **all** users, not
+just the staff the SSO bridge JIT-provisions. The mirror runs everywhere a session
+can first appear — the server auth routes `/welcome` + `/auth/callback`, the
+`/confirm-email` page, the paywall guest-checkout flow (client-side sign-in →
+`POST /api/cms/mirror-self`), and a best-effort backstop in the `(app)` shell layout
+— all idempotent; `pnpm cms:backfill-users` catches up anything missed.
 Member-scoped collections (comments, device-tokens, enrollments, …) carry
 owner-scoped access rules (`ownsOrStaff`), with the owner forced to the
 requesting user on create — but note the **SSO bridge currently authenticates
