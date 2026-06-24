@@ -142,10 +142,36 @@ function subscriptionRow(sub: Stripe.Subscription, userId: string) {
 }
 
 /**
+ * Whether a stored Stripe customer id still resolves to a live customer. A
+ * saved customer can vanish — deleted in the dashboard, test data wiped, or a
+ * test↔live key switch — leaving a stale `ext_billing_customers` row. Reusing a
+ * dead id makes EVERY checkout fail with `No such customer: cus_…`, so callers
+ * must validate before reuse. Returns false for a missing/deleted customer;
+ * rethrows other (e.g. transient) Stripe errors so they aren't masked as "gone".
+ */
+async function customerExists(
+  stripe: ReturnType<typeof getStripe>,
+  customerId: string,
+): Promise<boolean> {
+  try {
+    const c = await stripe.customers.retrieve(customerId);
+    return !(c as Stripe.DeletedCustomer).deleted;
+  } catch (err) {
+    if ((err as { code?: string }).code === "resource_missing") return false;
+    throw err;
+  }
+}
+
+/**
  * Resolve (or create) a Stripe customer for the current request — signed-in
  * users reuse their saved customer; guests get a fresh blank customer the
  * Express Checkout / Payment Element fills in (the webhook matches by email).
  * Shared by /checkout and /express-intent.
+ *
+ * The saved id is reused only if it still exists in Stripe (see
+ * `customerExists`); a stale one is replaced by find-by-email-or-create and the
+ * `ext_billing_customers` row is healed (via the service role — clients can't
+ * write billing rows) so the next request and the webhook resolve the live one.
  */
 async function resolveCustomer(
   ctx: ExtPublicRouteContext,
@@ -158,19 +184,31 @@ async function resolveCustomer(
     .select("stripe_customer_id")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (existing?.stripe_customer_id) return existing.stripe_customer_id;
+  const stored = existing?.stripe_customer_id ?? undefined;
+  if (stored && (await customerExists(stripe, stored))) return stored;
+
   const byEmail = user.email
     ? await stripe.customers.list({ email: user.email, limit: 1 })
     : null;
-  return (
+  const resolved =
     byEmail?.data[0]?.id ??
     (
       await stripe.customers.create({
         email: user.email ?? undefined,
         metadata: { supabase_user_id: user.id },
       })
-    ).id
-  );
+    ).id;
+
+  // Heal the stored mapping when it was missing or pointed at a dead customer.
+  if (resolved !== stored) {
+    await createAdminClient()
+      .from("ext_billing_customers")
+      .upsert(
+        { user_id: user.id, stripe_customer_id: resolved },
+        { onConflict: "user_id" },
+      );
+  }
+  return resolved;
 }
 
 /**
@@ -209,30 +247,10 @@ export const publicRoutes: ExtPublicRouteTable = {
     const stripe = getStripe();
     const isSubscription = plan.pricingType === "recurring";
 
-    // Reuse the user's Stripe customer when signed in; guests let Checkout
-    // collect the email and the webhook creates the account from it.
-    let customerId: string | undefined;
-    if (user) {
-      const { data: existing } = await ctx.supabase
-        .from("ext_billing_customers")
-        .select("stripe_customer_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      customerId = existing?.stripe_customer_id;
-      if (!customerId) {
-        const byEmail = user.email
-          ? await stripe.customers.list({ email: user.email, limit: 1 })
-          : null;
-        customerId =
-          byEmail?.data[0]?.id ??
-          (
-            await stripe.customers.create({
-              email: user.email ?? undefined,
-              metadata: { supabase_user_id: user.id },
-            })
-          ).id;
-      }
-    }
+    // Reuse the signed-in user's Stripe customer (validated + healed if the
+    // saved id is stale); guests pass no customer so Checkout collects the email
+    // and the webhook creates the account from it.
+    const customerId = await resolveCustomer(ctx, stripe);
 
     // An intro offer is auto-applied via its duration:once coupon. Otherwise
     // allow promotion codes (Stripe forbids combining the two).
