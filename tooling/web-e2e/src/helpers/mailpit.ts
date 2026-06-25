@@ -93,11 +93,16 @@ export async function signUpToCheckEmail(
     password = DEFAULT_PASSWORD,
   }: { name: string; email: string; password?: string },
 ): Promise<void> {
+  // login-05 multi-step sign-up: chooser → email step → name + password step.
+  // (Password is enabled in the default config, so "Continue with email" routes
+  // to the name/password step where the founder's display_name is captured.)
   await page.goto("/sign-up");
+  await page.getByRole("button", { name: "Continue with email" }).click();
+  await page.locator('input[type="email"]').fill(email);
+  await page.getByRole("button", { name: "Continue with email" }).click();
   await page.getByLabel("Name").fill(name);
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Create Account" }).click();
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Create account" }).click();
 
   await page.waitForURL(/\/check-email/, { timeout: 20_000 }).catch(() =>
     // Signup response lost (e.g. GoTrue 504) — the account usually exists
@@ -107,6 +112,26 @@ export async function signUpToCheckEmail(
   await expect(
     page.getByRole("heading", { name: "Check your email" }),
   ).toBeVisible();
+}
+
+/**
+ * Sign IN with email + password through the login-05 flow. The default config
+ * makes magic link the primary email method, so password is reached via "Use
+ * password instead" on the email step (no magic-link email sent). Leaves the
+ * caller on whatever the sign-in resolves to (the app, or /check-email if the
+ * email is unconfirmed).
+ */
+export async function signInWithPasswordUI(
+  page: Page,
+  email: string,
+  password: string = DEFAULT_PASSWORD,
+): Promise<void> {
+  await page.goto("/sign-in");
+  await page.getByRole("button", { name: "Continue with email" }).click();
+  await page.locator('input[type="email"]').fill(email);
+  await page.getByRole("button", { name: "Use password instead" }).click();
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Log in" }).click();
 }
 
 /**

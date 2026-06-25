@@ -232,6 +232,7 @@ export interface Config {
     "theme-settings": ThemeSetting;
     "image-generation-settings": ImageGenerationSetting;
     "profile-fields": ProfileField;
+    "authentication-settings": AuthenticationSetting;
     "ext-billing-settings": ExtBillingSetting;
     "ext-chat-settings": ExtChatSetting;
     "ext-docs-settings": ExtDocsSetting;
@@ -243,6 +244,9 @@ export interface Config {
       | ImageGenerationSettingsSelect<false>
       | ImageGenerationSettingsSelect<true>;
     "profile-fields": ProfileFieldsSelect<false> | ProfileFieldsSelect<true>;
+    "authentication-settings":
+      | AuthenticationSettingsSelect<false>
+      | AuthenticationSettingsSelect<true>;
     "ext-billing-settings":
       | ExtBillingSettingsSelect<false>
       | ExtBillingSettingsSelect<true>;
@@ -5333,6 +5337,101 @@ export interface ProfileField {
   createdAt?: string | null;
 }
 /**
+ * Choose the default sign-in method and which methods the auth screens offer, plus sign-up access rules and copy. This controls the UI and client logic only — each method must also be enabled in Supabase. Setup guide: https://github.com/vytenapps/dream-starter-kit/blob/main/docs/AUTH.md
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authentication-settings".
+ */
+export interface AuthenticationSetting {
+  id: number;
+  /**
+   * Drag the handle to reorder. Toggle Enabled to show/hide. Google/Apple need the provider enabled in Supabase; SAML SSO needs [auth.sso] + a registered identity provider.
+   */
+  loginMethods?:
+    | {
+        method:
+          | "password"
+          | "magicLink"
+          | "emailOtp"
+          | "google"
+          | "apple"
+          | "sso";
+        enabled?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * When off, public sign-up is hidden and the sign-up route is blocked (invite-only). For hard server enforcement also set enable_signup = false in Supabase — see https://github.com/vytenapps/dream-starter-kit/blob/main/docs/AUTH.md#invite-only.
+   */
+  allowSignups?: boolean | null;
+  /**
+   * Restrict which email domains may sign up (checked client-side and in the sign-up/checkout server route).
+   */
+  emailDomainMode?: ("off" | "allowlist" | "blocklist") | null;
+  /**
+   * Bare domains, e.g. acme.com (no @ or scheme).
+   */
+  emailDomains?:
+    | {
+        domain: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Terms of Service link in the sign-up footer.
+   */
+  termsUrl?: string | null;
+  /**
+   * Privacy Policy link in the sign-up footer.
+   */
+  privacyUrl?: string | null;
+  /**
+   * Require an explicit 'I agree' checkbox before sign-up.
+   */
+  requireTermsAcceptance?: boolean | null;
+  /**
+   * Where users land after login. Blank keeps the default role-based routing (/welcome → /a or the CMS).
+   */
+  postLoginRedirect?: string | null;
+  /**
+   * Where users land right after sign-up. Blank keeps the default (/welcome).
+   */
+  postSignupRedirect?: string | null;
+  /**
+   * Minimum password length enforced in the UI. Must be ≥ Supabase's server-side minimum_password_length to be enforced end-to-end — see https://github.com/vytenapps/dream-starter-kit/blob/main/docs/AUTH.md#passwords.
+   */
+  minPasswordLength?: number | null;
+  /**
+   * Require a Turnstile token on auth actions. Needs the site key configured and Supabase [auth.captcha] enabled — see https://github.com/vytenapps/dream-starter-kit/blob/main/docs/AUTH.md#captcha and docs/TURNSTILE.md.
+   */
+  requireCaptcha?: boolean | null;
+  /**
+   * Heading on the sign-in screen. Blank uses the app name.
+   */
+  signInHeading?: string | null;
+  /**
+   * Heading on the sign-up screen. Blank uses the app name.
+   */
+  signUpHeading?: string | null;
+  /**
+   * Optional subtitle shown under the heading.
+   */
+  subtitle?: string | null;
+  ssoButtonLabel?: string | null;
+  /**
+   * Map email domains to a registered Supabase SSO provider. A user entering an email on one of these domains is routed to that identity provider. Leave providerId blank to let Supabase resolve the provider by domain.
+   */
+  ssoDomains?:
+    | {
+        domain: string;
+        providerId?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ext-billing-settings".
  */
@@ -5723,6 +5822,48 @@ export interface ProfileFieldsSelect<T extends boolean = true> {
         visibility?: T;
         editableByMember?: T;
         order?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authentication-settings_select".
+ */
+export interface AuthenticationSettingsSelect<T extends boolean = true> {
+  loginMethods?:
+    | T
+    | {
+        method?: T;
+        enabled?: T;
+        id?: T;
+      };
+  allowSignups?: T;
+  emailDomainMode?: T;
+  emailDomains?:
+    | T
+    | {
+        domain?: T;
+        id?: T;
+      };
+  termsUrl?: T;
+  privacyUrl?: T;
+  requireTermsAcceptance?: T;
+  postLoginRedirect?: T;
+  postSignupRedirect?: T;
+  minPasswordLength?: T;
+  requireCaptcha?: T;
+  signInHeading?: T;
+  signUpHeading?: T;
+  subtitle?: T;
+  ssoButtonLabel?: T;
+  ssoDomains?:
+    | T
+    | {
+        domain?: T;
+        providerId?: T;
         id?: T;
       };
   updatedAt?: T;

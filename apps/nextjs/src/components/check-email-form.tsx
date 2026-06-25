@@ -70,6 +70,10 @@ export function CheckEmailForm({
 
   async function onVerifyCode(e: React.FormEvent) {
     e.preventDefault();
+    if (code.trim().length < 6) {
+      setError("Please enter a valid verification code.");
+      return;
+    }
     setPending(true);
     setError(null);
     try {
@@ -188,7 +192,7 @@ export function CheckEmailForm({
         )}
 
         <FieldDescription className="text-center">
-          <Link href="/sign-up">Back to signup</Link>
+          <Link href="/sign-in">Back to login</Link>
         </FieldDescription>
       </FieldGroup>
     </div>

@@ -5,6 +5,7 @@ import { draftMode } from "next/headers";
 import config from "@payload-config";
 import { getPayload } from "payload";
 
+import type { AuthSettings } from "@acme/app";
 import type {
   Audio as AudioDoc,
   Event as EventDoc,
@@ -15,6 +16,7 @@ import type {
   SiteSetting,
   Video,
 } from "@acme/cms";
+import { DEFAULT_AUTH_SETTINGS, normalizeAuthSettings } from "@acme/app";
 import { APP_NAME } from "@acme/config/constants";
 
 import type { ThemeSettingsInput } from "./theme/defaults";
@@ -256,6 +258,32 @@ export function getThemeSettings(): Promise<ThemeSettingsInput | null> {
   return safe(
     async () => (await themeGlobal()) as unknown as ThemeSettingsInput,
     null,
+  );
+}
+
+/**
+ * The front-end authentication config (authentication-settings global),
+ * normalized to a complete {@link AuthSettings} with all defaults applied.
+ * Cached per request. Degrades to the kit defaults (current behavior) when the
+ * CMS is unreachable/unmigrated, so the auth screens always render. Drives the
+ * sign-in/sign-up/forgot-password UIs and the public /api/auth/config endpoint.
+ */
+const authSettingsGlobal = cache(async () => {
+  try {
+    const payload = await client();
+    return await payload.findGlobal({
+      slug: "authentication-settings",
+      depth: 0,
+    });
+  } catch {
+    return null;
+  }
+});
+
+export function getAuthSettings(): Promise<AuthSettings> {
+  return safe(
+    async () => normalizeAuthSettings(await authSettingsGlobal()),
+    DEFAULT_AUTH_SETTINGS,
   );
 }
 

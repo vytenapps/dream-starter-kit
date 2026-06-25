@@ -5,7 +5,11 @@ import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Controller, useForm } from "react-hook-form";
 
 import type { ForgotPasswordInput } from "@acme/app";
-import { forgotPasswordSchema, resetPasswordForEmail } from "@acme/app";
+import {
+  forgotPasswordSchema,
+  resetPasswordForEmail,
+  useAuthConfig,
+} from "@acme/app";
 import { Button } from "@acme/ui-native/button";
 import { Input } from "@acme/ui-native/input";
 import { Text } from "@acme/ui-native/text";
@@ -16,6 +20,7 @@ const msg = (e: unknown) =>
   e instanceof Error ? e.message : "Something went wrong";
 
 export default function ForgotPassword() {
+  const settings = useAuthConfig();
   const {
     control,
     handleSubmit,
@@ -24,6 +29,21 @@ export default function ForgotPassword() {
     resolver: standardSchemaResolver(forgotPasswordSchema),
     defaultValues: { email: "" },
   });
+
+  // Password reset only applies when password sign-in is enabled.
+  if (!settings.methods.password) {
+    return (
+      <View className="bg-background flex-1 justify-center gap-4 p-6">
+        <Text className="text-3xl font-bold">Password sign-in is off</Text>
+        <Text className="text-muted-foreground">
+          This app doesn&apos;t use passwords. Go back to sign in to continue.
+        </Text>
+        <Link href="/sign-in">
+          <Text className="text-primary">Back to sign in</Text>
+        </Link>
+      </View>
+    );
+  }
 
   async function onSubmit({ email }: ForgotPasswordInput) {
     try {

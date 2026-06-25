@@ -291,6 +291,19 @@ links, whose one-time tokens break for re-sent emails (no PKCE state) and get bu
 by prefetchers/navigation restarts. E2E specs pull link + code from Mailpit — see
 `tooling/web-e2e/README.md`.
 
+**Which auth methods the front end offers is staff-configurable** via the
+`authentication-settings` Payload global (**System → Authentication**): an
+orderable method list (password · magic link · email OTP · Google · Apple · SAML
+SSO — drag to reorder, toggle on/off; first enabled = primary), plus sign-up
+access rules, min password length, captcha toggle, copy, and SSO routing. It's a
+**UI + client-logic** layer (it gates which buttons/forms render and the client
+rules) — **Supabase still controls what each method actually does**, so enabling a
+provider here also requires it enabled in Supabase. The shared shape/helpers live
+in `@acme/app` (`auth-settings.ts`); the web login-05 UI is `AuthFlow`
+(`components/auth/auth-flow.tsx`), read server-side via `getAuthSettings()` and on
+mobile via `GET /api/auth/config` (`useAuthConfig`). Full guide:
+[docs/AUTH.md](https://github.com/vytenapps/dream-starter-kit/blob/main/docs/AUTH.md).
+
 ## Payments (Payload ⇄ Stripe via @payloadcms/plugin-stripe)
 
 The billing catalog is **authored in Payload**, not the Stripe dashboard. `Plans`,

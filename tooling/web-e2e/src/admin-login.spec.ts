@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { readFounderEmail } from "./helpers/founder";
+import { signInWithPasswordUI } from "./helpers/mailpit";
 
 /**
  * Admin sign-IN routing: an existing staff/admin user who logs in lands in the
@@ -26,10 +27,7 @@ test("signing in as the admin lands in /admin", async ({ page }) => {
     if (frame === page.mainFrame()) visited.push(frame.url());
   });
 
-  await page.goto("/sign-in");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password", { exact: true }).fill("password123");
-  await page.getByRole("button", { name: "Login" }).click();
+  await signInWithPasswordUI(page, email);
 
   await page.waitForURL(/\/admin/, { timeout: 60_000 });
   expect(visited.filter((url) => url.includes("/cms-setup"))).toEqual([]);

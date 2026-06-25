@@ -66,6 +66,24 @@ export async function verifySignUpCode(
   if (error) throw error;
 }
 
+/**
+ * Verify a 6-digit email **login** code (the OTP sign-in method, distinct from
+ * the sign-up confirmation code in `verifySignUpCode`). Pairs with
+ * `signInWithOtp` to complete a passwordless code sign-in; establishes a session.
+ */
+export async function verifyEmailLoginCode(
+  client: AppSupabaseClient,
+  email: string,
+  token: string,
+): Promise<void> {
+  const { error } = await client.auth.verifyOtp({
+    email,
+    token,
+    type: "email",
+  });
+  if (error) throw error;
+}
+
 /** Re-send the sign-up confirmation email (link + code). */
 export async function resendSignUpEmail(
   client: AppSupabaseClient,
@@ -113,6 +131,32 @@ export function signInWithOAuth(
       skipBrowserRedirect: opts?.skipBrowserRedirect,
     },
   });
+}
+
+/**
+ * SAML 2.0 SSO sign-in. Pass `providerId` (a registered Supabase SSO provider)
+ * or an email `domain` to let Supabase resolve the provider. Returns
+ * `{ data: { url }, error }`; on web redirect to `data.url`, on native open it
+ * with expo-web-browser and exchange the code from the deep link (like OAuth).
+ *
+ * Requires SAML enabled in Supabase ([auth.sso]) with an IdP registered via
+ * `supabase sso add` — this is gated in the UI by the auth-settings global but
+ * the actual capability lives in GoTrue (see docs/AUTH.md).
+ */
+export function signInWithSSO(
+  client: AppSupabaseClient,
+  params: { domain?: string; providerId?: string },
+  opts?: { redirectTo?: string; skipBrowserRedirect?: boolean },
+) {
+  const options = {
+    redirectTo: opts?.redirectTo,
+    skipBrowserRedirect: opts?.skipBrowserRedirect,
+  };
+  return client.auth.signInWithSSO(
+    params.providerId
+      ? { providerId: params.providerId, options }
+      : { domain: params.domain ?? "", options },
+  );
 }
 
 export async function resetPasswordForEmail(
