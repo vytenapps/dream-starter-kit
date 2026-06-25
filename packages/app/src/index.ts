@@ -7,6 +7,8 @@
 export * from "./validators/auth";
 export * from "./validators/tag";
 export * from "./auth";
+export * from "./auth-settings";
+export { useAuthConfig } from "./hooks/use-auth-config";
 export * from "./hooks/use-content";
 export {
   useFavorites,

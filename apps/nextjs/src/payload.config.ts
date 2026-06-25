@@ -48,6 +48,7 @@ import { SpaceGroups } from "./payload/collections/SpaceGroups";
 import { TagGroups, Tags } from "./payload/collections/Tags";
 import { Users } from "./payload/collections/Users";
 import { Videos } from "./payload/collections/Videos";
+import { AuthenticationSettings } from "./payload/globals/AuthenticationSettings";
 import { ImageGenerationSettings } from "./payload/globals/ImageGenerationSettings";
 import { ProfileFields } from "./payload/globals/ProfileFields";
 import { SiteSettings } from "./payload/globals/SiteSettings";
@@ -185,6 +186,7 @@ export default buildConfig({
     ThemeSettings,
     ImageGenerationSettings,
     ProfileFields,
+    AuthenticationSettings,
     // Installed extensions' globals incl. their settings screens (§1.7)
     ...extGlobals,
   ].map(noDocumentLock),

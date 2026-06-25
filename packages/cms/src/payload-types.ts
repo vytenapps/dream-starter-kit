@@ -13,53 +13,53 @@
  * via the `definition` "supportedTimezones".
  */
 export type SupportedTimezones =
-  | "Pacific/Midway"
-  | "Pacific/Niue"
-  | "Pacific/Honolulu"
-  | "Pacific/Rarotonga"
-  | "America/Anchorage"
-  | "Pacific/Gambier"
-  | "America/Los_Angeles"
-  | "America/Tijuana"
-  | "America/Denver"
-  | "America/Phoenix"
-  | "America/Chicago"
-  | "America/Guatemala"
-  | "America/New_York"
-  | "America/Bogota"
-  | "America/Caracas"
-  | "America/Santiago"
-  | "America/Buenos_Aires"
-  | "America/Sao_Paulo"
-  | "Atlantic/South_Georgia"
-  | "Atlantic/Azores"
-  | "Atlantic/Cape_Verde"
-  | "Europe/London"
-  | "Europe/Berlin"
-  | "Africa/Lagos"
-  | "Europe/Athens"
-  | "Africa/Cairo"
-  | "Europe/Moscow"
-  | "Asia/Riyadh"
-  | "Asia/Dubai"
-  | "Asia/Baku"
-  | "Asia/Karachi"
-  | "Asia/Tashkent"
-  | "Asia/Calcutta"
-  | "Asia/Dhaka"
-  | "Asia/Almaty"
-  | "Asia/Jakarta"
-  | "Asia/Bangkok"
-  | "Asia/Shanghai"
-  | "Asia/Singapore"
-  | "Asia/Tokyo"
-  | "Asia/Seoul"
-  | "Australia/Brisbane"
-  | "Australia/Sydney"
-  | "Pacific/Guam"
-  | "Pacific/Noumea"
-  | "Pacific/Auckland"
-  | "Pacific/Fiji";
+  | 'Pacific/Midway'
+  | 'Pacific/Niue'
+  | 'Pacific/Honolulu'
+  | 'Pacific/Rarotonga'
+  | 'America/Anchorage'
+  | 'Pacific/Gambier'
+  | 'America/Los_Angeles'
+  | 'America/Tijuana'
+  | 'America/Denver'
+  | 'America/Phoenix'
+  | 'America/Chicago'
+  | 'America/Guatemala'
+  | 'America/New_York'
+  | 'America/Bogota'
+  | 'America/Caracas'
+  | 'America/Santiago'
+  | 'America/Buenos_Aires'
+  | 'America/Sao_Paulo'
+  | 'Atlantic/South_Georgia'
+  | 'Atlantic/Azores'
+  | 'Atlantic/Cape_Verde'
+  | 'Europe/London'
+  | 'Europe/Berlin'
+  | 'Africa/Lagos'
+  | 'Europe/Athens'
+  | 'Africa/Cairo'
+  | 'Europe/Moscow'
+  | 'Asia/Riyadh'
+  | 'Asia/Dubai'
+  | 'Asia/Baku'
+  | 'Asia/Karachi'
+  | 'Asia/Tashkent'
+  | 'Asia/Calcutta'
+  | 'Asia/Dhaka'
+  | 'Asia/Almaty'
+  | 'Asia/Jakarta'
+  | 'Asia/Bangkok'
+  | 'Asia/Shanghai'
+  | 'Asia/Singapore'
+  | 'Asia/Tokyo'
+  | 'Asia/Seoul'
+  | 'Australia/Brisbane'
+  | 'Australia/Sydney'
+  | 'Pacific/Guam'
+  | 'Pacific/Noumea'
+  | 'Pacific/Auckland'
+  | 'Pacific/Fiji';
 
 export interface Config {
   auth: {
@@ -68,8 +68,8 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
-    "device-tokens": DeviceToken;
-    "feed-tokens": FeedToken;
+    'device-tokens': DeviceToken;
+    'feed-tokens': FeedToken;
     enrollments: Enrollment;
     reviews: Review;
     media: Media;
@@ -83,91 +83,91 @@ export interface Config {
     events: Event;
     categories: Category;
     tags: Tag;
-    "tag-groups": TagGroup;
-    "space-groups": SpaceGroup;
-    "community-spaces": CommunitySpace;
-    "community-posts": CommunityPost;
+    'tag-groups': TagGroup;
+    'space-groups': SpaceGroup;
+    'community-spaces': CommunitySpace;
+    'community-posts': CommunityPost;
     comments: Comment;
     reports: Report;
     pages: Page;
     onboarding: Onboarding;
     banners: Banner;
     notifications: Notification;
-    "kit-extensions": KitExtension;
-    "nav-items": NavItem;
-    "ext-billing-plans": ExtBillingPlan;
-    "ext-billing-coupons": ExtBillingCoupon;
-    "ext-billing-subscriptions": ExtBillingSubscription;
-    "ext-chat-skills": ExtChatSkill;
-    "ext-docs-pages": ExtDocsPage;
+    'kit-extensions': KitExtension;
+    'nav-items': NavItem;
+    'ext-billing-plans': ExtBillingPlan;
+    'ext-billing-coupons': ExtBillingCoupon;
+    'ext-billing-subscriptions': ExtBillingSubscription;
+    'ext-chat-skills': ExtChatSkill;
+    'ext-docs-pages': ExtDocsPage;
     forms: Form;
-    "form-submissions": FormSubmission;
-    "payload-kv": PayloadKv;
-    "payload-jobs": PayloadJob;
-    "payload-folders": FolderInterface;
-    "payload-locked-documents": PayloadLockedDocument;
-    "payload-preferences": PayloadPreference;
-    "payload-migrations": PayloadMigration;
+    'form-submissions': FormSubmission;
+    'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
+    'payload-folders': FolderInterface;
+    'payload-locked-documents': PayloadLockedDocument;
+    'payload-preferences': PayloadPreference;
+    'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {
     users: {
-      subscriptions: "ext-billing-subscriptions";
-      enrollments: "enrollments";
-      devices: "device-tokens";
+      subscriptions: 'ext-billing-subscriptions';
+      enrollments: 'enrollments';
+      devices: 'device-tokens';
     };
     posts: {
-      comments: "comments";
+      comments: 'comments';
     };
     series: {
-      videoEpisodes: "videos";
-      audioEpisodes: "audio";
-      lessons: "lessons";
+      videoEpisodes: 'videos';
+      audioEpisodes: 'audio';
+      lessons: 'lessons';
     };
     locations: {
-      reviews: "reviews";
-      events: "events";
+      reviews: 'reviews';
+      events: 'events';
     };
-    "tag-groups": {
-      tags: "tags";
+    'tag-groups': {
+      tags: 'tags';
     };
-    "space-groups": {
-      spaces: "community-spaces";
+    'space-groups': {
+      spaces: 'community-spaces';
     };
-    "community-spaces": {
-      posts: "community-posts";
+    'community-spaces': {
+      posts: 'community-posts';
     };
-    "community-posts": {
-      comments: "comments";
-      reports: "reports";
+    'community-posts': {
+      comments: 'comments';
+      reports: 'reports';
     };
     comments: {
-      replies: "comments";
+      replies: 'comments';
     };
-    "ext-billing-plans": {
-      subscriptions: "ext-billing-subscriptions";
-      coupons: "ext-billing-coupons";
+    'ext-billing-plans': {
+      subscriptions: 'ext-billing-subscriptions';
+      coupons: 'ext-billing-coupons';
     };
     forms: {
-      submissions: "form-submissions";
+      submissions: 'form-submissions';
     };
-    "payload-folders": {
+    'payload-folders': {
       documentsAndFolders:
-        | "payload-folders"
-        | "media"
-        | "posts"
-        | "videos"
-        | "audio"
-        | "photos"
-        | "series"
-        | "lessons"
-        | "locations"
-        | "events";
+        | 'payload-folders'
+        | 'media'
+        | 'posts'
+        | 'videos'
+        | 'audio'
+        | 'photos'
+        | 'series'
+        | 'lessons'
+        | 'locations'
+        | 'events';
     };
   };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
-    "device-tokens": DeviceTokensSelect<false> | DeviceTokensSelect<true>;
-    "feed-tokens": FeedTokensSelect<false> | FeedTokensSelect<true>;
+    'device-tokens': DeviceTokensSelect<false> | DeviceTokensSelect<true>;
+    'feed-tokens': FeedTokensSelect<false> | FeedTokensSelect<true>;
     enrollments: EnrollmentsSelect<false> | EnrollmentsSelect<true>;
     reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -181,77 +181,55 @@ export interface Config {
     events: EventsSelect<false> | EventsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
-    "tag-groups": TagGroupsSelect<false> | TagGroupsSelect<true>;
-    "space-groups": SpaceGroupsSelect<false> | SpaceGroupsSelect<true>;
-    "community-spaces":
-      | CommunitySpacesSelect<false>
-      | CommunitySpacesSelect<true>;
-    "community-posts": CommunityPostsSelect<false> | CommunityPostsSelect<true>;
+    'tag-groups': TagGroupsSelect<false> | TagGroupsSelect<true>;
+    'space-groups': SpaceGroupsSelect<false> | SpaceGroupsSelect<true>;
+    'community-spaces': CommunitySpacesSelect<false> | CommunitySpacesSelect<true>;
+    'community-posts': CommunityPostsSelect<false> | CommunityPostsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
     reports: ReportsSelect<false> | ReportsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     onboarding: OnboardingSelect<false> | OnboardingSelect<true>;
     banners: BannersSelect<false> | BannersSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
-    "kit-extensions": KitExtensionsSelect<false> | KitExtensionsSelect<true>;
-    "nav-items": NavItemsSelect<false> | NavItemsSelect<true>;
-    "ext-billing-plans":
-      | ExtBillingPlansSelect<false>
-      | ExtBillingPlansSelect<true>;
-    "ext-billing-coupons":
-      | ExtBillingCouponsSelect<false>
-      | ExtBillingCouponsSelect<true>;
-    "ext-billing-subscriptions":
-      | ExtBillingSubscriptionsSelect<false>
-      | ExtBillingSubscriptionsSelect<true>;
-    "ext-chat-skills": ExtChatSkillsSelect<false> | ExtChatSkillsSelect<true>;
-    "ext-docs-pages": ExtDocsPagesSelect<false> | ExtDocsPagesSelect<true>;
+    'kit-extensions': KitExtensionsSelect<false> | KitExtensionsSelect<true>;
+    'nav-items': NavItemsSelect<false> | NavItemsSelect<true>;
+    'ext-billing-plans': ExtBillingPlansSelect<false> | ExtBillingPlansSelect<true>;
+    'ext-billing-coupons': ExtBillingCouponsSelect<false> | ExtBillingCouponsSelect<true>;
+    'ext-billing-subscriptions': ExtBillingSubscriptionsSelect<false> | ExtBillingSubscriptionsSelect<true>;
+    'ext-chat-skills': ExtChatSkillsSelect<false> | ExtChatSkillsSelect<true>;
+    'ext-docs-pages': ExtDocsPagesSelect<false> | ExtDocsPagesSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
-    "form-submissions":
-      | FormSubmissionsSelect<false>
-      | FormSubmissionsSelect<true>;
-    "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
-    "payload-jobs": PayloadJobsSelect<false> | PayloadJobsSelect<true>;
-    "payload-folders": PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
-    "payload-locked-documents":
-      | PayloadLockedDocumentsSelect<false>
-      | PayloadLockedDocumentsSelect<true>;
-    "payload-preferences":
-      | PayloadPreferencesSelect<false>
-      | PayloadPreferencesSelect<true>;
-    "payload-migrations":
-      | PayloadMigrationsSelect<false>
-      | PayloadMigrationsSelect<true>;
+    'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
+    'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
+    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
+    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
+    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
     defaultIDType: number;
   };
   fallbackLocale: null;
   globals: {
-    "site-settings": SiteSetting;
-    "theme-settings": ThemeSetting;
-    "image-generation-settings": ImageGenerationSetting;
-    "profile-fields": ProfileField;
-    "ext-billing-settings": ExtBillingSetting;
-    "ext-chat-settings": ExtChatSetting;
-    "ext-docs-settings": ExtDocsSetting;
+    'site-settings': SiteSetting;
+    'theme-settings': ThemeSetting;
+    'image-generation-settings': ImageGenerationSetting;
+    'profile-fields': ProfileField;
+    'authentication-settings': AuthenticationSetting;
+    'ext-billing-settings': ExtBillingSetting;
+    'ext-chat-settings': ExtChatSetting;
+    'ext-docs-settings': ExtDocsSetting;
   };
   globalsSelect: {
-    "site-settings": SiteSettingsSelect<false> | SiteSettingsSelect<true>;
-    "theme-settings": ThemeSettingsSelect<false> | ThemeSettingsSelect<true>;
-    "image-generation-settings":
-      | ImageGenerationSettingsSelect<false>
-      | ImageGenerationSettingsSelect<true>;
-    "profile-fields": ProfileFieldsSelect<false> | ProfileFieldsSelect<true>;
-    "ext-billing-settings":
-      | ExtBillingSettingsSelect<false>
-      | ExtBillingSettingsSelect<true>;
-    "ext-chat-settings":
-      | ExtChatSettingsSelect<false>
-      | ExtChatSettingsSelect<true>;
-    "ext-docs-settings":
-      | ExtDocsSettingsSelect<false>
-      | ExtDocsSettingsSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'theme-settings': ThemeSettingsSelect<false> | ThemeSettingsSelect<true>;
+    'image-generation-settings': ImageGenerationSettingsSelect<false> | ImageGenerationSettingsSelect<true>;
+    'profile-fields': ProfileFieldsSelect<false> | ProfileFieldsSelect<true>;
+    'authentication-settings': AuthenticationSettingsSelect<false> | AuthenticationSettingsSelect<true>;
+    'ext-billing-settings': ExtBillingSettingsSelect<false> | ExtBillingSettingsSelect<true>;
+    'ext-chat-settings': ExtChatSettingsSelect<false> | ExtChatSettingsSelect<true>;
+    'ext-docs-settings': ExtDocsSettingsSelect<false> | ExtDocsSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -308,8 +286,8 @@ export interface User {
   /**
    * admin/editor/author may enter /admin (with staff access granted); member is an app user.
    */
-  roles: ("admin" | "editor" | "author" | "member")[];
-  memberStatus?: ("active" | "invited" | "suspended" | "banned") | null;
+  roles: ('admin' | 'editor' | 'author' | 'member')[];
+  memberStatus?: ('active' | 'invited' | 'suspended' | 'banned') | null;
   /**
    * Public handle / profile URL slug.
    */
@@ -347,7 +325,7 @@ export interface User {
    * Member interests / skills (CMS tags).
    */
   interests?: (number | Tag)[] | null;
-  profileVisibility?: ("public" | "members" | "private") | null;
+  profileVisibility?: ('public' | 'members' | 'private') | null;
   /**
    * How they found the app (optional).
    */
@@ -378,58 +356,56 @@ export interface User {
    */
   timezone?:
     | (
-        | "Pacific/Midway"
-        | "Pacific/Niue"
-        | "Pacific/Honolulu"
-        | "Pacific/Rarotonga"
-        | "America/Anchorage"
-        | "Pacific/Gambier"
-        | "America/Los_Angeles"
-        | "America/Tijuana"
-        | "America/Denver"
-        | "America/Phoenix"
-        | "America/Chicago"
-        | "America/Guatemala"
-        | "America/New_York"
-        | "America/Bogota"
-        | "America/Caracas"
-        | "America/Santiago"
-        | "America/Buenos_Aires"
-        | "America/Sao_Paulo"
-        | "Atlantic/South_Georgia"
-        | "Atlantic/Azores"
-        | "Atlantic/Cape_Verde"
-        | "Europe/London"
-        | "Europe/Berlin"
-        | "Africa/Lagos"
-        | "Europe/Athens"
-        | "Africa/Cairo"
-        | "Europe/Moscow"
-        | "Asia/Riyadh"
-        | "Asia/Dubai"
-        | "Asia/Baku"
-        | "Asia/Karachi"
-        | "Asia/Tashkent"
-        | "Asia/Calcutta"
-        | "Asia/Dhaka"
-        | "Asia/Almaty"
-        | "Asia/Jakarta"
-        | "Asia/Bangkok"
-        | "Asia/Shanghai"
-        | "Asia/Singapore"
-        | "Asia/Tokyo"
-        | "Asia/Seoul"
-        | "Australia/Brisbane"
-        | "Australia/Sydney"
-        | "Pacific/Guam"
-        | "Pacific/Noumea"
-        | "Pacific/Auckland"
-        | "Pacific/Fiji"
+        | 'Pacific/Midway'
+        | 'Pacific/Niue'
+        | 'Pacific/Honolulu'
+        | 'Pacific/Rarotonga'
+        | 'America/Anchorage'
+        | 'Pacific/Gambier'
+        | 'America/Los_Angeles'
+        | 'America/Tijuana'
+        | 'America/Denver'
+        | 'America/Phoenix'
+        | 'America/Chicago'
+        | 'America/Guatemala'
+        | 'America/New_York'
+        | 'America/Bogota'
+        | 'America/Caracas'
+        | 'America/Santiago'
+        | 'America/Buenos_Aires'
+        | 'America/Sao_Paulo'
+        | 'Atlantic/South_Georgia'
+        | 'Atlantic/Azores'
+        | 'Atlantic/Cape_Verde'
+        | 'Europe/London'
+        | 'Europe/Berlin'
+        | 'Africa/Lagos'
+        | 'Europe/Athens'
+        | 'Africa/Cairo'
+        | 'Europe/Moscow'
+        | 'Asia/Riyadh'
+        | 'Asia/Dubai'
+        | 'Asia/Baku'
+        | 'Asia/Karachi'
+        | 'Asia/Tashkent'
+        | 'Asia/Calcutta'
+        | 'Asia/Dhaka'
+        | 'Asia/Almaty'
+        | 'Asia/Jakarta'
+        | 'Asia/Bangkok'
+        | 'Asia/Shanghai'
+        | 'Asia/Singapore'
+        | 'Asia/Tokyo'
+        | 'Asia/Seoul'
+        | 'Australia/Brisbane'
+        | 'Australia/Sydney'
+        | 'Pacific/Guam'
+        | 'Pacific/Noumea'
+        | 'Pacific/Auckland'
+        | 'Pacific/Fiji'
       )
     | null;
-  preferredLanguage?:
-    | ("en" | "es" | "fr" | "de" | "pt" | "it" | "ja" | "ko" | "zh")
-    | null;
+  preferredLanguage?: ('en' | 'es' | 'fr' | 'de' | 'pt' | 'it' | 'ja' | 'ko' | 'zh') | null;
   /**
    * Optional billing address.
    */
@@ -447,7 +423,7 @@ export interface User {
   smsOptIn?: boolean | null;
   marketingOptIn?: boolean | null;
   notificationPreferences?: {
-    emailDigest?: ("off" | "daily" | "weekly") | null;
+    emailDigest?: ('off' | 'daily' | 'weekly') | null;
     communityReplies?: boolean | null;
     mentions?: boolean | null;
     directMessages?: boolean | null;
@@ -477,7 +453,7 @@ export interface User {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
-  collection: "users";
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -584,43 +560,43 @@ export interface FolderInterface {
   documentsAndFolders?: {
     docs?: (
       | {
-          relationTo?: "payload-folders";
+          relationTo?: 'payload-folders';
           value: number | FolderInterface;
         }
       | {
-          relationTo?: "media";
+          relationTo?: 'media';
           value: number | Media;
         }
       | {
-          relationTo?: "posts";
+          relationTo?: 'posts';
           value: number | Post;
         }
       | {
-          relationTo?: "videos";
+          relationTo?: 'videos';
           value: number | Video;
         }
       | {
-          relationTo?: "audio";
+          relationTo?: 'audio';
           value: number | Audio;
         }
       | {
-          relationTo?: "photos";
+          relationTo?: 'photos';
           value: number | Photo;
         }
       | {
-          relationTo?: "series";
+          relationTo?: 'series';
           value: number | Series;
         }
       | {
-          relationTo?: "lessons";
+          relationTo?: 'lessons';
           value: number | Lesson;
         }
       | {
-          relationTo?: "locations";
+          relationTo?: 'locations';
           value: number | Location;
         }
       | {
-          relationTo?: "events";
+          relationTo?: 'events';
           value: number | Event;
         }
     )[];
@@ -628,17 +604,7 @@ export interface FolderInterface {
     totalDocs?: number;
   };
   folderType?:
-    | (
-        | "media"
-        | "posts"
-        | "videos"
-        | "audio"
-        | "photos"
-        | "series"
-        | "lessons"
-        | "locations"
-        | "events"
-      )[]
+    | ('media' | 'posts' | 'videos' | 'audio' | 'photos' | 'series' | 'lessons' | 'locations' | 'events')[]
     | null;
   updatedAt: string;
   createdAt: string;
@@ -663,8 +629,8 @@ export interface Post {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -698,7 +664,7 @@ export interface Post {
   /**
    * Who can view this content in the app.
    */
-  accessLevel?: ("public" | "members" | "premium") | null;
+  accessLevel?: ('public' | 'members' | 'premium') | null;
   /**
    * Pin to home/feed.
    */
@@ -749,7 +715,7 @@ export interface Post {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -795,31 +761,31 @@ export interface Comment {
   author: number | User;
   target:
     | {
-        relationTo: "community-posts";
+        relationTo: 'community-posts';
         value: number | CommunityPost;
       }
     | {
-        relationTo: "posts";
+        relationTo: 'posts';
         value: number | Post;
       }
     | {
-        relationTo: "videos";
+        relationTo: 'videos';
         value: number | Video;
       }
     | {
-        relationTo: "audio";
+        relationTo: 'audio';
         value: number | Audio;
       }
     | {
-        relationTo: "photos";
+        relationTo: 'photos';
         value: number | Photo;
       }
     | {
-        relationTo: "events";
+        relationTo: 'events';
         value: number | Event;
       }
     | {
-        relationTo: "locations";
+        relationTo: 'locations';
         value: number | Location;
       };
   /**
@@ -827,7 +793,7 @@ export interface Comment {
    */
   parent?: (number | null) | Comment;
   body: string;
-  status: "pending" | "approved" | "spam";
+  status: 'pending' | 'approved' | 'spam';
   likeCount?: number | null;
   reportCount?: number | null;
   isPinned?: boolean | null;
@@ -864,8 +830,8 @@ export interface CommunityPost {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -876,34 +842,34 @@ export interface CommunityPost {
    */
   media?: (number | Media)[] | null;
   link?: {
-    type?: ("page" | "appScreen" | "url") | null;
+    type?: ('page' | 'appScreen' | 'url') | null;
     page?:
       | ({
-          relationTo: "pages";
+          relationTo: 'pages';
           value: number | Page;
         } | null)
       | ({
-          relationTo: "posts";
+          relationTo: 'posts';
           value: number | Post;
         } | null)
       | ({
-          relationTo: "videos";
+          relationTo: 'videos';
           value: number | Video;
         } | null)
       | ({
-          relationTo: "audio";
+          relationTo: 'audio';
           value: number | Audio;
         } | null)
       | ({
-          relationTo: "series";
+          relationTo: 'series';
           value: number | Series;
         } | null)
       | ({
-          relationTo: "events";
+          relationTo: 'events';
           value: number | Event;
         } | null)
       | ({
-          relationTo: "locations";
+          relationTo: 'locations';
           value: number | Location;
         } | null);
     /**
@@ -925,7 +891,7 @@ export interface CommunityPost {
   /**
    * Who can view this content in the app.
    */
-  accessLevel?: ("public" | "members" | "premium") | null;
+  accessLevel?: ('public' | 'members' | 'premium') | null;
   /**
    * Allow members to comment on this item.
    */
@@ -934,7 +900,7 @@ export interface CommunityPost {
    * Mods pin to top.
    */
   pinned?: boolean | null;
-  status: "published" | "pending" | "hidden" | "flagged";
+  status: 'published' | 'pending' | 'hidden' | 'flagged';
   likeCount?: number | null;
   commentCount?: number | null;
   reportCount?: number | null;
@@ -978,12 +944,12 @@ export interface CommunitySpace {
   /**
    * Who can view this content in the app.
    */
-  accessLevel?: ("public" | "members" | "premium") | null;
+  accessLevel?: ('public' | 'members' | 'premium') | null;
   /**
    * Plans that unlock a premium space.
    */
   requiredPlans?: (number | ExtBillingPlan)[] | null;
-  postingPolicy: "members" | "moderators" | "admins";
+  postingPolicy: 'members' | 'moderators' | 'admins';
   moderators?: (number | User)[] | null;
   /**
    * Sidebar order within the group.
@@ -1014,7 +980,7 @@ export interface SpaceGroup {
   /**
    * Who can view this content in the app.
    */
-  accessLevel?: ("public" | "members" | "premium") | null;
+  accessLevel?: ('public' | 'members' | 'premium') | null;
   /**
    * Plans that unlock this group.
    */
@@ -1053,8 +1019,8 @@ export interface ExtBillingPlan {
   active?: boolean | null;
   slug: string;
   description?: string | null;
-  pricingType: "recurring" | "one_time";
-  interval?: ("day" | "week" | "month" | "year") | null;
+  pricingType: 'recurring' | 'one_time';
+  interval?: ('day' | 'week' | 'month' | 'year') | null;
   /**
    * Bill every N intervals, e.g. every 3 months.
    */
@@ -1080,7 +1046,7 @@ export interface ExtBillingPlan {
      * Intro-period price, e.g. 199 = $1.99.
      */
     introAmount?: number | null;
-    introInterval?: ("month" | "year") | null;
+    introInterval?: ('month' | 'year') | null;
     /**
      * How many intro periods the discount lasts (1 = first invoice only; years count as 12 months each).
      */
@@ -1089,7 +1055,7 @@ export interface ExtBillingPlan {
   /**
    * Content accessLevel this plan unlocks.
    */
-  entitlement?: ("members" | "premium") | null;
+  entitlement?: ('members' | 'premium') | null;
   /**
    * Shown on the public pricing card.
    */
@@ -1113,7 +1079,7 @@ export interface ExtBillingPlan {
   stripeProductId?: string | null;
   stripePriceId?: string | null;
   stripeIntroCouponId?: string | null;
-  syncStatus?: ("unsynced" | "synced" | "error") | null;
+  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
   syncError?: string | null;
   lastSyncedAt?: string | null;
   subscriptions?: {
@@ -1143,13 +1109,7 @@ export interface ExtBillingSubscription {
   user?: (number | null) | User;
   plan?: (number | null) | ExtBillingPlan;
   coupon?: (number | null) | ExtBillingCoupon;
-  status:
-    | "trialing"
-    | "active"
-    | "past_due"
-    | "canceled"
-    | "churned"
-    | "paused";
+  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'churned' | 'paused';
   startedAt?: string | null;
   trialEndsAt?: string | null;
   currentPeriodStart?: string | null;
@@ -1175,18 +1135,18 @@ export interface ExtBillingSubscription {
 export interface ExtBillingCoupon {
   id: number;
   name: string;
-  discountType: "percent_off" | "amount_off";
+  discountType: 'percent_off' | 'amount_off';
   /**
    * Percent (1–100) or amount in cents.
    */
   value: number;
   currency?: string | null;
-  duration: "once" | "repeating" | "forever";
+  duration: 'once' | 'repeating' | 'forever';
   durationCount?: number | null;
   /**
    * Years are converted to months for Stripe (2 years → 24 months).
    */
-  durationUnit?: ("month" | "year") | null;
+  durationUnit?: ('month' | 'year') | null;
   /**
    * Total redemptions allowed.
    */
@@ -1222,7 +1182,7 @@ export interface ExtBillingCoupon {
   skipSync?: boolean | null;
   stripeCouponId?: string | null;
   stripePromotionCodeId?: string | null;
-  syncStatus?: ("unsynced" | "synced" | "error") | null;
+  syncStatus?: ('unsynced' | 'synced' | 'error') | null;
   syncError?: string | null;
   lastSyncedAt?: string | null;
   updatedAt: string;
@@ -1236,17 +1196,7 @@ export interface Page {
   id: number;
   title: string;
   slug: string;
-  layout?:
-    | (
-        | HeroBlock
-        | ItemsBlock
-        | LogosBlock
-        | StatsBlock
-        | CTABlock
-        | FAQBlock
-        | ProseBlock
-      )[]
-    | null;
+  layout?: (HeroBlock | ItemsBlock | LogosBlock | StatsBlock | CTABlock | FAQBlock | ProseBlock)[] | null;
   showInNav?: boolean | null;
   publishedAt?: string | null;
   /**
@@ -1293,7 +1243,7 @@ export interface Page {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1312,7 +1262,7 @@ export interface HeroBlock {
     | {
         text: string;
         href: string;
-        variant?: ("default" | "glow" | "outline" | "secondary") | null;
+        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
         id?: string | null;
       }[]
     | null;
@@ -1326,7 +1276,7 @@ export interface HeroBlock {
   mockupDark?: (number | null) | Media;
   id?: string | null;
   blockName?: string | null;
-  blockType: "hero";
+  blockType: 'hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1347,26 +1297,26 @@ export interface ItemsBlock {
          */
         icon?:
           | (
-              | "Rocket"
-              | "Zap"
-              | "ShieldCheck"
-              | "Sparkles"
-              | "Star"
-              | "Heart"
-              | "Globe"
-              | "Code"
-              | "Layers"
-              | "Smartphone"
-              | "Palette"
-              | "Lock"
-              | "Check"
-              | "Cloud"
-              | "Bell"
-              | "Settings"
-              | "Users"
-              | "ChartBar"
-              | "Search"
-              | "Mail"
+              | 'Rocket'
+              | 'Zap'
+              | 'ShieldCheck'
+              | 'Sparkles'
+              | 'Star'
+              | 'Heart'
+              | 'Globe'
+              | 'Code'
+              | 'Layers'
+              | 'Smartphone'
+              | 'Palette'
+              | 'Lock'
+              | 'Check'
+              | 'Cloud'
+              | 'Bell'
+              | 'Settings'
+              | 'Users'
+              | 'ChartBar'
+              | 'Search'
+              | 'Mail'
             )
           | null;
         id?: string | null;
@@ -1374,7 +1324,7 @@ export interface ItemsBlock {
     | null;
   id?: string | null;
   blockName?: string | null;
-  blockType: "items";
+  blockType: 'items';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1395,7 +1345,7 @@ export interface LogosBlock {
     | null;
   id?: string | null;
   blockName?: string | null;
-  blockType: "logos";
+  blockType: 'logos';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1413,7 +1363,7 @@ export interface StatsBlock {
     | null;
   id?: string | null;
   blockName?: string | null;
-  blockType: "stats";
+  blockType: 'stats';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1425,13 +1375,13 @@ export interface CTABlock {
     | {
         text: string;
         href: string;
-        variant?: ("default" | "glow" | "outline" | "secondary") | null;
+        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
         id?: string | null;
       }[]
     | null;
   id?: string | null;
   blockName?: string | null;
-  blockType: "cta";
+  blockType: 'cta';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1448,7 +1398,7 @@ export interface FAQBlock {
     | null;
   id?: string | null;
   blockName?: string | null;
-  blockType: "faq";
+  blockType: 'faq';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1464,8 +1414,8 @@ export interface ProseBlock {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -1473,7 +1423,7 @@ export interface ProseBlock {
   };
   id?: string | null;
   blockName?: string | null;
-  blockType: "prose";
+  blockType: 'prose';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1495,8 +1445,8 @@ export interface Video {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -1505,12 +1455,12 @@ export interface Video {
   /**
    * Drives the player and which feed this is in.
    */
-  orientation: "landscape" | "vertical";
+  orientation: 'landscape' | 'vertical';
   /**
    * Defaults from orientation when unset.
    */
-  aspectRatio?: ("16:9" | "9:16" | "1:1" | "4:5") | null;
-  sourceType: "url" | "upload" | "mux" | "youtube" | "vimeo";
+  aspectRatio?: ('16:9' | '9:16' | '1:1' | '4:5') | null;
+  sourceType: 'url' | 'upload' | 'mux' | 'youtube' | 'vimeo';
   /**
    * External URL or provider playback ID.
    */
@@ -1535,9 +1485,7 @@ export interface Video {
   captions?:
     | {
         label: string;
-        language?:
-          | ("en" | "es" | "fr" | "de" | "pt" | "it" | "ja" | "ko" | "zh")
-          | null;
+        language?: ('en' | 'es' | 'fr' | 'de' | 'pt' | 'it' | 'ja' | 'ko' | 'zh') | null;
         file?: (number | null) | Media;
         id?: string | null;
       }[]
@@ -1563,7 +1511,7 @@ export interface Video {
   /**
    * Who can view this content in the app.
    */
-  accessLevel?: ("public" | "members" | "premium") | null;
+  accessLevel?: ('public' | 'members' | 'premium') | null;
   featured?: boolean | null;
   /**
    * Allow members to comment on this item.
@@ -1606,7 +1554,7 @@ export interface Video {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1616,7 +1564,7 @@ export interface Series {
   id: number;
   title: string;
   slug: string;
-  kind: "series" | "season" | "playlist" | "album" | "podcast" | "course";
+  kind: 'series' | 'season' | 'playlist' | 'album' | 'podcast' | 'course';
   description?: {
     root: {
       type: string;
@@ -1625,8 +1573,8 @@ export interface Series {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -1643,7 +1591,7 @@ export interface Series {
   /**
    * Who can view this content in the app.
    */
-  accessLevel?: ("public" | "members" | "premium") | null;
+  accessLevel?: ('public' | 'members' | 'premium') | null;
   /**
    * Plans that unlock this show/course (premium gating).
    */
@@ -1663,52 +1611,52 @@ export interface Series {
     artwork?: (number | null) | Media;
     category?:
       | (
-          | "arts"
-          | "business"
-          | "comedy"
-          | "education"
-          | "fiction"
-          | "government"
-          | "health_fitness"
-          | "history"
-          | "kids_family"
-          | "leisure"
-          | "music"
-          | "news"
-          | "religion_spirituality"
-          | "science"
-          | "society_culture"
-          | "sports"
-          | "tv_film"
-          | "technology"
-          | "true_crime"
+          | 'arts'
+          | 'business'
+          | 'comedy'
+          | 'education'
+          | 'fiction'
+          | 'government'
+          | 'health_fitness'
+          | 'history'
+          | 'kids_family'
+          | 'leisure'
+          | 'music'
+          | 'news'
+          | 'religion_spirituality'
+          | 'science'
+          | 'society_culture'
+          | 'sports'
+          | 'tv_film'
+          | 'technology'
+          | 'true_crime'
         )
       | null;
     subcategory?:
       | (
-          | "arts"
-          | "business"
-          | "comedy"
-          | "education"
-          | "fiction"
-          | "government"
-          | "health_fitness"
-          | "history"
-          | "kids_family"
-          | "leisure"
-          | "music"
-          | "news"
-          | "religion_spirituality"
-          | "science"
-          | "society_culture"
-          | "sports"
-          | "tv_film"
-          | "technology"
-          | "true_crime"
+          | 'arts'
+          | 'business'
+          | 'comedy'
+          | 'education'
+          | 'fiction'
+          | 'government'
+          | 'health_fitness'
+          | 'history'
+          | 'kids_family'
+          | 'leisure'
+          | 'music'
+          | 'news'
+          | 'religion_spirituality'
+          | 'science'
+          | 'society_culture'
+          | 'sports'
+          | 'tv_film'
+          | 'technology'
+          | 'true_crime'
         )
       | null;
     explicit?: boolean | null;
-    type?: ("episodic" | "serial") | null;
+    type?: ('episodic' | 'serial') | null;
     language?: string | null;
     copyright?: string | null;
     /**
@@ -1739,7 +1687,7 @@ export interface Series {
     instructors?: (number | User)[] | null;
     summary?: string | null;
     dripEnabled?: boolean | null;
-    dripAnchor?: ("enrollment" | "fixed_date") | null;
+    dripAnchor?: ('enrollment' | 'fixed_date') | null;
     certificateOnComplete?: boolean | null;
     estimatedHours?: number | null;
   };
@@ -1802,7 +1750,7 @@ export interface Series {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1832,8 +1780,8 @@ export interface Audio {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -1849,7 +1797,7 @@ export interface Audio {
   duration?: number | null;
   episodeNumber?: number | null;
   seasonNumber?: number | null;
-  episodeType?: ("full" | "trailer" | "bonus") | null;
+  episodeType?: ('full' | 'trailer' | 'bonus') | null;
   explicit?: boolean | null;
   transcript?: {
     root: {
@@ -1859,8 +1807,8 @@ export interface Audio {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -1898,7 +1846,7 @@ export interface Audio {
   /**
    * Who can view this content in the app.
    */
-  accessLevel?: ("public" | "members" | "premium") | null;
+  accessLevel?: ('public' | 'members' | 'premium') | null;
   featured?: boolean | null;
   /**
    * Allow members to comment on this item.
@@ -1980,8 +1928,8 @@ export interface Lesson {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -2001,10 +1949,10 @@ export interface Lesson {
    * Free preview — bypasses gating.
    */
   preview?: boolean | null;
-  dripType?: ("none" | "scheduled" | "relative") | null;
+  dripType?: ('none' | 'scheduled' | 'relative') | null;
   releaseAt?: string | null;
   releaseAfterDays?: number | null;
-  dripMode?: ("gate_content" | "notify_only") | null;
+  dripMode?: ('gate_content' | 'notify_only') | null;
   notifyPush?: boolean | null;
   notifyEmail?: boolean | null;
   /**
@@ -2015,7 +1963,7 @@ export interface Lesson {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2037,8 +1985,8 @@ export interface Event {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -2050,60 +1998,60 @@ export interface Event {
   allDay?: boolean | null;
   timezone?:
     | (
-        | "Pacific/Midway"
-        | "Pacific/Niue"
-        | "Pacific/Honolulu"
-        | "Pacific/Rarotonga"
-        | "America/Anchorage"
-        | "Pacific/Gambier"
-        | "America/Los_Angeles"
-        | "America/Tijuana"
-        | "America/Denver"
-        | "America/Phoenix"
-        | "America/Chicago"
-        | "America/Guatemala"
-        | "America/New_York"
-        | "America/Bogota"
-        | "America/Caracas"
-        | "America/Santiago"
-        | "America/Buenos_Aires"
-        | "America/Sao_Paulo"
-        | "Atlantic/South_Georgia"
-        | "Atlantic/Azores"
-        | "Atlantic/Cape_Verde"
-        | "Europe/London"
-        | "Europe/Berlin"
-        | "Africa/Lagos"
-        | "Europe/Athens"
-        | "Africa/Cairo"
-        | "Europe/Moscow"
-        | "Asia/Riyadh"
-        | "Asia/Dubai"
-        | "Asia/Baku"
-        | "Asia/Karachi"
-        | "Asia/Tashkent"
-        | "Asia/Calcutta"
-        | "Asia/Dhaka"
-        | "Asia/Almaty"
-        | "Asia/Jakarta"
-        | "Asia/Bangkok"
-        | "Asia/Shanghai"
-        | "Asia/Singapore"
-        | "Asia/Tokyo"
-        | "Asia/Seoul"
-        | "Australia/Brisbane"
-        | "Australia/Sydney"
-        | "Pacific/Guam"
-        | "Pacific/Noumea"
-        | "Pacific/Auckland"
-        | "Pacific/Fiji"
+        | 'Pacific/Midway'
+        | 'Pacific/Niue'
+        | 'Pacific/Honolulu'
+        | 'Pacific/Rarotonga'
+        | 'America/Anchorage'
+        | 'Pacific/Gambier'
+        | 'America/Los_Angeles'
+        | 'America/Tijuana'
+        | 'America/Denver'
+        | 'America/Phoenix'
+        | 'America/Chicago'
+        | 'America/Guatemala'
+        | 'America/New_York'
+        | 'America/Bogota'
+        | 'America/Caracas'
+        | 'America/Santiago'
+        | 'America/Buenos_Aires'
+        | 'America/Sao_Paulo'
+        | 'Atlantic/South_Georgia'
+        | 'Atlantic/Azores'
+        | 'Atlantic/Cape_Verde'
+        | 'Europe/London'
+        | 'Europe/Berlin'
+        | 'Africa/Lagos'
+        | 'Europe/Athens'
+        | 'Africa/Cairo'
+        | 'Europe/Moscow'
+        | 'Asia/Riyadh'
+        | 'Asia/Dubai'
+        | 'Asia/Baku'
+        | 'Asia/Karachi'
+        | 'Asia/Tashkent'
+        | 'Asia/Calcutta'
+        | 'Asia/Dhaka'
+        | 'Asia/Almaty'
+        | 'Asia/Jakarta'
+        | 'Asia/Bangkok'
+        | 'Asia/Shanghai'
+        | 'Asia/Singapore'
+        | 'Asia/Tokyo'
+        | 'Asia/Seoul'
+        | 'Australia/Brisbane'
+        | 'Australia/Sydney'
+        | 'Pacific/Guam'
+        | 'Pacific/Noumea'
+        | 'Pacific/Auckland'
+        | 'Pacific/Fiji'
       )
     | null;
   /**
    * Optional recurring schedule.
    */
   recurrence?: {
-    frequency?: ("daily" | "weekly" | "monthly" | "yearly") | null;
+    frequency?: ('daily' | 'weekly' | 'monthly' | 'yearly') | null;
     /**
      * Every N periods.
      */
@@ -2117,13 +2065,13 @@ export interface Event {
   gallery?: (number | Media)[] | null;
   isFree?: boolean | null;
   price?: number | null;
-  currency?: ("usd" | "eur" | "gbp" | "cad" | "aud") | null;
+  currency?: ('usd' | 'eur' | 'gbp' | 'cad' | 'aud') | null;
   ticketUrl?: string | null;
   capacity?: number | null;
   registrationRequired?: boolean | null;
   organizer?: (number | null) | User;
   speakers?: (number | User)[] | null;
-  eventStatus?: ("scheduled" | "rescheduled" | "cancelled" | "sold_out") | null;
+  eventStatus?: ('scheduled' | 'rescheduled' | 'cancelled' | 'sold_out') | null;
   featured?: boolean | null;
   /**
    * Allow members to comment on this item.
@@ -2174,7 +2122,7 @@ export interface Event {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2196,8 +2144,8 @@ export interface Location {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -2218,14 +2166,7 @@ export interface Location {
   coordinates?: [number, number] | null;
   hours?:
     | {
-        day:
-          | "monday"
-          | "tuesday"
-          | "wednesday"
-          | "thursday"
-          | "friday"
-          | "saturday"
-          | "sunday";
+        day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
         opensAt?: string | null;
         closesAt?: string | null;
         closed?: boolean | null;
@@ -2235,18 +2176,9 @@ export interface Location {
   phone?: string | null;
   email?: string | null;
   website?: string | null;
-  priceRange?: ("$" | "$$" | "$$$" | "$$$$") | null;
+  priceRange?: ('$' | '$$' | '$$$' | '$$$$') | null;
   amenities?:
-    | (
-        | "wifi"
-        | "parking"
-        | "accessible"
-        | "pets"
-        | "outdoor_seating"
-        | "restrooms"
-        | "food"
-        | "drinks"
-      )[]
+    | ('wifi' | 'parking' | 'accessible' | 'pets' | 'outdoor_seating' | 'restrooms' | 'food' | 'drinks')[]
     | null;
   featuredImage?: (number | null) | Media;
   gallery?: (number | Media)[] | null;
@@ -2316,7 +2248,7 @@ export interface Location {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2327,18 +2259,18 @@ export interface Review {
   author: number | User;
   target:
     | {
-        relationTo: "locations";
+        relationTo: 'locations';
         value: number | Location;
       }
     | {
-        relationTo: "events";
+        relationTo: 'events';
         value: number | Event;
       };
   rating: number;
   title?: string | null;
   body?: string | null;
   photos?: (number | Media)[] | null;
-  status: "pending" | "approved" | "rejected";
+  status: 'pending' | 'approved' | 'rejected';
   helpfulCount?: number | null;
   verifiedVisit?: boolean | null;
   /**
@@ -2364,24 +2296,17 @@ export interface Report {
   reporter: number | User;
   target:
     | {
-        relationTo: "community-posts";
+        relationTo: 'community-posts';
         value: number | CommunityPost;
       }
     | {
-        relationTo: "comments";
+        relationTo: 'comments';
         value: number | Comment;
       };
-  reason:
-    | "spam"
-    | "harassment"
-    | "hate"
-    | "nudity"
-    | "violence"
-    | "misinformation"
-    | "other";
+  reason: 'spam' | 'harassment' | 'hate' | 'nudity' | 'violence' | 'misinformation' | 'other';
   details?: string | null;
-  status: "open" | "reviewing" | "actioned" | "dismissed";
-  resolution?: ("none" | "hidden" | "deleted" | "warned" | "banned") | null;
+  status: 'open' | 'reviewing' | 'actioned' | 'dismissed';
+  resolution?: ('none' | 'hidden' | 'deleted' | 'warned' | 'banned') | null;
   resolvedBy?: (number | null) | User;
   resolvedAt?: string | null;
   updatedAt: string;
@@ -2412,7 +2337,7 @@ export interface Photo {
   /**
    * Who can view this content in the app.
    */
-  accessLevel?: ("public" | "members" | "premium") | null;
+  accessLevel?: ('public' | 'members' | 'premium') | null;
   featured?: boolean | null;
   /**
    * Allow members to comment on this item.
@@ -2480,8 +2405,8 @@ export interface Enrollment {
    * Anchor for relative drip.
    */
   enrolledAt: string;
-  status: "active" | "completed" | "refunded" | "expired";
-  source?: ("purchase" | "subscription" | "free" | "manual") | null;
+  status: 'active' | 'completed' | 'refunded' | 'expired';
+  source?: ('purchase' | 'subscription' | 'free' | 'manual') | null;
   /**
    * When access comes from a plan.
    */
@@ -2510,7 +2435,7 @@ export interface DeviceToken {
    * FCM/APNs token.
    */
   token: string;
-  platform: "ios" | "android" | "web";
+  platform: 'ios' | 'android' | 'web';
   deviceModel?: string | null;
   appVersion?: string | null;
   osVersion?: string | null;
@@ -2567,34 +2492,34 @@ export interface Onboarding {
      */
     label?: string | null;
     destination?: {
-      type?: ("page" | "appScreen" | "url") | null;
+      type?: ('page' | 'appScreen' | 'url') | null;
       page?:
         | ({
-            relationTo: "pages";
+            relationTo: 'pages';
             value: number | Page;
           } | null)
         | ({
-            relationTo: "posts";
+            relationTo: 'posts';
             value: number | Post;
           } | null)
         | ({
-            relationTo: "videos";
+            relationTo: 'videos';
             value: number | Video;
           } | null)
         | ({
-            relationTo: "audio";
+            relationTo: 'audio';
             value: number | Audio;
           } | null)
         | ({
-            relationTo: "series";
+            relationTo: 'series';
             value: number | Series;
           } | null)
         | ({
-            relationTo: "events";
+            relationTo: 'events';
             value: number | Event;
           } | null)
         | ({
-            relationTo: "locations";
+            relationTo: 'locations';
             value: number | Location;
           } | null);
       /**
@@ -2619,34 +2544,34 @@ export interface Onboarding {
   secondaryCta?: {
     label?: string | null;
     destination?: {
-      type?: ("page" | "appScreen" | "url") | null;
+      type?: ('page' | 'appScreen' | 'url') | null;
       page?:
         | ({
-            relationTo: "pages";
+            relationTo: 'pages';
             value: number | Page;
           } | null)
         | ({
-            relationTo: "posts";
+            relationTo: 'posts';
             value: number | Post;
           } | null)
         | ({
-            relationTo: "videos";
+            relationTo: 'videos';
             value: number | Video;
           } | null)
         | ({
-            relationTo: "audio";
+            relationTo: 'audio';
             value: number | Audio;
           } | null)
         | ({
-            relationTo: "series";
+            relationTo: 'series';
             value: number | Series;
           } | null)
         | ({
-            relationTo: "events";
+            relationTo: 'events';
             value: number | Event;
           } | null)
         | ({
-            relationTo: "locations";
+            relationTo: 'locations';
             value: number | Location;
           } | null);
       /**
@@ -2688,7 +2613,7 @@ export interface Banner {
   body?: string | null;
   image?: (number | null) | Media;
   icon?: string | null;
-  variant: "info" | "promo" | "warning" | "announcement";
+  variant: 'info' | 'promo' | 'warning' | 'announcement';
   /**
    * Optional CTA.
    */
@@ -2702,14 +2627,14 @@ export interface Banner {
      */
     url?: string | null;
     newTab?: boolean | null;
-    appearance?: ("default" | "button" | "outline" | "link") | null;
+    appearance?: ('default' | 'button' | 'outline' | 'link') | null;
   };
-  placement: "home" | "global" | "content" | "onboarding";
+  placement: 'home' | 'global' | 'content' | 'onboarding';
   /**
    * Empty = all platforms.
    */
-  targetPlatform?: ("ios" | "android" | "web")[] | null;
-  audience?: ("all" | "guests" | "members") | null;
+  targetPlatform?: ('ios' | 'android' | 'web')[] | null;
+  audience?: ('all' | 'guests' | 'members') | null;
   startsAt?: string | null;
   endsAt?: string | null;
   /**
@@ -2749,12 +2674,12 @@ export interface Notification {
     | number
     | boolean
     | null;
-  channel: ("push" | "email" | "sms" | "in_app")[];
+  channel: ('push' | 'email' | 'sms' | 'in_app')[];
   /**
    * Short SMS variant (≤160 chars). Sends require smsOptIn + phone.
    */
   smsBody?: string | null;
-  audience: "all" | "segment" | "users";
+  audience: 'all' | 'segment' | 'users';
   /**
    * Filter criteria for the send job.
    */
@@ -2773,7 +2698,7 @@ export interface Notification {
    * Set by the send job.
    */
   sentAt?: string | null;
-  status: "draft" | "scheduled" | "sending" | "sent" | "failed";
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
   sentCount?: number | null;
   openCount?: number | null;
   updatedAt: string;
@@ -2825,7 +2750,7 @@ export interface NavItem {
    * Icon name from the kit's icon map (e.g. IconMessageCircle). Unknown names fall back to a default icon.
    */
   icon?: string | null;
-  platforms?: ("web" | "native")[] | null;
+  platforms?: ('web' | 'native')[] | null;
   enabled?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -2863,7 +2788,7 @@ export interface ExtChatSkill {
   triggers?:
     | {
         pattern: string;
-        patternType: "keyword" | "synonym" | "regex";
+        patternType: 'keyword' | 'synonym' | 'regex';
         weight?: number | null;
         id?: string | null;
       }[]
@@ -2891,8 +2816,8 @@ export interface ExtDocsPage {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -2906,7 +2831,7 @@ export interface ExtDocsPage {
    * Sort order within category.
    */
   order?: number | null;
-  source?: ("manual" | "github") | null;
+  source?: ('manual' | 'github') | null;
   /**
    * Repo-relative file path.
    */
@@ -2917,7 +2842,7 @@ export interface ExtDocsPage {
   sourceSha?: string | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2936,7 +2861,7 @@ export interface Form {
             defaultValue?: boolean | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: "checkbox";
+            blockType: 'checkbox';
           }
         | {
             name: string;
@@ -2945,7 +2870,7 @@ export interface Form {
             required?: boolean | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: "email";
+            blockType: 'email';
           }
         | {
             message?: {
@@ -2956,15 +2881,8 @@ export interface Form {
                   version: number;
                   [k: string]: unknown;
                 }[];
-                direction: ("ltr" | "rtl") | null;
-                format:
-                  | "left"
-                  | "start"
-                  | "center"
-                  | "right"
-                  | "end"
-                  | "justify"
-                  | "";
+                direction: ('ltr' | 'rtl') | null;
+                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
                 indent: number;
                 version: number;
               };
@@ -2972,7 +2890,7 @@ export interface Form {
             } | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: "message";
+            blockType: 'message';
           }
         | {
             name: string;
@@ -2982,7 +2900,7 @@ export interface Form {
             required?: boolean | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: "number";
+            blockType: 'number';
           }
         | {
             name: string;
@@ -3000,7 +2918,7 @@ export interface Form {
             required?: boolean | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: "select";
+            blockType: 'select';
           }
         | {
             name: string;
@@ -3010,7 +2928,7 @@ export interface Form {
             required?: boolean | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: "text";
+            blockType: 'text';
           }
         | {
             name: string;
@@ -3020,7 +2938,7 @@ export interface Form {
             required?: boolean | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: "textarea";
+            blockType: 'textarea';
           }
       )[]
     | null;
@@ -3028,7 +2946,7 @@ export interface Form {
   /**
    * Choose whether to display an on-page message or redirect to a different page after they submit the form.
    */
-  confirmationType?: ("message" | "redirect") | null;
+  confirmationType?: ('message' | 'redirect') | null;
   confirmationMessage?: {
     root: {
       type: string;
@@ -3037,17 +2955,17 @@ export interface Form {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
     [k: string]: unknown;
   } | null;
   redirect?: {
-    type?: ("reference" | "custom") | null;
+    type?: ('reference' | 'custom') | null;
     reference?: {
-      relationTo: "pages";
+      relationTo: 'pages';
       value: number | Page;
     } | null;
     url?: string | null;
@@ -3074,15 +2992,8 @@ export interface Form {
               version: number;
               [k: string]: unknown;
             }[];
-            direction: ("ltr" | "rtl") | null;
-            format:
-              | "left"
-              | "start"
-              | "center"
-              | "right"
-              | "end"
-              | "justify"
-              | "";
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
             indent: number;
             version: number;
           };
@@ -3188,7 +3099,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: "inline" | "schedulePublish";
+        taskSlug: 'inline' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -3208,7 +3119,7 @@ export interface PayloadJob {
           | number
           | boolean
           | null;
-        state: "failed" | "succeeded";
+        state: 'failed' | 'succeeded';
         error?:
           | {
               [k: string]: unknown;
@@ -3221,7 +3132,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ("inline" | "schedulePublish") | null;
+  taskSlug?: ('inline' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -3236,20 +3147,20 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: "forms";
+        relationTo: 'forms';
         value: number | Form;
       } | null)
     | ({
-        relationTo: "form-submissions";
+        relationTo: 'form-submissions';
         value: number | FormSubmission;
       } | null)
     | ({
-        relationTo: "payload-folders";
+        relationTo: 'payload-folders';
         value: number | FolderInterface;
       } | null);
   globalSlug?: string | null;
   user: {
-    relationTo: "users";
+    relationTo: 'users';
     value: number | User;
   };
   updatedAt: string;
@@ -3262,7 +3173,7 @@ export interface PayloadLockedDocument {
 export interface PayloadPreference {
   id: number;
   user: {
-    relationTo: "users";
+    relationTo: 'users';
     value: number | User;
   };
   key?: string | null;
@@ -4845,7 +4756,7 @@ export interface SiteSetting {
     | {
         label: string;
         url: string;
-        variant?: ("default" | "glow" | "outline" | "secondary") | null;
+        variant?: ('default' | 'glow' | 'outline' | 'secondary') | null;
         isButton?: boolean | null;
         id?: string | null;
       }[]
@@ -5198,15 +5109,15 @@ export interface ThemeSetting {
   /**
    * Body / UI font (--font-sans)
    */
-  fontSans?: ("geist" | "inter" | "system") | null;
+  fontSans?: ('geist' | 'inter' | 'system') | null;
   /**
    * Serif font (--font-serif)
    */
-  fontSerif?: ("merriweather" | "lora" | "system") | null;
+  fontSerif?: ('merriweather' | 'lora' | 'system') | null;
   /**
    * Monospace font (--font-mono)
    */
-  fontMono?: ("geist-mono" | "jetbrains-mono") | null;
+  fontMono?: ('geist-mono' | 'jetbrains-mono') | null;
   /**
    * Base letter spacing, e.g. 0rem (--tracking-normal)
    */
@@ -5230,7 +5141,7 @@ export interface ThemeSetting {
     offsetX?: number | null;
     offsetY?: number | null;
   };
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -5251,10 +5162,10 @@ export interface ImageGenerationSetting {
    */
   model?:
     | (
-        | "google/imagen-4.0-generate-001"
-        | "google/imagen-4.0-fast-generate-001"
-        | "openai/gpt-image-1"
-        | "bfl/flux-pro-1.1"
+        | 'google/imagen-4.0-generate-001'
+        | 'google/imagen-4.0-fast-generate-001'
+        | 'openai/gpt-image-1'
+        | 'bfl/flux-pro-1.1'
       )
     | null;
   /**
@@ -5273,17 +5184,11 @@ export interface ImageGenerationSetting {
   /**
    * After the final failed attempt, either keep the last image anyway, or skip it — leaving the slot empty so a later save can retry.
    */
-  auditFailureAction?: ("publish" | "skip") | null;
+  auditFailureAction?: ('publish' | 'skip') | null;
   /**
    * Vision model (AI Gateway slug) that reviews each generated image. Must support image input.
    */
-  auditModel?:
-    | (
-        | "anthropic/claude-sonnet-4.5"
-        | "anthropic/claude-opus-4.1"
-        | "anthropic/claude-haiku-4.5"
-      )
-    | null;
+  auditModel?: ('anthropic/claude-sonnet-4.5' | 'anthropic/claude-opus-4.1' | 'anthropic/claude-haiku-4.5') | null;
   /**
    * Additional, workspace-specific acceptance rules layered on top of the defaults (depicts the subject, no text/logos, not garbled).
    */
@@ -5306,15 +5211,7 @@ export interface ProfileField {
          */
         key: string;
         label: string;
-        type:
-          | "text"
-          | "textarea"
-          | "number"
-          | "select"
-          | "multiselect"
-          | "checkbox"
-          | "date"
-          | "url";
+        type: 'text' | 'textarea' | 'number' | 'select' | 'multiselect' | 'checkbox' | 'date' | 'url';
         options?:
           | {
               label: string;
@@ -5323,9 +5220,98 @@ export interface ProfileField {
             }[]
           | null;
         required?: boolean | null;
-        visibility?: ("public" | "members" | "private" | "admin") | null;
+        visibility?: ('public' | 'members' | 'private' | 'admin') | null;
         editableByMember?: boolean | null;
         order?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Choose the default sign-in method and which methods the auth screens offer, plus sign-up access rules and copy. This controls the UI and client logic only — each method must also be enabled in Supabase. Setup guide: https://github.com/vytenapps/dream-starter-kit/blob/main/docs/AUTH.md
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authentication-settings".
+ */
+export interface AuthenticationSetting {
+  id: number;
+  /**
+   * Drag the handle to reorder. Toggle Enabled to show/hide. Google/Apple need the provider enabled in Supabase; SAML SSO needs [auth.sso] + a registered identity provider.
+   */
+  loginMethods?:
+    | {
+        method: 'password' | 'magicLink' | 'emailOtp' | 'google' | 'apple' | 'sso';
+        enabled?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * When off, public sign-up is hidden and the sign-up route is blocked (invite-only). For hard server enforcement also set enable_signup = false in Supabase — see https://github.com/vytenapps/dream-starter-kit/blob/main/docs/AUTH.md#invite-only.
+   */
+  allowSignups?: boolean | null;
+  /**
+   * Restrict which email domains may sign up (checked client-side and in the sign-up/checkout server route).
+   */
+  emailDomainMode?: ('off' | 'allowlist' | 'blocklist') | null;
+  /**
+   * Bare domains, e.g. acme.com (no @ or scheme).
+   */
+  emailDomains?:
+    | {
+        domain: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Terms of Service link in the sign-up footer.
+   */
+  termsUrl?: string | null;
+  /**
+   * Privacy Policy link in the sign-up footer.
+   */
+  privacyUrl?: string | null;
+  /**
+   * Require an explicit 'I agree' checkbox before sign-up.
+   */
+  requireTermsAcceptance?: boolean | null;
+  /**
+   * Where users land after login. Blank keeps the default role-based routing (/welcome → /a or the CMS).
+   */
+  postLoginRedirect?: string | null;
+  /**
+   * Where users land right after sign-up. Blank keeps the default (/welcome).
+   */
+  postSignupRedirect?: string | null;
+  /**
+   * Minimum password length enforced in the UI. Must be ≥ Supabase's server-side minimum_password_length to be enforced end-to-end — see https://github.com/vytenapps/dream-starter-kit/blob/main/docs/AUTH.md#passwords.
+   */
+  minPasswordLength?: number | null;
+  /**
+   * Require a Turnstile token on auth actions. Needs the site key configured and Supabase [auth.captcha] enabled — see https://github.com/vytenapps/dream-starter-kit/blob/main/docs/AUTH.md#captcha and docs/TURNSTILE.md.
+   */
+  requireCaptcha?: boolean | null;
+  /**
+   * Heading on the sign-in screen. Blank uses the app name.
+   */
+  signInHeading?: string | null;
+  /**
+   * Heading on the sign-up screen. Blank uses the app name.
+   */
+  signUpHeading?: string | null;
+  /**
+   * Optional subtitle shown under the heading.
+   */
+  subtitle?: string | null;
+  ssoButtonLabel?: string | null;
+  /**
+   * Map email domains to a registered Supabase SSO provider. A user entering an email on one of these domains is routed to that identity provider. Leave providerId blank to let Supabase resolve the provider by domain.
+   */
+  ssoDomains?:
+    | {
+        domain: string;
+        providerId?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -5344,7 +5330,7 @@ export interface ExtBillingSetting {
   /**
    * Which billing cadence the pricing page preselects.
    */
-  billingToggleDefault?: ("monthly" | "annual") | null;
+  billingToggleDefault?: ('monthly' | 'annual') | null;
   /**
    * Pick up to three paid plans to feature, in display order. Empty = all active plans by display order.
    */
@@ -5400,20 +5386,20 @@ export interface ExtChatSetting {
         label?: string | null;
         channels?:
           | (
-              | "web"
-              | "native"
-              | "slack"
-              | "sms-sendblue"
-              | "telegram"
-              | "whatsapp"
-              | "discord"
-              | "teams"
-              | "google-chat"
-              | "messenger"
-              | "email"
-              | "twilio-sms"
-              | "github"
-              | "linear"
+              | 'web'
+              | 'native'
+              | 'slack'
+              | 'sms-sendblue'
+              | 'telegram'
+              | 'whatsapp'
+              | 'discord'
+              | 'teams'
+              | 'google-chat'
+              | 'messenger'
+              | 'email'
+              | 'twilio-sms'
+              | 'github'
+              | 'linear'
             )[]
           | null;
         prompt: string;
@@ -5433,11 +5419,7 @@ export interface ExtChatSetting {
    */
   useLlmFallback?: boolean | null;
   llmFallbackModel?:
-    | (
-        | "anthropic/claude-sonnet-4.5"
-        | "anthropic/claude-opus-4.1"
-        | "anthropic/claude-haiku-4.5"
-      )
+    | ('anthropic/claude-sonnet-4.5' | 'anthropic/claude-opus-4.1' | 'anthropic/claude-haiku-4.5')
     | null;
   /**
    * Turns an active skill stays selected before re-routing.
@@ -5731,6 +5713,48 @@ export interface ProfileFieldsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authentication-settings_select".
+ */
+export interface AuthenticationSettingsSelect<T extends boolean = true> {
+  loginMethods?:
+    | T
+    | {
+        method?: T;
+        enabled?: T;
+        id?: T;
+      };
+  allowSignups?: T;
+  emailDomainMode?: T;
+  emailDomains?:
+    | T
+    | {
+        domain?: T;
+        id?: T;
+      };
+  termsUrl?: T;
+  privacyUrl?: T;
+  requireTermsAcceptance?: T;
+  postLoginRedirect?: T;
+  postSignupRedirect?: T;
+  minPasswordLength?: T;
+  requireCaptcha?: T;
+  signInHeading?: T;
+  signUpHeading?: T;
+  subtitle?: T;
+  ssoButtonLabel?: T;
+  ssoDomains?:
+    | T
+    | {
+        domain?: T;
+        providerId?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ext-billing-settings_select".
  */
 export interface ExtBillingSettingsSelect<T extends boolean = true> {
@@ -5825,7 +5849,7 @@ export interface CollectionsWidget {
   data?: {
     [k: string]: unknown;
   };
-  width: "full";
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -5833,35 +5857,35 @@ export interface CollectionsWidget {
  */
 export interface TaskSchedulePublish {
   input: {
-    type?: ("publish" | "unpublish") | null;
+    type?: ('publish' | 'unpublish') | null;
     locale?: string | null;
     doc?:
       | ({
-          relationTo: "posts";
+          relationTo: 'posts';
           value: number | Post;
         } | null)
       | ({
-          relationTo: "videos";
+          relationTo: 'videos';
           value: number | Video;
         } | null)
       | ({
-          relationTo: "series";
+          relationTo: 'series';
           value: number | Series;
         } | null)
       | ({
-          relationTo: "lessons";
+          relationTo: 'lessons';
           value: number | Lesson;
         } | null)
       | ({
-          relationTo: "locations";
+          relationTo: 'locations';
           value: number | Location;
         } | null)
       | ({
-          relationTo: "events";
+          relationTo: 'events';
           value: number | Event;
         } | null)
       | ({
-          relationTo: "pages";
+          relationTo: 'pages';
           value: number | Page;
         } | null);
     global?: string | null;

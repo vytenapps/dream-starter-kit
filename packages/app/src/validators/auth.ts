@@ -1,7 +1,15 @@
 import { z } from "zod/v4";
 
 export const emailSchema = z.email("Enter a valid email");
-export const passwordSchema = z.string().min(8, "Use at least 8 characters");
+
+/** Default minimum password length, mirrored by the auth-settings global. */
+export const DEFAULT_MIN_PASSWORD_LENGTH = 8;
+
+/** Password schema for a given minimum length (driven by the auth-settings global). */
+export const makePasswordSchema = (min: number = DEFAULT_MIN_PASSWORD_LENGTH) =>
+  z.string().min(min, `Use at least ${min} characters`);
+
+export const passwordSchema = makePasswordSchema();
 
 export const signInSchema = z.object({
   email: emailSchema,
@@ -9,11 +17,22 @@ export const signInSchema = z.object({
 });
 export type SignInInput = z.infer<typeof signInSchema>;
 
-export const signUpSchema = z.object({
-  email: emailSchema,
-  password: passwordSchema,
-  displayName: z.string().min(1, "Name is required").max(80).optional(),
-});
+/**
+ * Sign-up schema, parameterized by the front-end auth-settings global's minimum
+ * password length. Terms acceptance + email-domain rules are enforced in the UI
+ * (they depend on runtime settings, not a static schema). The static
+ * {@link signUpSchema} below is the default (8 chars) kept for back-compat.
+ */
+export const makeSignUpSchema = ({
+  minPasswordLength = DEFAULT_MIN_PASSWORD_LENGTH,
+}: { minPasswordLength?: number } = {}) =>
+  z.object({
+    email: emailSchema,
+    password: makePasswordSchema(minPasswordLength),
+    displayName: z.string().min(1, "Name is required").max(80).optional(),
+  });
+
+export const signUpSchema = makeSignUpSchema();
 export type SignUpInput = z.infer<typeof signUpSchema>;
 
 export const magicLinkSchema = z.object({ email: emailSchema });
