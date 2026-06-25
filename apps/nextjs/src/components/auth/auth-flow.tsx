@@ -34,6 +34,12 @@ import {
   FieldLabel,
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "~/components/ui/input-otp";
 import { authCallbackUrl } from "~/lib/site-url";
 import { createClient } from "~/lib/supabase/client";
 import { authErrorMessage, isSupabaseConfigured } from "~/lib/supabase/config";
@@ -53,15 +59,34 @@ export function AuthFlow({
   mode,
   settings,
   appName,
+  onAuthenticated,
+  redirectTo: redirectToProp,
 }: {
   mode: Mode;
   settings: AuthSettings;
   appName: string;
+  /**
+   * When provided, the paths that establish a session entirely client-side
+   * (password sign-in, sign-up returning a session, email-code verify) call
+   * this INSTEAD of a hard navigation — so the flow can be embedded as an inline
+   * step (e.g. the checkout Account step) without leaving the page. The paths
+   * that inherently leave the page (OAuth, SSO, the emailed magic-link) still
+   * navigate; use `redirectTo` to bring them back to where the embed lives.
+   * Its presence also hides the sign-in/sign-up cross-links (no page to leave to).
+   */
+  onAuthenticated?: () => void;
+  /**
+   * Override the post-auth destination. Used by embeds whose OAuth/magic-link
+   * round-trips must return to a specific URL (e.g. `/checkout?...&step=payment`).
+   * Takes precedence over the `?redirectTo` query param and the configured default.
+   */
+  redirectTo?: string;
 }) {
   const supabase = createClient();
   const configured = isSupabaseConfigured();
   const { token: captchaToken, reset: resetCaptcha } = useCaptcha();
   const isSignUp = mode === "signUp";
+  const embedded = Boolean(onAuthenticated);
 
   // Same-origin redirect only (the value drives a full navigation + OAuth `next`).
   const redirectParam = useSearchParams().get("redirectTo");
@@ -69,12 +94,20 @@ export function AuthFlow({
     ? (settings.postSignupRedirect ?? "/welcome")
     : (settings.postLoginRedirect ?? "/welcome");
   const dest =
-    !isSignUp &&
+    redirectToProp ??
+    (!isSignUp &&
     redirectParam?.startsWith("/") &&
     !redirectParam.startsWith("//")
       ? redirectParam
-      : configuredDest;
+      : configuredDest);
   const callback = authCallbackUrl(dest);
+
+  // Finish a client-completable auth path: hand control back to an embedding
+  // parent when present, otherwise navigate as the standalone pages do.
+  function finish() {
+    if (onAuthenticated) onAuthenticated();
+    else window.location.assign(dest);
+  }
 
   const m = settings.methods;
   const entries = chooserEntries(settings);
@@ -197,7 +230,7 @@ export function AuthFlow({
     setError(null);
     try {
       await signInWithPassword(supabase, { email, password }, { captchaToken });
-      window.location.assign(dest);
+      finish();
     } catch (err) {
       if ((err as { code?: string }).code === "email_not_confirmed") {
         try {
@@ -234,7 +267,7 @@ export function AuthFlow({
         { emailRedirectTo: callback, captchaToken },
       );
       if (session) {
-        window.location.assign(dest);
+        finish();
       } else {
         // Email confirmation required — the styled /check-email page handles the
         // sign-up link + 6-digit code (verifyOtp type "signup").
@@ -250,13 +283,13 @@ export function AuthFlow({
     }
   }
 
-  async function onVerifyCode(e: React.FormEvent) {
-    e.preventDefault();
+  async function onVerifyCode(e?: React.FormEvent) {
+    e?.preventDefault();
     setPending(true);
     setError(null);
     try {
       await verifyEmailLoginCode(supabase, email, code.trim());
-      window.location.assign(dest);
+      finish();
     } catch (err) {
       setError(authErrorMessage(err, "That code didn’t work. Try again."));
       setPending(false);
@@ -399,17 +432,20 @@ export function AuthFlow({
             </FieldDescription>
           )}
 
-          <FieldDescription className="text-center">
-            {isSignUp ? (
-              <>
-                Already have an account? <Link href="/sign-in">Log in</Link>
-              </>
-            ) : settings.allowSignups ? (
-              <>
-                Don&apos;t have an account? <Link href="/sign-up">Sign up</Link>
-              </>
-            ) : null}
-          </FieldDescription>
+          {!embedded && (
+            <FieldDescription className="text-center">
+              {isSignUp ? (
+                <>
+                  Already have an account? <Link href="/sign-in">Log in</Link>
+                </>
+              ) : settings.allowSignups ? (
+                <>
+                  Don&apos;t have an account?{" "}
+                  <Link href="/sign-up">Sign up</Link>
+                </>
+              ) : null}
+            </FieldDescription>
+          )}
         </FieldGroup>
       )}
 
@@ -563,15 +599,28 @@ export function AuthFlow({
             <form onSubmit={(e) => void onVerifyCode(e)}>
               <FieldGroup>
                 <Field>
-                  <Input
-                    aria-label="Login code"
-                    placeholder="Enter code"
-                    autoComplete="one-time-code"
-                    inputMode="numeric"
-                    className="text-center"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                  />
+                  <div className="flex justify-center">
+                    <InputOTP
+                      maxLength={6}
+                      value={code}
+                      onChange={(value) => setCode(value)}
+                      onComplete={() => void onVerifyCode()}
+                      aria-label="Login code"
+                      autoFocus
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                      </InputOTPGroup>
+                      <InputOTPSeparator />
+                      <InputOTPGroup>
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
                 </Field>
                 {error && (
                   <FieldDescription className="text-destructive text-center">

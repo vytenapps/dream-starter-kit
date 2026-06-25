@@ -33,10 +33,23 @@ export const Reviews: CollectionConfig = {
       name: "target",
       type: "relationship",
       relationTo: ["locations", "events"],
-      required: true,
+      // Optional: a review of a location/event sets a target, but a standalone
+      // marketing testimonial (e.g. featured on the checkout page) has none.
+      admin: {
+        description:
+          "The location or event this review is about. Leave empty for a standalone testimonial.",
+      },
     },
     { name: "rating", type: "number", required: true, min: 1, max: 5 },
     { name: "title", type: "text" },
+    {
+      name: "authorTitle",
+      type: "text",
+      admin: {
+        description:
+          "Optional role/title shown under the author's name when this review is used as a testimonial (e.g. “CEO at Acme”).",
+      },
+    },
     { name: "body", type: "textarea" },
     {
       name: "photos",

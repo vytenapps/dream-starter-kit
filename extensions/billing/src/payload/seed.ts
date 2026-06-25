@@ -112,6 +112,28 @@ export const seed: ExtSeedStep[] = [
         },
       });
 
+      // A standalone, approved demo testimonial featured on the checkout page.
+      // Reuses the core `reviews` collection (target is optional, so it isn't
+      // tied to a location/event); authored by the first/admin user so it
+      // inherits their avatar + display name. Best-effort: if no user exists yet
+      // (rare for the seed paths) we skip the testimonial rather than fail.
+      const author = await payload.find({ collection: "users", limit: 1 });
+      const authorId = author.docs[0]?.id;
+      let featuredReviewId: number | undefined;
+      if (authorId != null) {
+        const review = await payload.create({
+          collection: "reviews",
+          data: {
+            author: authorId,
+            rating: 5,
+            authorTitle: "Founder, Acme",
+            body: "We shipped our web and mobile apps in a weekend. The checkout, auth and admin were already done — we just made it ours.",
+            status: "approved",
+          },
+        });
+        featuredReviewId = review.id;
+      }
+
       await payload.updateGlobal({
         slug: "ext-billing-settings",
         data: {
@@ -129,6 +151,21 @@ export const seed: ExtSeedStep[] = [
               { text: "Community support" },
             ],
           },
+          showEnterpriseTier: true,
+          enterpriseTier: {
+            name: "Enterprise",
+            description: "Total access for your whole team, billed your way.",
+            ctaLabel: "Contact sales",
+            link: { url: "mailto:sales@example.com" },
+            features: [
+              { text: "Everything in the paid plans" },
+              { text: "Centralized team billing & SSO" },
+              { text: "Priority onboarding & support" },
+            ],
+          },
+          ...(featuredReviewId != null
+            ? { featuredReview: featuredReviewId }
+            : {}),
         },
       });
     },
