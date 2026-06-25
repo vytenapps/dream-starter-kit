@@ -192,7 +192,10 @@ function renderBlock(block: LayoutBlock) {
     case "prose":
       return (
         <Section>
-          <div className="max-w-container mx-auto max-w-3xl">
+          {/* GRT golden reading measure (grtcalculator.com): ~40rem column at
+              the 18px body set by CmsRichText — keeps marketing/legal prose at
+              the same readability sweet spot as the collection detail pages. */}
+          <div className="mx-auto max-w-[40rem]">
             {block.title && (
               <h2 className="mb-6 text-3xl font-semibold tracking-tight sm:text-4xl">
                 {block.title}

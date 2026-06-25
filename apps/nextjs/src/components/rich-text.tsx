@@ -7,7 +7,7 @@ import { RichText } from "@payloadcms/richtext-lexical/react";
 export function CmsRichText({ data }: { data: unknown }) {
   if (!data || typeof data !== "object") return null;
   return (
-    <div className="space-y-4 leading-7">
+    <div className="space-y-4 text-lg leading-[1.72]">
       <RichText data={data as React.ComponentProps<typeof RichText>["data"]} />
     </div>
   );

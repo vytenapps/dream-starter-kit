@@ -19,7 +19,7 @@ export function DetailLayout({
 }) {
   return (
     <Section>
-      <article className="mx-auto max-w-3xl">
+      <article className="mx-auto max-w-[40rem]">
         {image && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
