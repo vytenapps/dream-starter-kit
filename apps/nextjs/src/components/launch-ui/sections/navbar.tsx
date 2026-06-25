@@ -45,6 +45,13 @@ export interface NavbarProps {
   items?: NavItem[];
   mobileLinks?: NavbarLink[];
   actions?: NavbarActionProps[];
+  /**
+   * Optional client-rendered replacement for the right-side `actions`. When
+   * provided it owns the right side entirely (e.g. an auth-aware element that
+   * swaps the actions for a signed-in user's avatar menu); `actions` is then
+   * rendered by the slot, not here.
+   */
+  actionsSlot?: ReactNode;
   showNavigation?: boolean;
   className?: string;
 }
@@ -57,6 +64,7 @@ export default function Navbar({
   items = [],
   mobileLinks = [],
   actions = [],
+  actionsSlot,
   showNavigation = true,
   className,
 }: NavbarProps) {
@@ -83,29 +91,30 @@ export default function Navbar({
             {showNavigation && items.length > 0 && <Navigation items={items} />}
           </NavbarLeft>
           <NavbarRight>
-            {actions.map((action) =>
-              action.isButton ? (
-                <Button
-                  key={`${action.href}-${action.text}`}
-                  variant={action.variant ?? "default"}
-                  asChild
-                >
-                  <a href={action.href}>
-                    {action.icon}
+            {actionsSlot ??
+              actions.map((action) =>
+                action.isButton ? (
+                  <Button
+                    key={`${action.href}-${action.text}`}
+                    variant={action.variant ?? "default"}
+                    asChild
+                  >
+                    <a href={action.href}>
+                      {action.icon}
+                      {action.text}
+                      {action.iconRight}
+                    </a>
+                  </Button>
+                ) : (
+                  <a
+                    key={`${action.href}-${action.text}`}
+                    href={action.href}
+                    className="hidden text-sm md:block"
+                  >
                     {action.text}
-                    {action.iconRight}
                   </a>
-                </Button>
-              ) : (
-                <a
-                  key={`${action.href}-${action.text}`}
-                  href={action.href}
-                  className="hidden text-sm md:block"
-                >
-                  {action.text}
-                </a>
-              ),
-            )}
+                ),
+              )}
             <Sheet>
               {/* Style the radix trigger directly instead of `asChild` + <Button>:
                   radix Slot cloning a component child (Button) doesn't render on

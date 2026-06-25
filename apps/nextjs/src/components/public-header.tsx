@@ -1,6 +1,7 @@
 import type { NavbarActionProps } from "~/components/launch-ui/sections/navbar";
 import type { NavItem } from "~/components/launch-ui/ui/navigation";
 import Navbar from "~/components/launch-ui/sections/navbar";
+import { PublicHeaderUser } from "~/components/public-header-user";
 import { getBranding, getSiteSettings } from "~/lib/payload";
 import { SITE_HEADER, SITE_HEADER_ACTIONS } from "~/lib/site-chrome";
 
@@ -93,6 +94,9 @@ export async function PublicHeader() {
       items={items}
       mobileLinks={mobileLinks}
       actions={actions}
+      // Auth-aware right side: the configured actions (Sign in / CTA) for
+      // logged-out visitors, the shared account avatar dropdown once signed in.
+      actionsSlot={<PublicHeaderUser actions={actions} />}
     />
   );
 }
