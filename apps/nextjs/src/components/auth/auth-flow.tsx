@@ -8,6 +8,7 @@ import { GalleryVerticalEnd } from "lucide-react";
 import type { AuthSettings, ChooserEntry } from "@acme/app";
 import {
   chooserEntries,
+  EMAIL_METHODS,
   emailSchema,
   isEmailDomainAllowed,
   resendSignUpEmail,
@@ -77,6 +78,12 @@ export function AuthFlow({
 
   const m = settings.methods;
   const entries = chooserEntries(settings);
+  // The first enabled email method in the configured order drives the email
+  // step: magic link (default) → "check your email" link view; password →
+  // password step; email code → code entry.
+  const primaryEmailMethod = settings.orderedMethods.find((x) =>
+    EMAIL_METHODS.includes(x),
+  );
 
   const [step, setStep] = useState<Step>("chooser");
   const [purpose, setPurpose] = useState<"email" | "sso">("email");
@@ -144,7 +151,7 @@ export function AuthFlow({
     window.location.assign(data.url);
   }
 
-  // Email step submit: branch to password, passwordless send, or SSO.
+  // Email step submit: branch by mode + the primary email method.
   async function onEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!termsOk() || !emailOk(email)) return;
@@ -154,7 +161,10 @@ export function AuthFlow({
       setPending(false);
       return;
     }
-    if (m.password) {
+    // Sign-up collects name + password when password is enabled (else a
+    // passwordless sign-up link). Sign-in follows the configured primary email
+    // method — magic link by default, so the user lands on "check your email".
+    if (isSignUp ? m.password : primaryEmailMethod === "password") {
       setStep("password");
       return;
     }
@@ -169,7 +179,9 @@ export function AuthFlow({
         emailRedirectTo: callback,
         captchaToken,
       });
-      setOtpMode(m.emailOtp && !m.magicLink ? "code" : "link");
+      // Default to the magic-link view; the user only sees the code field after
+      // clicking "Enter code manually" (unless email-code is the primary method).
+      setOtpMode(primaryEmailMethod === "emailOtp" ? "code" : "link");
       setStep("check");
     } catch (err) {
       setError(authErrorMessage(err, "Could not send the email"));
@@ -430,6 +442,22 @@ export function AuthFlow({
                     ? settings.ssoButtonLabel
                     : "Continue with email"}
               </Button>
+              {/* Sign-in only: password is reachable without sending a link
+                  first when it's enabled but not the primary email method. */}
+              {!isSignUp &&
+                purpose === "email" &&
+                m.password &&
+                primaryEmailMethod !== "password" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      if (emailOk(email)) setStep("password");
+                    }}
+                  >
+                    Use password instead
+                  </Button>
+                )}
             </Field>
             {backToLogin}
           </FieldGroup>

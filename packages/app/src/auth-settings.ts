@@ -43,11 +43,16 @@ export interface LoginMethodRow {
   enabled: boolean;
 }
 
-/** The kit's out-of-the-box method order + enablement (mirrors the global default). */
+/**
+ * The kit's out-of-the-box method order + enablement (mirrors the global
+ * default). Magic link leads, so the default sign-in flow sends a magic link
+ * ("check your email") and email-code is the manual fallback; password stays
+ * enabled (reachable via "Use password instead" / used for sign-up).
+ */
 export const DEFAULT_LOGIN_METHODS: LoginMethodRow[] = [
-  { method: "password", enabled: true },
   { method: "magicLink", enabled: true },
   { method: "emailOtp", enabled: true },
+  { method: "password", enabled: true },
   { method: "google", enabled: false },
   { method: "apple", enabled: false },
   { method: "sso", enabled: false },

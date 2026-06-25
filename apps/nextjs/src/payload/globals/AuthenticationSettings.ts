@@ -56,11 +56,12 @@ export const AuthenticationSettings: GlobalConfig = {
               name: "loginMethods",
               type: "array",
               labels: { singular: "Method", plural: "Login methods" },
-              // Mirrors DEFAULT_LOGIN_METHODS in @acme/app (auth-settings.ts).
+              // Mirrors DEFAULT_LOGIN_METHODS in @acme/app (auth-settings.ts):
+              // magic link leads (default sign-in sends a magic link).
               defaultValue: [
-                { method: "password", enabled: true },
                 { method: "magicLink", enabled: true },
                 { method: "emailOtp", enabled: true },
+                { method: "password", enabled: true },
                 { method: "google", enabled: false },
                 { method: "apple", enabled: false },
                 { method: "sso", enabled: false },

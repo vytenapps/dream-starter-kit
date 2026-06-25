@@ -12,7 +12,7 @@ import {
 describe("auth-settings normalizer", () => {
   it("falls back to kit defaults for null/empty input", () => {
     const s = normalizeAuthSettings(null);
-    expect(s.orderedMethods).toEqual(["password", "magicLink", "emailOtp"]);
+    expect(s.orderedMethods).toEqual(["magicLink", "emailOtp", "password"]);
     expect(s.methods.google).toBe(false);
     expect(s.termsUrl).toBe("/terms");
     expect(s).toEqual(DEFAULT_AUTH_SETTINGS);

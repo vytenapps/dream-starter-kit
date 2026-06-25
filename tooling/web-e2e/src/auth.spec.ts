@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   fetchAuthEmail,
+  signInWithPasswordUI,
   signUpAndConfirm,
   signUpToCheckEmail,
 } from "./helpers/mailpit";
@@ -62,10 +63,7 @@ test("signing in before confirming re-sends the confirmation email", async ({
   await signUpToCheckEmail(page, { name: "E2E User", email });
   const first = await fetchAuthEmail(email);
 
-  await page.goto("/sign-in");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password", { exact: true }).fill("password123");
-  await page.getByRole("button", { name: "Login" }).click();
+  await signInWithPasswordUI(page, email);
   await page.waitForURL(/\/check-email/);
 
   // A fresh confirmation arrived (new one-time token → different link).
