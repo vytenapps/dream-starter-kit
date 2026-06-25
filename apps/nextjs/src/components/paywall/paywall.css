@@ -308,7 +308,9 @@
   font-size: 12px;
   line-height: 1.4;
   color: rgba(255, 255, 255, 0.5);
-  margin: 12px 0 0;
+  /* auto left/right margins center the 38ch box within its wider parent —
+     text-align alone only centers within the box, not the container. */
+  margin: 12px auto 0;
   max-width: 38ch;
   text-align: center;
 }
