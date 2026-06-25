@@ -2329,17 +2329,24 @@ export interface Location {
 export interface Review {
   id: number;
   author: number | User;
-  target:
-    | {
+  /**
+   * The location or event this review is about. Leave empty for a standalone testimonial.
+   */
+  target?:
+    | ({
         relationTo: "locations";
         value: number | Location;
-      }
-    | {
+      } | null)
+    | ({
         relationTo: "events";
         value: number | Event;
-      };
+      } | null);
   rating: number;
   title?: string | null;
+  /**
+   * Optional role/title shown under the author's name when this review is used as a testimonial (e.g. “CEO at Acme”).
+   */
+  authorTitle?: string | null;
   body?: string | null;
   photos?: (number | Media)[] | null;
   status: "pending" | "approved" | "rejected";
@@ -3428,6 +3435,7 @@ export interface ReviewsSelect<T extends boolean = true> {
   target?: T;
   rating?: T;
   title?: T;
+  authorTitle?: T;
   body?: T;
   photos?: T;
   status?: T;
@@ -5470,6 +5478,36 @@ export interface ExtBillingSetting {
         }[]
       | null;
   };
+  showEnterpriseTier?: boolean | null;
+  /**
+   * A non-self-serve “Contact Sales” tier. The CTA points to the link below (e.g. a mailto:, a booking link, or a contact page) — no Stripe.
+   */
+  enterpriseTier?: {
+    name?: string | null;
+    description?: string | null;
+    ctaLabel?: string | null;
+    /**
+     * Where the Enterprise CTA goes (e.g. mailto:sales@example.com or /contact).
+     */
+    link?: {
+      /**
+       * Internal path (e.g. /pricing) or full external URL (https://example.com).
+       */
+      url?: string | null;
+      newTab?: boolean | null;
+    };
+    features?:
+      | {
+          text: string;
+          included?: boolean | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Approved review shown as the testimonial on the checkout page (its body, rating, author name/avatar and optional author title).
+   */
+  featuredReview?: (number | null) | Review;
   /**
    * Fine print shown under the pricing grid.
    */
@@ -5900,6 +5938,28 @@ export interface ExtBillingSettingsSelect<T extends boolean = true> {
               id?: T;
             };
       };
+  showEnterpriseTier?: T;
+  enterpriseTier?:
+    | T
+    | {
+        name?: T;
+        description?: T;
+        ctaLabel?: T;
+        link?:
+          | T
+          | {
+              url?: T;
+              newTab?: T;
+            };
+        features?:
+          | T
+          | {
+              text?: T;
+              included?: T;
+              id?: T;
+            };
+      };
+  featuredReview?: T;
   disclaimer?: T;
   updatedAt?: T;
   createdAt?: T;

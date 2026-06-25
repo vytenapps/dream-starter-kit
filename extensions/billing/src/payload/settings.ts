@@ -92,6 +92,56 @@ export const settings = defineExtensionSettings({
       ],
     },
     {
+      name: "showEnterpriseTier",
+      type: "checkbox",
+      label: "Show Enterprise tier",
+      defaultValue: true,
+    },
+    {
+      name: "enterpriseTier",
+      type: "group",
+      label: "Enterprise tier card",
+      admin: {
+        condition: (data) => Boolean(data.showEnterpriseTier),
+        description:
+          "A non-self-serve “Contact Sales” tier. The CTA points to the link " +
+          "below (e.g. a mailto:, a booking link, or a contact page) — no Stripe.",
+      },
+      fields: [
+        { name: "name", type: "text", defaultValue: "Enterprise" },
+        {
+          name: "description",
+          type: "textarea",
+          defaultValue: "Total access for your whole team, billed your way.",
+        },
+        { name: "ctaLabel", type: "text", defaultValue: "Contact sales" },
+        linkField("link", {
+          description:
+            "Where the Enterprise CTA goes (e.g. mailto:sales@example.com or /contact).",
+        }),
+        {
+          name: "features",
+          type: "array",
+          fields: [
+            { name: "text", type: "text", required: true },
+            { name: "included", type: "checkbox", defaultValue: true },
+          ],
+        },
+      ],
+    },
+    {
+      name: "featuredReview",
+      type: "relationship",
+      relationTo: "reviews",
+      // Only approved reviews can be featured publicly.
+      filterOptions: () => ({ status: { equals: "approved" } }),
+      admin: {
+        description:
+          "Approved review shown as the testimonial on the checkout page " +
+          "(its body, rating, author name/avatar and optional author title).",
+      },
+    },
+    {
       name: "disclaimer",
       type: "textarea",
       admin: { description: "Fine print shown under the pricing grid." },
