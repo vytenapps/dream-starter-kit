@@ -14,12 +14,12 @@ import { useRouter } from "next/navigation";
 import { Check, Pencil } from "lucide-react";
 
 import type { AuthSettings } from "@acme/app";
-import { isAnonymousUser, signOut } from "@acme/app";
-import { useSession, useSupabase } from "@acme/api";
 import type { ExtBillingPlan } from "@acme/cms";
+import { useSession, useSupabase } from "@acme/api";
+import { isAnonymousUser, signOut } from "@acme/app";
 
-import type { CheckoutTestimonialData } from "~/components/checkout/checkout-testimonial";
 import type { PaidResult } from "~/components/checkout/checkout-payment";
+import type { CheckoutTestimonialData } from "~/components/checkout/checkout-testimonial";
 import type { PlanLite } from "~/lib/paywall-copy";
 import { AuthFlow } from "~/components/auth/auth-flow";
 import { CheckoutPayment } from "~/components/checkout/checkout-payment";
@@ -90,13 +90,10 @@ export function CheckoutFlow({
     router.push("/a?checkout=success");
   }, [router]);
 
-  const onPaid = useCallback(
-    (result: PaidResult) => {
-      subscriptionRef.current = result.subscriptionId;
-      setPaid(true);
-    },
-    [],
-  );
+  const onPaid = useCallback((result: PaidResult) => {
+    subscriptionRef.current = result.subscriptionId;
+    setPaid(true);
+  }, []);
 
   const onEditAccount = useCallback(async () => {
     setEditingAccount(true);
@@ -243,7 +240,9 @@ export function CheckoutFlow({
                         <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-full">
                           <Check className="size-6" />
                         </div>
-                        <h3 className="text-lg font-semibold">You&apos;re in.</h3>
+                        <h3 className="text-lg font-semibold">
+                          You&apos;re in.
+                        </h3>
                         <p className="text-muted-foreground text-sm">
                           Your subscription is active.
                         </p>

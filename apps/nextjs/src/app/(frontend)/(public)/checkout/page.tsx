@@ -19,8 +19,12 @@ export const metadata: Metadata = {
 };
 
 /** Pull the public URL off a populated media relation (id-only ⇒ undefined). */
-function mediaUrl(value: Media | number | null | undefined): string | undefined {
-  return value && typeof value === "object" ? (value.url ?? undefined) : undefined;
+function mediaUrl(
+  value: Media | number | null | undefined,
+): string | undefined {
+  return value && typeof value === "object"
+    ? (value.url ?? undefined)
+    : undefined;
 }
 
 /** Build the testimonial card data from a populated, approved review. */
@@ -28,8 +32,9 @@ function toTestimonial(review: Review): CheckoutTestimonialData | null {
   if (review.status !== "approved" || !review.body?.trim()) return null;
   const author = typeof review.author === "object" ? review.author : null;
   const authorName =
-    [author?.displayName, author?.username].map((s) => s?.trim()).find((s) => s) ??
-    "A happy customer";
+    [author?.displayName, author?.username]
+      .map((s) => s?.trim())
+      .find((s) => s) ?? "A happy customer";
   return {
     quote: review.body,
     rating: review.rating,

@@ -8,8 +8,8 @@
 // the surrounding UI is plain shadcn so it matches the rest of the page.
 import { useState } from "react";
 import {
-  ExpressCheckoutElement,
   Elements,
+  ExpressCheckoutElement,
   LinkAuthenticationElement,
   PaymentElement,
   useElements,
@@ -22,7 +22,10 @@ import { ensureAnonSession } from "@acme/app";
 import type { BuyerDetails, PaywallCopy, PlanLite } from "~/lib/paywall-copy";
 import { useCaptcha } from "~/components/captcha/captcha-provider";
 import { getStripePromise } from "~/components/paywall/stripe";
-import { walletName, useWalletProvider } from "~/components/paywall/wallet-button";
+import {
+  useWalletProvider,
+  walletName,
+} from "~/components/paywall/wallet-button";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";

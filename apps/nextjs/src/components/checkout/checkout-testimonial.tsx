@@ -58,7 +58,9 @@ export function CheckoutTestimonial({
                 alt={testimonial.authorName}
               />
             )}
-            <AvatarFallback>{initialsOf(testimonial.authorName)}</AvatarFallback>
+            <AvatarFallback>
+              {initialsOf(testimonial.authorName)}
+            </AvatarFallback>
           </Avatar>
           <div className="leading-tight">
             <p className="text-sm font-medium">{testimonial.authorName}</p>
