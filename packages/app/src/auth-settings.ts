@@ -94,7 +94,9 @@ export interface AuthSettings {
   ssoDomains: SsoDomain[];
 }
 
-const recordFromRows = (rows: LoginMethodRow[]): Record<AuthMethod, boolean> => {
+const recordFromRows = (
+  rows: LoginMethodRow[],
+): Record<AuthMethod, boolean> => {
   const rec: Record<AuthMethod, boolean> = {
     password: false,
     magicLink: false,
@@ -281,7 +283,10 @@ export function isEmailDomainAllowed(email: string, s: AuthSettings): boolean {
   if (s.emailDomainMode === "off" || s.emailDomains.length === 0) return true;
   const at = email.lastIndexOf("@");
   if (at < 0) return true;
-  const domain = email.slice(at + 1).trim().toLowerCase();
+  const domain = email
+    .slice(at + 1)
+    .trim()
+    .toLowerCase();
   const match = s.emailDomains.includes(domain);
   return s.emailDomainMode === "allowlist" ? match : !match;
 }
@@ -293,7 +298,10 @@ export function ssoParamsForEmail(
 ): { domain?: string; providerId?: string } | null {
   const at = email.lastIndexOf("@");
   if (at < 0) return null;
-  const domain = email.slice(at + 1).trim().toLowerCase();
+  const domain = email
+    .slice(at + 1)
+    .trim()
+    .toLowerCase();
   const entry = s.ssoDomains.find((row) => row.domain === domain);
   if (!entry) return null;
   return entry.providerId

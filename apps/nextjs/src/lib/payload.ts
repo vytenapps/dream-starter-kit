@@ -6,7 +6,6 @@ import config from "@payload-config";
 import { getPayload } from "payload";
 
 import type { AuthSettings } from "@acme/app";
-import { DEFAULT_AUTH_SETTINGS, normalizeAuthSettings } from "@acme/app";
 import type {
   Audio as AudioDoc,
   Event as EventDoc,
@@ -17,6 +16,7 @@ import type {
   SiteSetting,
   Video,
 } from "@acme/cms";
+import { DEFAULT_AUTH_SETTINGS, normalizeAuthSettings } from "@acme/app";
 import { APP_NAME } from "@acme/config/constants";
 
 import type { ThemeSettingsInput } from "./theme/defaults";

@@ -49,9 +49,15 @@ describe("auth-settings normalizer", () => {
   });
 
   it("clamps the minimum password length to [6, 72]", () => {
-    expect(normalizeAuthSettings({ minPasswordLength: 2 }).minPasswordLength).toBe(6);
-    expect(normalizeAuthSettings({ minPasswordLength: 999 }).minPasswordLength).toBe(72);
-    expect(normalizeAuthSettings({ minPasswordLength: 12 }).minPasswordLength).toBe(12);
+    expect(
+      normalizeAuthSettings({ minPasswordLength: 2 }).minPasswordLength,
+    ).toBe(6);
+    expect(
+      normalizeAuthSettings({ minPasswordLength: 999 }).minPasswordLength,
+    ).toBe(72);
+    expect(
+      normalizeAuthSettings({ minPasswordLength: 12 }).minPasswordLength,
+    ).toBe(12);
   });
 });
 
@@ -89,7 +95,9 @@ describe("sso routing", () => {
   });
 
   it("resolves a provider id when configured", () => {
-    expect(ssoParamsForEmail("jo@acme.com", s)).toEqual({ providerId: "prov-123" });
+    expect(ssoParamsForEmail("jo@acme.com", s)).toEqual({
+      providerId: "prov-123",
+    });
   });
 
   it("falls back to the bare domain when no provider id is set", () => {

@@ -105,8 +105,8 @@ export function AuthFlow({
           : isSignUp && step === "password"
             ? "Create your account"
             : "What’s your email address?"
-        : (isSignUp ? settings.signUpHeading : settings.signInHeading) ??
-          (isSignUp ? "Create your workspace" : `Welcome to ${appName}`);
+        : ((isSignUp ? settings.signUpHeading : settings.signInHeading) ??
+          (isSignUp ? "Create your workspace" : `Welcome to ${appName}`));
 
   function termsOk(): boolean {
     if (isSignUp && settings.requireTermsAcceptance && !acceptTerms) {

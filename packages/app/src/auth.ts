@@ -76,7 +76,11 @@ export async function verifyEmailLoginCode(
   email: string,
   token: string,
 ): Promise<void> {
-  const { error } = await client.auth.verifyOtp({ email, token, type: "email" });
+  const { error } = await client.auth.verifyOtp({
+    email,
+    token,
+    type: "email",
+  });
   if (error) throw error;
 }
 
