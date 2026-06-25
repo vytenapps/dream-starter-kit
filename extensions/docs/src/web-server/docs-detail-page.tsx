@@ -38,7 +38,8 @@ export async function DocsDetailPage({
 
   return (
     <DocsShell activeSlug={slug} nav={nav}>
-      <article className="mx-auto max-w-3xl">
+      {/* GRT golden reading measure (grtcalculator.com): ~40rem column. */}
+      <article className="mx-auto max-w-[40rem]">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             {page.category ? (
@@ -54,7 +55,8 @@ export async function DocsDetailPage({
           </div>
         </div>
 
-        <div className="prose prose-neutral dark:prose-invert max-w-none">
+        {/* prose-lg = 18px GRT body, matching the rest of the site's prose. */}
+        <div className="prose prose-lg prose-neutral dark:prose-invert max-w-none">
           {page.body ? (
             <RichText
               data={page.body as React.ComponentProps<typeof RichText>["data"]}
