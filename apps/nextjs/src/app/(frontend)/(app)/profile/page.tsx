@@ -56,9 +56,15 @@ export default function ProfilePage() {
   }
 
   async function onSignOut() {
-    await signOut(supabase);
-    router.replace("/sign-in");
-    router.refresh();
+    try {
+      await signOut(supabase);
+    } catch {
+      // Local session cookies are cleared even if the server revoke fails.
+    }
+    // Hard navigation (not router.replace + refresh): discards the client Router
+    // Cache so any entitled content rendered while signed in (e.g. a gated
+    // post/plan) can't linger after logout.
+    window.location.assign("/sign-in");
   }
 
   // Recovery path for an unconfirmed email (e.g. the confirmation link

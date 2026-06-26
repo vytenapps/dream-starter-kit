@@ -54,8 +54,8 @@ export function UserMenuContent({
   align = "end",
   sideOffset = 4,
   className,
-  /** When set, replace to this path after sign-out (e.g. the app sidebar →
-   *  /sign-in). Omitted on public pages, which just refresh and stay put. */
+  /** When set, navigate to this path after sign-out (e.g. the app sidebar →
+   *  /sign-in). Omitted on public pages, which hard-reload and stay put. */
   signOutRedirect,
 }: {
   user: UserMenuUser;
@@ -140,10 +140,21 @@ export function UserMenuContent({
       <DropdownMenuSeparator />
       <DropdownMenuItem
         onClick={() =>
-          void signOut(supabase).then(() => {
-            if (signOutRedirect) router.replace(signOutRedirect);
-            router.refresh();
-          })
+          void signOut(supabase)
+            .catch(() => {
+              // `signOut` throws if the server-side revoke fails, but the local
+              // session cookies are already cleared — proceed to reload anyway.
+            })
+            .finally(() => {
+              // Hard navigation, NOT router.refresh(): a soft refresh can keep
+              // serving the entitled (ungated) RSC that was cached/prefetched
+              // while signed in, so premium content (e.g. a gated post/plan)
+              // lingers after logout. A full document load discards the client
+              // Router Cache and re-renders server-side with the cleared
+              // session, re-evaluating access control.
+              if (signOutRedirect) window.location.assign(signOutRedirect);
+              else window.location.reload();
+            })
         }
       >
         <IconLogout />
