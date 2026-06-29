@@ -17,6 +17,7 @@ import {
   extPlugins,
 } from "./ext/registry.payload.generated";
 import { resolveCmsCredentials } from "./lib/cms/derived-credentials";
+import { generateMediaFileURL } from "./lib/cms/media-url";
 import { noDocumentLock } from "./lib/cms/no-document-lock";
 import { pgConnectionOptions } from "./lib/db/bootstrap-core";
 import { resolveS3Config } from "./lib/s3-config";
@@ -305,10 +306,30 @@ export default buildConfig({
       // photos + audio are upload collections in their own right (the app's
       // Photos/Podcast sections); prefixes keep their objects separated from
       // the general media store inside the one bucket.
+      //
+      // `disablePayloadAccessControl: true` + `generateFileURL` make every
+      // upload resolve to its PUBLIC Supabase Storage object URL instead of the
+      // access-controlled `/cms-api/<coll>/file/<filename>` path. That path
+      // boots Payload and opens a Postgres connection per image request; a
+      // public page of many images × concurrent visitors can saturate
+      // Supabase's pooler ("EMAXCONN … limit: 200") and 500 the site. The
+      // cms-media bucket is public-read by design, so serving the CDN URL
+      // directly is correct and costs zero DB connections. See lib/cms/media-url.ts.
       collections: {
-        media: true,
-        photos: { prefix: "photos" },
-        audio: { prefix: "audio" },
+        media: {
+          disablePayloadAccessControl: true,
+          generateFileURL: generateMediaFileURL,
+        },
+        photos: {
+          prefix: "photos",
+          disablePayloadAccessControl: true,
+          generateFileURL: generateMediaFileURL,
+        },
+        audio: {
+          prefix: "audio",
+          disablePayloadAccessControl: true,
+          generateFileURL: generateMediaFileURL,
+        },
       },
       // Raw process.env (the Payload CLI loads this config without full env
       // validation). resolveS3Config supports dedicated S3 keys OR Supabase
