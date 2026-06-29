@@ -65,14 +65,18 @@ export const generateMediaFileURL = ({
   return `${base}/${encodeKey(key)}`;
 };
 
-const CMS_FILE_RE = /^\/cms-api\/[^/]+\/file\/([^?#]+)/;
+// Match the cms-api file path ANYWHERE — stored URLs may be relative
+// (`/cms-api/media/file/<name>`) OR absolute
+// (`https://host/cms-api/media/file/<name>`, depending on Payload's serverURL).
+const CMS_FILE_RE = /\/cms-api\/[^/]+\/file\/([^?#]+)/;
 
 /**
- * Rewrite a STORED (possibly stale) `/cms-api/<collection>/file/<filename>` URL
- * to the public Supabase object URL. Useful for deployments that already cached
- * `<field>Url` columns before this fix, or for read paths that bypass the
- * storage plugin's afterRead hook (e.g. a `depth:0` read or a raw SQL query).
- * Already-absolute or unrecognised URLs pass through unchanged.
+ * Rewrite a STORED (possibly stale) `…/cms-api/<collection>/file/<filename>` URL
+ * (relative or absolute) to the public Supabase object URL. Useful for
+ * deployments that already cached `<field>Url` columns before this fix, or for
+ * read paths that bypass the storage plugin's afterRead hook (e.g. a `depth:0`
+ * read or a raw SQL query). URLs without a cms-api file path pass through
+ * unchanged.
  */
 export function toPublicMediaUrl(
   url: string | null | undefined,
