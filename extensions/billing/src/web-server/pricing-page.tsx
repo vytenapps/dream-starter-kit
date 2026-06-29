@@ -129,9 +129,7 @@ function PricingCard({
             </span>
           ) : null}
         </div>
-        {note ? (
-          <p className="text-muted-foreground text-xs">{note}</p>
-        ) : null}
+        {note ? <p className="text-muted-foreground text-xs">{note}</p> : null}
       </div>
 
       {cta}
@@ -292,7 +290,9 @@ export async function PricingPage() {
               <Link
                 href={enterpriseHref}
                 target={enterprise.link?.newTab ? "_blank" : undefined}
-                rel={enterprise.link?.newTab ? "noopener noreferrer" : undefined}
+                rel={
+                  enterprise.link?.newTab ? "noopener noreferrer" : undefined
+                }
                 className={buttonVariants({ variant: "outline" })}
               >
                 {enterprise.ctaLabel ?? "Contact sales"}
