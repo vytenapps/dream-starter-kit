@@ -368,7 +368,19 @@ Deno.serve(async (req) => {
         // host's /api/ext/billing/guest-account route is the primary, synchronous
         // path (it runs at "Continue"/"Maybe later"); this is the idempotent
         // backstop for when that call didn't run or didn't land.
-        if (!userId && event.type !== "customer.subscription.deleted") {
+        //
+        // SECURITY: gate this email-match linking on a PAID status. /express-intent
+        // creates the Stripe customer with an arbitrary, unverified client email
+        // and an unpaid `default_incomplete` subscription; without the paid gate,
+        // that unpaid event would match a victim's account by email and overwrite
+        // their ext_billing_customers mapping to the attacker's Stripe customer
+        // (cross-account invoice/PII leak) — all with no payment.
+        const paidSub = sub.status === "active" || sub.status === "trialing";
+        if (
+          !userId &&
+          paidSub &&
+          event.type !== "customer.subscription.deleted"
+        ) {
           const customer = await stripe.customers.retrieve(customerId);
           if (!customer.deleted && customer.email) {
             userId = await resolveOrInviteGuest(

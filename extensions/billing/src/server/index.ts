@@ -503,6 +503,33 @@ export const publicRoutes: ExtPublicRouteTable = {
 
       const admin = createAdminClient();
 
+      // SECURITY (account-takeover guard): this route is PUBLIC and `email` is
+      // client-supplied and unverified (the caller also set it on the Stripe
+      // customer via /express-intent, which requires no payment). So it must
+      // never mutate — or mint a session for — an account it did not create in
+      // this same call:
+      //   * An EXISTING account is left completely untouched. Linking a paid
+      //     subscription to it is done only by the signature-verified Stripe
+      //     webhook (the trusted, server-authenticated path). Returning here
+      //     also can't leak whether the email has an account (the webhook is
+      //     the sole backstop either way).
+      //   * A NEW account is created + auto-logged-in only once the purchase is
+      //     confirmed PAID, so /express-intent's unpaid, arbitrary-email
+      //     subscriptions can't be used to farm accounts, spam invites, or
+      //     squat unregistered emails.
+      const paid =
+        !!sub && (sub.status === "active" || sub.status === "trialing");
+
+      const preexistingId = await findUserIdByEmail(admin, email);
+      if (preexistingId) {
+        // Never touch a pre-existing account from this unauthenticated route.
+        return Response.json({ ok: true, existing: true });
+      }
+      if (!paid) {
+        // Payment not confirmed yet — the webhook invites once the charge lands.
+        return Response.json({ ok: true, existing: false });
+      }
+
       // The wallet identity, stored on the Supabase user. profiles is the RLS
       // source for security-critical state (phone — "captured from wallet
       // checkout"); user_metadata additionally carries the billing address/zip,
@@ -515,41 +542,30 @@ export const publicRoutes: ExtPublicRouteTable = {
         ...(address ? { billing_address: address } : {}),
       };
 
-      // 1) Account: link an existing one, or invite a new one (sends the email).
-      let userId = await findUserIdByEmail(admin, email);
-      let existing = userId !== null;
-      let created = false;
-      if (!userId) {
-        const { data, error } = await admin.auth.admin.inviteUserByEmail(
-          email,
-          {
-            redirectTo: `${siteUrl()}/accept-invite`,
-            data: walletMeta,
-          },
-        );
-        if (error) {
-          // email_exists race → link it; any other error fails so the client
-          // falls back to the webhook + "check your email" screen.
-          if (error.code === "email_exists" || /already/i.test(error.message)) {
-            userId = await findUserIdByEmail(admin, email);
-            existing = true;
-          } else {
-            console.error("[billing] guest invite failed:", error.message);
-            return json(502, { error: "Could not create your account." });
-          }
-        } else {
-          userId = data.user.id;
-          created = true;
+      // 1) Account: invite a brand-new one (sends the set-password email).
+      let userId: string | null = null;
+      const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+        redirectTo: `${siteUrl()}/accept-invite`,
+        data: walletMeta,
+      });
+      if (error) {
+        // email_exists race → the account already exists, so (per the guard
+        // above) do NOT mutate it or mint a session; the webhook links it.
+        if (error.code === "email_exists" || /already/i.test(error.message)) {
+          return Response.json({ ok: true, existing: true });
         }
+        console.error("[billing] guest invite failed:", error.message);
+        return json(502, { error: "Could not create your account." });
       }
+      userId = data.user.id;
       if (!userId) {
         return json(502, { error: "Could not resolve your account." });
       }
 
       // The handle_new_user trigger seeds profiles.display_name but NOT phone,
-      // so set it here for a brand-new account (profiles is the documented home
-      // for the wallet phone). Best-effort; existing accounts are left as-is.
-      if (created && phone) {
+      // so set it here for the brand-new account (profiles is the documented
+      // home for the wallet phone). Best-effort.
+      if (phone) {
         const { error: phoneErr } = await admin
           .from("profiles")
           .update({ phone })
@@ -600,9 +616,10 @@ export const publicRoutes: ExtPublicRouteTable = {
       // opens in a different browser / in-app webview (Gmail, Mail), so don't
       // make the buyer depend on it — mint a one-time magic-link token the
       // client verifies locally (no CAPTCHA, no email send). Best-effort: the
-      // emailed invite stays the fallback. Confirm the email first so magic-link
-      // generation succeeds (the completed payment is strong intent — mirrors
-      // the webhook's anon convert/confirm path).
+      // emailed invite stays the fallback. Safe here because this account was
+      // just created in THIS call for a confirmed-paid purchase (existing
+      // accounts returned early above and are never issued a token). Confirm the
+      // email first so magic-link generation succeeds.
       let loginToken: string | undefined;
       try {
         await admin.auth.admin.updateUserById(userId, { email_confirm: true });
@@ -618,7 +635,7 @@ export const publicRoutes: ExtPublicRouteTable = {
         );
       }
 
-      return Response.json({ ok: true, existing, loginToken });
+      return Response.json({ ok: true, existing: false, loginToken });
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Could not finish setup.";
