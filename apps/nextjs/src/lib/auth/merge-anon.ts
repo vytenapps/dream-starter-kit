@@ -87,6 +87,25 @@ export async function mergeAnonUser(
   await admin.auth.admin.deleteUser(anonId);
 }
 
+/** Whether an anon user actually transacted (has a billing subscription or a
+ *  customer mapping). Proof of a real prior purchase — see reconcileAnonByEmail. */
+async function anonHasBilling(admin: Admin, anonId: string): Promise<boolean> {
+  const [{ data: sub }, { data: cust }] = await Promise.all([
+    admin
+      .from("ext_billing_subscriptions")
+      .select("id")
+      .eq("user_id", anonId)
+      .limit(1)
+      .maybeSingle(),
+    admin
+      .from("ext_billing_customers")
+      .select("user_id")
+      .eq("user_id", anonId)
+      .maybeSingle(),
+  ]);
+  return Boolean(sub ?? cust);
+}
+
 /**
  * Safety net for the "paid anonymous user never confirmed, then signed up fresh"
  * case: find any leftover anonymous users carrying this email (as their primary
@@ -94,6 +113,16 @@ export async function mergeAnonUser(
  * billing/favorites into the now-permanent account. Called from /welcome after
  * sign-in/sign-up. Best-effort; the caller guards so the listUsers scan only runs
  * for accounts that haven't transacted yet.
+ *
+ * SECURITY: `new_email` is an UNVERIFIED pending address — any anonymous user can
+ * set it to a victim's email via updateUser({email}) without ever confirming it.
+ * Matching on it alone would let an attacker's anon user (stuffed with reminders
+ * / other rows) be grafted onto the victim's account when the victim signs in.
+ * So an email/new_email match is treated only as a CANDIDATE; we merge it only if
+ * that anon actually transacted (has a real billing record — the exact case this
+ * reconcile exists for). A confirmed permanent-account email would instead have
+ * flipped is_anonymous to false, so requiring `email` confirmation here would
+ * make the reconcile a no-op; the billing check is the correct proof instead.
  */
 export async function reconcileAnonByEmail(
   admin: Admin,
@@ -102,7 +131,7 @@ export async function reconcileAnonByEmail(
 ): Promise<void> {
   const target = email.toLowerCase();
   const perPage = 200;
-  const orphans: string[] = [];
+  const candidates: string[] = [];
   for (let page = 1; ; page++) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
     if (error) throw error;
@@ -113,12 +142,16 @@ export async function reconcileAnonByEmail(
         u.email?.toLowerCase() === target ||
         pending?.toLowerCase() === target
       ) {
-        orphans.push(u.id);
+        candidates.push(u.id);
       }
     }
     if (data.users.length < perPage) break;
   }
-  for (const anonId of orphans) {
-    await mergeAnonUser(admin, anonId, realId);
+  for (const anonId of candidates) {
+    // Only reconcile anons that genuinely paid — an unverified new_email match
+    // must not move an arbitrary anon's data onto this account.
+    if (await anonHasBilling(admin, anonId)) {
+      await mergeAnonUser(admin, anonId, realId);
+    }
   }
 }

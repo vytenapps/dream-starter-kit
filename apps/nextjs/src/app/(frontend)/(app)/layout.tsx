@@ -45,16 +45,20 @@ export default async function AppLayout({
     // through /welcome or /auth/callback, so mirror here the first time they
     // reach the app shell. Idempotent + best-effort (swallows its own errors),
     // so it never blocks render — for already-mirrored users it's one indexed
-    // lookup. See lib/cms/mirror-user.ts.
-    ensureCmsUser({
-      id: user.id,
-      email: user.email,
-      name:
-        (user.user_metadata.display_name as string | undefined) ??
-        (user.user_metadata.name as string | undefined),
-      metadata: user.user_metadata,
-    }),
-    ensureFreeTag(user.id),
+    // lookup. Skip ANONYMOUS sessions (anon-first identity): they must not
+    // become permanent ghost cms.users rows — they're mirrored on conversion.
+    // See lib/cms/mirror-user.ts.
+    user.is_anonymous
+      ? Promise.resolve()
+      : ensureCmsUser({
+          id: user.id,
+          email: user.email,
+          name:
+            (user.user_metadata.display_name as string | undefined) ??
+            (user.user_metadata.name as string | undefined),
+          metadata: user.user_metadata,
+        }),
+    user.is_anonymous ? Promise.resolve() : ensureFreeTag(user.id),
   ]);
   const isStaff = profile.data?.is_staff ?? false;
 

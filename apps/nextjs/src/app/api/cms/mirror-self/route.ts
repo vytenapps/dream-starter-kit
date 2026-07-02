@@ -1,7 +1,28 @@
 import { NextResponse } from "next/server";
 
+import { slidingWindow } from "@acme/config";
+
 import { ensureCmsUser, ensureFreeTag } from "~/lib/cms/mirror-user";
 import { createClient } from "~/lib/supabase/server";
+
+// Per-user budget: each call runs a Payload find + up to three service-role tag
+// queries, so an unbounded caller could hammer the small serverless pool. In
+// memory per instance, same trade-off as the extension dispatcher.
+const RATE_LIMIT = 20;
+const RATE_WINDOW_MS = 60_000;
+const hitsByUser = new Map<string, number[]>();
+
+function rateLimit(userId: string): boolean {
+  const now = Date.now();
+  const { allowed, hits } = slidingWindow(
+    hitsByUser.get(userId) ?? [],
+    now,
+    RATE_WINDOW_MS,
+    RATE_LIMIT,
+  );
+  hitsByUser.set(userId, hits);
+  return allowed;
+}
 
 /**
  * Mirror the CURRENT Supabase session user into the Payload `users` collection
@@ -31,6 +52,22 @@ export async function POST() {
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  // Anonymous sessions are real auth.users under the anon-first identity model,
+  // but they must NOT be mirrored: cms.users is for real members/staff, and a
+  // mirrored anon becomes a permanent ghost Users row that nothing cleans up
+  // after the anon is merged + deleted on conversion. Mirroring happens on the
+  // conversion paths (/confirm-email, /welcome, /auth/callback) instead.
+  if (user.is_anonymous) {
+    return NextResponse.json({ ok: true, skipped: "anonymous" });
+  }
+
+  if (!rateLimit(user.id)) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again shortly." },
+      { status: 429 },
+    );
   }
 
   await ensureCmsUser({
