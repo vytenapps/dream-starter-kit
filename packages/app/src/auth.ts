@@ -182,7 +182,15 @@ export async function updatePassword(
 
 export async function signOut(client: AppSupabaseClient): Promise<void> {
   const { error } = await client.auth.signOut();
-  if (error) throw error;
+  if (!error) return;
+  // A failed GLOBAL revoke (network blip / 5xx) leaves the LOCAL session fully
+  // intact in auth-js — it returns the error *before* clearing local storage for
+  // anything other than an already-invalid session. That's a shared-machine
+  // hazard, because callers navigate to /sign-in believing logout succeeded.
+  // Force a LOCAL sign-out (no server call) so the session cookies/storage are
+  // actually cleared, then surface the original error to the caller.
+  await client.auth.signOut({ scope: "local" }).catch(() => undefined);
+  throw error;
 }
 
 /**
