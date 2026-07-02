@@ -12,7 +12,10 @@ import { createClient } from "~/lib/supabase/server";
  * `/a`.
  */
 function safeNext(raw: string | null): string {
-  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/a";
+  // Leading `/` but not `//` or `/\` — browsers treat a backslash as a slash,
+  // so `/\evil.com` would resolve to a foreign origin if this value were ever
+  // fed to `new URL(next, base)` instead of concatenated onto a fixed origin.
+  return raw && /^\/(?![/\\])/.test(raw) ? raw : "/a";
 }
 
 /**

@@ -95,9 +95,9 @@ export function AuthFlow({
     : (settings.postLoginRedirect ?? "/welcome");
   const dest =
     redirectToProp ??
-    (!isSignUp &&
-    redirectParam?.startsWith("/") &&
-    !redirectParam.startsWith("//")
+    // Same-origin only: a leading `/` but not `//` or `/\` (browsers treat a
+    // backslash as a slash, so `/\evil.com` would navigate to a foreign origin).
+    (!isSignUp && redirectParam && /^\/(?![/\\])/.test(redirectParam)
       ? redirectParam
       : configuredDest);
   const callback = authCallbackUrl(dest);
