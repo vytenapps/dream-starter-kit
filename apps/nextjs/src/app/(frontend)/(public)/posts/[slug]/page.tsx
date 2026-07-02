@@ -6,6 +6,7 @@ import { PostDetail } from "~/components/content/post-detail";
 import { PostLivePreview } from "~/components/content/post-live-preview";
 import { PaywallJsonLd } from "~/components/paywall/paywall-jsonld";
 import { getPremiumPlan } from "~/lib/billing-plan";
+import { toPublicMediaUrl } from "~/lib/cms/media-url";
 import { getPost } from "~/lib/payload";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export async function generateMetadata({
   const post = await getPost(slug).catch(() => null);
   // Use the AI-generated OG card (then the hero) as the social-share image when
   // present — both URLs are cached on the doc by the syncImageUrls hook.
-  const ogImage = post?.imageOgUrl ?? post?.imageHeroUrl ?? undefined;
+  const ogImage = toPublicMediaUrl(post?.imageOgUrl ?? post?.imageHeroUrl);
   return {
     title: post?.meta?.title ?? post?.title ?? "Post",
     description: post?.meta?.description ?? post?.excerpt ?? undefined,
