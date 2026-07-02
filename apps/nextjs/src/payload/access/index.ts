@@ -103,8 +103,15 @@ export const premiumFieldAccess: FieldAccess = ({ req, doc, siblingData }) => {
   if (hasRole(req.user, STAFF_ROLES)) return true;
   const level =
     (doc as { accessLevel?: string } | null | undefined)?.accessLevel ??
-    (siblingData as { accessLevel?: string } | null | undefined)?.accessLevel ??
-    "public";
+    (siblingData as { accessLevel?: string } | null | undefined)?.accessLevel;
+  // No document context. Payload runs field access with no `doc` during its
+  // permission/query-validation phase (`getEntityPermissions`, fetchData:false).
+  // We can't prove the field is public here, so fail CLOSED for non-staff —
+  // otherwise an anonymous REST caller could pass `where[body][like]=…` and use
+  // whether a premium post is returned as a boolean oracle to reconstruct the
+  // withheld content. (Per-document reads always pass a real `doc`, so genuine
+  // public content is still returned.)
+  if (level === undefined) return false;
   const ctx = req.context as
     | { isPremium?: boolean; isLoggedIn?: boolean }
     | undefined;
