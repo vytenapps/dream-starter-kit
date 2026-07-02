@@ -1,0 +1,30 @@
+<!--
+  Magic-link sign-in email (Supabase "Magic Link" template).
+
+  Since PR #97 made magic link the default primary sign-in method, EXISTING users
+  signing in receive this template. Like confirmation.html it carries BOTH paths
+  the "Check your email" screen offers, and deliberately avoids GoTrue's default
+  {{ .ConfirmationURL }} redirect link:
+    - a link to /confirm-email?token_hash=…&type=magiclink — verified by an
+      explicit verifyOtp call from the page (works from any browser/device and
+      isn't burned by mail-scanner prefetch / Critical-CH navigation restarts).
+    - {{ .Token }} — the 6-digit code for "Enter code manually" (the default
+      Magic Link template omits it, which stranded that button).
+
+  Hosted Supabase does not read this file — paste the same markup into the
+  Dashboard (Authentication -> Emails -> Magic Link). See README -> Deploy.
+-->
+<h2>Sign in</h2>
+
+<p>Follow this link to sign in:</p>
+<p>
+  <a
+    href="{{ .SiteURL }}/confirm-email?token_hash={{ .TokenHash }}&type=magiclink"
+    >Sign in</a
+  >
+</p>
+
+<p>Or enter this code on the “Check your email” screen:</p>
+<p style="font-size: 24px; letter-spacing: 4px"><strong>{{ .Token }}</strong></p>
+
+<p>If you didn’t request this, you can safely ignore this email.</p>
