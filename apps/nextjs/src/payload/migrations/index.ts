@@ -15,6 +15,7 @@ import * as migration_20260613_161650_ai_chat_adapter_settings_tabs from './2026
 import * as migration_20260620_212733_image_generation from './20260620_212733_image_generation';
 import * as migration_20260624_000100_drop_favorites from './20260624_000100_drop_favorites';
 import * as migration_20260624_151421_image_audit_settings from './20260624_151421_image_audit_settings';
+import * as migration_20260702_173249_authentication_settings from './20260702_173249_authentication_settings';
 
 export const migrations = [
   {
@@ -100,6 +101,11 @@ export const migrations = [
   {
     up: migration_20260624_151421_image_audit_settings.up,
     down: migration_20260624_151421_image_audit_settings.down,
-    name: '20260624_151421_image_audit_settings'
+    name: '20260624_151421_image_audit_settings',
+  },
+  {
+    up: migration_20260702_173249_authentication_settings.up,
+    down: migration_20260702_173249_authentication_settings.down,
+    name: '20260702_173249_authentication_settings'
   },
 ];
