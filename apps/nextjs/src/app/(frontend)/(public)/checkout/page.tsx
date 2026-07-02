@@ -8,6 +8,7 @@ import type { ExtBillingPlan, Media, Review } from "@acme/cms";
 import type { CheckoutTestimonialData } from "~/components/checkout/checkout-testimonial";
 import type { PlanLite } from "~/lib/paywall-copy";
 import { CheckoutFlow } from "~/components/checkout/checkout-flow";
+import { isViewerPremium } from "~/lib/billing-entitlement";
 import { getAuthSettings, getBranding } from "~/lib/payload";
 import { resolveAnnualPlan } from "~/lib/paywall-copy";
 
@@ -70,19 +71,25 @@ export default async function CheckoutPage({
       .catch(() => null);
 
     if (plan && plan.active !== false) {
-      // The annual plan offered as a post-purchase 1-click upgrade (if distinct).
-      const all = await payload
-        .find({
-          collection: "ext-billing-plans",
-          where: { active: { equals: true } },
-          depth: 0,
-          limit: 100,
-        })
-        .catch(() => ({ docs: [] as ExtBillingPlan[] }));
-      annualPlan = resolveAnnualPlan(
-        all.docs as unknown as PlanLite[],
-        plan.id,
-      ) as unknown as ExtBillingPlan | null;
+      // The annual plan offered as a post-purchase 1-click upgrade — only when
+      // the purchased plan is a recurring, non-yearly subscription. Offering it
+      // after a one-time (Lifetime) or an already-annual purchase produces
+      // nonsense pricing and a 409 from /upgrade-annual (there's no monthly sub
+      // to switch).
+      if (plan.pricingType === "recurring" && plan.interval !== "year") {
+        const all = await payload
+          .find({
+            collection: "ext-billing-plans",
+            where: { active: { equals: true } },
+            depth: 0,
+            limit: 100,
+          })
+          .catch(() => ({ docs: [] as ExtBillingPlan[] }));
+        annualPlan = resolveAnnualPlan(
+          all.docs as unknown as PlanLite[],
+          plan.id,
+        ) as unknown as ExtBillingPlan | null;
+      }
 
       // Curated checkout testimonial: read the featured review id from settings,
       // then fetch it populated (author + avatar).
@@ -105,6 +112,11 @@ export default async function CheckoutPage({
   // Redirect OUTSIDE the try/catch: Next's redirect() throws a control-flow
   // signal that a surrounding catch would otherwise swallow.
   if (!plan || plan.active === false) redirect("/pricing");
+
+  // Don't let an already-subscribed user open a SECOND concurrent subscription
+  // (express-intent unconditionally creates one → double billing). Send them to
+  // self-serve billing to change/cancel instead. Guests/anon fall through.
+  if (await isViewerPremium()) redirect("/billing");
 
   const [authSettings, branding] = await Promise.all([
     getAuthSettings(),
