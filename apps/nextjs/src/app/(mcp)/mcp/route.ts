@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import type { McpToolContext } from "@acme/mcp";
+import { slidingWindow } from "@acme/config";
 import {
   handleMcpRequest,
   issuerIdentifier,
@@ -27,6 +28,27 @@ const getPayloadLazy = async () => {
   ]);
   return getPayload({ config });
 };
+
+// Per-user budget for the cost-bearing MCP surface (golden rule #6: authed AND
+// rate-limited). The intended client is an autonomous LLM loop, and tools like
+// generate_media hit the AI Gateway, so an unbounded token could burn spend with
+// only function-duration as a brake. In-memory per instance, same trade-off as
+// the extension dispatcher — swap for Redis/Upstash in prod for a global limit.
+const MCP_RATE_LIMIT = 60;
+const MCP_RATE_WINDOW_MS = 60_000;
+const mcpHitsByUser = new Map<string, number[]>();
+
+function mcpRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const { allowed, hits } = slidingWindow(
+    mcpHitsByUser.get(userId) ?? [],
+    now,
+    MCP_RATE_WINDOW_MS,
+    MCP_RATE_LIMIT,
+  );
+  mcpHitsByUser.set(userId, hits);
+  return allowed;
+}
 
 /** 401 with the WWW-Authenticate header that triggers the client's OAuth flow. */
 function unauthorized(origin: string): NextResponse {
@@ -97,6 +119,24 @@ async function dispatch(req: NextRequest): Promise<Response> {
 
   const auth = await authenticate(req, origin);
   if (auth instanceof NextResponse) return auth;
+
+  // Rate-limit per authenticated staff user (their Payload id is stable).
+  if (!mcpRateLimit(String(auth.user.id))) {
+    return new NextResponse(
+      JSON.stringify({
+        error: "rate_limited",
+        error_description: "Too many requests. Try again shortly.",
+      }),
+      {
+        status: 429,
+        headers: {
+          ...MCP_CORS_HEADERS,
+          "Content-Type": "application/json",
+          "Retry-After": String(Math.ceil(MCP_RATE_WINDOW_MS / 1000)),
+        },
+      },
+    );
+  }
 
   const res = await handleMcpRequest(req, auth);
   // Attach CORS headers to the transport's response.
