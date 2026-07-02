@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { anyone, isStaff } from "../access";
+import { anyone, isStaff, premiumFieldAccess } from "../access";
 import { accessLevelField } from "../fields/access-level";
 import { commentsEnabledField } from "../fields/comments-enabled";
 import { generatedImageFields } from "../fields/generated-images";
@@ -58,6 +58,10 @@ export const Audio: CollectionConfig = {
     {
       name: "body",
       type: "richText",
+      // Premium/members gate — stripped server-side for non-entitled viewers.
+      // (The audio ENCLOSURE itself is protected separately via tokenized
+      // private feeds — see the header note; this gates the show notes.)
+      access: { read: premiumFieldAccess },
       admin: { description: "Show notes → content:encoded." },
     },
     {
@@ -96,12 +100,14 @@ export const Audio: CollectionConfig = {
     {
       name: "transcript",
       type: "richText",
+      access: { read: premiumFieldAccess },
       admin: { disableListColumn: true },
     },
     {
       name: "transcriptFile",
       type: "upload",
       relationTo: "media",
+      access: { read: premiumFieldAccess },
       admin: { description: "podcast:transcript file (VTT/SRT/JSON)." },
     },
     {

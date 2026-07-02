@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { isStaff, publishedOrStaff } from "../access";
+import { isStaff, premiumFieldAccess, publishedOrStaff } from "../access";
 import { accessLevelField } from "../fields/access-level";
 import { commentsEnabledField } from "../fields/comments-enabled";
 import { generatedImageFields } from "../fields/generated-images";
@@ -53,6 +53,9 @@ export const Videos: CollectionConfig = {
     {
       name: "body",
       type: "richText",
+      // Premium/members gate — stripped server-side for non-entitled viewers
+      // (readers pass entitlement context, overrideAccess:false). See Posts.body.
+      access: { read: premiumFieldAccess },
       admin: { description: "Show notes (optional)." },
     },
     {
@@ -93,6 +96,9 @@ export const Videos: CollectionConfig = {
     {
       name: "url",
       type: "text",
+      // The playable source — gate it so a premium video's URL / playback id is
+      // never returned to a non-entitled viewer (they can't play it).
+      access: { read: premiumFieldAccess },
       admin: {
         condition: (data) => data.sourceType !== "upload",
         description: "External URL or provider playback ID.",
@@ -102,6 +108,8 @@ export const Videos: CollectionConfig = {
       name: "videoFile",
       type: "upload",
       relationTo: "media",
+      // The uploaded playable source — gate like `url` above.
+      access: { read: premiumFieldAccess },
       admin: { condition: (data) => data.sourceType === "upload" },
     },
     {
