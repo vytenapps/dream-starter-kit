@@ -33,6 +33,15 @@ export async function POST() {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
+  // Anonymous sessions are real auth.users under the anon-first identity model,
+  // but they must NOT be mirrored: cms.users is for real members/staff, and a
+  // mirrored anon becomes a permanent ghost Users row that nothing cleans up
+  // after the anon is merged + deleted on conversion. Mirroring happens on the
+  // conversion paths (/confirm-email, /welcome, /auth/callback) instead.
+  if (user.is_anonymous) {
+    return NextResponse.json({ ok: true, skipped: "anonymous" });
+  }
+
   await ensureCmsUser({
     id: user.id,
     email: user.email,
