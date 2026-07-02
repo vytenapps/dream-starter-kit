@@ -296,6 +296,17 @@ content_path = "./supabase/templates/confirmation.html"
 subject = "You have been invited"
 content_path = "./supabase/templates/invite.html"
 
+# Magic-link sign-in email. Magic link is the default primary sign-in method
+# (PR #97), so existing users sign in via this template. Customized to link to
+# /confirm-email?token_hash=…&type=magiclink (verified by an explicit verifyOtp,
+# NOT GoTrue's redirect link) and to include the {{ .Token }} code that the
+# "Enter code manually" path needs — the default Magic Link template omits it.
+# HOSTED projects must mirror this template in the Dashboard (Authentication ->
+# Emails -> Magic Link) — see README -> Deploy.
+[auth.email.template.magic_link]
+subject = "Your sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true

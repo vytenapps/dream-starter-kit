@@ -211,10 +211,18 @@ export function AuthFlow({
       await signInWithOtp(supabase, email, {
         emailRedirectTo: callback,
         captchaToken,
+        // Only the sign-UP page may create an account (already gated above by
+        // allowSignups server-side + the domain/terms checks). On the sign-IN
+        // page never create one — otherwise magic link / OTP silently becomes an
+        // ungated sign-up path.
+        shouldCreateUser: isSignUp,
       });
       // Default to the magic-link view; the user only sees the code field after
-      // clicking "Enter code manually" (unless email-code is the primary method).
-      setOtpMode(primaryEmailMethod === "emailOtp" ? "code" : "link");
+      // clicking "Enter code manually". If magic link is disabled (so only email
+      // OTP remains), show the code view directly — there is no link to wait for.
+      setOtpMode(
+        m.magicLink && primaryEmailMethod !== "emailOtp" ? "link" : "code",
+      );
       setStep("check");
     } catch (err) {
       setError(authErrorMessage(err, "Could not send the email"));

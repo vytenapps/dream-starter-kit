@@ -98,17 +98,31 @@ export async function resendSignUpEmail(
   if (error) throw error;
 }
 
-/** Magic-link / email OTP sign-in. */
+/**
+ * Magic-link / email OTP sign-in.
+ *
+ * `shouldCreateUser` MUST be passed explicitly by callers: GoTrue defaults it to
+ * `true`, so a bare call turns the sign-IN page into a silent sign-up path that
+ * bypasses the `allowSignups` (invite-only) toggle, the email-domain rules, and
+ * terms acceptance. Sign-in should pass `false` (GoTrue then rejects unknown
+ * emails with "Signups not allowed for otp"); the passwordless sign-UP path
+ * passes `true` (already gated by those rules before this call).
+ */
 export async function signInWithOtp(
   client: AppSupabaseClient,
   email: string,
-  opts?: { emailRedirectTo?: string; captchaToken?: string },
+  opts?: {
+    emailRedirectTo?: string;
+    captchaToken?: string;
+    shouldCreateUser?: boolean;
+  },
 ): Promise<void> {
   const { error } = await client.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: opts?.emailRedirectTo,
       captchaToken: opts?.captchaToken,
+      shouldCreateUser: opts?.shouldCreateUser,
     },
   });
   if (error) throw error;
