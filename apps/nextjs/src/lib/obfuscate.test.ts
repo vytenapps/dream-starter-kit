@@ -40,4 +40,45 @@ describe("obfuscateText", () => {
   it("handles empty input", () => {
     expect(obfuscateText("")).toBe("");
   });
+
+  it("scrambles non-ASCII letters and digits (no passthrough)", () => {
+    // Accented Latin, Cyrillic, Greek, CJK, full-width digits — none may survive.
+    for (const s of [
+      "café résumé",
+      "Привет мир",
+      "Καλημέρα",
+      "日本語のテスト",
+      "１２３４",
+    ]) {
+      const out = obfuscateText(s);
+      expect(out).toHaveLength([...s].length);
+      // No original letter/number code point remains in place.
+      [...s].forEach((ch, i) => {
+        if (/[\p{L}\p{N}]/u.test(ch)) {
+          // The replacement is ASCII a-z/A-Z/0-9, so a non-ASCII original is gone.
+          if (!/[a-zA-Z0-9]/.test(ch)) {
+            expect(/[a-zA-Z0-9]/.test(out.charAt(i))).toBe(true);
+          }
+        } else {
+          expect(out.charAt(i)).toBe(ch); // punctuation/space untouched
+        }
+      });
+      expect(out).not.toBe(s);
+    }
+  });
+
+  it("preserves case for accented letters", () => {
+    // "Ñ" is uppercase → uppercase ASCII; "é" is lowercase → lowercase ASCII.
+    const out = obfuscateText("Ñé");
+    expect(/[A-Z]/.test(out.charAt(0))).toBe(true);
+    expect(/[a-z]/.test(out.charAt(1))).toBe(true);
+  });
+
+  it("leaves emoji and symbols untouched", () => {
+    const s = "hi 🚀 €5";
+    const out = obfuscateText(s);
+    expect(out).toContain("🚀");
+    expect(out).toContain("€");
+    expect(out).toContain(" ");
+  });
 });

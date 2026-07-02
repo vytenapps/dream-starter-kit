@@ -1,11 +1,15 @@
 /**
  * Server-side text obfuscation for premium-gated content.
  *
- * Type-preserving, non-reversible scramble: a lowercase letter becomes a random
- * lowercase letter, an uppercase letter a random uppercase letter, a digit a
- * random digit; whitespace, punctuation and every other symbol are left exactly
- * as-is. Word length and shape are preserved, so garbled copy still lays out
- * like the original prose — it's just unintelligible.
+ * Type-preserving, non-reversible scramble, UNICODE-AWARE: an uppercase letter
+ * becomes a random uppercase ASCII letter, a lowercase letter a random lowercase
+ * one, any caseless letter (CJK, Arabic, Hebrew, …) a random lowercase letter,
+ * and any digit a random ASCII digit; whitespace, punctuation, symbols and emoji
+ * are left as-is. Accented Latin, Cyrillic, Greek, CJK, full-width digits, etc.
+ * are ALL scrambled — an earlier ASCII-only version silently passed non-English
+ * text through verbatim, so "raw text never reaches the browser" was false for
+ * localized content. Word/segment length is roughly preserved so garbled copy
+ * still lays out like prose.
  *
  * Unlike a fixed substitution cipher, the mapping is random per character with
  * no key, so the original cannot be recovered from the output. Garble locked
@@ -26,12 +30,13 @@ function randomFrom(chars: string): string {
   return chars.charAt(Math.floor(Math.random() * chars.length));
 }
 
-/** Scramble one character, preserving its category (see module docs). */
+/** Scramble one character, preserving its broad category (see module docs). */
 function obfuscateChar(ch: string): string {
-  if (ch >= "a" && ch <= "z") return randomFrom(LOWER);
-  if (ch >= "A" && ch <= "Z") return randomFrom(UPPER);
-  if (ch >= "0" && ch <= "9") return randomFrom(DIGITS);
-  return ch;
+  if (/\p{Lu}/u.test(ch)) return randomFrom(UPPER); // uppercase letter
+  if (/\p{Ll}/u.test(ch)) return randomFrom(LOWER); // lowercase letter
+  if (/\p{N}/u.test(ch)) return randomFrom(DIGITS); // any numeric (incl. full-width)
+  if (/\p{L}/u.test(ch)) return randomFrom(LOWER); // caseless letter (CJK, Arabic, …)
+  return ch; // whitespace, punctuation, symbols, emoji
 }
 
 /** Type-preserving, non-reversible obfuscation of a string. */
