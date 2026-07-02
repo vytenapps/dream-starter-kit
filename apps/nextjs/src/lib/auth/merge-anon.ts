@@ -103,7 +103,7 @@ async function anonHasBilling(admin: Admin, anonId: string): Promise<boolean> {
       .eq("user_id", anonId)
       .maybeSingle(),
   ]);
-  return Boolean(sub || cust);
+  return Boolean(sub ?? cust);
 }
 
 /**
