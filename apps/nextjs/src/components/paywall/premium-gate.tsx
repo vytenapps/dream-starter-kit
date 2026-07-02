@@ -8,6 +8,7 @@
 // renders untouched.
 import type { ReactNode } from "react";
 
+import { ReloadOnBfcacheRestore } from "~/components/reload-on-bfcache-restore";
 import { buildPlanCopy } from "~/lib/paywall-copy";
 import { PaywallOffer } from "./paywall-offer";
 import { usePaywall } from "./paywall-provider";
@@ -19,11 +20,20 @@ export function PremiumGate({ children }: { children: ReactNode }) {
   const copy = buildPlanCopy(plan);
 
   // Premium (or still resolving for a signed-in user) → show the real content.
-  // Anonymous/logged-out users resolve to "not premium" instantly.
-  if (isPremium || isLoading) return <>{children}</>;
+  // Anonymous/logged-out users resolve to "not premium" instantly. The bfcache
+  // guard covers the entitled case: after logout, Back must not restore the
+  // rendered premium body from bfcache without a server re-check.
+  if (isPremium || isLoading)
+    return (
+      <>
+        <ReloadOnBfcacheRestore />
+        {children}
+      </>
+    );
 
   return (
     <div className="premium-gate">
+      <ReloadOnBfcacheRestore />
       {/* The body stays in the DOM but is blurred + non-interactive. */}
       <div className="premium-gate-blur" aria-hidden="true">
         {children}

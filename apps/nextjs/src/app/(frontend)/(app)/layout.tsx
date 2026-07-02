@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AppSidebar } from "~/components/app-sidebar";
 import { BrandingProvider } from "~/components/branding-provider";
 import { AppExtWidgetsProvider } from "~/components/ext-widgets-provider";
+import { ReloadOnBfcacheRestore } from "~/components/reload-on-bfcache-restore";
 import { SiteHeader } from "~/components/site-header";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { ensureCmsUser, ensureFreeTag } from "~/lib/cms/mirror-user";
@@ -59,6 +60,9 @@ export default async function AppLayout({
 
   return (
     <BrandingProvider value={branding}>
+      {/* After logout, Back must not restore this entitled shell from bfcache
+          without a server re-check (shared-machine leak). */}
+      <ReloadOnBfcacheRestore />
       <SidebarProvider
         style={
           {
