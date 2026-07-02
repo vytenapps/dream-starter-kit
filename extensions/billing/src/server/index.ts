@@ -187,11 +187,8 @@ async function resolveCustomer(
   const stored = existing?.stripe_customer_id ?? undefined;
   if (stored && (await customerExists(stripe, stored))) return stored;
 
-  const byEmail = user.email
-    ? await stripe.customers.list({ email: user.email, limit: 1 })
-    : null;
-  const resolved =
-    byEmail?.data[0]?.id ??
+  const admin = createAdminClient();
+  const createFresh = async () =>
     (
       await stripe.customers.create({
         email: user.email ?? undefined,
@@ -199,14 +196,47 @@ async function resolveCustomer(
       })
     ).id;
 
+  // Try to reconnect the user to an existing Stripe customer with their email
+  // (e.g. one created by a prior guest checkout). Only adopt it when it's safe:
+  //   - its Stripe metadata isn't stamped for a DIFFERENT Supabase user, AND
+  //   - no ext_billing_customers row already maps it to a DIFFERENT user.
+  // Otherwise create a fresh customer. This prevents cross-linking two accounts
+  // to one Stripe customer (email can be reused after an account email change /
+  // shared Stripe account) and the resulting UNIQUE(stripe_customer_id) upsert
+  // violation that would otherwise silently leave the mapping unhealed.
+  const candidate = user.email
+    ? (await stripe.customers.list({ email: user.email, limit: 1 })).data[0]
+    : undefined;
+  let resolved: string;
+  const metaOwner = candidate?.metadata.supabase_user_id;
+  if (candidate && (!metaOwner || metaOwner === user.id)) {
+    const { data: mapOwner } = await admin
+      .from("ext_billing_customers")
+      .select("user_id")
+      .eq("stripe_customer_id", candidate.id)
+      .maybeSingle();
+    resolved =
+      !mapOwner || mapOwner.user_id === user.id
+        ? candidate.id
+        : await createFresh();
+  } else {
+    resolved = await createFresh();
+  }
+
   // Heal the stored mapping when it was missing or pointed at a dead customer.
   if (resolved !== stored) {
-    await createAdminClient()
+    const { error: healErr } = await admin
       .from("ext_billing_customers")
       .upsert(
         { user_id: user.id, stripe_customer_id: resolved },
         { onConflict: "user_id" },
       );
+    if (healErr) {
+      console.error(
+        "[billing] could not heal customer mapping:",
+        healErr.message,
+      );
+    }
   }
   return resolved;
 }
