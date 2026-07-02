@@ -83,6 +83,8 @@ export default function SignUp() {
     try {
       await signInWithOtp(supabase, email, {
         emailRedirectTo: Linking.createURL("/auth-callback"),
+        // Sign-up screen (gated by `gate()` above): creating the account is intended.
+        shouldCreateUser: true,
       });
       setConfirm({ email, mode: "otp" });
     } catch (e) {

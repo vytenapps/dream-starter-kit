@@ -142,8 +142,9 @@ export function UserMenuContent({
         onClick={() =>
           void signOut(supabase)
             .catch(() => {
-              // `signOut` throws if the server-side revoke fails, but the local
-              // session cookies are already cleared — proceed to reload anyway.
+              // `signOut` still throws if the server-side revoke fails, but it
+              // now guarantees a local sign-out first (see @acme/app signOut), so
+              // the session is genuinely cleared — proceed to reload anyway.
             })
             .finally(() => {
               // Hard navigation, NOT router.refresh(): a soft refresh can keep

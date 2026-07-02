@@ -59,7 +59,8 @@ export default function ProfilePage() {
     try {
       await signOut(supabase);
     } catch {
-      // Local session cookies are cleared even if the server revoke fails.
+      // `signOut` guarantees a local sign-out even when the server revoke fails
+      // (see @acme/app signOut), so the session is genuinely cleared here.
     }
     // Hard navigation (not router.replace + refresh): discards the client Router
     // Cache so any entitled content rendered while signed in (e.g. a gated

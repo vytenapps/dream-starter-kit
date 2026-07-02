@@ -61,6 +61,8 @@ export function generatedImageFields(config: GeneratedImagesConfig): Field[] {
     {
       name: promptField,
       type: "textarea",
+      // Bound the prompt — it drives a cost-bearing AI-Gateway render on save.
+      maxLength: 2000,
       admin: {
         description:
           "Describe the image(s) to generate. On save, empty slots above are " +

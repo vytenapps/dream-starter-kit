@@ -68,6 +68,8 @@ export default function SignIn() {
     try {
       await signInWithOtp(supabase, email, {
         emailRedirectTo: Linking.createURL("/auth-callback"),
+        // Sign-in must never create an account (that's the sign-up screen).
+        shouldCreateUser: false,
       });
       Alert.alert("Check your email", "We sent you a magic link.");
     } catch (e) {
@@ -79,7 +81,7 @@ export default function SignIn() {
     const email = requireEmail();
     if (!email) return;
     try {
-      await signInWithOtp(supabase, email);
+      await signInWithOtp(supabase, email, { shouldCreateUser: false });
       setOtpSent(true);
     } catch (e) {
       Alert.alert("Could not send code", msg(e));

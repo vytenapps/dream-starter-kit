@@ -98,17 +98,31 @@ export async function resendSignUpEmail(
   if (error) throw error;
 }
 
-/** Magic-link / email OTP sign-in. */
+/**
+ * Magic-link / email OTP sign-in.
+ *
+ * `shouldCreateUser` MUST be passed explicitly by callers: GoTrue defaults it to
+ * `true`, so a bare call turns the sign-IN page into a silent sign-up path that
+ * bypasses the `allowSignups` (invite-only) toggle, the email-domain rules, and
+ * terms acceptance. Sign-in should pass `false` (GoTrue then rejects unknown
+ * emails with "Signups not allowed for otp"); the passwordless sign-UP path
+ * passes `true` (already gated by those rules before this call).
+ */
 export async function signInWithOtp(
   client: AppSupabaseClient,
   email: string,
-  opts?: { emailRedirectTo?: string; captchaToken?: string },
+  opts?: {
+    emailRedirectTo?: string;
+    captchaToken?: string;
+    shouldCreateUser?: boolean;
+  },
 ): Promise<void> {
   const { error } = await client.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: opts?.emailRedirectTo,
       captchaToken: opts?.captchaToken,
+      shouldCreateUser: opts?.shouldCreateUser,
     },
   });
   if (error) throw error;
@@ -182,7 +196,15 @@ export async function updatePassword(
 
 export async function signOut(client: AppSupabaseClient): Promise<void> {
   const { error } = await client.auth.signOut();
-  if (error) throw error;
+  if (!error) return;
+  // A failed GLOBAL revoke (network blip / 5xx) leaves the LOCAL session fully
+  // intact in auth-js — it returns the error *before* clearing local storage for
+  // anything other than an already-invalid session. That's a shared-machine
+  // hazard, because callers navigate to /sign-in believing logout succeeded.
+  // Force a LOCAL sign-out (no server call) so the session cookies/storage are
+  // actually cleared, then surface the original error to the caller.
+  await client.auth.signOut({ scope: "local" }).catch(() => undefined);
+  throw error;
 }
 
 /**

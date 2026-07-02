@@ -31,9 +31,12 @@ export function registerMediaTools(
         "from any upload field). `format`: hero (16:9), og (1200×630), or square " +
         "(1:1, default). Optional `alt` text (defaults to the prompt).",
       inputSchema: {
-        prompt: z.string().min(1).describe("What to draw."),
+        // Cap the prompt/alt length: this is a cost-bearing AI-Gateway call and
+        // the intended client is an autonomous LLM loop — an unbounded string
+        // rides straight into the gateway request.
+        prompt: z.string().min(1).max(2000).describe("What to draw."),
         format: z.enum(["hero", "og", "square"]).optional(),
-        alt: z.string().optional(),
+        alt: z.string().max(2000).optional(),
       },
     },
     ({ prompt, format, alt }) =>

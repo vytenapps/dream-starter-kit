@@ -6,6 +6,7 @@ import { FavoriteButton } from "~/components/content/favorite-button";
 import { PaywallProvider } from "~/components/paywall/paywall-provider";
 import { PremiumGate } from "~/components/paywall/premium-gate";
 import { CmsRichText } from "~/components/rich-text";
+import { toPublicMediaUrl } from "~/lib/cms/media-url";
 
 /**
  * Presentational render of a `posts` document. Shared by the server route
@@ -29,11 +30,21 @@ export function PostDetail({
   // Prefer an explicit featuredImage; otherwise fall back to the AI-generated
   // hero (its public URL is cached on `imageHeroUrl` by the syncImageUrls hook,
   // so no relation populate is needed).
+  // Rewrite any stale/cached `/cms-api/.../file/…` URL to the public CDN object
+  // (columns cached before the CDN switch, and depth:0 reads that skip the
+  // storage afterRead hook, can still carry the access-controlled path).
   const image =
     typeof post.featuredImage === "object" && post.featuredImage?.url
-      ? { url: post.featuredImage.url, alt: post.featuredImage.alt }
+      ? {
+          url:
+            toPublicMediaUrl(post.featuredImage.url) ?? post.featuredImage.url,
+          alt: post.featuredImage.alt,
+        }
       : post.imageHeroUrl
-        ? { url: post.imageHeroUrl, alt: post.imageAlt ?? post.title }
+        ? {
+            url: toPublicMediaUrl(post.imageHeroUrl) ?? post.imageHeroUrl,
+            alt: post.imageAlt ?? post.title,
+          }
         : null;
 
   const gated = post.accessLevel === "premium";

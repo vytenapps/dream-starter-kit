@@ -13,9 +13,13 @@ import { env } from "~/env";
  * `useLivePreview` and re-renders the post in place — no save or refresh needed.
  */
 export function PostLivePreview({ initialData }: { initialData: Post }) {
+  // Use the iframe's own origin (shared with the admin) — useLivePreview's
+  // postMessage origin check is strict, and NEXT_PUBLIC_APP_URL defaults to
+  // localhost:3000, which broke live updates on real deploys. See live-preview.tsx.
   const serverURL =
-    env.NEXT_PUBLIC_APP_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "");
+    typeof window !== "undefined"
+      ? window.location.origin
+      : env.NEXT_PUBLIC_APP_URL;
   const { data } = useLivePreview<Post>({ initialData, serverURL, depth: 1 });
   return <PostDetail post={data} />;
 }

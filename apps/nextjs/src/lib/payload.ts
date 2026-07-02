@@ -145,9 +145,16 @@ export function getEvent(slug: string): Promise<EventDoc | null> {
 export function listVideos(): Promise<Video[]> {
   return safe(async () => {
     const payload = await client();
+    // Resolve viewer entitlement + run with overrideAccess:false so the
+    // premium/members field access on `body`/`url`/`videoFile` actually strips
+    // the playable source for non-entitled viewers (Local API bypasses access by
+    // default). Mirrors getPost. See payload/access premiumFieldAccess.
+    const entitlement = await getViewerEntitlement();
     const { docs } = await payload.find({
       collection: "videos",
       where: PUBLISHED,
+      overrideAccess: false,
+      context: entitlement,
       depth: 1,
       limit: 100,
     });
@@ -160,9 +167,14 @@ export function listVideos(): Promise<Video[]> {
 export function listAudio(): Promise<AudioDoc[]> {
   return safe(async () => {
     const payload = await client();
+    // Entitlement-gated like listVideos: strips body/transcript for non-entitled
+    // viewers (the enclosure is protected separately via tokenized feeds).
+    const entitlement = await getViewerEntitlement();
     const { docs } = await payload.find({
       collection: "audio",
       sort: "-publishedAt",
+      overrideAccess: false,
+      context: entitlement,
       depth: 1,
       limit: 100,
     });
