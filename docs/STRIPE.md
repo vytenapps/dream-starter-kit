@@ -40,7 +40,7 @@ Everything is **test mode** first (no real money). You flip to live mode at the 
 | `STRIPE_SECRET_KEY`                            | 🔒 server‑only | Your Stripe API key (`sk_test_…` / `rk_test_…` / `sk_live_…`). Lets the kit create products, prices, checkout sessions, etc.                            | Next.js server routes + both webhooks  |
 | `STRIPE_WEBHOOK_SECRET`                        | 🔒 server‑only | Signing secret for the **Supabase edge‑function** webhook (mirrors products/prices/subscriptions into `public.*` for the apps).                         | `billing-stripe-webhook` edge function |
 | `STRIPE_WEBHOOKS_ENDPOINT_SECRET`              | 🔒 server‑only | Signing secret for the **Payload** webhook (mirrors `customer.subscription.*` into the CMS `subscriptions` collection). A **second, separate** webhook. | `/cms-api/stripe/webhooks`             |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`           | public         | Client‑safe key (`pk_test_…`). **Not required** by the default redirect‑to‑Checkout flow; reserved for future in‑page card capture.                     | (optional) client                      |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`           | public         | Client‑safe key (`pk_test_…`). **Required for the embedded paywall + two‑step `/checkout`** (Stripe Elements / Express Checkout — Apple/Google Pay + card). Only the hosted redirect‑to‑Checkout flow works without it.                     | client                      |
 | `SITE_URL`                                     | server‑only    | Your site origin, used to build the guest‑checkout invite redirect. Defaults to `NEXT_PUBLIC_APP_URL`/localhost.                                        | edge‑function webhook                  |
 | `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY` | 🔒             | **Legacy / unused** by the plan‑driven flow. Leave blank.                                                                                               | —                                      |
 
@@ -89,7 +89,10 @@ these. Set **everything not listed below to _None_**:
 | **Customers**                                           | **Write**  | Find or create the Stripe customer at checkout              |
 | **Checkout Sessions**                                   | **Write**  | Create the hosted checkout page; read its line items        |
 | **Customer portal**                                     | **Write**  | Open the self‑serve billing portal (`/billing`)             |
-| **Subscriptions**                                       | **Read**   | Read subscription state in the webhooks                     |
+| **Subscriptions**                                       | **Write**  | Create subscriptions (embedded `/express-intent`) + switch plan (1‑click annual `/upgrade-annual`); read in webhooks |
+| **PaymentIntents**                                      | **Write**  | Embedded paywall / two‑step checkout card + wallet payments (`/express-intent`) |
+| **SetupIntents**                                        | **Write**  | Collect a payment method for trial / $0‑now subscriptions (`/express-intent`) |
+| **Charges**                                             | **Read**   | Capture the buyer's wallet identity from the first charge (edge‑function webhook) |
 | **Invoices**                                            | **Read**   | List a customer's past invoices on `/billing`               |
 | _Everything else_                                       | **None**   | Not used                                                    |
 
