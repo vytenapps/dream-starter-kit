@@ -7,7 +7,10 @@ import {
   resetBootstrapRunner,
   runFullBootstrap,
 } from "./bootstrap-runner";
-import { recordBootstrapResult, resetBootstrapStatus } from "./bootstrap-status";
+import {
+  recordBootstrapResult,
+  resetBootstrapStatus,
+} from "./bootstrap-status";
 
 const OK: BootstrapResult = {
   skipped: "up-to-date",

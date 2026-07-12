@@ -50,9 +50,7 @@ export const CMS_FAILURE_COOLDOWN_MS = 30_000;
  */
 export class CmsUnavailableError extends Error {
   constructor(detail?: string) {
-    super(
-      `CMS unavailable${detail ? `: ${detail}` : ""} (see /api/health/db)`,
-    );
+    super(`CMS unavailable${detail ? `: ${detail}` : ""} (see /api/health/db)`);
     this.name = "CmsUnavailableError";
   }
 }

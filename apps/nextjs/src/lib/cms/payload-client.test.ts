@@ -90,9 +90,7 @@ describe("getPayloadClient", () => {
   });
 
   it("re-provisions FIRST when the boot bootstrap failed, never touching the pool if still broken", async () => {
-    const loadPayload = vi.fn(() =>
-      Promise.resolve(makeFakePayload().payload),
-    );
+    const loadPayload = vi.fn(() => Promise.resolve(makeFakePayload().payload));
     const ensureProvisioned = vi.fn(() => Promise.resolve(errorStatus));
 
     await expect(
@@ -165,9 +163,7 @@ describe("getPayloadClient", () => {
   it("cools down after a failed heal instead of re-running it per call", async () => {
     let clock = 9_000_000;
     const now = () => clock;
-    const loadPayload = vi.fn(() =>
-      Promise.resolve(makeFakePayload().payload),
-    );
+    const loadPayload = vi.fn(() => Promise.resolve(makeFakePayload().payload));
     const ensureProvisioned = vi.fn(() => Promise.resolve(errorStatus));
     const deps = {
       loadPayload,
