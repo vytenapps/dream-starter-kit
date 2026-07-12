@@ -3,7 +3,9 @@
  * on first server boot, so deploying the kit needs NO manual `supabase db push`
  * or SQL-editor steps.
  *
- * Called from instrumentation.ts at server boot. In order, under one lock:
+ * Called via lib/db/bootstrap-runner.ts — at server boot (instrumentation.ts)
+ * and again from request paths when the boot attempt failed (the runner's
+ * `ensureDbProvisioned`). In order, under one lock:
  *
  *   1. applies pending `supabase/migrations/*.sql` (bundled by
  *      `pnpm db:gen-migrations`) against the privileged session-mode connection,
@@ -90,6 +92,8 @@ export interface BootstrapDeps {
    * stays Payload-free.
    */
   migrateCms?: () => Promise<void>;
+  /** Delay between connect retries — injectable so tests don't wait. */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 export interface BootstrapResult {
@@ -139,6 +143,44 @@ async function defaultCreateClient(
   });
   await client.connect();
   return client;
+}
+
+/**
+ * Connect retry policy. A one-click deploy connects the Supabase integration
+ * and redeploys while the brand-new project is still provisioning — the very
+ * first connect attempt can hit a database/pooler that isn't accepting
+ * connections yet. A single failed attempt used to abort provisioning for the
+ * whole life of the instance, and the un-provisioned `payload_cms` role then
+ * poisoned later attempts (see lib/cms/payload-client.ts), so the founder's
+ * first sign-up died on /welcome. Three spaced attempts ride out that window.
+ */
+const CONNECT_ATTEMPTS = 3;
+const CONNECT_RETRY_DELAYS_MS = [2_000, 4_000];
+
+const defaultSleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+async function connectWithRetry(
+  createClient: (connectionString: string) => Promise<BootstrapClient>,
+  connectionString: string,
+  log: Pick<Console, "info" | "warn" | "error">,
+  sleep: (ms: number) => Promise<void>,
+): Promise<BootstrapClient> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await createClient(connectionString);
+    } catch (error) {
+      if (attempt >= CONNECT_ATTEMPTS) throw error;
+      const delay =
+        CONNECT_RETRY_DELAYS_MS[attempt - 1] ??
+        CONNECT_RETRY_DELAYS_MS[CONNECT_RETRY_DELAYS_MS.length - 1] ??
+        2_000;
+      log.warn(
+        `[db-bootstrap] connect attempt ${attempt}/${CONNECT_ATTEMPTS} failed (${summarizeDbError(error).message}) — retrying in ${Math.round(delay / 1000)}s (a just-created Supabase project can take a moment to accept connections)`,
+      );
+      await sleep(delay);
+    }
+  }
 }
 
 async function inspectState(
@@ -301,7 +343,12 @@ async function runBootstrap(deps: BootstrapDeps): Promise<BootstrapResult> {
   let client: BootstrapClient | undefined;
   let locked = false;
   try {
-    client = await (deps.createClient ?? defaultCreateClient)(adminUrl);
+    client = await connectWithRetry(
+      deps.createClient ?? defaultCreateClient,
+      adminUrl,
+      log,
+      deps.sleep ?? defaultSleep,
+    );
     // Hosted role defaults are too short for DDL of this size.
     await client.query(`set statement_timeout = '5min'`);
 

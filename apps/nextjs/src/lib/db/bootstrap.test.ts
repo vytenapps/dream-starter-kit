@@ -541,6 +541,7 @@ describe("bootstrapDatabase failure handling", () => {
       migrations: MIGRATIONS,
       createClient: () => Promise.reject(new Error("ECONNREFUSED")),
       logger,
+      sleep: () => Promise.resolve(),
     });
     expect(result.skipped).toBe("error");
     expect(logger.error).toHaveBeenCalled();
@@ -558,6 +559,7 @@ describe("bootstrapDatabase failure handling", () => {
       migrations: MIGRATIONS,
       createClient: () => Promise.reject(tlsError),
       logger: spyLogger(),
+      sleep: () => Promise.resolve(),
     });
     expect(result.error?.code).toBe("SELF_SIGNED_CERT_IN_CHAIN");
     // The summary feeds the PUBLIC /api/health/db endpoint.
@@ -571,5 +573,54 @@ describe("bootstrapDatabase failure handling", () => {
     const result = await run(fake);
     expect(result.skipped).toBe(false);
     expect(result.error?.message).toContain("forced failure");
+  });
+});
+
+describe("bootstrapDatabase connect retries (fresh-project readiness)", () => {
+  // A just-created Supabase project (one-click deploy + integration connect)
+  // can reject the very first connection attempt; a single failed attempt used
+  // to abort provisioning for the instance's whole life.
+  it("retries a failing connect with backoff, then provisions normally", async () => {
+    const fake = makeFake();
+    const sleep = vi.fn((_ms: number) => Promise.resolve());
+    const logger = spyLogger();
+    let attempts = 0;
+    const result = await bootstrapDatabase({
+      envSource: ENV,
+      migrations: MIGRATIONS,
+      createClient: () => {
+        attempts += 1;
+        return attempts < 3
+          ? Promise.reject(new Error("timeout expired"))
+          : Promise.resolve(fake.client);
+      },
+      logger,
+      sleep,
+    });
+    expect(attempts).toBe(3);
+    expect(sleep.mock.calls.map((c) => c[0])).toEqual([2_000, 4_000]);
+    expect(result.skipped).toBe(false);
+    expect(result.appliedVersions).toEqual(MIGRATIONS.map((m) => m.version));
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("connect attempt 1/3 failed (timeout expired)"),
+    );
+  });
+
+  it("gives up after the last attempt, surfacing the final error", async () => {
+    const sleep = vi.fn(() => Promise.resolve());
+    const createClient = vi.fn(() =>
+      Promise.reject(new Error("timeout expired")),
+    );
+    const result = await bootstrapDatabase({
+      envSource: ENV,
+      migrations: MIGRATIONS,
+      createClient,
+      logger: spyLogger(),
+      sleep,
+    });
+    expect(createClient).toHaveBeenCalledTimes(3);
+    expect(sleep).toHaveBeenCalledTimes(2);
+    expect(result.skipped).toBe("error");
+    expect(result.error?.message).toContain("timeout expired");
   });
 });

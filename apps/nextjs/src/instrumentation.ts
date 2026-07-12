@@ -44,54 +44,31 @@ export async function register() {
   // eslint-disable-next-line no-restricted-properties, turbo/no-undeclared-env-vars
   if (process.env.NEXT_PHASE === "phase-production-build") return;
 
-  // The CMS warm-up: initialize Payload (its `getPayload()` runs the
-  // `prodMigrations` on first connect) and reconcile the extension registry +
-  // CMS-driven menu from the bundled generated defaults (lib/ext/reconcile-nav)
-  // — insert rows for newly installed extensions, drop removed ones, never
-  // touch staff edits.
-  const warmCms = async () => {
-    const [{ default: config }, { getPayload }] = await Promise.all([
-      import("@payload-config"),
-      import("payload"),
-    ]);
-    const payload = await getPayload({ config });
-    const { reconcileExtensions } = await import("~/lib/ext/reconcile-nav");
-    await reconcileExtensions(payload);
-  };
-
-  // Bundled Payload migration names — so the bootstrap can spot a pending CMS
-  // migration (fresh DB, or a deploy that added one) and run `warmCms` under
-  // its advisory lock. Resolved best-effort; missing names just disable that
-  // detection (the bootstrap still provisions and warms).
-  const cmsMigrationNames = await (async () => {
-    try {
-      const [{ migrations }, { extPayloadMigrations }] = await Promise.all([
-        import("./payload/migrations"),
-        import("./ext/registry.payload.generated"),
-      ]);
-      return [...migrations, ...extPayloadMigrations].map((m) => m.name);
-    } catch {
-      return undefined;
-    }
-  })();
-
-  // DB bootstrap runs the CMS migration UNDER its cross-instance advisory lock
-  // (via `migrateCms`), so the first-boot `prodMigrations` is serialized across
-  // cold-starting instances and never races at request time — where a failed
-  // migration's `process.exit(1)` surfaces as a Vercel FUNCTION_INVOCATION_FAILED
-  // 500 (e.g. the `/welcome` redirect on a fresh deploy). Handles its own
-  // errors — never throws.
-  const { bootstrapDatabase } = await import("~/lib/db/bootstrap");
-  const result = await bootstrapDatabase({
-    migrateCms: warmCms,
-    cmsMigrationNames,
-  });
+  // The full bootstrap (lib/db/bootstrap-runner.ts) runs the CMS migration
+  // UNDER its cross-instance advisory lock (via `migrateCms`), so the
+  // first-boot `prodMigrations` is serialized across cold-starting instances
+  // and never races at request time — where a failed migration's
+  // `process.exit(1)` surfaces as a Vercel FUNCTION_INVOCATION_FAILED 500
+  // (e.g. the `/welcome` redirect on a fresh deploy). Handles its own errors —
+  // never throws.
+  const { runFullBootstrap, warmCms } = await import(
+    "~/lib/db/bootstrap-runner"
+  );
+  const result = await runFullBootstrap();
 
   // Fast path: a fully-provisioned, fully-migrated DB skips the lock and the
   // warm-up. Warm Payload now (unlocked is safe — no migration is pending, so
   // concurrent runs just read the ledger) so the first request doesn't pay
   // Payload's multi-second init.
-  if (!result.cmsWarmed) {
+  //
+  // But NEVER warm after a FAILED bootstrap: the payload_cms role may not
+  // exist yet, and connecting as a role Supavisor can't resolve feeds its
+  // credential circuit breaker until the whole tenant blocks new connections —
+  // including the session connection the next bootstrap retry needs (the
+  // production first-deploy spiral; see lib/cms/payload-client.ts). The
+  // request-path guard re-provisions and warms on demand instead.
+  const failed = result.skipped === "error" || result.error !== undefined;
+  if (!result.cmsWarmed && !failed) {
     try {
       await warmCms();
     } catch {

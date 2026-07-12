@@ -1,10 +1,9 @@
 import type { CollectionSlug } from "payload";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import config from "@payload-config";
-import { getPayload } from "payload";
 
 import { env } from "~/env";
+import { getPayloadClient } from "~/lib/cms/payload-client";
 import { generateAuditedImage } from "~/lib/image-generation";
 import { isS3Configured } from "~/lib/s3-config";
 import {
@@ -60,7 +59,7 @@ interface Candidate {
 }
 
 export async function POST() {
-  const payload = await getPayload({ config });
+  const payload = await getPayloadClient();
   const { user } = await payload.auth({ headers: await headers() });
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

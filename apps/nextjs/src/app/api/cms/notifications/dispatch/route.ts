@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { runDispatch } from "@acme/mcp";
 
 import { env } from "~/env";
+import { summarizeDbError } from "~/lib/db/bootstrap-core";
 import { createAdminClient } from "~/lib/supabase/admin";
 
 /**
@@ -23,11 +24,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const getPayloadLazy = async () => {
-  const [{ default: config }, { getPayload }] = await Promise.all([
-    import("@payload-config"),
-    import("payload"),
-  ]);
-  return getPayload({ config });
+  const { getPayloadClient } = await import("~/lib/cms/payload-client");
+  return getPayloadClient();
 };
 
 async function handler(req: NextRequest): Promise<Response> {
@@ -41,7 +39,19 @@ async function handler(req: NextRequest): Promise<Response> {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const payload = await getPayloadLazy();
+  // The guarded client re-runs the DB bootstrap when a fresh deploy's boot
+  // attempt failed — this cron is the deployment's steady background healer.
+  // Answer a clean 503 (instead of crashing the invocation) while the
+  // database still isn't reachable/provisioned.
+  let payload;
+  try {
+    payload = await getPayloadLazy();
+  } catch (error) {
+    return NextResponse.json(
+      { error: "CMS database unavailable", detail: summarizeDbError(error) },
+      { status: 503 },
+    );
+  }
   const admin = createAdminClient();
   const result = await runDispatch({ payload, admin });
   return NextResponse.json(result);

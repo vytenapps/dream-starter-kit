@@ -67,6 +67,11 @@ export function recordBootstrapResult(result: BootstrapResult): void {
   (globalThis as GlobalWithStatus)[GLOBAL_KEY] = toBootstrapStatus(result);
 }
 
+/** Test seam: forget the recorded status (back to "not-run"). */
+export function resetBootstrapStatus(): void {
+  delete (globalThis as GlobalWithStatus)[GLOBAL_KEY];
+}
+
 export function getBootstrapStatus(): BootstrapStatus {
   return (
     (globalThis as GlobalWithStatus)[GLOBAL_KEY] ?? {

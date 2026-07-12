@@ -2,8 +2,6 @@ import "server-only";
 
 import { cache } from "react";
 import { draftMode } from "next/headers";
-import config from "@payload-config";
-import { getPayload } from "payload";
 
 import type { AuthSettings } from "@acme/app";
 import type {
@@ -21,6 +19,7 @@ import { APP_NAME } from "@acme/config/constants";
 
 import type { ThemeSettingsInput } from "./theme/defaults";
 import { getViewerEntitlement } from "./billing-entitlement";
+import { getPayloadClient } from "./cms/payload-client";
 
 /**
  * Server-side access to Payload via its LOCAL API (in-process, no HTTP) — the
@@ -29,9 +28,12 @@ import { getViewerEntitlement } from "./billing-entitlement";
  *
  * Reads degrade gracefully: if the CMS isn't reachable or hasn't been migrated
  * yet (e.g. a placeholder-env deploy before Payload is configured), the public
- * pages render an empty state rather than 500-ing.
+ * pages render an empty state rather than 500-ing. The guarded client
+ * (lib/cms/payload-client.ts) additionally fails FAST while the CMS is known
+ * to be down — one connection attempt per cooldown instead of one per render —
+ * and re-runs the DB bootstrap when a fresh deploy's boot attempt failed.
  */
-const client = () => getPayload({ config });
+const client = () => getPayloadClient();
 
 const PUBLISHED = { _status: { equals: "published" } };
 const publishedSlug = (slug: string) => ({

@@ -374,7 +374,11 @@ app needs — including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
    injected env vars. The web app should now be live (the first boot runs the DB
    bootstrap above) — verify at `https://<your-domain>/api/health/db`, which reports
    the bootstrap status (`ok`, with the applied migration versions) and a sanitized
-   error if provisioning failed.
+   error if provisioning failed. A brand-new Supabase project can reject the very
+   first connection attempts while it finishes provisioning — that's fine: the
+   bootstrap retries at boot and again from request paths (and `/welcome` shows an
+   auto-refreshing setup page instead of an error), so give it a minute before
+   digging into logs.
 5. **Finish config** — in the Supabase dashboard set **Authentication → URL
    Configuration**. **This is required** — a fresh Supabase project defaults its Site URL
    to `http://localhost:3000` and the integration doesn't change it, so until you do this
