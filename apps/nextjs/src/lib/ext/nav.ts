@@ -20,11 +20,8 @@ export type { NavMenuItem } from "./nav-types";
  */
 export const getWebNavItems = cache(async (): Promise<NavMenuItem[]> => {
   try {
-    const [{ default: config }, { getPayload }] = await Promise.all([
-      import("@payload-config"),
-      import("payload"),
-    ]);
-    const payload = await getPayload({ config });
+    const { getPayloadClient } = await import("../cms/payload-client");
+    const payload = await getPayloadClient();
     const [navRes, extRes] = await Promise.all([
       payload.find({
         collection: "nav-items",

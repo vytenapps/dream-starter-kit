@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import config from "@payload-config";
-import { getPayload } from "payload";
 
 import type { ExtBillingPlan, Media, Review } from "@acme/cms";
 
@@ -9,6 +7,7 @@ import type { CheckoutTestimonialData } from "~/components/checkout/checkout-tes
 import type { PlanLite } from "~/lib/paywall-copy";
 import { CheckoutFlow } from "~/components/checkout/checkout-flow";
 import { isViewerPremium } from "~/lib/billing-entitlement";
+import { getPayloadClient } from "~/lib/cms/payload-client";
 import { getAuthSettings, getBranding } from "~/lib/payload";
 import { resolveAnnualPlan } from "~/lib/paywall-copy";
 
@@ -64,7 +63,7 @@ export default async function CheckoutPage({
   let testimonial: CheckoutTestimonialData | null = null;
 
   try {
-    const payload = await getPayload({ config });
+    const payload = await getPayloadClient();
 
     plan = await payload
       .findByID({ collection: "ext-billing-plans", id: planParam, depth: 0 })

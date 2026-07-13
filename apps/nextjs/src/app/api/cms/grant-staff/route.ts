@@ -1,9 +1,8 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import config from "@payload-config";
-import { getPayload } from "payload";
 import { z } from "zod/v4";
 
+import { getPayloadClient } from "~/lib/cms/payload-client";
 import { createAdminClient } from "~/lib/supabase/admin";
 
 /**
@@ -23,7 +22,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const payload = await getPayload({ config });
+  const payload = await getPayloadClient();
   const { user } = await payload.auth({ headers: await headers() });
   // The SSO bridge only authenticates staff, but check the role explicitly
   // for defense in depth (only admins/editors may grant or revoke staff).

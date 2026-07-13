@@ -21,12 +21,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+// Guarded (lib/cms/payload-client.ts): fails fast while the CMS database is
+// down/unprovisioned instead of hammering the pooler per request, and re-runs
+// the DB bootstrap when a fresh deploy's boot attempt failed.
 const getPayloadLazy = async () => {
-  const [{ default: config }, { getPayload }] = await Promise.all([
-    import("@payload-config"),
-    import("payload"),
-  ]);
-  return getPayload({ config });
+  const { getPayloadClient } = await import("~/lib/cms/payload-client");
+  return getPayloadClient();
 };
 
 // Per-user budget for the cost-bearing MCP surface (golden rule #6: authed AND

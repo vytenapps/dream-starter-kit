@@ -389,7 +389,19 @@ boot ─ bootstrapDatabase()                 ─ getPayload() warm-up      ─ f
 It's concurrency-safe (session advisory lock, double-checked inside), idempotent (a
 provisioned DB short-circuits after one cheap inspection), skipped during `next build`
 and when no admin URL is set, and it **never throws** — failures log `[db-bootstrap]`
-and the app degrades to the manual flow. Opt out with `DB_BOOTSTRAP=off`.
+and the app keeps booting. Failures also **self-heal** rather than stranding the
+deploy: the boot connect retries with backoff (a just-created Supabase project can
+reject its first connections), and if the whole boot attempt still fails, request
+paths re-run the full bootstrap — single-flight, cooldown-limited
+(`lib/db/bootstrap-runner.ts`). Until a run succeeds, the guarded Payload client
+(`lib/cms/payload-client.ts`) keeps the app from opening connections as the
+not-yet-created `payload_cms` role — repeated failed credential lookups trip
+Supavisor's circuit breaker ("ECIRCUITBREAKER … new connections are temporarily
+blocked"), which would also block the session connections the bootstrap itself needs
+(the fresh-deploy death spiral) — and `/welcome` answers with an auto-refreshing
+"finishing setup" page instead of a 503 dead end, so the founder's first sign-up
+completes on its own once the database comes up. The manual `supabase db push` flow
+remains supported in either order; opt out with `DB_BOOTSTRAP=off`.
 
 ### 4.12 Remote MCP server — `@acme/mcp`
 

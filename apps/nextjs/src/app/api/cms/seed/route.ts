@@ -1,9 +1,8 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import config from "@payload-config";
-import { getPayload } from "payload";
 
 import { cmsConfigStatus, cmsNotConfiguredMessage } from "~/lib/cms/env-status";
+import { getPayloadClient } from "~/lib/cms/payload-client";
 import { isCmsSeeded } from "~/lib/cms/seed-status";
 import { summarizeDbError } from "~/lib/db/bootstrap-core";
 import { seedCmsContent } from "~/payload/seed";
@@ -24,7 +23,7 @@ import { seedCmsContent } from "~/payload/seed";
 export const dynamic = "force-dynamic";
 
 async function authedPayload() {
-  const payload = await getPayload({ config });
+  const payload = await getPayloadClient();
   const { user } = await payload.auth({ headers: await headers() });
   return { payload, user };
 }

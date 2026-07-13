@@ -1,9 +1,7 @@
 import "server-only";
 
-import config from "@payload-config";
-import { getPayload } from "payload";
-
 import type { PlanLite } from "./paywall-copy";
+import { getPayloadClient } from "./cms/payload-client";
 import { resolvePremiumPlan } from "./paywall-copy";
 
 /**
@@ -15,7 +13,7 @@ import { resolvePremiumPlan } from "./paywall-copy";
  */
 export async function getPremiumPlan(): Promise<PlanLite | null> {
   try {
-    const payload = await getPayload({ config });
+    const payload = await getPayloadClient();
     const { docs } = await payload.find({
       collection: "ext-billing-plans",
       where: { active: { equals: true } },

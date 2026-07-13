@@ -21,11 +21,8 @@ async function disabledExtensions(): Promise<Set<string>> {
   const now = Date.now();
   if (cached && now - cached.at < CACHE_MS) return cached.disabled;
   try {
-    const [{ default: config }, { getPayload }] = await Promise.all([
-      import("@payload-config"),
-      import("payload"),
-    ]);
-    const payload = await getPayload({ config });
+    const { getPayloadClient } = await import("../cms/payload-client");
+    const payload = await getPayloadClient();
     const res = await payload.find({
       collection: "kit-extensions",
       where: { enabled: { equals: false } },

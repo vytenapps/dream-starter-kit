@@ -1,11 +1,10 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import config from "@payload-config";
-import { getPayload } from "payload";
 import { z } from "zod/v4";
 
 import { createTagSchema } from "@acme/app";
 
+import { getPayloadClient } from "~/lib/cms/payload-client";
 import { createAdminClient } from "~/lib/supabase/admin";
 
 /**
@@ -17,7 +16,7 @@ import { createAdminClient } from "~/lib/supabase/admin";
 export const dynamic = "force-dynamic";
 
 async function resolveSupabaseUserId(docId: string): Promise<string | null> {
-  const payload = await getPayload({ config });
+  const payload = await getPayloadClient();
   const { user } = await payload.auth({ headers: await headers() });
   if (!user) return null;
   const doc = await payload

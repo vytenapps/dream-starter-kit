@@ -1,10 +1,8 @@
 import "server-only";
 
-import config from "@payload-config";
-import { getPayload } from "payload";
-
 import { createAdminClient } from "~/lib/supabase/admin";
 import { withCmsSchemaHeal } from "./ensure-schema";
+import { getPayloadClient } from "./payload-client";
 
 /**
  * Mirror a Supabase user into the Payload `users` collection so the admin Users
@@ -33,7 +31,7 @@ export async function ensureCmsUser(user: {
   metadata?: Record<string, unknown> | null;
 }): Promise<void> {
   try {
-    const payload = await getPayload({ config });
+    const payload = await getPayloadClient();
 
     // Map wallet-captured contact/billing from user_metadata onto the cms.users
     // shape (its `address` group has no `line1/line2/state`, so fold them in).
